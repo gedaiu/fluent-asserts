@@ -1,0 +1,13 @@
+{
+	"name": "should",
+	"authors": [
+		"Szabo Bogdan"
+	],
+	"description": "A rich assert utility",
+	"copyright": "Copyright © 2016, Szabo Bogdan",
+	"license": "MIT",
+
+	"dependencies": {
+		"vibe-d": "*"
+	}
+}
