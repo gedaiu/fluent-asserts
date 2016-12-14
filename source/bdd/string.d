@@ -41,6 +41,10 @@ unittest {
   import std.stdio;
 
   should.not.throwAnyException({
+    "test string".should.contain(["string", "test"]);
+  });
+
+  should.not.throwAnyException({
     "test string".should.contain("string");
   });
 
