@@ -1,13 +1,23 @@
 module bdd.string;
 
 public import bdd.base;
+
 import std.string;
 import std.conv;
+import std.algorithm;
 
 struct ShouldString {
   private const string testData;
 
   mixin ShouldCommons;
+
+  void contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage("contain");
+    addMessage("`" ~ someStrings.to!string ~ "`");
+    beginCheck;
+
+    someStrings.each!(value => contain(value, file, line));
+  }
 
   void contain(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("contain");
@@ -51,6 +61,10 @@ unittest {
   should.not.throwAnyException({
     "test string".should.contain('s');
   });
+
+  should.throwException!TestException({
+    "test string".should.contain(["other", "message"]);
+  }).msg.should.contain("`other` was not found in `test string`");
 
   should.throwException!TestException({
     "test string".should.contain("other");
