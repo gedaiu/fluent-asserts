@@ -48,8 +48,6 @@ struct ShouldString {
 
 @("string contain")
 unittest {
-  import std.stdio;
-
   should.not.throwAnyException({
     "test string".should.contain(["string", "test"]);
   });
