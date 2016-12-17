@@ -2,12 +2,18 @@ module bdd.base;
 
 public import bdd.array;
 public import bdd.string;
+public import bdd.numeric;
 
 import std.traits;
 
 mixin template ShouldCommons()
 {
   import std.string;
+
+  auto be() {
+    return this;
+  }
+
 
   auto not() {
     addMessage("not");
@@ -93,7 +99,9 @@ auto should() {
 auto should(T)(const T testData) {
   static if(is(T == string)) {
     return ShouldString(testData);
-  } else if(isArray!T) {
+  } else static if(isArray!T) {
     return ShouldList!T(testData);
+  } else {
+    return ShouldNumeric!T(testData);
   }
 }

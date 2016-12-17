@@ -11,6 +11,16 @@ struct ShouldString {
 
   mixin ShouldCommons;
 
+  void equal(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage("equal");
+    addMessage("`" ~ someString.to!string ~ "`");
+    beginCheck;
+
+    auto isSame = testData == someString;
+
+    result(isSame, "`" ~ testData ~ "`" ~ (isSame ? " is equal" : " is not equal") ~ " to `" ~ someString ~"`.", file, line);
+  }
+
   void contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("contain");
     addMessage("`" ~ someStrings.to!string ~ "`");
@@ -41,10 +51,9 @@ struct ShouldString {
     auto index = testData.indexOf(someChar);
     auto isPresent = index >= 0;
 
-    result(isPresent, strVal ~ (isPresent ? " is present." : " is not present in `" ~ testData ~"`."), file, line);
+    result(isPresent, strVal ~ (isPresent ? " is present" : " is not present") ~ " in `" ~ testData ~"`.", file, line);
   }
 }
-
 
 @("string contain")
 unittest {
@@ -71,4 +80,23 @@ unittest {
   should.throwException!TestException({
     "test string".should.contain('o');
   }).msg.should.contain("`o` is not present in `test string`");
+}
+
+@("string equal")
+unittest {
+  should.not.throwAnyException({
+    "test string".should.equal("test string");
+  });
+
+  should.not.throwAnyException({
+    "test string".should.not.equal("test");
+  });
+
+  should.throwException!TestException({
+    "test string".should.equal("test");
+  }).msg.should.contain("`test string` is not equal to `test`");
+
+  should.throwException!TestException({
+    "test string".should.not.equal("test string");
+  }).msg.should.contain("`test string` is equal to `test string`");
 }

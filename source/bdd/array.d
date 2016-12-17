@@ -28,7 +28,7 @@ struct ShouldList(T : T[]) {
 
     auto isPresent = testData.canFind(value);
 
-    result(isPresent, strVal ~ (isPresent ? " is present." : " is not present."), file, line);
+    result(isPresent, strVal ~ (isPresent ? " is present" : " is not present") ~ " in `" ~ testData.to!string ~ "`", file, line);
   }
 }
 
