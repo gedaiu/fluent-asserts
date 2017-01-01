@@ -8,6 +8,7 @@ import vibe.data.json;
 import vibe.stream.memory;
 
 import std.conv, std.string, std.array;
+import std.algorithm, std.conv;
 import std.stdio;
 
 RequestRouter request(URLRouter router)
@@ -133,6 +134,11 @@ final class RequestRouter
 	{
 		if (expectedStatusCode != 0)
 		{
+			if(expectedStatusCode != 404 && res.statusCode == 404) {
+				writeln("\n\nIs your route defined here?");
+				router.getAllRoutes.map!(a => a.method.to!string ~ " " ~ a.pattern).each!writeln;
+			}
+
 			assert(expectedStatusCode == res.statusCode,
 					"Expected status code `" ~ expectedStatusCode.to!string
 					~ "` not found. Got `" ~ res.statusCode.to!string ~ "` instead");

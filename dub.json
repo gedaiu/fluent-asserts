@@ -8,6 +8,6 @@
 	"license": "MIT",
 
 	"dependencies": {
-		"vibe-d": "*"
+    "vibe-d": "*"
 	}
 }
