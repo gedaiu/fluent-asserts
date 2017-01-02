@@ -186,7 +186,6 @@ final class RequestRouter
 
 	void end(T)(T callback)
 	{
-		pragma(msg, typeof(callback));
 		import vibe.stream.operations : readAllUTF8;
 		import vibe.inet.webform;
 
