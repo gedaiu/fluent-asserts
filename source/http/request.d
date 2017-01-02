@@ -10,6 +10,9 @@ import vibe.stream.memory;
 import std.conv, std.string, std.array;
 import std.algorithm, std.conv;
 import std.stdio;
+import std.exception;
+
+import bdd.string;
 
 RequestRouter request(URLRouter router)
 {
@@ -20,14 +23,12 @@ final class RequestRouter
 {
 	private
 	{
+		alias ExpectedCallback = void delegate(Response res);
+		ExpectedCallback[] expected;
 		URLRouter router;
 		HTTPServerRequest preparedRequest;
 
-		string[string] expectHeaders;
-		string[string] expectHeadersContains;
-
 		string[string] headers;
-		int expectedStatusCode;
 
 		string responseBody;
 	}
@@ -112,61 +113,80 @@ final class RequestRouter
 		return this;
 	}
 
-	RequestRouter expectHeader(string name, string value)
+	RequestRouter expectHeaderExist(string name, const string file = __FILE__, const size_t line = __LINE__)
 	{
-		expectHeaders[name] = value;
+		void localExpectHeaderExist(Response res) {
+			enforce(name in res.headers, "Response header `" ~ name ~ "` is missing.", file, line);
+		}
+
+		expected ~= &localExpectHeaderExist;
+
 		return this;
 	}
 
-	RequestRouter expectHeaderContains(string name, string value)
+	RequestRouter expectHeader(string name, string value, const string file = __FILE__, const size_t line = __LINE__)
 	{
-		expectHeadersContains[name] = value;
+		expectHeaderExist(name, file, line);
+
+		void localExpectedHeader(Response res) {
+			enforce(res.headers[name] == value,
+				"Response header `" ~ name ~ "` has an unexpected value. Expected `"
+				~ value ~ "` != `" ~ res.headers[name].to!string ~ "`", file, line);
+		}
+
+		expected ~= &localExpectedHeader;
+
 		return this;
 	}
 
-	RequestRouter expectStatusCode(int code)
+	RequestRouter expectHeaderContains(string name, string value, const string file = __FILE__, const size_t line = __LINE__)
 	{
-		expectedStatusCode = code;
+		expectHeaderExist(name, file, line);
+
+		void expectHeaderContains(Response res) {
+			enforce(res.headers[name].indexOf(value) != -1,
+				"Response header `" ~ name ~ "` has an unexpected value. Expected `"
+				~ value ~ "` not found in `" ~ res.headers[name].to!string ~ "`", file, line);
+		}
+
+		expected ~= &expectHeaderContains;
+
+		return this;
+	}
+
+	RequestRouter expectStatusCode(int code, const string file = __FILE__, const size_t line = __LINE__)
+	{
+		void localExpectStatusCode(Response res) {
+			if(code != 404 && res.statusCode == 404) {
+				writeln("\n\nIs your route defined here?");
+				router.getAllRoutes.map!(a => a.method.to!string ~ " " ~ a.pattern).each!writeln;
+			}
+
+			enforce(code == res.statusCode,
+					"Expected status code `" ~ code.to!string
+					~ "` not found. Got `" ~ res.statusCode.to!string ~ "` instead", file, line);
+		}
+
+		expected ~= &localExpectStatusCode;
+
+
 		return this;
 	}
 
 	private void performExpected(Response res)
 	{
-		if (expectedStatusCode != 0)
-		{
-			if(expectedStatusCode != 404 && res.statusCode == 404) {
-				writeln("\n\nIs your route defined here?");
-				router.getAllRoutes.map!(a => a.method.to!string ~ " " ~ a.pattern).each!writeln;
-			}
-
-			assert(expectedStatusCode == res.statusCode,
-					"Expected status code `" ~ expectedStatusCode.to!string
-					~ "` not found. Got `" ~ res.statusCode.to!string ~ "` instead");
-		}
-
-		foreach (string key, value; expectHeaders)
-		{
-			assert(key in res.headers, "Response header `" ~ key ~ "` is missing.");
-			assert(res.headers[key] == value,
-					"Response header `" ~ key ~ "` has an unexpected value. Expected `"
-					~ value ~ "` != `" ~ res.headers[key].to!string ~ "`");
-		}
-
-		foreach (string key, value; expectHeadersContains)
-		{
-			assert(key in res.headers, "Response header `" ~ key ~ "` is missing.");
-			assert(res.headers[key].indexOf(value) != -1,
-					"Response header `" ~ key ~ "` has an unexpected value. Expected `"
-					~ value ~ "` not found in `" ~ res.headers[key].to!string ~ "`");
+		foreach(func; expected) {
+			func(res);
 		}
 	}
 
-  void end() {
-    end((Response response) => { });
-  }
+	void end() {
+		end((Response response) => { });
+	}
 
 	void end(T)(T callback)
 	{
+		pragma(msg, typeof(callback));
 		import vibe.stream.operations : readAllUTF8;
 		import vibe.inet.webform;
 
