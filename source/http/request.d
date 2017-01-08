@@ -201,6 +201,8 @@ final class RequestRouter
 			parseFormData(preparedRequest.form, preparedRequest.files, *ptype, preparedRequest.bodyReader, 5000);
 		}
 
+		parseURLEncodedForm(preparedRequest.queryString, preparedRequest.query);
+
 		router.handleRequest(preparedRequest, res);
 
 		string responseString = (cast(string) data).toStringz.to!string;

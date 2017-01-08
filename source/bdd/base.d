@@ -96,7 +96,7 @@ auto should() {
   return Should();
 }
 
-auto should(T)(const T testData) {
+auto should(T)(lazy const T testData) {
   static if(is(T == string)) {
     return ShouldString(testData);
   } else static if(isArray!T) {
