@@ -20,4 +20,14 @@ struct ShouldNumeric(T) {
 
     result(isSame, "`" ~ testData.to!string ~ "`" ~ (isSame ? " is equal" : " is not equal") ~ " to `" ~ someValue.to!string ~"`.", file, line);
   }
+
+  void graterThan(const T someValue, const string file = __FILE__, const size_t line = __LINE__){
+    addMessage("greater then");
+    addMessage("`" ~ someValue.to!string ~ "`");
+    beginCheck;
+
+    auto isGreater = testData > someValue;
+
+    result(isGreater, "`" ~ testData.to!string ~ "`" ~ (isGreater ? " is greater" : " is not greater") ~ " than `" ~ someValue.to!string ~"`.", file, line);
+  }
 }

@@ -5,11 +5,22 @@ public import bdd.base;
 import std.algorithm;
 import std.conv;
 import std.traits;
+import std.range;
 
 struct ShouldList(T : T[]) {
   private const T[] testData;
 
   mixin ShouldCommons;
+
+  void equal(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
+    import bdd.numeric;
+    addMessage("equal");
+    addMessage("`" ~ valueList.to!string ~ "`");
+    beginCheck;
+
+    valueList.each!(value => contain(value, file, line));
+    valueList.enumerate.each!((i, value) => value.should.equal(testData[i]));
+  }
 
   void contain(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("contain");
@@ -50,5 +61,18 @@ unittest {
 
   should.throwException!TestException({
     [1, 2, 3].should.contain(4);
+  }).msg.should.contain("`4` is not present");
+}
+
+@("array equals")
+unittest {
+  import std.stdio;
+
+  should.not.throwAnyException({
+    [1, 2, 3].should.equal([1, 2, 3]);
+  });
+
+  should.throwException!TestException({
+    [1, 2, 3].should.equal([4, 5]);
   }).msg.should.contain("`4` is not present");
 }
