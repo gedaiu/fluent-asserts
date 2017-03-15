@@ -19,7 +19,7 @@ struct ShouldList(T : T[]) {
     beginCheck;
 
     valueList.each!(value => contain(value, file, line));
-    valueList.enumerate.each!((i, value) => value.should.equal(testData[i]));
+    valueList.enumerate.each!((i, value) => value.should.equal(testData[i], file, line));
   }
 
   void contain(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
