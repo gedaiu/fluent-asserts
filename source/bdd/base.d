@@ -98,8 +98,6 @@ class TestException : Exception {
 @("TestException should read the code from the file")
 unittest
 {
-  import std.conv, std.stdio;
-
   auto exception = new TestException(Source("Some test error", "test/example.txt", 10));
 
   exception.msg.should.contain("Some test error");
@@ -107,16 +105,26 @@ unittest
   exception.msg.should.contain(">   10: line 10");
 }
 
-@("TestException should read the code from the file")
+@("TestException should ignore missing files")
 unittest
 {
-  import std.conv, std.stdio;
-
   auto exception = new TestException(Source("Some test error", "test/missing.txt", 10));
 
   exception.msg.should.contain("Some test error");
   exception.msg.should.not.contain("test/example.txt");
   exception.msg.should.not.contain(">   10: line 10");
+}
+
+@("Source struct should find the tested value")
+unittest
+{
+  should.throwException!TestException({
+    [1, 2, 3].should.contain(4);
+  }).msg.writeln;
+
+  should.throwException!TestException({
+    [1, 2, 3].should.contain(4);
+  }).msg.should.contain("`4` is not present");
 }
 
 struct Should {
