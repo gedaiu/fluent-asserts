@@ -45,8 +45,6 @@ struct ShouldList(T : T[]) {
 
 @("array contain")
 unittest {
-  import std.stdio;
-
   should.not.throwAnyException({
     [1, 2, 3].should.contain([2, 1]);
   });
