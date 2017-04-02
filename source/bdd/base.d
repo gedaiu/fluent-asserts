@@ -66,7 +66,7 @@ struct Source {
   string code;
   string message;
 
-  this(string message, string fileName = __FILE__, size_t line = __LINE__, size_t range = 3) {
+  this(string message, string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) {
     this.file = fileName;
     this.line = line;
 
@@ -84,8 +84,8 @@ struct Source {
         .take(range * 2 - 1).join("\n")
         .to!string;
 
-    auto separator = "\n" ~ leftJustify("", 20, '-') ~ "\n";
-    this.message = "\n" ~ message ~ separator ~ fileName ~ separator ~ code ~ "\n";
+    auto separator = "\n " ~ leftJustify("", 20, '-') ~ "\n";
+    this.message = message ~ separator ~ " " ~ fileName ~ separator ~ code ~ "\n";
   }
 }
 
