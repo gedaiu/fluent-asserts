@@ -5,6 +5,13 @@ public import bdd.string;
 public import bdd.numeric;
 
 import std.traits;
+import std.stdio;
+import std.algorithm;
+import std.array;
+import std.range;
+import std.conv;
+import std.string;
+import std.file;
 
 mixin template ShouldCommons()
 {
@@ -13,7 +20,6 @@ mixin template ShouldCommons()
   auto be() {
     return this;
   }
-
 
   auto not() {
     addMessage("not");
@@ -46,16 +52,71 @@ mixin template ShouldCommons()
     void result(bool value, string msg, string file, size_t line) {
       if(expectedValue != value) {
         auto message = "should " ~ messages.join(" ") ~ ". " ~ msg;
-        throw new TestException(message, file, line);
+
+        throw new TestException(Source(message, file, line));
       }
     }
   }
 }
 
-class TestException : Exception {
-  pure nothrow @nogc @safe this(string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null) {
-    super(msg, file, line, next);
+struct Source {
+  string file;
+  size_t line;
+
+  string code;
+  string message;
+
+  this(string message, string fileName = __FILE__, size_t line = __LINE__, size_t range = 3) {
+    this.file = fileName;
+    this.line = line;
+
+    if(!fileName.exists) {
+      this.message = message;
+      return;
+    }
+
+    auto file = File(fileName);
+
+    code =
+      file.byLine().enumerate(1)
+        .dropExactly(line - range)
+        .map!(a => (a[0] == line ? ">" : " ") ~ rightJustifier(a[0].to!string, 5).to!string ~ ": " ~ a[1])
+        .take(range * 2 - 1).join("\n")
+        .to!string;
+
+    auto separator = "\n" ~ leftJustify("", 20, '-') ~ "\n";
+    this.message = "\n" ~ message ~ separator ~ fileName ~ separator ~ code ~ "\n";
   }
+}
+
+class TestException : Exception {
+  pure nothrow @nogc @safe this(Source source, Throwable next = null) {
+    super(source.message, source.file, source.line, next);
+  }
+}
+
+@("TestException should read the code from the file")
+unittest
+{
+  import std.conv, std.stdio;
+
+  auto exception = new TestException(Source("Some test error", "test/example.txt", 10));
+
+  exception.msg.should.contain("Some test error");
+  exception.msg.should.contain("test/example.txt");
+  exception.msg.should.contain(">   10: line 10");
+}
+
+@("TestException should read the code from the file")
+unittest
+{
+  import std.conv, std.stdio;
+
+  auto exception = new TestException(Source("Some test error", "test/missing.txt", 10));
+
+  exception.msg.should.contain("Some test error");
+  exception.msg.should.not.contain("test/example.txt");
+  exception.msg.should.not.contain(">   10: line 10");
 }
 
 struct Should {

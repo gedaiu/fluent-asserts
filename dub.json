@@ -1,13 +1,14 @@
 {
-	"name": "should",
+	"name": "FluentAsserts",
 	"authors": [
 		"Szabo Bogdan"
 	],
-	"description": "A rich assert utility",
+	"version": "0.2.0",
+	"description": "Fluent assertions done right",
 	"copyright": "Copyright © 2016, Szabo Bogdan",
 	"license": "MIT",
 
 	"dependencies": {
-    "vibe-d": "*"
+		"vibe-d": "*"
 	}
 }
