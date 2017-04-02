@@ -3,7 +3,6 @@
 	"authors": [
 		"Szabo Bogdan"
 	],
-	"version": "0.2.0",
 	"description": "Fluent assertions done right",
 	"copyright": "Copyright © 2017, Szabo Bogdan",
 	"license": "MIT",
