@@ -65,6 +65,7 @@ struct Source {
 
   string code;
   string message;
+  string value;
 
   this(string message, string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) {
     this.file = fileName;
@@ -77,15 +78,61 @@ struct Source {
 
     auto file = File(fileName);
 
-    code =
-      file.byLine().enumerate(1)
-        .dropExactly(line - range)
+    auto rawCode = file.byLine().map!(a => a.to!string).take(line + range).array;
+
+    code = rawCode.enumerate(1).dropExactly(range < line ? line - range : 0)
         .map!(a => (a[0] == line ? ">" : " ") ~ rightJustifier(a[0].to!string, 5).to!string ~ ": " ~ a[1])
         .take(range * 2 - 1).join("\n")
         .to!string;
 
+    value = evaluatedValue(rawCode);
+
     auto separator = "\n " ~ leftJustify("", 20, '-') ~ "\n";
-    this.message = message ~ separator ~ " " ~ fileName ~ separator ~ code ~ "\n";
+    this.message = value ~ " " ~ message ~ separator ~ " " ~ fileName ~ separator ~ code ~ "\n";
+  }
+
+  private {
+    auto evaluatedValue(string[] rawCode) {
+      string result = "";
+
+      auto value = rawCode.take(line)
+        .filter!(a => a.indexOf("//") == -1)
+        .map!(a => a.strip)
+        .join("");
+
+      auto end = valueEndIndex(value);
+
+      if(end > 0) {
+        auto begin = valueBeginIndex(value[0..end]);
+
+        if(begin > 0) {
+          result = value[begin..end];
+        }
+      }
+
+      return result;
+    }
+
+    auto valueBeginIndex(string value) {
+      auto tokens = ["{", ";", "*/", "+/"];
+
+      auto positions =
+        tokens
+          .map!(a => [value.lastIndexOf(a), a.length])
+          .filter!(a => a[0] != -1)
+          .map!(a => a[0] + a[1])
+            .array;
+
+      if(positions.length == 0) {
+        return -1;
+      }
+
+      return positions.maxElement;
+    }
+
+    auto valueEndIndex(string value) {
+      return value.lastIndexOf(".should");
+    }
   }
 }
 
@@ -115,16 +162,39 @@ unittest
   exception.msg.should.not.contain(">   10: line 10");
 }
 
-@("Source struct should find the tested value")
+@("Source struct should find the tested value on scope start")
 unittest
 {
-  should.throwException!TestException({
-    [1, 2, 3].should.contain(4);
-  }).msg.writeln;
+  Source("should contain `4`", "test/values.d", 4).message
+    .should.startWith("[1, 2, 3] should contain `4`");
+}
 
-  should.throwException!TestException({
-    [1, 2, 3].should.contain(4);
-  }).msg.should.contain("`4` is not present");
+@("Source struct should find the tested value after a statment")
+unittest
+{
+  Source("should contain `4`", "test/values.d", 12).message
+    .should.startWith("[1, 2, 3] should contain `4`");
+}
+
+@("Source struct should find the tested value after a */ comment")
+unittest
+{
+  Source("should contain `4`", "test/values.d", 20).message
+    .should.startWith("[1, 2, 3] should contain `4`");
+}
+
+@("Source struct should find the tested value after a +/ comment")
+unittest
+{
+  Source("should contain `4`", "test/values.d", 28).message
+    .should.startWith("[1, 2, 3] should contain `4`");
+}
+
+@("Source struct should find the tested value after a // comment")
+unittest
+{
+  Source("should contain `4`", "test/values.d", 36).message
+    .should.startWith("[1, 2, 3] should contain `4`");
 }
 
 struct Should {
