@@ -114,6 +114,7 @@ struct Source {
     }
 
     auto valueBeginIndex(string value) {
+
       auto tokens = ["{", ";", "*/", "+/"];
 
       auto positions =
@@ -127,7 +128,7 @@ struct Source {
         return -1;
       }
 
-      return positions.sort.reverse.front;
+      return positions.sort!("a > b").front;
     }
 
     auto valueEndIndex(string value) {
