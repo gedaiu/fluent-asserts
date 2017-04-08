@@ -24,7 +24,8 @@
 			"sourcePaths": ["vibe/source"],
 			"importPaths": ["vibe/source"],
 			"dependencies": {
-				"vibe-d": "*",
+				"vibe-d:data": "*",
+				"vibe-d:http": "*",
 				"fluent-asserts:core": "*"
 			}
 		}
