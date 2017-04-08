@@ -56,32 +56,35 @@ struct ShouldList(T : T[]) {
 
 @("array contain")
 unittest {
-  should.not.throwAnyException({
+  should.not.throwException!TestException({
     [1, 2, 3].should.contain([2, 1]);
   });
 
-  should.not.throwAnyException({
+  should.not.throwException!TestException({
     [1, 2, 3].should.contain(1);
   });
 
   should.throwException!TestException({
     [1, 2, 3].should.contain([4, 5]);
-  }).msg.should.contain("`4` is not present");
+  }).msg.split('\n')[0].should.contain("`4` is not present");
 
   should.throwException!TestException({
     [1, 2, 3].should.contain(4);
-  }).msg.should.contain("`4` is not present");
+  }).msg.split('\n')[0].should.contain("`4` is not present");
 }
 
 @("array equals")
 unittest {
- [1, 2, 3].should.equal([1, 2, 3]);
+  
+  should.not.throwException!TestException({
+    [1, 2, 3].should.equal([1, 2, 3]);
+  });
  
   should.throwException!TestException({
     [1, 2, 3].should.equal([4, 5]);
-  }).msg.should.contain("`4` is not present");
+  }).msg.split('\n')[0].should.contain("`4` is not present");
 
   should.throwException!TestException({
     [1, 2, 3].should.equal([2, 3, 1]);
-  }).msg.should.contain("`1` should be at index `0` not `2`");
+  }).msg.split('\n')[0].should.contain("`1` should be at index `0` not `2`");
 }

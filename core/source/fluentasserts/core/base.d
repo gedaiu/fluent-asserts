@@ -198,6 +198,14 @@ unittest
     .should.startWith("[1, 2, 3] should contain `4`");
 }
 
+@("Throw exception message")
+unittest 
+{
+  should.throwAnyException({
+    throw new Exception("test");
+  }).msg.should.contain("test");
+}
+
 struct Should {
   mixin ShouldCommons;
 
