@@ -1,4 +1,4 @@
-module http.json;
+module fluentasserts.vibe.json;
 
 import std.exception, std. conv;
 

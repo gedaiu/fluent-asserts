@@ -1,8 +1,8 @@
-module bdd.base;
+module fluentasserts.core.base;
 
-public import bdd.array;
-public import bdd.string;
-public import bdd.numeric;
+public import fluentasserts.core.array;
+public import fluentasserts.core.string;
+public import fluentasserts.core.numeric;
 
 import std.traits;
 import std.stdio;

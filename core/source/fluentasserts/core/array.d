@@ -1,6 +1,6 @@
-module bdd.array;
+module fluentasserts.core.array;
 
-public import bdd.base;
+public import fluentasserts.core.base;
 
 import std.algorithm;
 import std.conv;
@@ -13,7 +13,7 @@ struct ShouldList(T : T[]) {
   mixin ShouldCommons;
 
   void equal(T)(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
-    import bdd.numeric;
+    import fluentasserts.core.numeric;
     addMessage("equal");
     addMessage("`" ~ valueList.to!string ~ "`");
     beginCheck;

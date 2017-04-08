@@ -1,4 +1,4 @@
-module http.request;
+module fluentasserts.vibe.request;
 
 import vibe.inet.url;
 import vibe.http.router;
@@ -12,7 +12,7 @@ import std.algorithm, std.conv;
 import std.stdio;
 import std.exception;
 
-import bdd.string;
+import fluentasserts.core.string;
 
 RequestRouter request(URLRouter router)
 {

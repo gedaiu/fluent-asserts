@@ -1,6 +1,6 @@
-module bdd.numeric;
+module fluentasserts.core.numeric;
 
-public import bdd.base;
+public import fluentasserts.core.base;
 
 import std.string;
 import std.conv;

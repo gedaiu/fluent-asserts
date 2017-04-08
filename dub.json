@@ -8,6 +8,25 @@
 	"license": "MIT",
 
 	"dependencies": {
-		"vibe-d": "*"
-	}
+		"fluent-asserts:core": "*"
+	},
+
+	"subPackages": [
+		{
+			"name": "core",
+			"targetType": "library",
+			"sourcePaths": ["core/source"],
+			"importPaths": ["core/source"]
+		},
+		{
+			"name": "vibe",
+			"targetType": "library",
+			"sourcePaths": ["vibe/source"],
+			"importPaths": ["vibe/source"],
+			"dependencies": {
+				"vibe-d": "*",
+				"fluent-asserts:core": "*"
+			}
+		}
+	]
 }
