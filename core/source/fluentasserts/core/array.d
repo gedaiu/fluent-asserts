@@ -6,6 +6,7 @@ import std.algorithm;
 import std.conv;
 import std.traits;
 import std.range;
+import std.array;
 
 struct ShouldList(T : T[]) {
   private const T[] testData;
@@ -19,7 +20,17 @@ struct ShouldList(T : T[]) {
     beginCheck;
 
     valueList.each!(value => contain(value, file, line));
-    valueList.enumerate.each!((i, value) => value.should.equal(testData[i], file, line));
+
+    foreach(i; 0..valueList.length) {
+      try {
+        valueList[i].should.equal(testData[i], file, line);
+      } catch(TestException e) {
+        auto index = testData.countUntil(valueList[i]) + 1;
+        auto msg = "`" ~ testData[i].to!string ~ "` should be at index `" ~ i.to!string ~ "` not `" ~ index.to!string ~ "`";
+
+        result(false, msg, file, line);
+      }
+    }
   }
 
   void contain(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
@@ -64,13 +75,13 @@ unittest {
 
 @("array equals")
 unittest {
-  import std.stdio;
-
-  should.not.throwAnyException({
-    [1, 2, 3].should.equal([1, 2, 3]);
-  });
-
+ [1, 2, 3].should.equal([1, 2, 3]);
+ 
   should.throwException!TestException({
     [1, 2, 3].should.equal([4, 5]);
   }).msg.should.contain("`4` is not present");
+
+  should.throwException!TestException({
+    [1, 2, 3].should.equal([2, 3, 1]);
+  }).msg.should.contain("`1` should be at index `0` not `2`");
 }
