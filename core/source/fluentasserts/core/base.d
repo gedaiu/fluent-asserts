@@ -127,7 +127,7 @@ struct Source {
         return -1;
       }
 
-      return positions.maxElement;
+      return positions.sort.reverse.front;
     }
 
     auto valueEndIndex(string value) {
