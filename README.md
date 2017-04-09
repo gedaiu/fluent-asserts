@@ -76,7 +76,7 @@ You can use fluent asserts with:
 - [Strings](api/strings.md)
 - [Arrays](api/arrays.md)
 - [Exceptions](api/exceptions.md)
-- Vibe.d Json
+- [Vibe.d Json](api/vibe-json.md)
 - Vibe.d requests (Experimental)
 
 # License
