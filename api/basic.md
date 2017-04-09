@@ -8,7 +8,9 @@ Here are the examples of how you can use the `should` template with [basic data 
 
 - [Equal](#equal)
 - [Greater than](#greater-than)
+- [Above](#above)
 - [Less than](#less-than)
+- [Below](#below)
 
 ## Examples
 
@@ -46,6 +48,20 @@ Failing expectations
     5.should.not.be.greaterThan(4); 
 ```
 
+### Above
+
+Success expectations
+```
+    5.should.be.above(4);
+    5.should.not.be.above(6);
+```
+
+Failing expectations
+```
+    5.should.be.above(5);
+    5.should.not.be.above(4); 
+```
+
 ### Less than
 
 Success expectations
@@ -58,4 +74,19 @@ Failing expectations
 ```
     5.should.be.lessThan(4);
     5.should.not.be.lessThan(5); 
+```
+
+
+### Below
+
+Success expectations
+```
+    5.should.be.below(6);
+    5.should.not.be.below(4);
+```
+
+Failing expectations
+```
+    5.should.be.below(4);
+    5.should.not.be.below(5); 
 ```
