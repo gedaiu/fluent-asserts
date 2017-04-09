@@ -78,30 +78,35 @@ final class RequestRouter
 
 	RequestRouter post(string path)
 	{
-		return request!(HTTPMethod.POST)(URL("http://localhost" ~ path));
+		return customMethod!(HTTPMethod.POST)(URL("http://localhost" ~ path));
 	}
 
 	RequestRouter patch(string path)
 	{
-		return request!(HTTPMethod.PATCH)(URL("http://localhost" ~ path));
+		return customMethod!(HTTPMethod.PATCH)(URL("http://localhost" ~ path));
 	}
 
 	RequestRouter put(string path)
 	{
-		return request!(HTTPMethod.PUT)(URL("http://localhost" ~ path));
+		return customMethod!(HTTPMethod.PUT)(URL("http://localhost" ~ path));
 	}
 
 	RequestRouter delete_(string path)
 	{
-		return request!(HTTPMethod.DELETE)(URL("http://localhost" ~ path));
+		return customMethod!(HTTPMethod.DELETE)(URL("http://localhost" ~ path));
 	}
 
 	RequestRouter get(string path)
 	{
-		return request!(HTTPMethod.GET)(URL("http://localhost" ~ path));
+		return customMethod!(HTTPMethod.GET)(URL("http://localhost" ~ path));
 	}
 
-	RequestRouter request(HTTPMethod method)(URL url)
+	RequestRouter customMethod(HTTPMethod method)(string path)
+	{
+		return customMethod!method(URL("http://localhost" ~ path));
+	}
+
+	RequestRouter customMethod(HTTPMethod method)(URL url)
 	{
 		preparedRequest = createTestHTTPServerRequest(url, method);
 		preparedRequest.host = "localhost";
@@ -278,4 +283,215 @@ class Response
 	string toString() {
 		return data;
 	}
+}
+
+@("Mocking a GET Request")
+unittest {
+	auto router = new URLRouter();
+	
+	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
+	{
+		res.writeBody("hello");
+	}
+
+	router.get("*", &sayHello);
+	request(router)
+		.get("/")
+			.end((Response response) => {
+				response.bodyString.should.equal("hello");
+			});
+
+	request(router)
+		.post("/")
+			.end((Response response) => {
+				response.bodyString.should.not.equal("hello");
+			});
+}
+
+@("Mocking a POST Request")
+unittest {
+	auto router = new URLRouter();
+	
+	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
+	{
+		res.writeBody("hello");
+	}
+
+	router.post("*", &sayHello);
+	request(router)
+		.post("/")
+			.end((Response response) => {
+				response.bodyString.should.equal("hello");
+			});
+
+	request(router)
+		.get("/")
+			.end((Response response) => {
+				response.bodyString.should.not.equal("hello");
+			});
+}
+
+@("Mocking a PATCH Request")
+unittest {
+	auto router = new URLRouter();
+	
+	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
+	{
+		res.writeBody("hello");
+	}
+
+	router.patch("*", &sayHello);
+	request(router)
+		.patch("/")
+			.end((Response response) => {
+				response.bodyString.should.equal("hello");
+			});
+
+	request(router)
+		.get("/")
+			.end((Response response) => {
+				response.bodyString.should.not.equal("hello");
+			});
+}
+
+@("Mocking a PUT Request")
+unittest {
+	auto router = new URLRouter();
+	
+	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
+	{
+		res.writeBody("hello");
+	}
+
+	router.put("*", &sayHello);
+	request(router)
+		.put("/")
+			.end((Response response) => {
+				response.bodyString.should.equal("hello");
+			});
+
+	request(router)
+		.get("/")
+			.end((Response response) => {
+				response.bodyString.should.not.equal("hello");
+			});
+}
+
+@("Mocking a DELETE Request")
+unittest {
+	auto router = new URLRouter();
+	
+	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
+	{
+		res.writeBody("hello");
+	}
+
+	router.delete_("*", &sayHello);
+	request(router)
+		.delete_("/")
+			.end((Response response) => {
+				response.bodyString.should.equal("hello");
+			});
+
+	request(router)
+		.get("/")
+			.end((Response response) => {
+				response.bodyString.should.not.equal("hello");
+			});
+}
+
+@("Mocking a ACL Request")
+unittest {
+	auto router = new URLRouter();
+	
+	void sayHello(HTTPServerRequest, HTTPServerResponse res)
+	{
+		res.writeBody("hello");
+	}
+
+	router.match(HTTPMethod.ACL, "*", &sayHello);
+	
+	request(router)
+		.customMethod!(HTTPMethod.ACL)("/")
+			.end((Response response) => {
+				response.bodyString.should.equal("hello");
+			});
+
+	request(router)
+		.get("/")
+			.end((Response response) => {
+				response.bodyString.should.not.equal("hello");
+			});
+}
+
+@("Sending headers")
+unittest {
+	auto router = new URLRouter();
+	
+	void checkHeaders(HTTPServerRequest req, HTTPServerResponse)
+	{
+		req.headers["Accept"].should.equal("application/json");
+	}
+
+	router.any("*", &checkHeaders);
+	
+	request(router)
+		.get("/")
+        .header("Accept", "application/json")
+			.end();
+}
+
+@("Sending raw string")
+unittest {
+	import std.string;
+
+	auto router = new URLRouter();
+	
+	void checkStringData(HTTPServerRequest req, HTTPServerResponse)
+	{
+		req.bodyReader.peek.assumeUTF.should.equal("raw string");
+	}
+
+	router.any("*", &checkStringData);
+	
+	request(router)
+		.post("/")
+        .send("raw string")
+			.end();
+}
+
+@("Sending form data")
+unittest {
+	auto router = new URLRouter();
+	
+	void checkFormData(HTTPServerRequest req, HTTPServerResponse)
+	{
+		req.headers["content-type"].should.equal("application/x-www-form-urlencoded");
+		req.form["key1"].should.equal("value1");
+		req.form["key2"].should.equal("value2");
+	}
+
+	router.any("*", &checkFormData);
+	
+	request(router)
+		.post("/")
+        .send(["key1": "value1", "key2": "value2"])
+			.end();
+}
+
+@("Sending json data")
+unittest {
+	auto router = new URLRouter();
+	
+	void checkJsonData(HTTPServerRequest req, HTTPServerResponse)
+	{
+		req.json["key"].to!string.should.equal("value");
+	}
+
+	router.any("*", &checkJsonData);
+
+	request(router)
+		.post("/")
+        .send(`{ "key": "value" }`.parseJsonString)
+			.end();
 }
