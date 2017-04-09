@@ -73,7 +73,7 @@ exepectedValue.should.not.equal(42);
 You can use fluent asserts with:
 
 - [Basic Data Types](api/basic.md)
-- Strings
+- [Strings](api/strings.md)
 - Arrays
 - Exceptions
 - Vibe.d Json
