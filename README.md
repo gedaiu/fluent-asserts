@@ -2,40 +2,29 @@
 
 [Writing unit tests it's easy with Dlang](https://dlang.org/spec/unittest.html). The `unittest` block allows you to start writing tests and to be productive with no special setup. Unfortunely the [assert expresion](https://dlang.org/spec/expression.html#AssertExpression) does not help you to write expressive asserts, and in case of a failure it's hard to find why an assert failed. The `fluent-assert` allow you to more naturally specify the expected outcome of a TDD or BDD-style test.
 
-## Getting started using DUB 
+## To begin
 
+1. Add the DUB dependency:
 [https://code.dlang.org/packages/fluent-asserts](https://code.dlang.org/packages/fluent-asserts)
-Add this project as a dependency inside the `package.json` or `package.sdl` file:
 
+2. Import it:
 ```
-    ...
-
-    "dependencies": {
-            "fluent-asserts": "~>0.3.0"
-    }
-
-    ...
+import fluent.asserts;
 ```
 
-Write a failing test:
+3. Use it:
 ```
-    import std.stdio;
-    import fluent.asserts;
-
-    void main()
-    {
-        writeln("Edit source/app.d to start your project.");
-    }
-
-
     unittest {
         true.should.equal(false);
     }
 ```
 
-Run the tests and notice the failing assert:
+4. Run the tests:
 ```
 ➜  dub test --compiler=ldc2
+```
+
+```
 No source files found in configuration 'library'. Falling back to "dub -b unittest".
 Performing "unittest" build using ldc2 for x86_64.
 fluent-asserts:core 0.2.0+commit.16.g05678db: target for configuration "library" is up to date.
@@ -58,3 +47,7 @@ fluentasserts.core.base.TestException@source/app.d(11): true should equal `false
 ----------------
 Program exited with code 1
 ```
+
+# License
+
+MIT. See LICENSE for details.
