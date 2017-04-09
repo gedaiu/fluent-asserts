@@ -23,6 +23,7 @@ Failing expectations
 ```
     [1, 2, 3].should.equal([4, 5]);
     [1, 2, 3].should.equal([2, 3, 1]);
+    [1, 2, 3].should.not.equal([1, 2, 3]);
 ```
 
 ### Contain

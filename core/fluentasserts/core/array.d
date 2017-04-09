@@ -21,17 +21,25 @@ struct ShouldList(T : T[]) {
 
     if(expectedValue) {
       valueList.each!(value => contain(value, file, line));
-    }
+      
+      foreach(i; 0..valueList.length) {
+        try {
+          valueList[i].should.equal(testData[i], file, line);
+        } catch(TestException e) {
+          auto index = testData.countUntil(valueList[i]) + 1;
+          auto msg = "`" ~ testData[i].to!string ~ "` should be at index `" ~ i.to!string ~ "` not `" ~ index.to!string ~ "`";
 
-    foreach(i; 0..valueList.length) {
-      try {
-        valueList[i].should.equal(testData[i], file, line);
-      } catch(TestException e) {
-        auto index = testData.countUntil(valueList[i]) + 1;
-        auto msg = "`" ~ testData[i].to!string ~ "` should be at index `" ~ i.to!string ~ "` not `" ~ index.to!string ~ "`";
-
-        result(false, msg, file, line);
+          result(false, msg, file, line);
+        }
       }
+    } else {
+      bool allEqual = valueList.length == testData.length;
+
+      foreach(i; 0..valueList.length) {
+        allEqual = allEqual && (valueList[i] == testData[i]);
+      }
+
+      result(allEqual, "`" ~ testData.to!string ~ "` is equal to `"~ valueList.to!string ~"`", file, line);
     }
   }
 
@@ -93,4 +101,8 @@ unittest {
   should.throwException!TestException({
     [1, 2, 3].should.equal([2, 3, 1]);
   }).msg.split('\n')[0].should.contain("`1` should be at index `0` not `2`");
+
+  should.throwException!TestException({
+    [1, 2, 3].should.not.equal([1, 2, 3]);
+  }).msg.should.startWith("[1, 2, 3] should not equal `[1, 2, 3]`. `[1, 2, 3]` is equal to `[1, 2, 3]`");
 }
