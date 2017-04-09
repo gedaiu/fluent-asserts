@@ -19,6 +19,7 @@ Mocking HTTP requests are usefull for api tests. This module allows you to mock 
 - [Sending JSON data](#sending-json-data)
 - [Receive JSON data](#receive-json-data)
 - [Expect status code](#expect-status-code)
+- [Expect header value](#expect-header-value)
 
 ## Examples
 
