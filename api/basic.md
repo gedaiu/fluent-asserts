@@ -2,8 +2,8 @@
 
 ## Summary
 
-- [Equal](#Equal)
-- [Greater than](#Greater than)
+- [Equal](#equal)
+- [Greater than](#greater-than)
 
 ## Examples
 
