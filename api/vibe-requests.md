@@ -217,6 +217,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 	router.get("*", &respondHeader);
 ```
 
+Check for the exact header value:
 ```
 	request(router)
 		.get("/")
@@ -238,3 +239,35 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 	}).msg.should.equal("Response header `some-header` is missing.");
 ```
 
+Check if a header exists
+
+```
+	request(router)
+		.get("/")
+		.expectHeaderExist("some-header")
+			.end();
+
+
+	should.throwAnyException({	
+		request(router)
+			.post("/")
+			.expectHeaderExist("some-header")
+				.end();
+	}).msg.should.equal("Response header `some-header` is missing.");
+```
+
+Check if a header contains a string
+```
+	request(router)
+		.get("/")
+		.expectHeaderContains("some-header", "value")
+			.end();
+
+
+	should.throwAnyException({	
+		request(router)
+			.get("/")
+			.expectHeaderContains("some-header", "other")
+				.end();
+	}).msg.should.contain("Response header `some-header` has an unexpected value.");
+```

@@ -553,6 +553,8 @@ unittest {
 
 	router.get("*", &respondHeader);
 
+
+	// Check for the exact header value:
 	request(router)
 		.get("/")
 		.expectHeader("some-header", "some-value")
@@ -573,7 +575,7 @@ unittest {
 				.end();
 	}).msg.should.contain("Response header `some-header` has an unexpected value");
 
-
+	// Check if a header exists
 	request(router)
 		.get("/")
 		.expectHeaderExist("some-header")
@@ -587,7 +589,7 @@ unittest {
 				.end();
 	}).msg.should.equal("Response header `some-header` is missing.");
 
-
+	// Check if a header contains a string
 	request(router)
 		.get("/")
 		.expectHeaderContains("some-header", "value")
