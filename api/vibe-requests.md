@@ -16,6 +16,9 @@ Mocking HTTP requests are usefull for api tests. This module allows you to mock 
 - [Sending headers](#sending-headers)
 - [Sending string data](#sending-string-data)
 - [Sending form data](#sending-form-data)
+- [Sending JSON data](#sending-json-data)
+- [Receive JSON data](#receive-json-data)
+- [Expect status code](#expect-status-code)
 
 ## Examples
 
@@ -127,7 +130,6 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 			.end();
 ```
 
-
 ### Sending JSON data
 
 ```
@@ -147,3 +149,91 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 		.send(`{ "key": "value" }`.parseJsonString)
 			.end();
 ```
+
+
+### Receive JSON data
+
+```
+	auto router = new URLRouter();
+	
+	void respondJsonData(HTTPServerRequest, HTTPServerResponse res)
+	{
+		res.writeJsonBody(`{ "key": "value"}`.parseJsonString);
+	}
+
+	router.any("*", &respondJsonData);
+```
+
+```
+	request(router)
+		.get("/")
+			.end((Response response) => {
+				response.bodyJson["key"].to!string.should.equal("value");
+			});
+```
+
+### Expect status code
+
+```
+	auto router = new URLRouter();
+	
+	void respondStatus(HTTPServerRequest, HTTPServerResponse res)
+	{
+		res.statusCode = 200;
+		res.writeBody("");
+	}
+
+	router.get("*", &respondStatus);
+```
+
+```
+	request(router)
+		.get("/")
+		.expectStatusCode(200)
+			.end();
+
+
+	should.throwAnyException({	
+		request(router)
+			.post("/")
+			.expectStatusCode(200)
+				.end();
+	}).msg.should.equal("Expected status code `200` not found. Got `404` instead");
+```
+
+
+### Expect header value
+
+```
+	auto router = new URLRouter();
+	
+	void respondHeader(HTTPServerRequest, HTTPServerResponse res)
+	{
+		res.headers["some-header"] = "some-value";
+		res.writeBody("");
+	}
+
+	router.get("*", &respondHeader);
+```
+
+```
+	request(router)
+		.get("/")
+		.expectHeader("some-header", "some-value")
+			.end();
+
+	should.throwAnyException({	
+		request(router)
+			.get("/")
+			.expectHeader("some-header", "other-value")
+				.end();
+	}).msg.should.contain("Response header `some-header` has an unexpected value");
+
+	should.throwAnyException({	
+		request(router)
+			.post("/")
+			.expectHeader("some-header", "some-value")
+				.end();
+	}).msg.should.equal("Response header `some-header` is missing.");
+```
+
