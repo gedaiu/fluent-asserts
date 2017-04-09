@@ -48,6 +48,17 @@ fluentasserts.core.base.TestException@source/app.d(11): true should equal `false
 Program exited with code 1
 ```
 
+# API Docs
+
+You can use fluent asserts with:
+
+- Basic Data Types
+- Strings
+- Arrays
+- Exceptions
+- Vibe.d Json
+- Vibe.d requests (Experimental)
+
 # License
 
 MIT. See LICENSE for details.
