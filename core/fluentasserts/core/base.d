@@ -198,12 +198,39 @@ unittest
     .should.startWith("[1, 2, 3] should contain `4`");
 }
 
-@("Throw exception message")
+@("Throw any exception")
 unittest 
 {
   should.throwAnyException({
     throw new Exception("test");
-  }).msg.should.contain("test");
+  }).msg.should.startWith("test");
+
+  should.not.throwAnyException({});
+}
+
+@("Throw any exception failures")
+unittest
+{ 
+  bool foundException;
+
+  try {
+    should.not.throwAnyException({
+      throw new Exception("test");
+    });
+  } catch(TestException e) {
+    foundException = true;
+  }
+  assert(foundException);
+
+
+
+  foundException = false;
+  try {
+    should.throwAnyException({});
+  } catch(TestException e) {
+    foundException = true;
+  }
+  assert(foundException);
 }
 
 struct Should {

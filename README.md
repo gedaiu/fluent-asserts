@@ -75,7 +75,7 @@ You can use fluent asserts with:
 - [Basic Data Types](api/basic.md)
 - [Strings](api/strings.md)
 - [Arrays](api/arrays.md)
-- Exceptions
+- [Exceptions](api/exceptions.md)
 - Vibe.d Json
 - Vibe.d requests (Experimental)
 
