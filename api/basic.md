@@ -1,5 +1,9 @@
 # Basic Data Types API
 
+[up](../README.md)
+
+Here are the examples of how you can use the `should` template with [basic data types](https://dlang.org/spec/type.html#basic-data-types).
+
 ## Summary
 
 - [Equal](#equal)
