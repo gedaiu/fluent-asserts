@@ -22,13 +22,23 @@ struct ShouldNumeric(T) {
   }
 
   void greaterThan(const T someValue, const string file = __FILE__, const size_t line = __LINE__){
-    addMessage("be greater then");
+    addMessage("be greater than");
     addMessage("`" ~ someValue.to!string ~ "`");
     beginCheck;
 
     auto isGreater = testData > someValue;
 
     result(isGreater, "`" ~ testData.to!string ~ "`" ~ (isGreater ? " is greater" : " is not greater") ~ " than `" ~ someValue.to!string ~"`.", file, line);
+  }
+
+  void lessThan(const T someValue, const string file = __FILE__, const size_t line = __LINE__){
+    addMessage("be less than");
+    addMessage("`" ~ someValue.to!string ~ "`");
+    beginCheck;
+
+    auto isLess = testData < someValue;
+
+    result(isLess, "`" ~ testData.to!string ~ "`" ~ (isLess ? " is less" : " is not less") ~ " than `" ~ someValue.to!string ~"`.", file, line);
   }
 }
 
@@ -73,9 +83,25 @@ unittest {
 
   should.throwException!TestException({
     5.should.be.greaterThan(5);
-  }).msg.should.startWith("5 should be greater then `5`. `5` is not greater than `5`.");
+  }).msg.should.startWith("5 should be greater than `5`. `5` is not greater than `5`.");
 
   should.throwException!TestException({
     5.should.not.be.greaterThan(4);
-  }).msg.should.startWith("5 should not be greater then `4`. `5` is greater than `4`.");
+  }).msg.should.startWith("5 should not be greater than `4`. `5` is greater than `4`.");
+}
+
+@("numbers less than")
+unittest {
+  should.not.throwAnyException({
+    5.should.be.lessThan(6);
+    5.should.not.be.lessThan(4);
+  });
+
+  should.throwException!TestException({
+    5.should.be.lessThan(4);
+  }).msg.should.startWith("5 should be less than `4`. `5` is not less than `4`.");
+
+  should.throwException!TestException({
+    5.should.not.be.lessThan(6);
+  }).msg.should.startWith("5 should not be less than `6`. `5` is less than `6`.");
 }
