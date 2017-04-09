@@ -139,7 +139,7 @@ unittest {
 
   should.throwException!TestException({
     "test string".should.not.endWith("string");
-  }).msg.should.contain("`test string` does end with `string`");
+  }).msg.should.startWith("\"test string\" should not end with `string`. `test string` does end with `string`");
 
 
   should.not.throwAnyException({

@@ -19,7 +19,9 @@ struct ShouldList(T : T[]) {
     addMessage("`" ~ valueList.to!string ~ "`");
     beginCheck;
 
-    valueList.each!(value => contain(value, file, line));
+    if(expectedValue) {
+      valueList.each!(value => contain(value, file, line));
+    }
 
     foreach(i; 0..valueList.length) {
       try {
@@ -76,8 +78,12 @@ unittest {
 @("array equals")
 unittest {
   
-  should.not.throwException!TestException({
+  should.not.throwAnyException({
     [1, 2, 3].should.equal([1, 2, 3]);
+  });
+
+  should.not.throwAnyException({
+    [1, 2, 3].should.not.equal([2, 1, 3]);
   });
  
   should.throwException!TestException({

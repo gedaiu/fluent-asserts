@@ -1,4 +1,4 @@
-# Basic Data Types API
+# Strings API
 
 [up](../README.md)
 
