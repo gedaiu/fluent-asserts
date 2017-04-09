@@ -6,6 +6,7 @@
 	"description": "Fluent assertions done right",
 	"copyright": "Copyright © 2017, Szabo Bogdan",
 	"license": "MIT",
+	"homepage": "http://fluentasserts.szabobogdan.com/",
 
 	"dependencies": {
 		"fluent-asserts:core": "*"
@@ -15,14 +16,14 @@
 		{
 			"name": "core",
 			"targetType": "library",
-			"sourcePaths": ["core/source"],
-			"importPaths": ["core/source"]
+			"sourcePaths": ["core"],
+			"importPaths": ["core"]
 		},
 		{
 			"name": "vibe",
 			"targetType": "library",
-			"sourcePaths": ["vibe/source"],
-			"importPaths": ["vibe/source"],
+			"sourcePaths": ["vibe"],
+			"importPaths": ["vibe"],
 			"dependencies": {
 				"vibe-d:data": "*",
 				"vibe-d:http": "*",
