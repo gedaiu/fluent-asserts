@@ -52,7 +52,7 @@ Program exited with code 1
 
 You can use fluent asserts with:
 
-- Basic Data Types
+- [Basic Data Types](api/basic.md)
 - Strings
 - Arrays
 - Exceptions
