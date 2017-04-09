@@ -50,6 +50,26 @@ Program exited with code 1
 
 # API Docs
 
+The library uses the `should` template in combination with 
+[Uniform Function Call Syntax (UFCS)](https://dlang.org/spec/function.html#pseudo-member)
+
+```
+auto should(T)(lazy const T testData);
+```
+
+So the following statements are equivalent
+
+```
+exepectedValue.should.equal(42);
+should(expectedValue).equal(42);
+```
+
+In addition, the library provides a `not` modifier that negates the assert condition:
+
+```
+exepectedValue.should.not.equal(42);
+```
+
 You can use fluent asserts with:
 
 - [Basic Data Types](api/basic.md)
