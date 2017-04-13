@@ -43,6 +43,17 @@ struct ShouldNumeric(T) {
 
     result(isLess, "`" ~ testData.to!string ~ "`" ~ (isLess ? " is less" : " is not less") ~ " than `" ~ someValue.to!string ~"`.", file, line);
   }
+
+  void between(const T limit1, const T limit2, const string file = __FILE__, const size_t line = __LINE__) {
+    T min = limit1 < limit2 ? limit1 : limit2;
+    T max = limit1 > limit2 ? limit1 : limit2;
+
+    addMessage("be between `" ~ min.to!string ~ "` and `" ~ max.to!string ~ "`");
+
+    auto isBetween = min < testData && max > testData;
+
+    result(isBetween, "", file, line);
+  }
 }
 
 @("numbers equal")
@@ -117,4 +128,30 @@ unittest {
     5.should.not.be.lessThan(6);
     5.should.not.be.below(6);
   }).msg.should.startWith("5 should not be less than `6`. `5` is less than `6`.");
+}
+
+@("numbers between")
+unittest {
+  should.not.throwAnyException({
+    5.should.be.between(4, 6);
+    5.should.be.between(6, 4);
+    5.should.not.be.between(5, 6);
+    5.should.not.be.between(4, 5);
+  });
+
+  should.throwException!TestException({
+    5.should.be.between(5, 6);
+  }).msg.should.startWith("5 should be between `5` and `6`");
+
+  should.throwException!TestException({
+    5.should.be.between(4, 5);
+  }).msg.should.startWith("5 should be between `4` and `5`");
+
+  should.throwException!TestException({
+    5.should.not.be.between(4, 6);
+  }).msg.should.startWith("5 should not be between `4` and `6`");
+
+  should.throwException!TestException({
+    5.should.not.be.between(6, 4);
+  }).msg.should.startWith("5 should not be between `4` and `6`");
 }
