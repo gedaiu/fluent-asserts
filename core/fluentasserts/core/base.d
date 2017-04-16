@@ -88,6 +88,7 @@ struct Source {
         .to!string;
 
     value = evaluatedValue(rawCode);
+    originalMessage = value ~ " " ~ originalMessage;
 
     auto separator = "\n " ~ leftJustify("", 20, '-') ~ "\n";
     this.message = value ~ " " ~ message ~ separator ~ " " ~ fileName ~ separator ~ code ~ "\n";
