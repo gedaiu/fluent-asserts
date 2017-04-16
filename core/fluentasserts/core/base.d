@@ -4,6 +4,8 @@ public import fluentasserts.core.array;
 public import fluentasserts.core.string;
 public import fluentasserts.core.numeric;
 
+import fluentasserts.core.results;
+
 import std.traits;
 import std.stdio;
 import std.algorithm;
@@ -16,6 +18,7 @@ import std.file;
 mixin template ShouldCommons()
 {
   import std.string;
+  import fluentasserts.core.results;
 
   auto be() {
     return this;
@@ -51,213 +54,77 @@ mixin template ShouldCommons()
 
     void result(bool value, string msg, string file, size_t line) {
       if(expectedValue != value) {
-        auto message = "should " ~ messages.join(" ") ~ ". " ~ msg;
+        auto sourceResult = new SourceResult(file, line);
+        auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ". " ~ msg;
+        IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) sourceResult ];
 
-        throw new TestException(Source(message, file, line));
+        throw new TestException(results, file, line);
       }
     }
 
     void result(bool value, string actual, string expected, string file, size_t line) {
       if(expectedValue != value) {
-        auto message = "should " ~ messages.join(" ") ~ ".";
+        auto sourceResult = new SourceResult(file, line);
+        auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ".";
 
-        throw new TestException(Source(message, actual, expected, file, line));
+        IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) new ExpectedActualResult(expected, actual), cast(IResult) sourceResult ];
+
+        throw new TestException(results, file, line);
       }
-    }
-  }
-}
-
-struct Source {
-  string file;
-  size_t line;
-
-  string code;
-  string message;
-  string originalMessage;
-  string value;
-  string expected;
-  string actual;
-
-  this(string message, string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) {
-    this(message, expected, actual, fileName, line, range);
-  }
-
-  this(string message, string actual, string expected, string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) {
-    this.file = fileName;
-    this.line = line;
-    this.originalMessage = message;
-    this.expected = expected;
-    this.actual = actual;
-
-    if(!fileName.exists) {
-      this.message = message;
-      return;
-    }
-
-    auto file = File(fileName);
-
-    auto rawCode = file.byLine().map!(a => a.to!string).take(line + range).array;
-
-    code = rawCode.enumerate(1).dropExactly(range < line ? line - range : 0)
-        .map!(a => (a[0] == line ? ">" : " ") ~ rightJustifier(a[0].to!string, 5).to!string ~ ": " ~ a[1])
-        .take(range * 2 - 1).join("\n")
-        .to!string;
-
-    value = evaluatedValue(rawCode);
-    originalMessage = value ~ " " ~ originalMessage;
-
-    auto separator = "\n " ~ leftJustify("", 20, '-') ~ "\n";
-    this.message = value ~ " " ~ message ~ separator ~ " " ~ fileName ~ separator ~ code ~ "\n";
-  }
-
-  void print()() {
-    import consoled;
-
-    writeln(originalMessage, "\n");
-
-    if(expected != "" && actual != "") {
-      write("Expected:"); printValue(expected);
-      write("  Actual:"); printValue(actual);
-    }
-
-    foreground = Color.blue;
-    writeln(file, ":", line);
-    resetColors();
-    writeln;
-
-    foreach(line; this.code.split("\n")) {
-      auto index = line.indexOf(':') + 1;
-
-      if(line[0] != '>') {
-        foreground = Color.blue;
-        write(line[0..index]);
-
-        resetColors();
-        writeln(line[index..$] ~ " ");
-      } else {
-        foreground = Color.white;
-        background = Color.red;
-        write(line ~ " ");
-        resetColors();
-        write(" \n");
-      }
-    }
-
-    writeln;
-  }
-
-  private {
-    void printValue(string value) {
-      writeln(value.split("\n").join("\n        |"));
-    }
-
-    auto evaluatedValue(string[] rawCode) {
-      string result = "";
-
-      auto value = rawCode.take(line)
-        .filter!(a => a.indexOf("//") == -1)
-        .map!(a => a.strip)
-        .join("");
-
-      auto end = valueEndIndex(value);
-
-      if(end > 0) {
-        auto begin = valueBeginIndex(value[0..end]);
-
-        if(begin > 0) {
-          result = value[begin..end];
-        }
-      }
-
-      return result;
-    }
-
-    auto valueBeginIndex(string value) {
-
-      auto tokens = ["{", ";", "*/", "+/"];
-
-      auto positions =
-        tokens
-          .map!(a => [value.lastIndexOf(a), a.length])
-          .filter!(a => a[0] != -1)
-          .map!(a => a[0] + a[1])
-            .array;
-
-      if(positions.length == 0) {
-        return -1;
-      }
-
-      return positions.sort!("a > b").front;
-    }
-
-    auto valueEndIndex(string value) {
-      return value.lastIndexOf(".should");
     }
   }
 }
 
 class TestException : Exception {
-  Source source;
+  private {
+    IResult[] results;
+  }
 
-  pure nothrow @nogc @safe this(Source source, Throwable next = null) {
-    super(source.message, source.file, source.line, next);
-    this.source = source;
+  this(IResult[] results, string fileName, size_t line, Throwable next = null) {
+    auto msg = results.map!(a => a.toString).join('\n') ~ '\n';
+    this.results = results;
+
+    super(msg, fileName, line, next);
+  }
+
+  void print() {
+    results.each!(a => a.print);
   }
 }
 
-@("TestException should read the code from the file")
-unittest
-{
-  auto exception = new TestException(Source("Some test error", "test/example.txt", 10));
+@("TestException should concatenate all the Result strings")
+unittest {
+  class TestResult : IResult {
+    override string toString() {
+      return "message";
+    }
 
-  exception.msg.should.contain("Some test error");
-  exception.msg.should.contain("test/example.txt");
-  exception.msg.should.contain(">   10: line 10");
+    void print() {}
+  }
+
+  auto exception = new TestException([ new TestResult, new TestResult, new TestResult], "", 0);
+
+  exception.msg.should.equal("message\nmessage\nmessage\n");
 }
 
-@("TestException should ignore missing files")
-unittest
-{
-  auto exception = new TestException(Source("Some test error", "test/missing.txt", 10));
+@("TestException should call all the result print methods on print")
+unittest {
+  int count;
 
-  exception.msg.should.contain("Some test error");
-  exception.msg.should.not.contain("test/example.txt");
-  exception.msg.should.not.contain(">   10: line 10");
-}
+  class TestResult : IResult {
+    override string toString() {
+      return "";
+    }
 
-@("Source struct should find the tested value on scope start")
-unittest
-{
-  Source("should contain `4`", "test/values.d", 4).message
-    .should.startWith("[1, 2, 3] should contain `4`");
-}
+    void print() {
+      count++;
+    }
+  }
 
-@("Source struct should find the tested value after a statment")
-unittest
-{
-  Source("should contain `4`", "test/values.d", 12).message
-    .should.startWith("[1, 2, 3] should contain `4`");
-}
+  auto exception = new TestException([ new TestResult, new TestResult, new TestResult], "", 0);
+  exception.print;
 
-@("Source struct should find the tested value after a */ comment")
-unittest
-{
-  Source("should contain `4`", "test/values.d", 20).message
-    .should.startWith("[1, 2, 3] should contain `4`");
-}
-
-@("Source struct should find the tested value after a +/ comment")
-unittest
-{
-  Source("should contain `4`", "test/values.d", 28).message
-    .should.startWith("[1, 2, 3] should contain `4`");
-}
-
-@("Source struct should find the tested value after a // comment")
-unittest
-{
-  Source("should contain `4`", "test/values.d", 36).message
-    .should.startWith("[1, 2, 3] should contain `4`");
+  count.should.equal(3);
 }
 
 @("Throw any exception")

@@ -18,7 +18,7 @@ struct ShouldString {
 
     auto isSame = testData == someString;
 
-    result(isSame, "`" ~ testData ~ "`" ~ (isSame ? " is equal" : " is not equal") ~ " to `" ~ someString ~"`.", file, line);
+    result(isSame, testData, someString, file, line);
   }
 
   void contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
