@@ -56,6 +56,14 @@ mixin template ShouldCommons()
         throw new TestException(Source(message, file, line));
       }
     }
+
+    void result(bool value, string actual, string expected, string file, size_t line) {
+      if(expectedValue != value) {
+        auto message = "should " ~ messages.join(" ") ~ ".";
+
+        throw new TestException(Source(message, actual, expected, file, line));
+      }
+    }
   }
 }
 
@@ -67,11 +75,19 @@ struct Source {
   string message;
   string originalMessage;
   string value;
+  string expected;
+  string actual;
 
   this(string message, string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) {
+    this(message, expected, actual, fileName, line, range);
+  }
+
+  this(string message, string actual, string expected, string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) {
     this.file = fileName;
     this.line = line;
     this.originalMessage = message;
+    this.expected = expected;
+    this.actual = actual;
 
     if(!fileName.exists) {
       this.message = message;
@@ -97,7 +113,12 @@ struct Source {
   void print()() {
     import consoled;
 
-    writeln("\n", originalMessage, "\n");
+    writeln(originalMessage, "\n");
+
+    if(expected != "" && actual != "") {
+      write("Expected:"); printValue(expected);
+      write("  Actual:"); printValue(actual);
+    }
 
     foreground = Color.blue;
     writeln(file, ":", line);
@@ -126,6 +147,10 @@ struct Source {
   }
 
   private {
+    void printValue(string value) {
+      writeln(value.split("\n").join("\n        |"));
+    }
+
     auto evaluatedValue(string[] rawCode) {
       string result = "";
 

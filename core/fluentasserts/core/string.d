@@ -37,8 +37,7 @@ struct ShouldString {
     auto index = testData.indexOf(someString);
     auto isPresent = index >= 0;
 
-    result(isPresent, "`" ~ someString ~ "`" ~
-      (isPresent ? " was found on position `" ~ index.to!string ~ "`." : " was not found in `" ~ testData ~"`."), file, line);
+    result(isPresent, testData, someString, file, line);
   }
 
   void contain(const char someChar, const string file = __FILE__, const size_t line = __LINE__) {
