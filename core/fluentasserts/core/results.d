@@ -254,7 +254,7 @@ class ExpectedActualResult : IResult {
 
   private {
     pure string printValue(string value) {
-      return value.split("\n").join("\n        :");
+      return value.split("\n").join("\\n\n        :");
     }
   }
 }
@@ -281,8 +281,8 @@ unittest {
 @("ExpectedActual result should show one line of the expected and actual data")
 unittest {
   auto result = new ExpectedActualResult("data\ndata", "data\ndata");
-  result.toString.should.equal("Expected:data\n" ~
+  result.toString.should.equal("Expected:data\\n\n" ~
                                "        :data\n" ~
-                               "  Actual:data\n" ~
+                               "  Actual:data\\n\n" ~
                                "        :data");
 }
