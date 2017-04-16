@@ -30,7 +30,8 @@
 			"dependencies": {
 				"vibe-d:data": "0.7.30",
 				"vibe-d:http": "0.7.30",
-				"fluent-asserts:core": "*"
+				"fluent-asserts:core": "*",
+				"openssl": "*"
 			}
 		}
 	]
