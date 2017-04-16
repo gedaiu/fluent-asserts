@@ -6,3 +6,4 @@ __dummy.html
 *.lst
 *.a
 dub.selections.json
+generated.d

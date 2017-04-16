@@ -65,11 +65,13 @@ struct Source {
 
   string code;
   string message;
+  string originalMessage;
   string value;
 
   this(string message, string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) {
     this.file = fileName;
     this.line = line;
+    this.originalMessage = message;
 
     if(!fileName.exists) {
       this.message = message;
@@ -89,6 +91,37 @@ struct Source {
 
     auto separator = "\n " ~ leftJustify("", 20, '-') ~ "\n";
     this.message = value ~ " " ~ message ~ separator ~ " " ~ fileName ~ separator ~ code ~ "\n";
+  }
+
+  void print()() {
+    import consoled;
+
+    writeln("\n", originalMessage, "\n");
+
+    foreground = Color.blue;
+    writeln(file, ":", line);
+    resetColors();
+    writeln;
+
+    foreach(line; this.code.split("\n")) {
+      auto index = line.indexOf(':') + 1;
+
+      if(line[0] != '>') {
+        foreground = Color.blue;
+        write(line[0..index]);
+
+        resetColors();
+        writeln(line[index..$] ~ " ");
+      } else {
+        foreground = Color.white;
+        background = Color.red;
+        write(line ~ " ");
+        resetColors();
+        write(" \n");
+      }
+    }
+
+    writeln;
   }
 
   private {
@@ -138,8 +171,11 @@ struct Source {
 }
 
 class TestException : Exception {
+  Source source;
+
   pure nothrow @nogc @safe this(Source source, Throwable next = null) {
     super(source.message, source.file, source.line, next);
+    this.source = source;
   }
 }
 
@@ -199,7 +235,7 @@ unittest
 }
 
 @("Throw any exception")
-unittest 
+unittest
 {
   should.throwAnyException({
     throw new Exception("test");
@@ -210,7 +246,7 @@ unittest
 
 @("Throw any exception failures")
 unittest
-{ 
+{
   bool foundException;
 
   try {
