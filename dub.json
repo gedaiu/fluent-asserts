@@ -28,8 +28,8 @@
 			"sourcePaths": ["vibe"],
 			"importPaths": ["vibe"],
 			"dependencies": {
-				"vibe-d:data": "0.7.30",
-				"vibe-d:http": "0.7.30",
+				"vibe-d:data": "*",
+				"vibe-d:http": "*",
 				"fluent-asserts:core": "*",
 				"openssl": "*"
 			}
