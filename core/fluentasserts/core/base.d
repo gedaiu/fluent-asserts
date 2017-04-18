@@ -104,7 +104,7 @@ unittest {
 
   auto exception = new TestException([ new TestResult, new TestResult, new TestResult], "", 0);
 
-  exception.msg.should.equal("message\n\nmessage\n\nmessage\n\n");
+  exception.msg.should.equal("message\n\nmessage\n\nmessage\n");
 }
 
 @("TestException should call all the result print methods on print")
