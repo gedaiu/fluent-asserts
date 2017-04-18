@@ -22,7 +22,7 @@ struct ShouldBaseType(T) {
 
     auto isSame = testData == someValue;
 
-    result(isSame, "`" ~ testData.to!string ~ "`" ~ (isSame ? " is equal" : " is not equal") ~ " to `" ~ someValue.to!string ~"`.", file, line);
+    result(isSame, testData.to!string, someValue.to!string, file, line);
   }
 
   void greaterThan(const T someValue, const string file = __FILE__, const size_t line = __LINE__){
@@ -55,6 +55,12 @@ struct ShouldBaseType(T) {
 
     result(isBetween, "", file, line);
   }
+
+  void approximately()(const T someValue, const T delta, const string file = __FILE__, const size_t line = __LINE__)
+  if(!is(T == bool))
+  {
+    between(someValue - delta, someValue + delta, file, line);
+  }
 }
 
 @("numbers equal")
@@ -66,11 +72,11 @@ unittest {
 
   should.throwException!TestException({
     5.should.equal(6);
-  }).msg.should.startWith("5 should equal `6`. `5` is not equal to `6`.");
+  }).msg.should.startWith("5 should equal `6`");
 
   should.throwException!TestException({
     5.should.not.equal(5);
-  }).msg.should.startWith("5 should not equal `5`. `5` is equal to `5`.");
+  }).msg.should.startWith("5 should not equal `5`");
 }
 
 @("bools equal")
@@ -82,11 +88,11 @@ unittest {
 
   should.throwException!TestException({
     true.should.equal(false);
-  }).msg.should.startWith("true should equal `false`. `true` is not equal to `false`.");
+  }).msg.should.startWith("true should equal `false`");
 
   should.throwException!TestException({
     true.should.not.equal(true);
-  }).msg.should.startWith("true should not equal `true`. `true` is equal to `true`.");
+  }).msg.should.startWith("true should not equal `true`");
 }
 
 @("numbers greater than")
@@ -157,7 +163,6 @@ unittest {
   }).msg.should.startWith("5 should not be between `4` and `6`");
 }
 
-
 @("numbers within")
 unittest {
   should.not.throwAnyException({
@@ -182,4 +187,20 @@ unittest {
   should.throwException!TestException({
     5.should.not.be.within(6, 4);
   }).msg.should.startWith("5 should not be between `4` and `6`");
+}
+
+@("numbers approximately")
+unittest {
+  should.not.throwAnyException({
+    (10f/3f).should.be.approximately(3, 0.34);
+    (10f/3f).should.not.be.approximately(3, 0.24);
+  });
+
+  should.throwException!TestException({
+    (10f/3f).should.be.approximately(3, 0.3);
+  }).msg.should.startWith("(10f/3f) should be between `2.7` and `3.3`.");
+
+  should.throwException!TestException({
+    (10f/3f).should.not.be.approximately(3, 0.34);
+  }).msg.should.startWith("(10f/3f) should not be between `2.66` and `3.34");
 }
