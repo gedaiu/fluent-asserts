@@ -1,4 +1,4 @@
-module fluentasserts.core.numeric;
+module fluentasserts.core.basetype;
 
 public import fluentasserts.core.base;
 
@@ -6,7 +6,7 @@ import std.string;
 import std.conv;
 import std.algorithm;
 
-struct ShouldNumeric(T) {
+struct ShouldBaseType(T) {
   private const T testData;
 
   mixin ShouldCommons;

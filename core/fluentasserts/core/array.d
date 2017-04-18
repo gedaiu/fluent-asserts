@@ -14,7 +14,7 @@ struct ShouldList(T : T[]) {
   mixin ShouldCommons;
 
   void equal(T)(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
-    import fluentasserts.core.numeric;
+    import fluentasserts.core.basetype;
     addMessage("equal");
     addMessage("`" ~ valueList.to!string ~ "`");
     beginCheck;

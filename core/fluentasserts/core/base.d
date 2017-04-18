@@ -2,7 +2,7 @@ module fluentasserts.core.base;
 
 public import fluentasserts.core.array;
 public import fluentasserts.core.string;
-public import fluentasserts.core.numeric;
+public import fluentasserts.core.basetype;
 
 import fluentasserts.core.results;
 
@@ -211,6 +211,6 @@ auto should(T)(lazy const T testData) {
   } else static if(isArray!T) {
     return ShouldList!T(testData);
   } else {
-    return ShouldNumeric!T(testData);
+    return ShouldBaseType!T(testData);
   }
 }
