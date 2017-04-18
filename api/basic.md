@@ -135,8 +135,8 @@ Failing expectations
 
 Success expectations
 ```
-    (10f/3f).should.be.approximately(3, 0.34);
-    (10f/3f).should.not.be.approximately(3, 0.24);
+  (10f/3f).should.be.approximately(3, 0.34);
+  (10f/3f).should.not.be.approximately(3, 0.24);
 ```
 
 Failing expectations
