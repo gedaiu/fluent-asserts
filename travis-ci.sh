@@ -11,6 +11,6 @@ dub test :core --compiler=$DC
 dub test :vibe --compiler=$DC
 
 # run a build for unit-threaded
-if [[ $($DC --version | grep -q 1.0.0) -ne 0 ]]; then
+if ! $($DC --version | grep -q 1.0.0); then
   dub --root=test/unit-threaded --compiler=$DC
 fi
