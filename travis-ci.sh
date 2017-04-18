@@ -8,3 +8,6 @@ dub clean --all-packages
 
 dub test :core --compiler=$DC
 dub test :vibe --compiler=$DC
+
+# run a build for unit-threaded
+dub --root=test/unit-threaded
