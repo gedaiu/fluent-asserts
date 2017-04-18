@@ -10,4 +10,4 @@ dub test :core --compiler=$DC
 dub test :vibe --compiler=$DC
 
 # run a build for unit-threaded
-dub --root=test/unit-threaded
+dub --root=test/unit-threaded --compiler=$DC
