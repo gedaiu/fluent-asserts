@@ -21,62 +21,62 @@ Here are the examples of how you can use the `should` template with [basic data 
 
 Success expectations
 ```
-    5.should.equal(5);
-    5.should.not.equal(6);
+  5.should.equal(5);
+  5.should.not.equal(6);
 
-    true.should.equal(true);
-    true.should.not.equal(false);
+  true.should.equal(true);
+  true.should.not.equal(false);
 ```
 
 Failing expectations
 ```
-    5.should.equal(6);
-    5.should.not.equal(5);
+  5.should.equal(6);
+  5.should.not.equal(5);
 
-    true.should.equal(false);
-    true.should.not.equal(true);
+  true.should.equal(false);
+  true.should.not.equal(true);
 ```
 
 ### Greater than
 
 Success expectations
 ```
-    5.should.be.greaterThan(4);
-    5.should.not.be.greaterThan(6);
+  5.should.be.greaterThan(4);
+  5.should.not.be.greaterThan(6);
 ```
 
 Failing expectations
 ```
-    5.should.be.greaterThan(5);
-    5.should.not.be.greaterThan(4);
+  5.should.be.greaterThan(5);
+  5.should.not.be.greaterThan(4);
 ```
 
 ### Above
 
 Success expectations
 ```
-    5.should.be.above(4);
-    5.should.not.be.above(6);
+  5.should.be.above(4);
+  5.should.not.be.above(6);
 ```
 
 Failing expectations
 ```
-    5.should.be.above(5);
-    5.should.not.be.above(4);
+  5.should.be.above(5);
+  5.should.not.be.above(4);
 ```
 
 ### Less than
 
 Success expectations
 ```
-    5.should.be.lessThan(6);
-    5.should.not.be.lessThan(4);
+  5.should.be.lessThan(6);
+  5.should.not.be.lessThan(4);
 ```
 
 Failing expectations
 ```
-    5.should.be.lessThan(4);
-    5.should.not.be.lessThan(5);
+  5.should.be.lessThan(4);
+  5.should.not.be.lessThan(5);
 ```
 
 
@@ -84,14 +84,14 @@ Failing expectations
 
 Success expectations
 ```
-    5.should.be.below(6);
-    5.should.not.be.below(4);
+  5.should.be.below(6);
+  5.should.not.be.below(4);
 ```
 
 Failing expectations
 ```
-    5.should.be.below(4);
-    5.should.not.be.below(5);
+  5.should.be.below(4);
+  5.should.not.be.below(5);
 ```
 
 ### Between
