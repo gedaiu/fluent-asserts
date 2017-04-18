@@ -18,7 +18,4 @@ d:
 matrix:
   allow_failures:
     - d: dmd-beta
-  include:
-    - d: ldc-1.0.0
-      env: UNIT_THREADED=false
 script: ./travis-ci.sh
