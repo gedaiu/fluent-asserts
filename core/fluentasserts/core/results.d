@@ -85,29 +85,33 @@ class SourceResult: IResult {
   }
 
   void print() {
-    import consoled;
+    version(Have_consoled) {
+      import consoled;
 
-    foreground = Color.blue;
-    writeln(file, ":", line);
-    resetColors();
-    writeln;
+      foreground = Color.blue;
+      writeln(file, ":", line);
+      resetColors();
+      writeln;
 
-    foreach(line; this.code.split("\n")) {
-      auto index = line.indexOf(':') + 1;
+      foreach(line; this.code.split("\n")) {
+        auto index = line.indexOf(':') + 1;
 
-      if(line[0] != '>') {
-        foreground = Color.blue;
-        write(line[0..index]);
+        if(line[0] != '>') {
+          foreground = Color.blue;
+          write(line[0..index]);
 
-        resetColors();
-        writeln(line[index..$] ~ " ");
-      } else {
-        foreground = Color.white;
-        background = Color.red;
-        write(line ~ " ");
-        resetColors();
-        write(" \n");
+          resetColors();
+          writeln(line[index..$] ~ " ");
+        } else {
+          foreground = Color.white;
+          background = Color.red;
+          write(line ~ " ");
+          resetColors();
+          write(" \n");
+        }
       }
+    } else {
+      writeln(toString);
     }
 
     writeln;

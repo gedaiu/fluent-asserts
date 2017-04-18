@@ -19,7 +19,10 @@
 			"sourcePaths": ["core"],
 			"importPaths": ["core"],
 			"dependencies": {
-				"consoled": "~>1.0.4",
+				"consoled": {
+					"version": "~>1.0.4",
+					"optional": true
+				},
 				"unit-threaded": {
 					"version": "*",
 					"optional": true
