@@ -7,3 +7,6 @@ __dummy.html
 *.a
 dub.selections.json
 generated.d
+/fluent-asserts-core-test-library
+/fluent-asserts-test-library
+/fluent-asserts-vibe-test-library

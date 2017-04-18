@@ -81,7 +81,7 @@ class TestException : Exception {
   }
 
   this(IResult[] results, string fileName, size_t line, Throwable next = null) {
-    auto msg = results.map!(a => a.toString).join('\n') ~ '\n';
+    auto msg = results.map!(a => a.toString).join("\n\n") ~ '\n';
     this.results = results;
 
     super(msg, fileName, line, next);
@@ -104,7 +104,7 @@ unittest {
 
   auto exception = new TestException([ new TestResult, new TestResult, new TestResult], "", 0);
 
-  exception.msg.should.equal("message\nmessage\nmessage\n");
+  exception.msg.should.equal("message\n\nmessage\n\nmessage\n\n");
 }
 
 @("TestException should call all the result print methods on print")
@@ -150,8 +150,6 @@ unittest
     foundException = true;
   }
   assert(foundException);
-
-
 
   foundException = false;
   try {
