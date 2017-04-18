@@ -75,7 +75,16 @@ mixin template ShouldCommons()
   }
 }
 
-class TestException : Exception {
+version(Have_unit_threaded) {
+  import unit_threaded.should;
+  alias ReferenceException = UnitTestException;
+} else {
+  alias ReferenceException = Exception;
+}
+
+import unit_threaded.should;
+
+class TestException : unit_threaded.should.UnitTestException {
   private {
     IResult[] results;
   }
