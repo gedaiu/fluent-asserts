@@ -13,6 +13,7 @@ struct ShouldNumeric(T) {
 
   alias above = this.greaterThan;
   alias below = this.lessThan;
+  alias within = this.between;
 
   void equal(const T someValue, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("equal");
@@ -153,5 +154,32 @@ unittest {
 
   should.throwException!TestException({
     5.should.not.be.between(6, 4);
+  }).msg.should.startWith("5 should not be between `4` and `6`");
+}
+
+
+@("numbers within")
+unittest {
+  should.not.throwAnyException({
+    5.should.be.within(4, 6);
+    5.should.be.within(6, 4);
+    5.should.not.be.within(5, 6);
+    5.should.not.be.within(4, 5);
+  });
+
+  should.throwException!TestException({
+    5.should.be.within(5, 6);
+  }).msg.should.startWith("5 should be between `5` and `6`");
+
+  should.throwException!TestException({
+    5.should.be.within(4, 5);
+  }).msg.should.startWith("5 should be between `4` and `5`");
+
+  should.throwException!TestException({
+    5.should.not.be.within(4, 6);
+  }).msg.should.startWith("5 should not be between `4` and `6`");
+
+  should.throwException!TestException({
+    5.should.not.be.within(6, 4);
   }).msg.should.startWith("5 should not be between `4` and `6`");
 }

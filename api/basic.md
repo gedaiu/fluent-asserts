@@ -12,6 +12,7 @@ Here are the examples of how you can use the `should` template with [basic data 
 - [Less than](#less-than)
 - [Below](#below)
 - [Between](#between)
+- [Within](#within)
 
 ## Examples
 
@@ -108,4 +109,23 @@ Failing expectations
   5.should.be.between(4, 5);   
   5.should.not.be.between(4, 6);
   5.should.not.be.between(6, 4);
+```
+
+
+### Within
+
+Success expectations
+```
+  5.should.be.within(4, 6);
+  5.should.be.within(6, 4);
+  5.should.not.be.within(5, 6);
+  5.should.not.be.within(4, 5);
+```
+
+Failing expectations
+```
+  5.should.be.within(5, 6);
+  5.should.be.within(4, 5);   
+  5.should.not.be.within(4, 6);
+  5.should.not.be.within(6, 4);
 ```
