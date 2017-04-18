@@ -21,7 +21,7 @@ struct ShouldList(T : T[]) {
 
     if(expectedValue) {
       valueList.each!(value => contain(value, file, line));
-      
+
       foreach(i; 0..valueList.length) {
         try {
           valueList[i].should.equal(testData[i], file, line);
@@ -85,18 +85,24 @@ unittest {
 
 @("array equals")
 unittest {
-  
+
   should.not.throwAnyException({
     [1, 2, 3].should.equal([1, 2, 3]);
   });
 
   should.not.throwAnyException({
     [1, 2, 3].should.not.equal([2, 1, 3]);
+    [1, 2, 3].should.not.equal([2, 3]);
+    [2, 3].should.not.equal([1, 2, 3]);
   });
- 
+
   should.throwException!TestException({
     [1, 2, 3].should.equal([4, 5]);
-  }).msg.split('\n')[0].should.contain("`4` is not present");
+  }).msg.should.startWith("[1, 2, 3] should equal `[4, 5]`. `4` is not present in `[1, 2, 3]");
+
+  should.throwException!TestException({
+    [1, 2].should.equal([4, 5]);
+  }).msg.should.startWith("[1, 2] should equal `[4, 5]`. `4` is not present in `[1, 2]`");
 
   should.throwException!TestException({
     [1, 2, 3].should.equal([2, 3, 1]);
