@@ -82,9 +82,7 @@ version(Have_unit_threaded) {
   alias ReferenceException = Exception;
 }
 
-import unit_threaded.should;
-
-class TestException : unit_threaded.should.UnitTestException {
+class TestException : ReferenceException {
   private {
     IResult[] results;
   }
