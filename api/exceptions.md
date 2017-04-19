@@ -17,38 +17,38 @@ The `throwAnyException` exception is an alias for `throwException!Exception`
 
 Success expectations
 ```
-    should.throwAnyException({
+    ({
         throw new Exception("test");
-    });
+    }).should.throwAnyException;
 
-    should.not.throwAnyException({ });
+    ({ }).should.not.throwAnyException;
 ```
 
 Failing expectations
 ```
-    should.not.throwAnyException({
+    ({
         throw new Exception("test");
-    });
+    }).should.not.throwAnyException;
 
-    should.throwAnyException({ });
+    ({ }).should.throwAnyException;
 ```
 
 ### Throw exception
 
 Success expectations
 ```
-    should.throwException!CustomException({
+    ({
         throw new CustomException("test");
-    });
+    }).should.throwException!CustomException;
 
-    should.not.throwException!CustomException({ });
+    ({ }).should.not.throwException!CustomException;
 ```
 
 Failing expectations
 ```
-    should.not.throwException!CustomException({
+    ({
         throw new Exception("test");
-    });
+    }).should.not.throwException!CustomException;
 
-    should.throwException!CustomException({ });
+    ({ }).should.throwException!CustomException;
 ```
