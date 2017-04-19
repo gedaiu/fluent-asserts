@@ -3,6 +3,7 @@ module fluentasserts.core.base;
 public import fluentasserts.core.array;
 public import fluentasserts.core.string;
 public import fluentasserts.core.basetype;
+public import fluentasserts.core.callable;
 
 import fluentasserts.core.results;
 
@@ -134,39 +135,6 @@ unittest {
   count.should.equal(3);
 }
 
-@("Throw any exception")
-unittest
-{
-  should.throwAnyException({
-    throw new Exception("test");
-  }).msg.should.startWith("test");
-
-  should.not.throwAnyException({});
-}
-
-@("Throw any exception failures")
-unittest
-{
-  bool foundException;
-
-  try {
-    should.not.throwAnyException({
-      throw new Exception("test");
-    });
-  } catch(TestException e) {
-    foundException = true;
-  }
-  assert(foundException);
-
-  foundException = false;
-  try {
-    should.throwAnyException({});
-  } catch(TestException e) {
-    foundException = true;
-  }
-  assert(foundException);
-}
-
 struct Should {
   mixin ShouldCommons;
 
@@ -210,6 +178,8 @@ auto should(T)(lazy const T testData) {
     return ShouldString(testData);
   } else static if(isArray!T) {
     return ShouldList!T(testData);
+  } else static if(isCallable!T) {
+    return ShouldCallable!T(testData);
   } else {
     return ShouldBaseType!T(testData);
   }
