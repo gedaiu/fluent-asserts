@@ -66,50 +66,50 @@ struct ShouldList(T : T[]) {
 
 @("array contain")
 unittest {
-  should.not.throwException!TestException({
+  ({
     [1, 2, 3].should.contain([2, 1]);
     [1, 2, 3].should.not.contain([4, 5, 6, 7]);
-  });
+  }).should.not.throwException!TestException;
 
-  should.not.throwException!TestException({
+  ({
     [1, 2, 3].should.contain(1);
-  });
+  }).should.not.throwException!TestException;
 
-  should.throwException!TestException({
+  ({
     [1, 2, 3].should.contain([4, 5]);
-  }).msg.split('\n')[0].should.contain("`4` is not present");
+  }).should.throwException!TestException.msg.split('\n')[0].should.contain("`4` is not present");
 
-  should.throwException!TestException({
+  ({
     [1, 2, 3].should.contain(4);
-  }).msg.split('\n')[0].should.contain("`4` is not present");
+  }).should.throwException!TestException.msg.split('\n')[0].should.contain("`4` is not present");
 }
 
 @("array equals")
 unittest {
 
-  should.not.throwAnyException({
+  ({
     [1, 2, 3].should.equal([1, 2, 3]);
-  });
+  }).should.not.throwAnyException;
 
-  should.not.throwAnyException({
+  ({
     [1, 2, 3].should.not.equal([2, 1, 3]);
     [1, 2, 3].should.not.equal([2, 3]);
     [2, 3].should.not.equal([1, 2, 3]);
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     [1, 2, 3].should.equal([4, 5]);
-  }).msg.should.startWith("[1, 2, 3] should equal `[4, 5]`. `4` is not present in `[1, 2, 3]");
+  }).should.throwException!TestException.msg.should.startWith("[1, 2, 3] should equal `[4, 5]`. `4` is not present in `[1, 2, 3]");
 
-  should.throwException!TestException({
+  ({
     [1, 2].should.equal([4, 5]);
-  }).msg.should.startWith("[1, 2] should equal `[4, 5]`. `4` is not present in `[1, 2]`");
+  }).should.throwException!TestException.msg.should.startWith("[1, 2] should equal `[4, 5]`. `4` is not present in `[1, 2]`");
 
-  should.throwException!TestException({
+  ({
     [1, 2, 3].should.equal([2, 3, 1]);
-  }).msg.split('\n')[0].should.contain("`1` should be at index `0` not `2`");
+  }).should.throwException!TestException.msg.split('\n')[0].should.contain("`1` should be at index `0` not `2`");
 
-  should.throwException!TestException({
+  ({
     [1, 2, 3].should.not.equal([1, 2, 3]);
-  }).msg.should.startWith("[1, 2, 3] should not equal `[1, 2, 3]`. `[1, 2, 3]` is equal to `[1, 2, 3]`");
+  }).should.throwException!TestException.msg.should.startWith("[1, 2, 3] should not equal `[1, 2, 3]`. `[1, 2, 3]` is equal to `[1, 2, 3]`");
 }

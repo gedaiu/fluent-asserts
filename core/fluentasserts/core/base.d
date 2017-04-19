@@ -135,44 +135,6 @@ unittest {
   count.should.equal(3);
 }
 
-struct Should {
-  mixin ShouldCommons;
-
-  auto throwAnyException(T)(T callable, string file = __FILE__, size_t line = __LINE__) {
-    addMessage("throw any exception");
-    beginCheck;
-
-    return throwException!Exception(callable, file, line);
-  }
-
-  auto throwException(E : Exception, T)(T callable, string file = __FILE__, size_t line = __LINE__) {
-    addMessage("throw " ~ E.stringof);
-    beginCheck;
-
-    string msg = "Exception not found.";
-
-    bool isFailed = false;
-
-    E foundException;
-
-    try {
-      callable();
-    } catch(E exception) {
-      isFailed = true;
-      msg = "Exception thrown `" ~ exception.msg ~ "`";
-      foundException = exception;
-    }
-
-    result(isFailed, msg, file, line);
-
-    return foundException;
-  }
-}
-
-auto should() {
-  return Should();
-}
-
 auto should(T)(lazy const T testData) {
   static if(is(T == string)) {
     return ShouldString(testData);

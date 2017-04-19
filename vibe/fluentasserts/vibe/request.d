@@ -288,7 +288,7 @@ class Response
 @("Mocking a GET Request")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
 	{
 		res.writeBody("hello");
@@ -311,7 +311,7 @@ unittest {
 @("Mocking a POST Request")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
 	{
 		res.writeBody("hello");
@@ -334,7 +334,7 @@ unittest {
 @("Mocking a PATCH Request")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
 	{
 		res.writeBody("hello");
@@ -357,7 +357,7 @@ unittest {
 @("Mocking a PUT Request")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
 	{
 		res.writeBody("hello");
@@ -380,7 +380,7 @@ unittest {
 @("Mocking a DELETE Request")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
 	{
 		res.writeBody("hello");
@@ -403,14 +403,14 @@ unittest {
 @("Mocking a ACL Request")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void sayHello(HTTPServerRequest, HTTPServerResponse res)
 	{
 		res.writeBody("hello");
 	}
 
 	router.match(HTTPMethod.ACL, "*", &sayHello);
-	
+
 	request(router)
 		.customMethod!(HTTPMethod.ACL)("/")
 			.end((Response response) => {
@@ -427,14 +427,14 @@ unittest {
 @("Sending headers")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void checkHeaders(HTTPServerRequest req, HTTPServerResponse)
 	{
 		req.headers["Accept"].should.equal("application/json");
 	}
 
 	router.any("*", &checkHeaders);
-	
+
 	request(router)
 		.get("/")
         .header("Accept", "application/json")
@@ -446,14 +446,14 @@ unittest {
 	import std.string;
 
 	auto router = new URLRouter();
-	
+
 	void checkStringData(HTTPServerRequest req, HTTPServerResponse)
 	{
 		req.bodyReader.peek.assumeUTF.should.equal("raw string");
 	}
 
 	router.any("*", &checkStringData);
-	
+
 	request(router)
 		.post("/")
         .send("raw string")
@@ -463,7 +463,7 @@ unittest {
 @("Sending form data")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void checkFormData(HTTPServerRequest req, HTTPServerResponse)
 	{
 		req.headers["content-type"].should.equal("application/x-www-form-urlencoded");
@@ -472,7 +472,7 @@ unittest {
 	}
 
 	router.any("*", &checkFormData);
-	
+
 	request(router)
 		.post("/")
         .send(["key1": "value1", "key2": "value2"])
@@ -482,7 +482,7 @@ unittest {
 @("Sending json data")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void checkJsonData(HTTPServerRequest req, HTTPServerResponse)
 	{
 		req.json["key"].to!string.should.equal("value");
@@ -499,7 +499,7 @@ unittest {
 @("Receive json data")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void respondJsonData(HTTPServerRequest, HTTPServerResponse res)
 	{
 		res.writeJsonBody(`{ "key": "value"}`.parseJsonString);
@@ -517,7 +517,7 @@ unittest {
 @("Expect status code")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void respondStatus(HTTPServerRequest, HTTPServerResponse res)
 	{
 		res.statusCode = 200;
@@ -532,19 +532,19 @@ unittest {
 			.end();
 
 
-	should.throwAnyException({	
+	({
 		request(router)
 			.post("/")
 			.expectStatusCode(200)
 				.end();
-	}).msg.should.equal("Expected status code `200` not found. Got `404` instead");
+	}).should.throwAnyException.msg.should.equal("Expected status code `200` not found. Got `404` instead");
 }
 
 
 @("Expect header")
 unittest {
 	auto router = new URLRouter();
-	
+
 	void respondHeader(HTTPServerRequest, HTTPServerResponse res)
 	{
 		res.headers["some-header"] = "some-value";
@@ -561,19 +561,19 @@ unittest {
 			.end();
 
 
-	should.throwAnyException({	
+	({
 		request(router)
 			.post("/")
 			.expectHeader("some-header", "some-value")
 				.end();
-	}).msg.should.equal("Response header `some-header` is missing.");
+	}).should.throwAnyException.msg.should.equal("Response header `some-header` is missing.");
 
-	should.throwAnyException({	
+	({
 		request(router)
 			.get("/")
 			.expectHeader("some-header", "other-value")
 				.end();
-	}).msg.should.contain("Response header `some-header` has an unexpected value");
+	}).should.throwAnyException.msg.should.contain("Response header `some-header` has an unexpected value");
 
 	// Check if a header exists
 	request(router)
@@ -582,12 +582,12 @@ unittest {
 			.end();
 
 
-	should.throwAnyException({	
+	({
 		request(router)
 			.post("/")
 			.expectHeaderExist("some-header")
 				.end();
-	}).msg.should.equal("Response header `some-header` is missing.");
+	}).should.throwAnyException.msg.should.equal("Response header `some-header` is missing.");
 
 	// Check if a header contains a string
 	request(router)
@@ -595,12 +595,10 @@ unittest {
 		.expectHeaderContains("some-header", "value")
 			.end();
 
-
-	should.throwAnyException({	
+	({
 		request(router)
 			.get("/")
 			.expectHeaderContains("some-header", "other")
 				.end();
-	}).msg.should.contain("Response header `some-header` has an unexpected value.");
+	}).should.throwAnyException.msg.should.contain("Response header `some-header` has an unexpected value.");
 }
-

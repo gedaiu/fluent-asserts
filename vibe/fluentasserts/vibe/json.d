@@ -28,8 +28,8 @@ unittest {
 @("Json object keys")
 unittest {
   auto obj = Json.emptyObject;
-  obj["key1"] = 1; 
-  obj["key2"] = 3; 
+  obj["key1"] = 1;
+  obj["key2"] = 3;
 
   obj.keys.length.should.equal(2);
   obj.keys.should.contain(["key1", "key2"]);
@@ -39,7 +39,7 @@ unittest {
 unittest {
   auto obj = Json.emptyArray;
 
-  should.throwAnyException({
+  ({
     obj.keys.should.contain(["key1", "key2"]);
-  }).msg.should.equal("The json should be an object. `array` found.");
+  }).should.throwAnyException.msg.should.equal("The json should be an object. `array` found.");
 }

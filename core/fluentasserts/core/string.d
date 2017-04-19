@@ -87,119 +87,119 @@ struct ShouldString {
 
 @("string startWith")
 unittest {
-  should.not.throwAnyException({
+  ({
     "test string".should.startWith("test");
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.startWith("other");
-  }).msg.should.contain("`test string` does not start with `other`");
+  }).should.throwException!TestException.msg.should.contain("`test string` does not start with `other`");
 
-  should.not.throwAnyException({
+  ({
     "test string".should.not.startWith("other");
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.not.startWith("test");
-  }).msg.should.contain("`test string` does start with `test`");
+  }).should.throwException!TestException.msg.should.contain("`test string` does start with `test`");
 
 
 
-  should.not.throwAnyException({
+  ({
     "test string".should.startWith('t');
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.startWith('o');
-  }).msg.should.contain("`test string` does not start with `o`");
+  }).should.throwException!TestException.msg.should.contain("`test string` does not start with `o`");
 
-  should.not.throwAnyException({
+  ({
     "test string".should.not.startWith('o');
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.not.startWith('t');
-  }).msg.should.contain("`test string` does start with `t`");
+  }).should.throwException!TestException.msg.should.contain("`test string` does start with `t`");
 }
 
 @("string endWith")
 unittest {
-  should.not.throwAnyException({
+  ({
     "test string".should.endWith("string");
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.endWith("other");
-  }).msg.should.contain("`test string` does not end with `other`");
+  }).should.throwException!TestException.msg.should.contain("`test string` does not end with `other`");
 
-  should.not.throwAnyException({
+  ({
     "test string".should.not.endWith("other");
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.not.endWith("string");
-  }).msg.should.startWith("\"test string\" should not end with `string`. `test string` does end with `string`");
+  }).should.throwException!TestException.msg.should.startWith("\"test string\" should not end with `string`. `test string` does end with `string`");
 
 
-  should.not.throwAnyException({
+  ({
     "test string".should.endWith('g');
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.endWith('t');
-  }).msg.should.contain("`test string` does not end with `t`");
+  }).should.throwException!TestException.msg.should.contain("`test string` does not end with `t`");
 
-  should.not.throwAnyException({
+  ({
     "test string".should.not.endWith('w');
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.not.endWith('g');
-  }).msg.should.contain("`test string` does end with `g`");
+  }).should.throwException!TestException.msg.should.contain("`test string` does end with `g`");
 }
 
 @("string contain")
 unittest {
-  should.not.throwAnyException({
+  ({
     "test string".should.contain(["string", "test"]);
-  });
+  }).should.not.throwAnyException;
 
-  should.not.throwAnyException({
+  ({
     "test string".should.contain("string");
-  });
+  }).should.not.throwAnyException;
 
-  should.not.throwAnyException({
+  ({
     "test string".should.contain('s');
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.contain(["other", "message"]);
-  }).msg.should.contain("`other` was not found in `test string`");
+  }).should.throwException!TestException.msg.should.contain("`other` was not found in `test string`");
 
-  should.throwException!TestException({
+  ({
     "test string".should.contain("other");
-  }).msg.should.contain("`other` was not found in `test string`");
+  }).should.throwException!TestException.msg.should.contain("`other` was not found in `test string`");
 
-  should.throwException!TestException({
+  ({
     "test string".should.contain('o');
-  }).msg.should.contain("`o` is not present in `test string`");
+  }).should.throwException!TestException.msg.should.contain("`o` is not present in `test string`");
 }
 
 @("string equal")
 unittest {
-  should.not.throwAnyException({
+  ({
     "test string".should.equal("test string");
-  });
+  }).should.not.throwAnyException;
 
-  should.not.throwAnyException({
+  ({
     "test string".should.not.equal("test");
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     "test string".should.equal("test");
-  }).msg.should.contain("`test string` is not equal to `test`");
+  }).should.throwException!TestException.msg.should.contain("`test string` is not equal to `test`");
 
-  should.throwException!TestException({
+  ({
     "test string".should.not.equal("test string");
-  }).msg.should.contain("`test string` is equal to `test string`");
+  }).should.throwException!TestException.msg.should.contain("`test string` is equal to `test string`");
 }

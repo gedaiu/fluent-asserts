@@ -65,142 +65,142 @@ struct ShouldBaseType(T) {
 
 @("numbers equal")
 unittest {
-  should.not.throwAnyException({
+  ({
     5.should.equal(5);
     5.should.not.equal(6);
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     5.should.equal(6);
-  }).msg.should.startWith("5 should equal `6`");
+  }).should.throwException!TestException.msg.should.startWith("5 should equal `6`");
 
-  should.throwException!TestException({
+  ({
     5.should.not.equal(5);
-  }).msg.should.startWith("5 should not equal `5`");
+  }).should.throwException!TestException.msg.should.startWith("5 should not equal `5`");
 }
 
 @("bools equal")
 unittest {
-  should.not.throwAnyException({
+  ({
     true.should.equal(true);
     true.should.not.equal(false);
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     true.should.equal(false);
-  }).msg.should.startWith("true should equal `false`");
+  }).should.throwException!TestException.msg.should.startWith("true should equal `false`");
 
-  should.throwException!TestException({
+  ({
     true.should.not.equal(true);
-  }).msg.should.startWith("true should not equal `true`");
+  }).should.throwException!TestException.msg.should.startWith("true should not equal `true`");
 }
 
 @("numbers greater than")
 unittest {
-  should.not.throwAnyException({
+  ({
     5.should.be.greaterThan(4);
     5.should.not.be.greaterThan(6);
 
     5.should.be.above(4);
     5.should.not.be.above(6);
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     5.should.be.greaterThan(5);
     5.should.be.above(5);
-  }).msg.should.startWith("5 should be greater than `5`. `5` is not greater than `5`.");
+  }).should.throwException!TestException.msg.should.startWith("5 should be greater than `5`. `5` is not greater than `5`.");
 
-  should.throwException!TestException({
+  ({
     5.should.not.be.greaterThan(4);
     5.should.not.be.above(4);
-  }).msg.should.startWith("5 should not be greater than `4`. `5` is greater than `4`.");
+  }).should.throwException!TestException.msg.should.startWith("5 should not be greater than `4`. `5` is greater than `4`.");
 }
 
 @("numbers less than")
 unittest {
-  should.not.throwAnyException({
+  ({
     5.should.be.lessThan(6);
     5.should.not.be.lessThan(4);
 
     5.should.be.below(6);
     5.should.not.be.below(4);
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     5.should.be.lessThan(4);
     5.should.be.below(4);
-  }).msg.should.startWith("5 should be less than `4`. `5` is not less than `4`.");
+  }).should.throwException!TestException.msg.should.startWith("5 should be less than `4`. `5` is not less than `4`.");
 
-  should.throwException!TestException({
+  ({
     5.should.not.be.lessThan(6);
     5.should.not.be.below(6);
-  }).msg.should.startWith("5 should not be less than `6`. `5` is less than `6`.");
+  }).should.throwException!TestException.msg.should.startWith("5 should not be less than `6`. `5` is less than `6`.");
 }
 
 @("numbers between")
 unittest {
-  should.not.throwAnyException({
+  ({
     5.should.be.between(4, 6);
     5.should.be.between(6, 4);
     5.should.not.be.between(5, 6);
     5.should.not.be.between(4, 5);
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     5.should.be.between(5, 6);
-  }).msg.should.startWith("5 should be between `5` and `6`");
+  }).should.throwException!TestException.msg.should.startWith("5 should be between `5` and `6`");
 
-  should.throwException!TestException({
+  ({
     5.should.be.between(4, 5);
-  }).msg.should.startWith("5 should be between `4` and `5`");
+  }).should.throwException!TestException.msg.should.startWith("5 should be between `4` and `5`");
 
-  should.throwException!TestException({
+  ({
     5.should.not.be.between(4, 6);
-  }).msg.should.startWith("5 should not be between `4` and `6`");
+  }).should.throwException!TestException.msg.should.startWith("5 should not be between `4` and `6`");
 
-  should.throwException!TestException({
+  ({
     5.should.not.be.between(6, 4);
-  }).msg.should.startWith("5 should not be between `4` and `6`");
+  }).should.throwException!TestException.msg.should.startWith("5 should not be between `4` and `6`");
 }
 
 @("numbers within")
 unittest {
-  should.not.throwAnyException({
+  ({
     5.should.be.within(4, 6);
     5.should.be.within(6, 4);
     5.should.not.be.within(5, 6);
     5.should.not.be.within(4, 5);
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     5.should.be.within(5, 6);
-  }).msg.should.startWith("5 should be between `5` and `6`");
+  }).should.throwException!TestException.msg.should.startWith("5 should be between `5` and `6`");
 
-  should.throwException!TestException({
+  ({
     5.should.be.within(4, 5);
-  }).msg.should.startWith("5 should be between `4` and `5`");
+  }).should.throwException!TestException.msg.should.startWith("5 should be between `4` and `5`");
 
-  should.throwException!TestException({
+  ({
     5.should.not.be.within(4, 6);
-  }).msg.should.startWith("5 should not be between `4` and `6`");
+  }).should.throwException!TestException.msg.should.startWith("5 should not be between `4` and `6`");
 
-  should.throwException!TestException({
+  ({
     5.should.not.be.within(6, 4);
-  }).msg.should.startWith("5 should not be between `4` and `6`");
+  }).should.throwException!TestException.msg.should.startWith("5 should not be between `4` and `6`");
 }
 
 @("numbers approximately")
 unittest {
-  should.not.throwAnyException({
+  ({
     (10f/3f).should.be.approximately(3, 0.34);
     (10f/3f).should.not.be.approximately(3, 0.24);
-  });
+  }).should.not.throwAnyException;
 
-  should.throwException!TestException({
+  ({
     (10f/3f).should.be.approximately(3, 0.3);
-  }).msg.should.startWith("(10f/3f) should be between `2.7` and `3.3`.");
+  }).should.throwException!TestException.msg.should.startWith("(10f/3f) should be between `2.7` and `3.3`.");
 
-  should.throwException!TestException({
+  ({
     (10f/3f).should.not.be.approximately(3, 0.34);
-  }).msg.should.startWith("(10f/3f) should not be between `2.66` and `3.34");
+  }).should.throwException!TestException.msg.should.startWith("(10f/3f) should not be between `2.66` and `3.34");
 }
