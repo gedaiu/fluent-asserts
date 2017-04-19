@@ -68,6 +68,7 @@ struct ShouldList(T : T[]) {
 unittest {
   should.not.throwException!TestException({
     [1, 2, 3].should.contain([2, 1]);
+    [1, 2, 3].should.not.contain([2, 1, 3, 4]);
   });
 
   should.not.throwException!TestException({
