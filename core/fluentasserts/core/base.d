@@ -136,13 +136,21 @@ unittest {
 }
 
 auto should(T)(lazy const T testData) {
+  version(Have_fluent_asserts_vibe) {
+    import vibe.data.json;
+
+    static if(is(T == Json)) {
+      return ShouldString(testData.to!string);
+    }
+  }
+
   static if(is(T == string)) {
     return ShouldString(testData);
   } else static if(isArray!T) {
     return ShouldList!T(testData);
   } else static if(isCallable!T) {
     return ShouldCallable!T(testData);
-  } else {
+  } else static if(isBuiltinType!T){
     return ShouldBaseType!T(testData);
   }
 }

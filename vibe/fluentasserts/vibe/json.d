@@ -1,8 +1,10 @@
 module fluentasserts.vibe.json;
 
-import std.exception, std. conv;
+import std.exception, std.conv;
 
 import vibe.data.json;
+import fluentasserts.core.base;
+import fluentasserts.core.results;
 
 string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE__) {
   string[] list;
@@ -18,6 +20,11 @@ string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE
 
 version(unittest) {
   import fluentasserts.core.base;
+}
+
+@("Should work on Json string values")
+unittest {
+  Json("text").should.equal("text");
 }
 
 @("Empty Json object keys")
