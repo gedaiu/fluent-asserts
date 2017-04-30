@@ -18,9 +18,13 @@ struct ShouldCallable(T) {
     addMessage("throw a `" ~ T.stringof ~ "` exception");
 
     try {
-      callable();
-    } catch(T e) {
-      t = e;
+      try {
+        callable();
+      } catch(T e) {
+        t = e;
+      }
+    } catch(Throwable t) {
+      result(false, "Got invalid exception type: `" ~ t.msg ~ "`", file, line);
     }
 
     auto hasException = t !is null;

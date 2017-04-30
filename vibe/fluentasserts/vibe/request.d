@@ -12,7 +12,8 @@ import std.algorithm, std.conv;
 import std.stdio;
 import std.exception;
 
-import fluentasserts.core.string;
+import fluentasserts.core.base;
+import fluentasserts.core.results;
 
 RequestRouter request(URLRouter router)
 {
@@ -167,9 +168,14 @@ final class RequestRouter
 				router.getAllRoutes.map!(a => a.method.to!string ~ " " ~ a.pattern).each!writeln;
 			}
 
-			enforce(code == res.statusCode,
-					"Expected status code `" ~ code.to!string
-					~ "` not found. Got `" ~ res.statusCode.to!string ~ "` instead", file, line);
+			if(code != res.statusCode) {
+				IResult[] results = [ cast(IResult) new MessageResult("Invalid status code."),
+															cast(IResult) new ExpectedActualResult(code.to!string ~ " - " ~ httpStatusText(code),
+																																		 res.statusCode.to!string ~ " - " ~ httpStatusText(res.statusCode)),
+															cast(IResult) new SourceResult(file, line) ];
+
+				throw new TestException(results, file, line);
+			}
 		}
 
 		expected ~= &localExpectStatusCode;
@@ -537,7 +543,7 @@ unittest {
 			.post("/")
 			.expectStatusCode(200)
 				.end();
-	}).should.throwAnyException.msg.should.equal("Expected status code `200` not found. Got `404` instead");
+	}).should.throwException!TestException.msg.should.startWith("Invalid status code.");
 }
 
 
