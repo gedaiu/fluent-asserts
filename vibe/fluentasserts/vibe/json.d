@@ -9,7 +9,13 @@ import fluentasserts.core.results;
 string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE__) {
   string[] list;
 
-  enforce(obj.type == Json.Type.object, "The json should be an object. `" ~ obj.type.to!string ~ "` found.", file, line);
+  if(obj.type != Json.Type.object) {
+    IResult[] results = [ cast(IResult) new MessageResult("Invalid Json type."),
+                          cast(IResult) new ExpectedActualResult("object", obj.type.to!string),
+                          cast(IResult) new SourceResult(file, line) ];
+
+    throw new TestException(results, file, line);
+  }
 
   foreach(string key, Json value; obj) {
     list ~= key;
@@ -48,5 +54,5 @@ unittest {
 
   ({
     obj.keys.should.contain(["key1", "key2"]);
-  }).should.throwAnyException.msg.should.equal("The json should be an object. `array` found.");
+  }).should.throwAnyException.msg.should.startWith("Invalid Json type.");
 }
