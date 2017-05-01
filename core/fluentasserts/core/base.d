@@ -140,17 +140,24 @@ auto should(T)(lazy const T testData) {
     import vibe.data.json;
 
     static if(is(T == Json)) {
+      enum returned = true;
       return ShouldString(testData.to!string);
+    } else {
+      enum returned = false;
     }
+  } else {
+    enum returned = false;
   }
 
-  static if(is(T == string)) {
-    return ShouldString(testData);
-  } else static if(isArray!T) {
-    return ShouldList!T(testData);
-  } else static if(isCallable!T) {
-    return ShouldCallable!T(testData);
-  } else static if(isBuiltinType!T){
-    return ShouldBaseType!T(testData);
+  static if(!returned) {
+    static if(is(T == string)) {
+      return ShouldString(testData);
+    } else static if(isArray!T) {
+      return ShouldList!T(testData);
+    } else static if(isCallable!T) {
+      return ShouldCallable!T(testData);
+    } else {
+      return ShouldBaseType!T(testData);
+    }
   }
 }
