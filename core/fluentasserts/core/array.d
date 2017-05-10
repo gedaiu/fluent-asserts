@@ -107,9 +107,9 @@ unittest {
 
   ({
     [1, 2, 3].should.equal([2, 3, 1]);
-  }).should.throwException!TestException.msg.split('\n')[0].should.contain("`1` should be at index `0` not `2`");
+  }).should.throwException!TestException.msg.split('\n').should.contain("Expected:`1` should be at index `0` not `2`");
 
   ({
     [1, 2, 3].should.not.equal([1, 2, 3]);
-  }).should.throwException!TestException.msg.should.startWith("[1, 2, 3] should not equal `[1, 2, 3]`. `[1, 2, 3]` is equal to `[1, 2, 3]`");
+  }).should.throwException!TestException.msg.should.startWith("[1, 2, 3] should not equal `[1, 2, 3]`");
 }

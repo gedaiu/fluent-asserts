@@ -68,6 +68,10 @@ mixin template ShouldCommons()
         auto sourceResult = new SourceResult(file, line);
         auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ".";
 
+        if(expectedValue == false) {
+          expected = "not " ~ expected;
+        }
+
         IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) new ExpectedActualResult(expected, actual), cast(IResult) sourceResult ];
 
         throw new TestException(results, file, line);
