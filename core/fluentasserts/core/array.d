@@ -29,7 +29,7 @@ struct ShouldList(T : T[]) {
           auto index = testData.countUntil(valueList[i]) + 1;
           auto msg = "`" ~ testData[i].to!string ~ "` should be at index `" ~ i.to!string ~ "` not `" ~ index.to!string ~ "`";
 
-          result(false, msg, file, line);
+          result(false, testData.to!string, msg, file, line);
         }
       }
     } else {
@@ -39,7 +39,7 @@ struct ShouldList(T : T[]) {
         allEqual = allEqual && (valueList[i] == testData[i]);
       }
 
-      result(allEqual, "`" ~ testData.to!string ~ "` is equal to `"~ valueList.to!string ~"`", file, line);
+      result(allEqual, testData.to!string, valueList.to!string ~"`", file, line);
     }
   }
 
