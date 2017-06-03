@@ -239,15 +239,73 @@ unittest
   result.getValue.should.equal("[1, 2, 3]");
 }
 
-class DiffResult : ExpectedActualResult {
-  this(string expected, string actual){
-    super(expected, actual);
+class DiffResult : IResult {
+  import ddmp.diff;
+
+  protected
+  {
+    string expected;
+    string actual;
+  }
+
+  this(string expected, string actual)
+  {
+    this.expected = expected;
+    this.actual = actual;
+  }
+
+  private string getResult(const Diff d) pure {
+    final switch(d.operation) {
+        case Operation.DELETE:
+          return "[-" ~ d.text ~ "]";
+        case Operation.INSERT:
+          return "[+" ~ d.text ~ "]";
+        case Operation.EQUAL:
+          return d.text;
+    }
+  }
+
+  override string toString()
+  {
+    return "Diff:\n" ~ diff_main(actual, expected).map!(a => getResult(a)).join("");
+  }
+
+  void print() {
+    version (Have_arsd_official_terminal)
+    {
+      import arsd.terminal;
+      auto result = diff_main(actual, expected);
+      writeln("Diff:");
+
+      auto terminal = Terminal(ConsoleOutputType.linear);
+
+      foreach(diff; result) {
+        if(diff.operation == Operation.EQUAL) {
+          terminal.color(Color.DEFAULT, Color.DEFAULT);
+        }
+
+        if(diff.operation == Operation.INSERT) {
+          terminal.color(Color.green, Color.DEFAULT);
+        }
+
+        if(diff.operation == Operation.DELETE) {
+          terminal.color(Color.red, Color.DEFAULT);
+        }
+
+        terminal.write(diff.text);
+      }
+
+      terminal.reset;
+      terminal.writeln;
+    } else {
+      writeln(toString, "\n");
+    }
   }
 }
 
 class ExpectedActualResult : IResult
 {
-  private
+  protected
   {
     string expected;
     string actual;
