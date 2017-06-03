@@ -65,8 +65,9 @@ struct ShouldString {
     auto index = testData.indexOf(someString);
     auto doesStartWith = index == 0;
     auto msg = "`" ~ testData ~ "`" ~ (doesStartWith ? " does start with " : " does not start with ") ~ strVal;
+    auto mode = expectedValue ? "to start with " : "to not start with ";
 
-    result(doesStartWith, msg, new ExpectedActualResult("to start with " ~ strVal, testData), file, line);
+    result(doesStartWith, msg, new ExpectedActualResult(mode ~ strVal, testData), file, line);
   }
 
   void endWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
@@ -91,39 +92,55 @@ struct ShouldString {
 
 @("string startWith")
 unittest {
+  import std.stdio;
+
   ({
     "test string".should.startWith("test");
   }).should.not.throwAnyException;
 
-  ({
+  auto msg = ({
     "test string".should.startWith("other");
-  }).should.throwException!TestException.msg.should.contain("`test string` does not start with `other`");
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.contain("`test string` does not start with `other`");
+  msg.split("\n")[2].should.contain("Expected:to start with `other`");
+  msg.split("\n")[3].should.contain("Actual:test string");
 
   ({
     "test string".should.not.startWith("other");
   }).should.not.throwAnyException;
 
-  ({
+  msg = ({
     "test string".should.not.startWith("test");
-  }).should.throwException!TestException.msg.should.contain("`test string` does start with `test`");
+  }).should.throwException!TestException.msg;
 
-
+  msg.split("\n")[0].should.contain("`test string` does start with `test`");
+  msg.split("\n")[2].should.equal("Expected:to not start with `test`");
+  msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   ({
     "test string".should.startWith('t');
   }).should.not.throwAnyException;
 
-  ({
+  msg = ({
     "test string".should.startWith('o');
-  }).should.throwException!TestException.msg.should.contain("`test string` does not start with `o`");
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.contain("`test string` does not start with `o`");
+  msg.split("\n")[2].should.equal("Expected:to start with `o`");
+  msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   ({
     "test string".should.not.startWith('o');
   }).should.not.throwAnyException;
 
-  ({
+  msg = ({
     "test string".should.not.startWith('t');
-  }).should.throwException!TestException.msg.should.contain("`test string` does start with `t`");
+  }).should.throwException!TestException.msg;
+  
+  msg.split("\n")[0].should.contain("`test string` does start with `t`");
+  msg.split("\n")[2].should.equal("Expected:to not start with `t`");
+  msg.split("\n")[3].strip.should.equal("Actual:test string");
 }
 
 @("string endWith")

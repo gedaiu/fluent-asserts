@@ -267,14 +267,14 @@ class DiffResult : IResult {
 
   override string toString()
   {
-    return "Diff:\n" ~ diff_main(actual, expected).map!(a => getResult(a)).join("");
+    return "Diff:\n" ~ diff_main(expected, actual).map!(a => getResult(a)).join("");
   }
 
   void print() {
     version (Have_arsd_official_terminal)
     {
       import arsd.terminal;
-      auto result = diff_main(actual, expected);
+      auto result = diff_main(expected, actual);
       writeln("Diff:");
 
       auto terminal = Terminal(ConsoleOutputType.linear);
