@@ -1,6 +1,7 @@
 module fluentasserts.core.basetype;
 
 public import fluentasserts.core.base;
+import fluentasserts.core.results;
 
 import std.string;
 import std.conv;
@@ -22,7 +23,7 @@ struct ShouldBaseType(T) {
 
     auto isSame = testData == someValue;
 
-    result(isSame, testData.to!string, someValue.to!string, file, line);
+    result(isSame, new ExpectedActualResult(someValue.to!string, testData.to!string), file, line);
   }
 
   void greaterThan(const T someValue, const string file = __FILE__, const size_t line = __LINE__){
@@ -31,8 +32,12 @@ struct ShouldBaseType(T) {
     beginCheck;
 
     auto isGreater = testData > someValue;
+    auto mode = isGreater ? "greater" : "not greater";
+    auto expectedMode = isGreater ? "is not greater" : "is greater";
 
-    result(isGreater, "`" ~ testData.to!string ~ "`" ~ (isGreater ? " is greater" : " is not greater") ~ " than `" ~ someValue.to!string ~"`.", file, line);
+    auto msg = "`" ~ testData.to!string ~ "` is " ~ mode ~ " than `" ~ someValue.to!string ~"`.";
+
+    result(isGreater, msg, new ExpectedActualResult(expectedMode ~ " than " ~ someValue.to!string, testData.to!string), file, line);
   }
 
   void lessThan(const T someValue, const string file = __FILE__, const size_t line = __LINE__){
@@ -42,7 +47,10 @@ struct ShouldBaseType(T) {
 
     auto isLess = testData < someValue;
 
-    result(isLess, "`" ~ testData.to!string ~ "`" ~ (isLess ? " is less" : " is not less") ~ " than `" ~ someValue.to!string ~"`.", file, line);
+    auto msg = "`" ~ testData.to!string ~ "`" ~ (isLess ? " is less" : " is not less") ~ " than `" ~ someValue.to!string ~ "`.";
+    auto expectedMode = isLess ? "is not less" : "is less";
+
+    result(isLess, msg, new ExpectedActualResult(expectedMode ~ " than " ~ someValue.to!string, testData.to!string), file, line);
   }
 
   void between(const T limit1, const T limit2, const string file = __FILE__, const size_t line = __LINE__) {
@@ -52,8 +60,9 @@ struct ShouldBaseType(T) {
     addMessage("be between `" ~ min.to!string ~ "` and `" ~ max.to!string ~ "`");
 
     auto isBetween = min < testData && max > testData;
+    auto msg = testData.to!string ~ " is not between `" ~ limit1.to!string ~ "` and `" ~ limit2.to!string ~ "`";
 
-    result(isBetween, "", file, line);
+    simpleResult(isBetween, msg, file, line);
   }
 
   void approximately()(const T someValue, const T delta, const string file = __FILE__, const size_t line = __LINE__)

@@ -11,3 +11,4 @@ generated.d
 /fluent-asserts-test-library
 /fluent-asserts-vibe-test-library
 trial.json
+trial-stats.csv

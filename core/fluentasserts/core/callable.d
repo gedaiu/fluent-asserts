@@ -24,12 +24,12 @@ struct ShouldCallable(T) {
         t = e;
       }
     } catch(Throwable t) {
-      result(false, "Got invalid exception type: `" ~ t.msg ~ "`", file, line);
+      simpleResult(false, "Got invalid exception type: `" ~ t.msg ~ "`", file, line);
     }
 
     auto hasException = t !is null;
 
-    result(hasException, "", file, line);
+    simpleResult(hasException, "", file, line);
 
     return t;
   }

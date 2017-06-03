@@ -1,6 +1,7 @@
 module fluentasserts.core.string;
 
 public import fluentasserts.core.base;
+import fluentasserts.core.results;
 
 import std.string;
 import std.conv;
@@ -18,7 +19,7 @@ struct ShouldString {
 
     auto isSame = testData == someString;
 
-    result(isSame, testData, someString, file, line);
+    result(isSame, new DiffResult(someString, testData), file, line);
   }
 
   void contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
@@ -37,7 +38,7 @@ struct ShouldString {
     auto index = testData.indexOf(someString);
     auto isPresent = index >= 0;
 
-    result(isPresent, testData, someString, file, line);
+    result(isPresent, new ExpectedActualResult("to contain " ~ someString, testData), file, line);
   }
 
   void contain(const char someChar, const string file = __FILE__, const size_t line = __LINE__) {
@@ -49,8 +50,9 @@ struct ShouldString {
 
     auto index = testData.indexOf(someChar);
     auto isPresent = index >= 0;
+    auto msg = strVal ~ (isPresent ? " is present" : " is not present") ~ " in `" ~ testData ~"`.";
 
-    result(isPresent, strVal ~ (isPresent ? " is present" : " is not present") ~ " in `" ~ testData ~"`.", file, line);
+    result(isPresent, msg, new ExpectedActualResult("to contain " ~ someChar, testData), file, line);
   }
 
   void startWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
@@ -62,8 +64,9 @@ struct ShouldString {
 
     auto index = testData.indexOf(someString);
     auto doesStartWith = index == 0;
+    auto msg = "`" ~ testData ~ "`" ~ (doesStartWith ? " does start with " : " does not start with ") ~ strVal;
 
-    result(doesStartWith, "`" ~ testData ~ "`" ~ (doesStartWith ? " does start with " : " does not start with ") ~ strVal, file, line);
+    result(doesStartWith, msg, new ExpectedActualResult("to start with " ~ strVal, testData), file, line);
   }
 
   void endWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
@@ -76,12 +79,13 @@ struct ShouldString {
     auto index = testData.lastIndexOf(someString);
 
     static if(is(T == string)) {
-      auto doesStartWith = index == testData.length - someString.length;
+      auto doesEndWith = index == testData.length - someString.length;
     } else {
-      auto doesStartWith = index == testData.length - 1;
+      auto doesEndWith = index == testData.length - 1;
     }
+    auto msg = "`" ~ testData ~ "`" ~ (doesEndWith ? " does end with " : " does not end with ") ~ strVal;
 
-    result(doesStartWith, "`" ~ testData ~ "`" ~ (doesStartWith ? " does end with " : " does not end with ") ~ strVal, file, line);
+    result(doesEndWith, msg, new ExpectedActualResult("to end with " ~ strVal, testData), file, line);
   }
 }
 

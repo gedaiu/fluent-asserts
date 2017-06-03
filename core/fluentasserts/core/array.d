@@ -1,5 +1,6 @@
 module fluentasserts.core.array;
 
+import fluentasserts.core.results;
 public import fluentasserts.core.base;
 
 import std.algorithm;
@@ -19,28 +20,13 @@ struct ShouldList(T : T[]) {
     addMessage("`" ~ valueList.to!string ~ "`");
     beginCheck;
 
-    if(expectedValue) {
-      valueList.each!(value => contain(value, file, line));
+    bool allEqual = valueList.length == testData.length;
 
-      foreach(i; 0..valueList.length) {
-        try {
-          valueList[i].should.equal(testData[i], file, line);
-        } catch(TestException e) {
-          auto index = testData.countUntil(valueList[i]) + 1;
-          auto msg = "`" ~ testData[i].to!string ~ "` should be at index `" ~ i.to!string ~ "` not `" ~ index.to!string ~ "`";
-
-          result(false, testData.to!string, msg, file, line);
-        }
-      }
-    } else {
-      bool allEqual = valueList.length == testData.length;
-
-      foreach(i; 0..valueList.length) {
-        allEqual = allEqual && (valueList[i] == testData[i]);
-      }
-
-      result(allEqual, testData.to!string, valueList.to!string ~"`", file, line);
+    foreach(i; 0..valueList.length) {
+      allEqual = allEqual && (valueList[i] == testData[i]);
     }
+
+    result(allEqual, new DiffResult(valueList.to!string, testData.to!string), file, line);
   }
 
   void contain(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
@@ -59,8 +45,9 @@ struct ShouldList(T : T[]) {
     beginCheck;
 
     auto isPresent = testData.canFind(value);
+    auto msg = strVal ~ (isPresent ? " is present in " : " is missing from ") ~ testData.to!string ~ "`";
 
-    result(isPresent, strVal ~ (isPresent ? " is present" : " is not present") ~ " in `" ~ testData.to!string ~ "`", file, line);
+    result(isPresent, msg, new ExpectedActualResult(" to contain " ~ value.to!string, testData.to!string), file, line);
   }
 }
 
@@ -77,11 +64,11 @@ unittest {
 
   ({
     [1, 2, 3].should.contain([4, 5]);
-  }).should.throwException!TestException.msg.split('\n')[0].should.contain("`4` is not present");
+  }).should.throwException!TestException.msg.split('\n')[0].should.contain("`4` is missing from [1, 2, 3]");
 
   ({
     [1, 2, 3].should.contain(4);
-  }).should.throwException!TestException.msg.split('\n')[0].should.contain("`4` is not present");
+  }).should.throwException!TestException.msg.split('\n')[0].should.contain("`4` is missing from [1, 2, 3]");
 }
 
 @("array equals")
@@ -99,15 +86,15 @@ unittest {
 
   ({
     [1, 2, 3].should.equal([4, 5]);
-  }).should.throwException!TestException.msg.should.startWith("[1, 2, 3] should equal `[4, 5]`. `4` is not present in `[1, 2, 3]");
+  }).should.throwException!TestException.msg.should.startWith("[1, 2, 3] should equal `[4, 5]");
 
   ({
     [1, 2].should.equal([4, 5]);
-  }).should.throwException!TestException.msg.should.startWith("[1, 2] should equal `[4, 5]`. `4` is not present in `[1, 2]`");
+  }).should.throwException!TestException.msg.should.startWith("[1, 2] should equal `[4, 5]");
 
   ({
     [1, 2, 3].should.equal([2, 3, 1]);
-  }).should.throwException!TestException.msg.split('\n').should.contain("Expected:`1` should be at index `0` not `2`");
+  }).should.throwException!TestException.msg.should.contain("`1` should be at index `0` not `2`");
 
   ({
     [1, 2, 3].should.not.equal([1, 2, 3]);

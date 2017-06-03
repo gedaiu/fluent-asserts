@@ -7,42 +7,51 @@ import std.conv;
 import std.range;
 import std.string;
 
-interface IResult {
+interface IResult
+{
   string toString();
   void print();
 }
 
-class MessageResult: IResult {
-  private {
+class MessageResult : IResult
+{
+  private
+  {
     const string message;
   }
 
-  this(string message) {
+  this(string message)
+  {
     this.message = message;
   }
 
-
-  override string toString() {
+  override string toString()
+  {
     return message;
   }
 
-  void print() {
+  void print()
+  {
     writeln(toString, "\n");
   }
 }
 
-version(unittest) {
+version (unittest)
+{
   import fluentasserts.core.base;
 }
 
 @("Message result should return the message")
-unittest {
+unittest
+{
   auto result = new MessageResult("Message");
   result.toString.should.equal("Message");
 }
 
-class SourceResult: IResult {
-  private const {
+class SourceResult : IResult
+{
+  private const
+  {
     string file;
     size_t line;
 
@@ -50,11 +59,13 @@ class SourceResult: IResult {
     string value;
   }
 
-  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) {
+  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6)
+  {
     this.file = fileName;
     this.line = line;
 
-    if(!fileName.exists) {
+    if (!fileName.exists)
+    {
       return;
     }
 
@@ -63,101 +74,107 @@ class SourceResult: IResult {
     auto rawCode = file.byLine().map!(a => a.to!string).take(line + range).array;
 
     code = rawCode.enumerate(1).dropExactly(range < line ? line - range : 0)
-        .map!(a => (a[0] == line ? ">" : " ") ~ rightJustifier(a[0].to!string, 5).to!string ~ ": " ~ a[1])
-        .take(range * 2 - 1).join("\n")
-        .to!string;
+      .map!(a => (a[0] == line ? ">" : " ") ~ rightJustifier(a[0].to!string, 5)
+          .to!string ~ ": " ~ a[1]).take(range * 2 - 1).join("\n").to!string;
 
     value = evaluatedValue(rawCode);
   }
 
-  string getValue() {
+  string getValue()
+  {
     return value;
   }
 
-  override string toString() {
+  override string toString()
+  {
     auto separator = leftJustify("", 20, '-') ~ "\n";
 
-    return separator ~
-           file ~ ":" ~ line.to!string ~ "\n" ~
-           separator ~
-           code ~ "\n" ~
-           separator;
+    return separator ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator ~ code ~ "\n" ~ separator;
   }
 
-  void print() {
-    version(Have_consoled) {
-      import consoled;
+  void print()
+  {
+    version (Have_arsd_official_terminal)
+    {
+      import arsd.terminal;
+      auto terminal = Terminal(ConsoleOutputType.linear);
 
-      foreground = Color.blue;
-      writeln(file, ":", line);
-      resetColors();
-      writeln;
+      terminal.color(Color.blue, Color.DEFAULT);
+      terminal.writeln(file, ":", line);
+      terminal.reset;
+      terminal.writeln;
 
-      foreach(line; this.code.split("\n")) {
+      foreach (line; this.code.split("\n"))
+      {
         auto index = line.indexOf(':') + 1;
 
-        if(line[0] != '>') {
-          foreground = Color.blue;
-          write(line[0..index]);
+        if (line[0] != '>')
+        {
+          terminal.color(Color.blue, Color.DEFAULT);
+          terminal.write(line[0 .. index]);
 
-          resetColors();
-          writeln(line[index..$] ~ " ");
-        } else {
-          foreground = Color.white;
-          background = Color.red;
-          write(line ~ " ");
-          resetColors();
-          write(" \n");
+          terminal.reset;
+          terminal.writeln(line[index .. $] ~ " ");
+        }
+        else
+        {
+          terminal.color(Color.white, Color.red);
+          terminal.write(line ~ " ");
+          terminal.reset;
+          terminal.write(" \n");
         }
       }
-    } else {
+    }
+    else
+    {
       writeln(toString);
     }
 
     writeln;
   }
 
-  private {
-    auto evaluatedValue(string[] rawCode) {
+  private
+  {
+    auto evaluatedValue(string[] rawCode)
+    {
       string result = "";
 
-      auto value = rawCode.take(line)
-        .filter!(a => a.indexOf("//") == -1)
-        .map!(a => a.strip)
-        .join("");
+      auto value = rawCode.take(line).filter!(a => a.indexOf("//") == -1)
+        .map!(a => a.strip).join("");
 
       auto end = valueEndIndex(value);
 
-      if(end > 0) {
-        auto begin = valueBeginIndex(value[0..end]);
+      if (end > 0)
+      {
+        auto begin = valueBeginIndex(value[0 .. end]);
 
-        if(begin > 0) {
-          result = value[begin..end];
+        if (begin > 0)
+        {
+          result = value[begin .. end];
         }
       }
 
       return result;
     }
 
-    auto valueBeginIndex(string value) {
+    auto valueBeginIndex(string value)
+    {
 
       auto tokens = ["{", ";", "*/", "+/"];
 
-      auto positions =
-        tokens
-          .map!(a => [value.lastIndexOf(a), a.length])
-          .filter!(a => a[0] != -1)
-          .map!(a => a[0] + a[1])
-            .array;
+      auto positions = tokens.map!(a => [value.lastIndexOf(a), a.length]).filter!(a => a[0] != -1)
+        .map!(a => a[0] + a[1]).array;
 
-      if(positions.length == 0) {
+      if (positions.length == 0)
+      {
         return -1;
       }
 
       return positions.sort!("a > b").front;
     }
 
-    auto valueEndIndex(string value) {
+    auto valueEndIndex(string value)
+    {
       return value.lastIndexOf(".should");
     }
   }
@@ -222,27 +239,39 @@ unittest
   result.getValue.should.equal("[1, 2, 3]");
 }
 
-class ExpectedActualResult : IResult {
+class DiffResult : ExpectedActualResult {
+  this(string expected, string actual){
+    super(expected, actual);
+  }
+}
 
-  private {
+class ExpectedActualResult : IResult
+{
+  private
+  {
     string expected;
     string actual;
   }
 
-  this(string expected, string actual) {
+  this(string expected, string actual)
+  {
     this.expected = expected;
     this.actual = actual;
   }
 
-  override string toString() {
+  override string toString()
+  {
     string result = "";
 
-    if(expected != "") {
+    if (expected != "")
+    {
       result ~= "Expected:" ~ printValue(expected);
     }
 
-    if(actual != "") {
-      if(result.length > 0) {
+    if (actual != "")
+    {
+      if (result.length > 0)
+      {
         result ~= "\n";
       }
 
@@ -252,41 +281,46 @@ class ExpectedActualResult : IResult {
     return result;
   }
 
-  void print() {
+  void print()
+  {
     writeln(toString, "\n");
   }
 
-  private {
-    pure string printValue(string value) {
+  private
+  {
+    pure string printValue(string value)
+    {
       return value.split("\n").join("\\n\n        :");
     }
   }
 }
 
 @("ExpectedActual result should be empty when no data is provided")
-unittest {
+unittest
+{
   auto result = new ExpectedActualResult("", "");
   result.toString.should.equal("");
 }
 
 @("ExpectedActual result should be empty when null data is provided")
-unittest {
+unittest
+{
   auto result = new ExpectedActualResult(null, null);
   result.toString.should.equal("");
 }
 
 @("ExpectedActual result should show one line of the expected and actual data")
-unittest {
+unittest
+{
   auto result = new ExpectedActualResult("data", "data");
   result.toString.should.equal(`Expected:data
   Actual:data`);
 }
 
 @("ExpectedActual result should show one line of the expected and actual data")
-unittest {
+unittest
+{
   auto result = new ExpectedActualResult("data\ndata", "data\ndata");
-  result.toString.should.equal("Expected:data\\n\n" ~
-                               "        :data\n" ~
-                               "  Actual:data\\n\n" ~
-                               "        :data");
+  result.toString.should.equal(
+      "Expected:data\\n\n" ~ "        :data\n" ~ "  Actual:data\\n\n" ~ "        :data");
 }

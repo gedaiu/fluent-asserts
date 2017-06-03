@@ -53,28 +53,57 @@ mixin template ShouldCommons()
       mesageCheckIndex = messages.length;
     }
 
-    void result(bool value, string msg, string file, size_t line) {
-      if(expectedValue != value) {
+    void result(bool value, string msg, IResult result, string file, size_t line) {
+      if(expectedValue == value) {
+        return;
+      }
+
+      auto sourceResult = new SourceResult(file, line);
+      auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ". " ~ msg;
+
+      IResult[] results = [ cast(IResult) new MessageResult(message), result, cast(IResult) sourceResult ];
+
+      throw new TestException(results, file, line);
+    }
+
+    void result(bool value, IResult result, string file, size_t line) {
+      if(expectedValue == value) {
+        return;
+      }
+
+      auto sourceResult = new SourceResult(file, line);
+      auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ". ";
+
+      IResult[] results = [ cast(IResult) new MessageResult(message), result, cast(IResult) sourceResult ];
+
+      throw new TestException(results, file, line);
+    }
+
+    void simpleResult(bool value, string msg, string file, size_t line) {
+        if(expectedValue == value) {
+          return;
+        }
+
         auto sourceResult = new SourceResult(file, line);
         auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ". " ~ msg;
         IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) sourceResult ];
 
         throw new TestException(results, file, line);
       }
-    }
 
-    void result(bool value, string actual, string expected, string file, size_t line) {
-      if(expectedValue != value) {
-        auto sourceResult = new SourceResult(file, line);
-        auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ".";
+      void result(bool value, string actual, string expected, string file, size_t line) {
+        if(expectedValue != value) {
+          auto sourceResult = new SourceResult(file, line);
+          auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ".";
 
-        if(expectedValue == false) {
-          expected = "not " ~ expected;
+          if(expectedValue == false) {
+            expected = "not " ~ expected;
+          }
+
+          IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) new ExpectedActualResult(expected, actual), cast(IResult) sourceResult ];
+
+          throw new TestException(results, file, line);
         }
-
-        IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) new ExpectedActualResult(expected, actual), cast(IResult) sourceResult ];
-
-        throw new TestException(results, file, line);
       }
     }
   }
