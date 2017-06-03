@@ -1,6 +1,7 @@
 module fluentasserts.core.callable;
 
 public import fluentasserts.core.base;
+import std.string;
 
 struct ShouldCallable(T) {
   private T callable;
@@ -10,7 +11,7 @@ struct ShouldCallable(T) {
     addMessage("throw any exception");
     beginCheck;
 
-    return throwException!Exception;
+    return throwException!Exception(file, line);
   }
 
   Throwable throwException(T)(string file = __FILE__, size_t line = __LINE__) {
@@ -65,7 +66,7 @@ unittest
     ({  }).should.throwAnyException;
   } catch(TestException e) {
     thrown = true;
-    e.msg.should.startWith(" should throw any exception.");
+    e.msg.split("\n")[0].should.contain(" should throw any exception.");
   }
 
   thrown.should.equal(true);
@@ -81,7 +82,7 @@ unittest
     }).should.not.throwAnyException;
   } catch(TestException e) {
     thrown = true;
-    e.msg.should.startWith(" should not throw any exception.");
+    e.msg.split("\n")[0].should.contain(" should not throw any exception.");
   }
 
   thrown.should.equal(true);
