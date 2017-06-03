@@ -79,32 +79,17 @@ mixin template ShouldCommons()
       throw new TestException(results, file, line);
     }
 
+
     void simpleResult(bool value, string msg, string file, size_t line) {
-        if(expectedValue == value) {
-          return;
-        }
-
-        auto sourceResult = new SourceResult(file, line);
-        auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ". " ~ msg;
-        IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) sourceResult ];
-
-        throw new TestException(results, file, line);
+      if(expectedValue == value) {
+        return;
       }
 
-      void result(bool value, string actual, string expected, string file, size_t line) {
-        if(expectedValue != value) {
-          auto sourceResult = new SourceResult(file, line);
-          auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ".";
+      auto sourceResult = new SourceResult(file, line);
+      auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ". " ~ msg;
+      IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) sourceResult ];
 
-          if(expectedValue == false) {
-            expected = "not " ~ expected;
-          }
-
-          IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) new ExpectedActualResult(expected, actual), cast(IResult) sourceResult ];
-
-          throw new TestException(results, file, line);
-        }
-      }
+      throw new TestException(results, file, line);
     }
   }
 }
