@@ -20,7 +20,9 @@ struct ShouldString {
 
     auto isSame = testData == someString;
 
-    result(isSame, new DiffResult(someString, testData), file, line);
+    auto msg = "`" ~ testData ~ "` is" ~ (expectedValue ? " not" : "") ~ " equal to `" ~ someString ~ "`.";
+
+    result(isSame, msg, new DiffResult(someString, testData), file, line);
   }
 
   void contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
@@ -284,11 +286,15 @@ unittest {
     "test string".should.not.equal("test");
   }).should.not.throwAnyException;
 
-  ({
+  auto msg = ({
     "test string".should.equal("test");
-  }).should.throwException!TestException.msg.should.contain("`test string` is not equal to `test`");
+  }).should.throwException!TestException.msg;
+  
+  msg.split("\n")[0].should.equal("\"test string\" should equal `test`. `test string` is not equal to `test`.");
 
-  ({
+  msg = ({
     "test string".should.not.equal("test string");
-  }).should.throwException!TestException.msg.should.contain("`test string` is equal to `test string`");
+  }).should.throwException!TestException.msg;
+  
+  msg.split("\n")[0].should.equal("\"test string\" should not equal `test string`. `test string` is equal to `test string`.");
 }
