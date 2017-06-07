@@ -18,6 +18,32 @@ import std.string;
 import std.file;
 import std.range.primitives;
 
+struct Result {
+  bool willThrow;
+  IResult[] results;
+
+  string message;
+
+  string file;
+  size_t line;
+
+  void because(string reason) {
+    message = "Because " ~ reason ~ ", " ~ message;
+  }
+
+  void perform() {
+    if(!willThrow) {
+      return;
+    }
+
+    throw new TestException(cast(IResult) new MessageResult(message) ~ results, file, line);
+  }
+
+  ~this() {
+    this.perform;
+  }
+}
+
 mixin template ShouldCommons()
 {
   import std.string;
@@ -55,55 +81,29 @@ mixin template ShouldCommons()
       mesageCheckIndex = messages.length;
     }
 
-    void result(bool value, string msg, IResult result, string file, size_t line) {
-      if(expectedValue == value) {
-        return;
-      }
-
-      auto sourceResult = new SourceResult(file, line);
-      auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ". " ~ msg;
-
-      IResult[] results = [ cast(IResult) new MessageResult(message), result, cast(IResult) sourceResult ];
-
-      throw new TestException(results, file, line);
+    auto simpleResult(bool value, string msg, string file, size_t line) {
+      return result(value, msg, [ ], file, line);
     }
 
-    void result(bool value, IResult res, string file, size_t line) {
-      if(expectedValue == value) {
-        return;
-      }
+    auto result(bool value, string msg, IResult res, string file, size_t line) {
+      return result(value, msg, [ res ], file, line);
+    }
 
+    auto result(bool value, IResult res, string file, size_t line) {
+       return result(value, "", [ res ], file, line);
+    }
+
+    auto result(bool value, string msg, IResult[] res, const string file, const size_t line) {
       auto sourceResult = new SourceResult(file, line);
       auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ".";
 
-      IResult[] results = [ cast(IResult) new MessageResult(message), res, cast(IResult) sourceResult ];
-
-      throw new TestException(results, file, line);
-    }
-
-    void result(bool value, string msg, IResult[] res, const string file, const size_t line) {
-      if(expectedValue == value) {
-        return;
+      if(msg != "") {
+        message ~= " " ~ msg;
       }
 
-      auto sourceResult = new SourceResult(file, line);
-      auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ". " ~ msg;
+      IResult[] results = res ~ cast(IResult) sourceResult;
 
-      IResult[] results = cast(IResult) new MessageResult(message) ~ res ~ cast(IResult) sourceResult;
-
-      throw new TestException(results, file, line);
-    }
-
-    void simpleResult(bool value, string msg, string file, size_t line) {
-      if(expectedValue == value) {
-        return;
-      }
-
-      auto sourceResult = new SourceResult(file, line);
-      auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ". " ~ msg;
-      IResult[] results = [ cast(IResult) new MessageResult(message), cast(IResult) sourceResult ];
-
-      throw new TestException(results, file, line);
+      return Result(expectedValue != value, results, message, file, line);
     }
   }
 }
@@ -194,4 +194,14 @@ auto should(T)(lazy T testData) {
       return ShouldBaseType!T(testData);
     }
   }
+}
+
+@("because")
+unittest {
+  
+  auto msg = ({
+    true.should.equal(false).because("of test reasons");
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Because of test reasons, true should equal `false`.");
 }

@@ -11,14 +11,14 @@ struct ShouldObject(T) {
 
   mixin ShouldCommons;
 
-  void beNull(const string file = __FILE__, const size_t line = __LINE__) {
+  auto beNull(const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("be null");
     beginCheck;
 
     if(expectedValue) {
-      result(testData is null, cast(IResult) new ExpectedActualResult("null", "a `" ~ T.stringof ~ "` instance"), file, line);
+      return result(testData is null, cast(IResult) new ExpectedActualResult("null", "a `" ~ T.stringof ~ "` instance"), file, line);
     } else {
-      result(testData is null, cast(IResult) new ExpectedActualResult("a `" ~ T.stringof ~ "` instance", "null"), file, line);
+      return result(testData is null, cast(IResult) new ExpectedActualResult("a `" ~ T.stringof ~ "` instance", "null"), file, line);
     }
   }
 }

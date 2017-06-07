@@ -16,7 +16,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
   alias U = ElementType!T;
   mixin ShouldCommons;
 
-  void equal(T)(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
+  auto equal(T)(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
     import fluentasserts.core.basetype;
     addMessage("equal");
     addMessage("`" ~ valueList.to!string ~ "`");
@@ -29,13 +29,13 @@ struct ShouldList(T) if(isInputRange!(T)) {
     }
 
     if(expectedValue) {
-      result(allEqual,"", cast(IResult[]) [ new ExpectedActualResult(valueList.to!string, testData.to!string), new DiffResult(valueList.to!string, testData.to!string) ], file, line);
+      return result(allEqual,"", cast(IResult[]) [ new ExpectedActualResult(valueList.to!string, testData.to!string), new DiffResult(valueList.to!string, testData.to!string) ], file, line);
     } else {
-      result(allEqual, cast(IResult) new ExpectedActualResult("not " ~ valueList.to!string, testData.to!string), file, line);
+      return result(allEqual, cast(IResult) new ExpectedActualResult("not " ~ valueList.to!string, testData.to!string), file, line);
     }
   }
 
-  void contain(const U[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
+  auto contain(const U[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("contain");
     addMessage(valueList.to!string);
     beginCheck;
@@ -56,13 +56,13 @@ struct ShouldList(T) if(isInputRange!(T)) {
     auto arePresent = indexes.keys.length == valueList.length;
 
     if(expectedValue) {
-      result(arePresent, notFound.to!string ~ " are missing from " ~ testData.to!string ~ ".", new ExpectedActualResult("all of " ~ valueList.to!string, testData.to!string), file, line);
+      return result(arePresent, notFound.to!string ~ " are missing from " ~ testData.to!string ~ ".", new ExpectedActualResult("all of " ~ valueList.to!string, testData.to!string), file, line);
     } else {
-      result(arePresent, found.to!string ~ " are present in " ~ testData.to!string ~ ".", new ExpectedActualResult("none of " ~ valueList.to!string, testData.to!string), file, line);
+      return result(arePresent, found.to!string ~ " are present in " ~ testData.to!string ~ ".", new ExpectedActualResult("none of " ~ valueList.to!string, testData.to!string), file, line);
     }
   }
 
-  void contain(const U value, const string file = __FILE__, const size_t line = __LINE__) {
+  auto contain(const U value, const string file = __FILE__, const size_t line = __LINE__) {
     auto strVal = "`" ~ value.to!string ~ "`";
 
     addMessage("contain");
@@ -72,7 +72,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
     auto isPresent = testData.canFind(value);
     auto msg = strVal ~ (isPresent ? " is present in " : " is missing from ") ~ testData.to!string ~ ".";
 
-    result(isPresent, msg, new ExpectedActualResult("to contain `" ~ value.to!string ~ "`", testData.to!string), file, line);
+    return result(isPresent, msg, new ExpectedActualResult("to contain `" ~ value.to!string ~ "`", testData.to!string), file, line);
   }
 }
 

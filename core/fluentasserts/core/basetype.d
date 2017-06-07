@@ -16,7 +16,7 @@ struct ShouldBaseType(T) {
   alias below = this.lessThan;
   alias within = this.between;
 
-  void equal(const T someValue, const string file = __FILE__, const size_t line = __LINE__) {
+  auto equal(const T someValue, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("equal");
     addMessage("`" ~ someValue.to!string ~ "`");
     beginCheck;
@@ -29,10 +29,10 @@ struct ShouldBaseType(T) {
       auto expected = expectedValue ? someValue.to!string : ("not " ~ someValue.to!string);
     }
 
-    result(isSame, new ExpectedActualResult(expected, testData.to!string), file, line);
+    return result(isSame, new ExpectedActualResult(expected, testData.to!string), file, line);
   }
 
-  void greaterThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
+  auto greaterThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
     addMessage("be greater than");
@@ -45,10 +45,10 @@ struct ShouldBaseType(T) {
 
     auto msg = "`" ~ testData.to!string ~ "` is " ~ mode ~ " `" ~ someValue.to!string ~"`.";
 
-    result(isGreater, msg, new ExpectedActualResult(expectedMode  ~ " `" ~ someValue.to!string ~ "`", testData.to!string), file, line);
+    return result(isGreater, msg, new ExpectedActualResult(expectedMode  ~ " `" ~ someValue.to!string ~ "`", testData.to!string), file, line);
   }
 
-  void lessThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
+  auto lessThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
     addMessage("be less than");
@@ -60,10 +60,10 @@ struct ShouldBaseType(T) {
     auto msg = "`" ~ testData.to!string ~ "`" ~ (isLess ? " is less than" : " is greater or equal to") ~ " `" ~ someValue.to!string ~ "`.";
     auto expectedMode = isLess ? "greater or equal to" : "less than";
 
-    result(isLess, msg, new ExpectedActualResult(expectedMode ~ " `" ~ someValue.to!string ~ "`", testData.to!string), file, line);
+    return result(isLess, msg, new ExpectedActualResult(expectedMode ~ " `" ~ someValue.to!string ~ "`", testData.to!string), file, line);
   }
 
-  void between()(const T limit1, const T limit2, const string file = __FILE__, const size_t line = __LINE__) 
+  auto between()(const T limit1, const T limit2, const string file = __FILE__, const size_t line = __LINE__) 
   if(!is(T == bool))
   {
     T min = limit1 < limit2 ? limit1 : limit2;
@@ -91,16 +91,16 @@ struct ShouldBaseType(T) {
       }
     }
 
-    result(isBetween, msg, new ExpectedActualResult(interval, testData.to!string), file, line);
+    return result(isBetween, msg, new ExpectedActualResult(interval, testData.to!string), file, line);
   }
 
-  void approximately()(const T someValue, const T delta, const string file = __FILE__, const size_t line = __LINE__)
+  auto approximately()(const T someValue, const T delta, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
     addMessage("equal `" ~ someValue.to!string ~ "±" ~ delta.to!string ~ "`");
     beginCheck;
 
-    between(someValue - delta, someValue + delta, file, line);
+    return between(someValue - delta, someValue + delta, file, line);
   }
 }
 

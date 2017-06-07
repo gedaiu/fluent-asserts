@@ -13,7 +13,7 @@ struct ShouldString {
 
   mixin ShouldCommons;
 
-  void equal(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
+  auto equal(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("equal");
     addMessage("`" ~ someString.to!string ~ "`");
     beginCheck;
@@ -22,10 +22,10 @@ struct ShouldString {
 
     auto msg = "`" ~ testData ~ "` is" ~ (expectedValue ? " not" : "") ~ " equal to `" ~ someString ~ "`.";
 
-    result(isSame, msg, cast(IResult[])[ new DiffResult(someString, testData) , new ExpectedActualResult(someString, testData) ], file, line);
+    return result(isSame, msg, cast(IResult[])[ new DiffResult(someString, testData) , new ExpectedActualResult(someString, testData) ], file, line);
   }
 
-  void contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
+  auto contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("contain");
     addMessage("`" ~ someStrings.to!string ~ "`");
     beginCheck;
@@ -34,16 +34,16 @@ struct ShouldString {
       auto missingValues = someStrings.filter!(a => testData.indexOf(a) == -1).array;
       auto msg = missingValues.to!string ~ " are missing from `" ~ testData ~ "`.";
 
-      result(missingValues.length == 0, msg, new ExpectedActualResult("to contain all " ~ someStrings.to!string, testData), file, line);
+      return result(missingValues.length == 0, msg, new ExpectedActualResult("to contain all " ~ someStrings.to!string, testData), file, line);
     } else {
       auto presentValues = someStrings.filter!(a => testData.indexOf(a) != -1).array;
       auto msg = presentValues.to!string ~ " are present in `" ~ testData ~ "`.";
 
-      result(presentValues.length != 0, msg, new ExpectedActualResult("to not contain any " ~ someStrings.to!string, testData), file, line);
+      return result(presentValues.length != 0, msg, new ExpectedActualResult("to not contain any " ~ someStrings.to!string, testData), file, line);
     }
   }
 
-  void contain(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
+  auto contain(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage("contain");
     addMessage("`" ~ someString ~ "`");
     beginCheck;
@@ -54,10 +54,10 @@ struct ShouldString {
     auto msg = expectedValue ? "`" ~ someString ~ "` is missing from `" ~ testData ~ "`." : "`" ~ someString ~ "` is present in `" ~ testData ~ "`.";
     auto mode = expectedValue ? "to contain" : "to not contain";
 
-    result(isPresent, msg, new ExpectedActualResult(mode ~ " `" ~ someString ~ "`", testData), file, line);
+    return result(isPresent, msg, new ExpectedActualResult(mode ~ " `" ~ someString ~ "`", testData), file, line);
   }
 
-  void contain(const char someChar, const string file = __FILE__, const size_t line = __LINE__) {
+  auto contain(const char someChar, const string file = __FILE__, const size_t line = __LINE__) {
     auto strVal = "`" ~ someChar.to!string ~ "`";
 
     addMessage("contain");
@@ -69,10 +69,10 @@ struct ShouldString {
     auto msg = strVal ~ (isPresent ? " is present" : " is not present") ~ " in `" ~ testData ~"`.";
     auto mode = expectedValue ? "to contain" : "to not contain";
 
-    result(isPresent, msg, new ExpectedActualResult(mode ~ " `" ~ someChar ~ "`", testData), file, line);
+    return result(isPresent, msg, new ExpectedActualResult(mode ~ " `" ~ someChar ~ "`", testData), file, line);
   }
 
-  void startWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
+  auto startWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
     auto strVal = "`" ~ someString.to!string ~ "`";
 
     addMessage("start with");
@@ -84,10 +84,10 @@ struct ShouldString {
     auto msg = "`" ~ testData ~ "`" ~ (doesStartWith ? " does start with " : " does not start with ") ~ strVal;
     auto mode = expectedValue ? "to start with " : "to not start with ";
 
-    result(doesStartWith, msg, new ExpectedActualResult(mode ~ strVal, testData), file, line);
+    return result(doesStartWith, msg, new ExpectedActualResult(mode ~ strVal, testData), file, line);
   }
 
-  void endWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
+  auto endWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
     auto strVal = "`" ~ someString.to!string ~ "`";
 
     addMessage("end with");
@@ -104,7 +104,7 @@ struct ShouldString {
     auto msg = "`" ~ testData ~ "`" ~ (doesEndWith ? " does end with " : " does not end with ") ~ strVal;
     auto mode = expectedValue ? "to end with " : "to not end with ";
 
-    result(doesEndWith, msg, new ExpectedActualResult(mode ~ strVal, testData), file, line);
+    return result(doesEndWith, msg, new ExpectedActualResult(mode ~ strVal, testData), file, line);
   }
 }
 
