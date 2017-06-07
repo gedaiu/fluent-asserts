@@ -58,6 +58,7 @@ exepectedValue.should.not.equal(42);
 You can use fluent asserts with:
 
 - [Basic Data Types](api/basic.md)
+- [Objects](api/objects.md)
 - [Strings](api/strings.md)
 - [Arrays](api/arrays.md)
 - [Exceptions](api/exceptions.md)

@@ -2,6 +2,7 @@ module fluentasserts.core.base;
 
 public import fluentasserts.core.array;
 public import fluentasserts.core.string;
+public import fluentasserts.core.objects;
 public import fluentasserts.core.basetype;
 public import fluentasserts.core.callable;
 
@@ -180,7 +181,9 @@ auto should(T)(lazy const T testData) {
   }
 
   static if(!returned) {
-    static if(is(T == string)) {
+    static if(is(T == class)) {
+      return ShouldObject!T(testData);
+    } else static if(is(T == string)) {
       return ShouldString(testData);
     } else static if(isArray!T) {
       return ShouldList!T(testData);
