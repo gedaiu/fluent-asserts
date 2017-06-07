@@ -16,6 +16,7 @@ import std.range;
 import std.conv;
 import std.string;
 import std.file;
+import std.range.primitives;
 
 mixin template ShouldCommons()
 {
@@ -166,7 +167,7 @@ unittest {
   count.should.equal(3);
 }
 
-auto should(T)(lazy const T testData) {
+auto should(T)(lazy T testData) {
   version(Have_fluent_asserts_vibe) {
     import vibe.data.json;
 
@@ -185,7 +186,7 @@ auto should(T)(lazy const T testData) {
       return ShouldObject!T(testData);
     } else static if(is(T == string)) {
       return ShouldString(testData);
-    } else static if(isArray!T) {
+    } else static if(isInputRange!T) {
       return ShouldList!T(testData);
     } else static if(isCallable!T) {
       return ShouldCallable!T(testData);
