@@ -49,10 +49,19 @@ exepectedValue.should.equal(42);
 should(expectedValue).equal(42);
 ```
 
-In addition, the library provides a `not` modifier that negates the assert condition:
+In addition, the library provides the `not` and `because` modifiers that allow to improve your asserts.
+
+`not` negates the assert condition:
 
 ```
 exepectedValue.should.not.equal(42);
+```
+
+`because` allows you to add a custom message:
+
+```
+    true.should.equal(false).because("of test reasons");
+    ///will output this message: Because of test reasons, true should equal `false`.
 ```
 
 You can use fluent asserts with:
