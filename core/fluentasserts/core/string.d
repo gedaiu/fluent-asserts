@@ -22,7 +22,7 @@ struct ShouldString {
 
     auto msg = "`" ~ testData ~ "` is" ~ (expectedValue ? " not" : "") ~ " equal to `" ~ someString ~ "`.";
 
-    result(isSame, msg, new DiffResult(someString, testData), file, line);
+    result(isSame, msg, cast(IResult[])[ new DiffResult(someString, testData) , new ExpectedActualResult(someString, testData) ], file, line);
   }
 
   void contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {

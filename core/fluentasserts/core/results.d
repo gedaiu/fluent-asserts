@@ -285,18 +285,18 @@ class DiffResult : IResult {
         }
 
         if(diff.operation == Operation.INSERT) {
-          terminal.color(Color.green, Color.DEFAULT);
+          terminal.color(Color.DEFAULT, Color.green);
         }
 
         if(diff.operation == Operation.DELETE) {
-          terminal.color(Color.red, Color.DEFAULT);
+          terminal.color(Color.DEFAULT, Color.red);
         }
 
         terminal.write(diff.text);
       }
 
       terminal.reset;
-      terminal.writeln;
+      terminal.writeln("\n");
     } else {
       writeln(toString, "\n");
     }
