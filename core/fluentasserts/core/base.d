@@ -81,19 +81,19 @@ mixin template ShouldCommons()
       mesageCheckIndex = messages.length;
     }
 
-    auto simpleResult(bool value, string msg, string file, size_t line) {
+    Result simpleResult(bool value, string msg, string file, size_t line) {
       return result(value, msg, [ ], file, line);
     }
 
-    auto result(bool value, string msg, IResult res, string file, size_t line) {
+    Result result(bool value, string msg, IResult res, string file, size_t line) {
       return result(value, msg, [ res ], file, line);
     }
 
-    auto result(bool value, IResult res, string file, size_t line) {
+    Result result(bool value, IResult res, string file, size_t line) {
        return result(value, "", [ res ], file, line);
     }
 
-    auto result(bool value, string msg, IResult[] res, const string file, const size_t line) {
+    Result result(bool value, string msg, IResult[] res, const string file, const size_t line) {
       auto sourceResult = new SourceResult(file, line);
       auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ".";
 
