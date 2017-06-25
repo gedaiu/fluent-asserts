@@ -19,10 +19,6 @@
 			"sourcePaths": ["core"],
 			"importPaths": ["core"],
 			"dependencies": {
-				"arsd-official:terminal": {
-					"version": "~>1.2.0",
-					"optional": true
-				},
 				"unit-threaded": {
 					"version": "*",
 					"optional": true

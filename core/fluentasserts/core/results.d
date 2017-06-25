@@ -92,44 +92,39 @@ class SourceResult : IResult
     return separator ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator ~ code ~ "\n" ~ separator;
   }
 
-  void print()
-  {
-    version (Have_arsd_official_terminal)
+  void printTerminal(T)(T terminal) {
+    terminal.color(Color.blue, Color.DEFAULT);
+    terminal.writeln(file, ":", line);
+    terminal.reset;
+    terminal.writeln;
+
+    foreach (line; this.code.split("\n"))
     {
-      import arsd.terminal;
-      auto terminal = Terminal(ConsoleOutputType.linear);
+      auto index = line.indexOf(':') + 1;
 
-      terminal.color(Color.blue, Color.DEFAULT);
-      terminal.writeln(file, ":", line);
-      terminal.reset;
-      terminal.writeln;
-
-      foreach (line; this.code.split("\n"))
+      if (line[0] != '>')
       {
-        auto index = line.indexOf(':') + 1;
+        terminal.color(Color.blue, Color.DEFAULT);
+        terminal.write(line[0 .. index]);
 
-        if (line[0] != '>')
-        {
-          terminal.color(Color.blue, Color.DEFAULT);
-          terminal.write(line[0 .. index]);
-
-          terminal.reset;
-          terminal.writeln(line[index .. $] ~ " ");
-        }
-        else
-        {
-          terminal.color(Color.white, Color.red);
-          terminal.write(line ~ " ");
-          terminal.reset;
-          terminal.write(" \n");
-        }
+        terminal.reset;
+        terminal.writeln(line[index .. $] ~ " ");
+      }
+      else
+      {
+        terminal.color(Color.white, Color.red);
+        terminal.write(line ~ " ");
+        terminal.reset;
+        terminal.write(" \n");
       }
     }
-    else
-    {
-      writeln(toString);
-    }
 
+    terminal.write("\n");
+  }
+
+  void print()
+  {
+    writeln(toString);
     writeln;
   }
 
