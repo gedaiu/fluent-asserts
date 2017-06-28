@@ -142,8 +142,10 @@ class SourceResult : IResult
       }
       else
       {
-        printer.danger(line ~ " \n");
+        printer.danger(line);
       }
+
+      printer.primary("\n");
     }
 
     printer.primary("\n");
@@ -175,7 +177,6 @@ class SourceResult : IResult
 
     auto valueBeginIndex(string value)
     {
-
       auto tokens = ["{", ";", "*/", "+/"];
 
       auto positions = tokens.map!(a => [value.lastIndexOf(a), a.length]).filter!(a => a[0] != -1)
