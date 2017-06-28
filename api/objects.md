@@ -13,7 +13,7 @@ Here are the examples of how you can use the `should` template with [objects](ht
 ### Be null
 
 Success expectations
-```
+```D
     Object o = null;
 
     o.should.beNull;
@@ -21,7 +21,7 @@ Success expectations
 ```
 
 Failing expectations
-```
+```D
     Object o = null;
 
     o.should.not.beNull;
