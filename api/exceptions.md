@@ -16,7 +16,7 @@ Here are the examples of how you can use the `should` function with [exceptions]
 The `throwAnyException` exception is an alias for `throwException!Exception`
 
 Success expectations
-```
+```D
     ({
         throw new Exception("test");
     }).should.throwAnyException;
@@ -25,7 +25,7 @@ Success expectations
 ```
 
 Failing expectations
-```
+```D
     ({
         throw new Exception("test");
     }).should.not.throwAnyException;
@@ -36,7 +36,7 @@ Failing expectations
 ### Throw exception
 
 Success expectations
-```
+```D
     ({
         throw new CustomException("test");
     }).should.throwException!CustomException;
@@ -45,7 +45,7 @@ Success expectations
 ```
 
 Failing expectations
-```
+```D
     ({
         throw new Exception("test");
     }).should.not.throwException!CustomException;
