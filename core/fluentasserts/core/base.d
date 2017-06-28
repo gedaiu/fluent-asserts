@@ -127,8 +127,8 @@ class TestException : ReferenceException {
     super(msg, fileName, line, next);
   }
 
-  void print() {
-    results.each!(a => a.print);
+  void print(ResultPrinter printer) {
+    results.each!(a => a.print(printer));
   }
 }
 
@@ -139,7 +139,7 @@ unittest {
       return "message";
     }
 
-    void print() {}
+    void print(ResultPrinter) {}
   }
 
   auto exception = new TestException([ new TestResult, new TestResult, new TestResult], "", 0);
@@ -156,13 +156,13 @@ unittest {
       return "";
     }
 
-    void print() {
+    void print(ResultPrinter) {
       count++;
     }
   }
 
   auto exception = new TestException([ new TestResult, new TestResult, new TestResult], "", 0);
-  exception.print;
+  exception.print(new DefaultResultPrinter);
 
   count.should.equal(3);
 }

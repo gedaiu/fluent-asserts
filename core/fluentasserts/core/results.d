@@ -7,10 +7,46 @@ import std.conv;
 import std.range;
 import std.string;
 
+interface ResultPrinter {
+  void primary(string);
+  void info(string);
+  void danger(string);
+  void success(string);
+
+  void dangerReverse(string);
+  void successReverse(string);
+}
+
+class DefaultResultPrinter : ResultPrinter {
+  void primary(string text) {
+    write(text);
+  }
+
+  void info(string text) {
+    write(text);
+  }
+
+  void danger(string text) {
+    write(text);
+  }
+
+  void success(string text) {
+    write(text);
+  }
+
+  void dangerReverse(string text) {
+    write(text);
+  }
+
+  void successReverse(string text) {
+    write(text);
+  }
+}
+
 interface IResult
 {
   string toString();
-  void print();
+  void print(ResultPrinter);
 }
 
 class MessageResult : IResult
@@ -30,9 +66,9 @@ class MessageResult : IResult
     return message;
   }
 
-  void print()
+  void print(ResultPrinter printer)
   {
-    writeln(toString, "\n");
+    printer.primary(toString ~ "\n");
   }
 }
 
@@ -92,11 +128,8 @@ class SourceResult : IResult
     return separator ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator ~ code ~ "\n" ~ separator;
   }
 
-  void printTerminal(T)(T terminal) {
-    terminal.color(Color.blue, Color.DEFAULT);
-    terminal.writeln(file, ":", line);
-    terminal.reset;
-    terminal.writeln;
+  void print(ResultPrinter printer) {
+    printer.info(file ~ ":" ~ line.to!string ~ "\n");
 
     foreach (line; this.code.split("\n"))
     {
@@ -104,28 +137,16 @@ class SourceResult : IResult
 
       if (line[0] != '>')
       {
-        terminal.color(Color.blue, Color.DEFAULT);
-        terminal.write(line[0 .. index]);
-
-        terminal.reset;
-        terminal.writeln(line[index .. $] ~ " ");
+        printer.info(line[0 .. index]);
+        printer.primary(line[index .. $] ~ " ");
       }
       else
       {
-        terminal.color(Color.white, Color.red);
-        terminal.write(line ~ " ");
-        terminal.reset;
-        terminal.write(" \n");
+        printer.danger(line ~ " \n");
       }
     }
 
-    terminal.write("\n");
-  }
-
-  void print()
-  {
-    writeln(toString);
-    writeln;
+    printer.primary("\n");
   }
 
   private
@@ -265,36 +286,26 @@ class DiffResult : IResult {
     return "Diff:\n" ~ diff_main(expected, actual).map!(a => getResult(a)).join("");
   }
 
-  void print() {
-    version (Have_arsd_official_terminal)
-    {
-      import arsd.terminal;
-      auto result = diff_main(expected, actual);
-      writeln("Diff:");
+  void print(ResultPrinter printer) {
+    auto result = diff_main(expected, actual);
+    printer.primary("Diff:");
 
-      auto terminal = Terminal(ConsoleOutputType.linear);
-
-      foreach(diff; result) {
-        if(diff.operation == Operation.EQUAL) {
-          terminal.color(Color.DEFAULT, Color.DEFAULT);
-        }
-
-        if(diff.operation == Operation.INSERT) {
-          terminal.color(Color.DEFAULT, Color.green);
-        }
-
-        if(diff.operation == Operation.DELETE) {
-          terminal.color(Color.DEFAULT, Color.red);
-        }
-
-        terminal.write(diff.text);
+    foreach(diff; result) {
+      if(diff.operation == Operation.EQUAL) {
+        printer.primary(diff.text);
       }
 
-      terminal.reset;
-      terminal.writeln("\n");
-    } else {
-      writeln(toString, "\n");
+      if(diff.operation == Operation.INSERT) {
+        printer.successReverse(diff.text);
+      }
+
+      if(diff.operation == Operation.DELETE) {
+        printer.dangerReverse(diff.text);
+      }
+
     }
+
+    printer.primary("\n");
   }
 }
 
@@ -334,9 +345,9 @@ class ExpectedActualResult : IResult
     return result;
   }
 
-  void print()
+  void print(ResultPrinter printer)
   {
-    writeln(toString, "\n");
+    printer.primary(toString ~ "\n");
   }
 
   private
