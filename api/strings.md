@@ -16,13 +16,13 @@ Here are the examples of how you can use the `should` template with [strings](ht
 ### Equal
 
 Success expectations
-```
+```D
     "test string".should.equal("test string");
     "test string".should.not.equal("test");
 ```
 
 Failing expectations
-```
+```D
      "test string".should.equal("test");
      "test string".should.not.equal("test string");
 ```
@@ -30,14 +30,14 @@ Failing expectations
 ### Contain
 
 Success expectations
-```
+```D
     "test string".should.contain(["string", "test"]);
     "test string".should.contain("string");
     "test string".should.contain('s');
 ```
 
 Failing expectations
-```
+```D
     "test string".should.contain(["other", "message"]);
     "test string".should.contain("other");
     "test string".should.contain('o');
@@ -46,7 +46,7 @@ Failing expectations
 ### Start with
 
 Success expectations
-```
+```D
     "test string".should.startWith("test");
     "test string".should.not.startWith("other");
 
@@ -55,7 +55,7 @@ Success expectations
 ```
 
 Failing expectations
-```
+```D
     "test string".should.startWith("other");
     "test string".should.not.startWith("test");
 
@@ -66,7 +66,7 @@ Failing expectations
 ### End with
 
 Success expectations
-```
+```D
    "test string".should.endWith("string");
    "test string".should.not.endWith("other");
 
@@ -75,7 +75,7 @@ Success expectations
 ```
 
 Failing expectations
-```
+```D
     "test string".should.endWith("other");
     "test string".should.not.endWith("string");
 
