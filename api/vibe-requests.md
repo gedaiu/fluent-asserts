@@ -28,7 +28,7 @@ Mocking HTTP requests are usefull for api tests. This module allows you to mock 
 Returns an array containg the keys of an Json object.
 
 Given a simple router
-```
+```D
 	auto router = new URLRouter();
 	
 	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
@@ -40,7 +40,7 @@ Given a simple router
 ```
 
 You can mock requests like this:
-```
+```D
 	request(router)
 		.get("/")
 			.end((Response response) => {
@@ -55,7 +55,7 @@ callback to the `end` callback, where you can add your custom asserts.
 
 You can also mock `POST`, `PATCH`, `PUT`, `DELETE` requests by using the folowing methods:
 
-```
+```D
 	RequestRouter post(string path);
 	RequestRouter patch(string path);
 	RequestRouter put(string path);
@@ -63,14 +63,14 @@ You can also mock `POST`, `PATCH`, `PUT`, `DELETE` requests by using the folowin
 ```
 
 Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http.common/HTTPMethod] you can use the generic request methods: 
-```
+```D
 	customMethod(HTTPMethod method)(string path);
 	customMethod(HTTPMethod method)(URL url);
 ```
 
 ### Sending headers
 
-```
+```D
 	auto router = new URLRouter();
 	
 	void checkHeaders(HTTPServerRequest req, HTTPServerResponse)
@@ -88,7 +88,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ### Sending string data
 
-```
+```D
 	import std.string;
 
 	auto router = new URLRouter();
@@ -101,7 +101,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 	router.any("*", &checkStringData);
 ```
 
-```
+```D
 	request(router)
 		.post("/")
 		.send("raw string")
@@ -111,7 +111,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ### Sending form data
 
-```
+```D
 	auto router = new URLRouter();
 	
 	void checkFormData(HTTPServerRequest req, HTTPServerResponse)
@@ -124,7 +124,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 	router.any("*", &checkFormData);
 ```
 
-```
+```D
 	request(router)
 		.post("/")
 		.send(["key1": "value1", "key2": "value2"])
@@ -133,7 +133,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ### Sending JSON data
 
-```
+```D
 	auto router = new URLRouter();
 	
 	void checkJsonData(HTTPServerRequest req, HTTPServerResponse)
@@ -144,7 +144,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 	router.any("*", &checkJsonData);
 ```
 
-```
+```D
 	request(router)
 		.post("/")
 		.send(`{ "key": "value" }`.parseJsonString)
@@ -154,7 +154,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ### Receive JSON data
 
-```
+```D
 	auto router = new URLRouter();
 	
 	void respondJsonData(HTTPServerRequest, HTTPServerResponse res)
@@ -165,7 +165,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 	router.any("*", &respondJsonData);
 ```
 
-```
+```D
 	request(router)
 		.get("/")
 			.end((Response response) => {
@@ -175,7 +175,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ### Expect status code
 
-```
+```D
 	auto router = new URLRouter();
 	
 	void respondStatus(HTTPServerRequest, HTTPServerResponse res)
@@ -187,7 +187,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 	router.get("*", &respondStatus);
 ```
 
-```
+```D
 	request(router)
 		.get("/")
 		.expectStatusCode(200)
@@ -205,7 +205,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ### Expect header value
 
-```
+```D
 	auto router = new URLRouter();
 	
 	void respondHeader(HTTPServerRequest, HTTPServerResponse res)
@@ -218,7 +218,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 ```
 
 Check for the exact header value:
-```
+```D
 	request(router)
 		.get("/")
 		.expectHeader("some-header", "some-value")
@@ -241,7 +241,7 @@ Check for the exact header value:
 
 Check if a header exists
 
-```
+```D
 	request(router)
 		.get("/")
 		.expectHeaderExist("some-header")
@@ -257,7 +257,7 @@ Check if a header exists
 ```
 
 Check if a header contains a string
-```
+```D
 	request(router)
 		.get("/")
 		.expectHeaderContains("some-header", "value")
