@@ -14,19 +14,19 @@ Unfortunately the [assert expresion](https://dlang.org/spec/expression.html#Asse
 [https://code.dlang.org/packages/fluent-asserts](https://code.dlang.org/packages/fluent-asserts)
 
 2. Import it:
-```
+```D
 import fluent.asserts;
 ```
 
 3. Use it:
-```
+```D
     unittest {
         true.should.equal(false);
     }
 ```
 
 4. Run the tests:
-```
+```D
 ➜  dub test --compiler=ldc2
 ```
 
@@ -37,13 +37,13 @@ import fluent.asserts;
 The library uses the `should` template in combination with
 [Uniform Function Call Syntax (UFCS)](https://dlang.org/spec/function.html#pseudo-member)
 
-```
+```D
 auto should(T)(lazy const T testData);
 ```
 
 So the following statements are equivalent
 
-```
+```D
 exepectedValue.should.equal(42);
 should(expectedValue).equal(42);
 ```
@@ -52,13 +52,13 @@ In addition, the library provides the `not` and `because` modifiers that allow t
 
 `not` negates the assert condition:
 
-```
+```D
 exepectedValue.should.not.equal(42);
 ```
 
 `because` allows you to add a custom message:
 
-```
+```D
     true.should.equal(false).because("of test reasons");
     ///will output this message: Because of test reasons, true should equal `false`.
 ```
