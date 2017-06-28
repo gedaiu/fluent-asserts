@@ -23,11 +23,11 @@ Returns an array containg the keys of an Json object.
 
 
 Success expectations
-```
+```D
     Json.emptyObject.keys.length.should.equal(0);
 ```
 
-```
+```D
     auto obj = Json.emptyObject;
     obj["key1"] = 1; 
     obj["key2"] = 3; 
@@ -37,7 +37,7 @@ Success expectations
 ```
 
 Failing expectations
-```
+```D
     Json.emptyArray.keys.should.contain(["key1", "key2"]);
     // fails with: The json should be an object. `array` found.
 ```
