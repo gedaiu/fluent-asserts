@@ -20,7 +20,7 @@ Here are the examples of how you can use the `should` template with [basic data 
 ### Equal
 
 Success expectations
-```
+```D
   5.should.equal(5);
   5.should.not.equal(6);
 
@@ -29,7 +29,7 @@ Success expectations
 ```
 
 Failing expectations
-```
+```D
   5.should.equal(6);
   5.should.not.equal(5);
 
@@ -40,13 +40,13 @@ Failing expectations
 ### Greater than
 
 Success expectations
-```
+```D
   5.should.be.greaterThan(4);
   5.should.not.be.greaterThan(6);
 ```
 
 Failing expectations
-```
+```D
   5.should.be.greaterThan(5);
   5.should.not.be.greaterThan(4);
 ```
@@ -54,13 +54,13 @@ Failing expectations
 ### Above
 
 Success expectations
-```
+```D
   5.should.be.above(4);
   5.should.not.be.above(6);
 ```
 
 Failing expectations
-```
+```D
   5.should.be.above(5);
   5.should.not.be.above(4);
 ```
@@ -68,13 +68,13 @@ Failing expectations
 ### Less than
 
 Success expectations
-```
+```D
   5.should.be.lessThan(6);
   5.should.not.be.lessThan(4);
 ```
 
 Failing expectations
-```
+```D
   5.should.be.lessThan(4);
   5.should.not.be.lessThan(5);
 ```
@@ -83,13 +83,13 @@ Failing expectations
 ### Below
 
 Success expectations
-```
+```D
   5.should.be.below(6);
   5.should.not.be.below(4);
 ```
 
 Failing expectations
-```
+```D
   5.should.be.below(4);
   5.should.not.be.below(5);
 ```
@@ -97,7 +97,7 @@ Failing expectations
 ### Between
 
 Success expectations
-```
+```D
   5.should.be.between(4, 6);
   5.should.be.between(6, 4);
   5.should.not.be.between(5, 6);
@@ -105,7 +105,7 @@ Success expectations
 ```
 
 Failing expectations
-```
+```D
   5.should.be.between(5, 6);
   5.should.be.between(4, 5);   
   5.should.not.be.between(4, 6);
@@ -116,7 +116,7 @@ Failing expectations
 ### Within
 
 Success expectations
-```
+```D
   5.should.be.within(4, 6);
   5.should.be.within(6, 4);
   5.should.not.be.within(5, 6);
@@ -124,7 +124,7 @@ Success expectations
 ```
 
 Failing expectations
-```
+```D
   5.should.be.within(5, 6);
   5.should.be.within(4, 5);   
   5.should.not.be.within(4, 6);
@@ -134,13 +134,13 @@ Failing expectations
 ### Approximately
 
 Success expectations
-```
+```D
   (10f/3f).should.be.approximately(3, 0.34);
   (10f/3f).should.not.be.approximately(3, 0.24);
 ```
 
 Failing expectations
-```
+```D
   (10f/3f).should.be.approximately(3, 0.3);
   (10f/3f).should.not.be.approximately(3, 0.34);
 ```
