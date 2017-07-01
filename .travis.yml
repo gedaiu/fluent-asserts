@@ -1,5 +1,6 @@
 language: d
 sudo: false
+dist: trusty
 
 d:
   # order: latest DMD, oldest DMD, LDC/GDC, remaining DMD versions
