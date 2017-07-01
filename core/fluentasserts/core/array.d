@@ -17,8 +17,8 @@ struct ListComparison(T) {
   }
 
   this(U, V)(U reference, V list) {
-    this.referenceList = reference.idup;
-    this.list = list.idup;
+    this.referenceList = reference.idup.to!(const T[]);
+    this.list = list.idup.to!(const T[]);
   }
 
   T[] missing() {
