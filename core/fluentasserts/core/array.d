@@ -157,6 +157,12 @@ struct ShouldList(T) if(isInputRange!(T)) {
     addMessage("`" ~ valueList.to!string ~ "`");
     beginCheck;
 
+    auto comparison = ListComparison!U(valueList, testData.array);
+
+    auto missing = comparison.missing;
+    auto extra = comparison.extra;
+    auto common = comparison.common;
+
     auto arrayTestData = testData.array;
 
     bool allEqual = valueList.length == arrayTestData.length;
@@ -166,14 +172,15 @@ struct ShouldList(T) if(isInputRange!(T)) {
     }
 
     if(expectedValue) {
-      return result(allEqual,"", cast(IResult[]) [ 
-        new ExpectedActualResult(valueList.to!string, arrayTestData.to!string), 
-        new DiffResult(valueList.to!string, arrayTestData.to!string) 
+      return result(allEqual,"", [
+        cast(IResult) new ExpectedActualResult(valueList.to!string, arrayTestData.to!string),
+        cast(IResult) new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, missing.length == 0 ? "" : missing.to!string) 
       ], file, line);
     } else {
-      return result(allEqual, 
-        cast(IResult) new ExpectedActualResult("not " ~ valueList.to!string, arrayTestData.to!string), 
-        file, line);
+      return result(allEqual, "", [
+        cast(IResult) new ExpectedActualResult("not " ~ valueList.to!string, arrayTestData.to!string),
+        cast(IResult) new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, missing.length ==0 ? "" : missing.to!string) 
+      ], file, line);
     }
   }
 
@@ -449,35 +456,37 @@ unittest {
 
   auto msg = ({
     [1, 2, 3].should.equal([4, 5]);
-  }).should.throwException!TestException.msg;
+  }).should.throwException!TestException.msg.split("\n");
 
-  msg.split("\n")[0].strip.should.equal("[1, 2, 3] should equal `[4, 5]`.");
-  msg.split("\n")[2].strip.should.equal("Expected:[4, 5]");
-  msg.split("\n")[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[0].strip.should.equal("[1, 2, 3] should equal `[4, 5]`.");
+  msg[2].strip.should.equal("Expected:[4, 5]");
+  msg[3].strip.should.equal("Actual:[1, 2, 3]");
 
   msg = ({
     [1, 2].should.equal([4, 5]);
-  }).should.throwException!TestException.msg;
+  }).should.throwException!TestException.msg.split("\n");
   
-  msg.split("\n")[0].strip.should.equal("[1, 2] should equal `[4, 5]`.");
-  msg.split("\n")[2].strip.should.equal("Expected:[4, 5]");
-  msg.split("\n")[3].strip.should.equal("Actual:[1, 2]");
+  msg[0].strip.should.equal("[1, 2] should equal `[4, 5]`.");
+  msg[2].strip.should.equal("Expected:[4, 5]");
+  msg[3].strip.should.equal("Actual:[1, 2]");
+  msg[5].strip.should.equal("Extra:[1, 2]");
+  msg[6].strip.should.equal("Missing:[4, 5]");
 
   msg = ({
     [1, 2, 3].should.equal([2, 3, 1]);
-  }).should.throwException!TestException.msg;
+  }).should.throwException!TestException.msg.split("\n");
 
-  msg.split("\n")[0].strip.should.equal("[1, 2, 3] should equal `[2, 3, 1]`.");
-  msg.split("\n")[2].strip.should.equal("Expected:[2, 3, 1]");
-  msg.split("\n")[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[0].strip.should.equal("[1, 2, 3] should equal `[2, 3, 1]`.");
+  msg[2].strip.should.equal("Expected:[2, 3, 1]");
+  msg[3].strip.should.equal("Actual:[1, 2, 3]");
 
   msg = ({
     [1, 2, 3].should.not.equal([1, 2, 3]);
-  }).should.throwException!TestException.msg;
+  }).should.throwException!TestException.msg.split("\n");
 
-  msg.split("\n")[0].strip.should.startWith("[1, 2, 3] should not equal `[1, 2, 3]`");
-  msg.split("\n")[2].strip.should.equal("Expected:not [1, 2, 3]");
-  msg.split("\n")[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[0].strip.should.startWith("[1, 2, 3] should not equal `[1, 2, 3]`");
+  msg[2].strip.should.equal("Expected:not [1, 2, 3]");
+  msg[3].strip.should.equal("Actual:[1, 2, 3]");
 }
 
 /// range equals
