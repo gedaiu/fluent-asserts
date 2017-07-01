@@ -8,6 +8,7 @@ Here are the examples of how you can use the `should` template with [ranges](htt
 
 - [Equal](#equal)
 - [Contain](#contain)
+- [ContainOnly](#containOnly)
 
 ## Examples
 
@@ -38,4 +39,27 @@ Failing expectations
 ```D
     [1, 2, 3].should.contain([4, 5]);
     [1, 2, 3].should.contain(4);
+```
+
+### Contain only
+
+Success expectations
+```D
+    [1, 2, 3].should.containOnly([3, 2, 1]);
+    [1, 2, 3].should.not.containOnly([2, 1]);
+
+    [1, 2, 2].should.containOnly([2, 1, 2]);
+    [1, 2, 2].should.not.containOnly([2, 1]);
+
+    [2, 2].should.containOnly([2, 2]);
+    [2, 2, 2].should.not.containOnly([2, 2]);
+```
+
+Failing expectations
+```D
+    [1, 2, 3].should.containOnly([2, 1]);
+    [1, 2].should.not.containOnly([2, 1]);
+    [2, 2].should.containOnly([2]);
+    [3, 3].should.containOnly([2]);
+    [2, 2].should.not.containOnly([2, 2]);
 ```
