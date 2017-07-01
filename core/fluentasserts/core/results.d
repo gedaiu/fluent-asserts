@@ -310,6 +310,43 @@ class DiffResult : IResult {
   }
 }
 
+class KeyResult(string key) : IResult {
+
+  private immutable {
+    string value;
+    ulong indent;
+  }
+
+  this(string value, ulong indent = 10) {
+    this.value = value;
+    this.indent = indent;
+  }
+
+  override string toString()
+  {
+    if(value == "") {
+      return "";
+    }
+
+    return rightJustify(key ~ ":", indent, ' ') ~ printableValue ~ "\n";
+  }
+
+  void print(ResultPrinter printer)
+  {
+    printer.primary(toString);
+  }
+
+  private
+  {
+    pure string printableValue()
+    {
+      string space = repeat(' ', indent - 1).array.to!string;
+
+      return value.split("\n").join("\\n\n" ~ space ~ ":");
+    }
+  }
+}
+
 class ExpectedActualResult : IResult
 {
   protected
@@ -388,4 +425,29 @@ unittest
   auto result = new ExpectedActualResult("data\ndata", "data\ndata");
   result.toString.should.equal(
       "Expected:data\\n\n" ~ "        :data\n" ~ "  Actual:data\\n\n" ~ "        :data");
+}
+
+class ExtraMissingResult : IResult
+{
+  protected
+  {
+    KeyResult!"Extra" extra;
+    KeyResult!"Missing" missing;
+  }
+
+  this(string extra, string missing)
+  {
+    this.extra = new KeyResult!"Extra"(extra);
+    this.missing = new KeyResult!"Missing"(missing);
+  }
+
+  override string toString()
+  {
+    return extra.toString ~ missing.toString;
+  }
+
+  void print(ResultPrinter printer)
+  {
+    printer.primary(toString ~ "\n");
+  }
 }

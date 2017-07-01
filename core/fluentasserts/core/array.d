@@ -10,6 +10,141 @@ import std.range;
 import std.array;
 import std.string;
 
+struct ListComparison(T) {
+  private {
+    const(T)[] referenceList;
+    const(T)[] list;
+  }
+
+  this(const T[] reference, const T[] list) {
+    this.referenceList = reference.idup;
+    this.list = list.idup;
+  }
+
+  T[] missing() {
+    T[] result;
+
+    auto tmpList = list.dup;
+
+    foreach(element; referenceList) {
+      auto index = tmpList.countUntil(element);
+
+      if(index == -1) {
+        result ~= element;
+      } else {
+        tmpList = remove(tmpList, index);
+      }
+    }
+
+    return result;
+  }
+
+  T[] extra() {
+    T[] result;
+
+    auto tmpReferenceList = referenceList.dup;
+
+    foreach(element; list) {
+      auto index = tmpReferenceList.countUntil(element);
+
+      if(index == -1) {
+        result ~= element;
+      } else {
+        tmpReferenceList = remove(tmpReferenceList, index);
+      }
+    }
+
+    return result;
+  }
+
+  T[] common() {
+    T[] result;
+
+    auto tmpList = list.dup;
+
+    foreach(element; referenceList) {
+      if(tmpList.length == 0) {
+        break;
+      }
+
+      auto index = tmpList.countUntil(element);
+
+      if(index >= 0) {
+        result ~= element;
+        tmpList = std.algorithm.remove(tmpList, index);
+      }
+    }
+
+    return result;
+  }
+}
+
+/// ListComparison should be able to get the missing elements
+unittest {
+  auto comparison = ListComparison!int([1, 2, 3], [4]);
+
+  auto missing = comparison.missing;
+
+  assert(missing.length == 3);
+  assert(missing[0] == 1);
+  assert(missing[1] == 2);
+  assert(missing[2] == 3);
+}
+
+/// ListComparison should be able to get the missing elements with duplicates
+unittest {
+  auto comparison = ListComparison!int([2, 2], [2]);
+
+  auto missing = comparison.missing;
+
+  assert(missing.length == 1);
+  assert(missing[0] == 2);
+}
+
+/// ListComparison should be able to get the extra elements
+unittest {
+  auto comparison = ListComparison!int([4], [1, 2, 3]);
+
+  auto extra = comparison.extra;
+
+  assert(extra.length == 3);
+  assert(extra[0] == 1);
+  assert(extra[1] == 2);
+  assert(extra[2] == 3);
+}
+
+/// ListComparison should be able to get the extra elements with duplicates
+unittest {
+  auto comparison = ListComparison!int([2], [2, 2]);
+
+  auto extra = comparison.extra;
+
+  assert(extra.length == 1);
+  assert(extra[0] == 2);
+}
+
+/// ListComparison should be able to get the common elements
+unittest {
+  auto comparison = ListComparison!int([1, 2, 3, 4], [2, 3]);
+
+  auto common = comparison.common;
+
+  assert(common.length == 2);
+  assert(common[0] == 2);
+  assert(common[1] == 3);
+}
+
+/// ListComparison should be able to get the common elements with duplicates
+unittest {
+  auto comparison = ListComparison!int([2, 2, 2, 2], [2, 2]);
+
+  auto common = comparison.common;
+
+  assert(common.length == 2);
+  assert(common[0] == 2);
+  assert(common[1] == 2);
+}
+
 struct ShouldList(T) if(isInputRange!(T)) {
   private T testData;
   
@@ -40,6 +175,48 @@ struct ShouldList(T) if(isInputRange!(T)) {
         cast(IResult) new ExpectedActualResult("not " ~ valueList.to!string, arrayTestData.to!string), 
         file, line);
     }
+  }
+
+  auto containOnly(const U[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage("contain only");
+    addMessage(valueList.to!string);
+    beginCheck;
+
+    auto comparison = ListComparison!U(testData.array, valueList);
+
+    auto missing = comparison.missing;
+    auto extra = comparison.extra;
+    auto common = comparison.common;
+    string missingString;
+    string extraString;
+
+    bool isSuccess;
+    string expected;
+
+    if(expectedValue) {
+      isSuccess = missing.length == 0 && extra.length == 0 && common.length == valueList.length;
+
+      if(extra.length > 0) {
+        missingString = extra.to!string;
+      }
+
+      if(missing.length > 0) {
+        extraString = missing.to!string;
+      }
+
+    } else {
+      isSuccess = (missing.length != 0 || extra.length != 0) || common.length != valueList.length;
+      isSuccess = !isSuccess;
+
+      if(common.length > 0) {
+        extraString = common.to!string;
+      }
+    }
+
+    return result(isSuccess, "", [ 
+          cast(IResult) new ExpectedActualResult("", testData.to!string), 
+          cast(IResult) new ExtraMissingResult(extraString, missingString)
+      ], file, line);
   }
 
   auto contain(const U[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
@@ -127,6 +304,60 @@ unittest {
   msg.split('\n')[0].should.contain("`4` is missing from [1, 2, 3]");
   msg.split('\n')[2].should.equal("Expected:to contain `4`");
   msg.split('\n')[3].strip.should.equal("Actual:[1, 2, 3]");
+}
+
+/// contain only
+unittest {
+  ({
+    [1, 2, 3].should.containOnly([3, 2, 1]);
+    [1, 2, 3].should.not.containOnly([2, 1]);
+
+    [1, 2, 2].should.not.containOnly([2, 1]);
+    [1, 2, 2].should.containOnly([2, 1, 2]);
+
+    [2, 2].should.containOnly([2, 2]);
+    [2, 2, 2].should.not.containOnly([2, 2]);
+  }).should.not.throwException!TestException;
+
+  auto msg = ({
+    [1, 2, 3].should.containOnly([2, 1]);
+  }).should.throwException!TestException.msg;
+
+  msg.split('\n')[0].should.equal("[1, 2, 3] should contain only [2, 1].");
+  msg.split('\n')[2].strip.should.equal("Actual:[1, 2, 3]");
+  msg.split('\n')[4].strip.should.equal("Extra:[3]");
+
+  msg = ({
+    [1, 2].should.not.containOnly([2, 1]);
+  }).should.throwException!TestException.msg;
+  
+  msg.split('\n')[0].should.equal("[1, 2] should not contain only [2, 1].");
+  msg.split('\n')[2].strip.should.equal("Actual:[1, 2]");
+
+  msg = ({
+    [2, 2].should.containOnly([2]);
+  }).should.throwException!TestException.msg;
+  
+  msg.split('\n')[0].should.equal("[2, 2] should contain only [2].");
+  msg.split('\n')[2].strip.should.equal("Actual:[2, 2]");
+  msg.split('\n')[4].strip.should.equal("Extra:[2]");
+
+  msg = ({
+    [3, 3].should.containOnly([2]);
+  }).should.throwException!TestException.msg;
+  
+  msg.split('\n')[0].should.equal("[3, 3] should contain only [2].");
+  msg.split('\n')[2].strip.should.equal("Actual:[3, 3]");
+  msg.split('\n')[4].strip.should.equal("Extra:[3, 3]");
+  msg.split('\n')[5].strip.should.equal("Missing:[2]");
+
+  msg = ({
+    [2, 2].should.not.containOnly([2, 2]);
+  }).should.throwException!TestException.msg;
+  
+  msg.split('\n')[0].should.equal("[2, 2] should not contain only [2, 2].");
+  msg.split('\n')[2].strip.should.equal("Actual:[2, 2]");
+  msg.split('\n')[4].strip.should.equal("Extra:[2, 2]");
 }
 
 @("array contain")
