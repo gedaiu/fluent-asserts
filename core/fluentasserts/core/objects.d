@@ -37,7 +37,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("o should not be null.");
-  msg.split("\n")[2].should.equal("Expected:a `Object` instance");
+  msg.split("\n")[2].strip.should.equal("Expected:a `Object` instance");
   msg.split("\n")[3].strip.should.equal("Actual:null");
 
   msg = ({
@@ -45,6 +45,6 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("(new Object) should be null.");
-  msg.split("\n")[2].should.equal("Expected:null");
-  msg.split("\n")[3].strip.should.equal("Actual:a `Object` instance");
+  msg.split("\n")[2].strip.should.equal("Expected:null");
+  msg.split("\n")[3].strip.strip.should.equal("Actual:a `Object` instance");
 }

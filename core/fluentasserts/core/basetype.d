@@ -116,16 +116,16 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should equal `6`.");
-  msg.split("\n")[2].should.equal("Expected:6");
-  msg.split("\n")[3].strip().should.equal("Actual:5");
+  msg.split("\n")[2].strip.should.equal("Expected:6");
+  msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
     5.should.not.equal(5);
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should not equal `5`.");
-  msg.split("\n")[2].should.equal("Expected:not 5");
-  msg.split("\n")[3].strip().should.equal("Actual:5");
+  msg.split("\n")[2].strip.should.equal("Expected:not 5");
+  msg.split("\n")[3].strip.should.equal("Actual:5");
 }
 
 @("bools equal")
@@ -140,7 +140,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("true should equal `false`.");
-  msg.split("\n")[2].should.equal("Expected:false");
+  msg.split("\n")[2].strip.should.equal("Expected:false");
   msg.split("\n")[3].strip.should.equal("Actual:true");
 
   msg = ({
@@ -148,7 +148,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("true should not equal `true`.");
-  msg.split("\n")[2].should.equal("Expected:false");
+  msg.split("\n")[2].strip.should.equal("Expected:false");
   msg.split("\n")[3].strip.should.equal("Actual:true");
 }
 
@@ -168,7 +168,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("5 should be greater than `5`. `5` is less than or equal to `5`.");
-  msg.split("\n")[2].should.equal("Expected:greater than `5`");
+  msg.split("\n")[2].strip.should.equal("Expected:greater than `5`");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -177,7 +177,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should not be greater than `4`. `5` is greater than `4`.");
-  msg.split("\n")[2].should.equal("Expected:less than or equal to `4`");
+  msg.split("\n")[2].strip.should.equal("Expected:less than or equal to `4`");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 }
 
@@ -197,7 +197,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should be less than `4`. `5` is greater or equal to `4`.");
-  msg.split("\n")[2].should.equal("Expected:less than `4`");
+  msg.split("\n")[2].strip.should.equal("Expected:less than `4`");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -228,7 +228,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should be between `5` and `6`. `5` is less than or equal to `5`.");
-  msg.split("\n")[2].should.equal("Expected:a number inside (5, 6) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number inside (5, 6) interval");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -237,7 +237,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should be between `4` and `5`. `5` is greater than or equal to `5`.");
-  msg.split("\n")[2].should.equal("Expected:a number inside (4, 5) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number inside (4, 5) interval");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -246,7 +246,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].strip.should.equal("5 should not be between `4` and `6`.");
-  msg.split("\n")[2].should.equal("Expected:a number outside (4, 6) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number outside (4, 6) interval");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -255,7 +255,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].strip.should.equal("5 should not be between `4` and `6`.");
-  msg.split("\n")[2].should.equal("Expected:a number outside (4, 6) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number outside (4, 6) interval");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 }
 
@@ -271,7 +271,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].strip.should.equal("(10f/3f) should equal `3±0.3`. `3.33333` is greater than or equal to `3.3`.");
-  msg.split("\n")[2].should.equal("Expected:a number inside (2.7, 3.3) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number inside (2.7, 3.3) interval");
   msg.split("\n")[3].strip.should.equal("Actual:3.33333");
 
   msg = ({
@@ -279,6 +279,6 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].strip.should.equal("(10f/3f) should not equal `3±0.34`.");
-  msg.split("\n")[2].should.equal("Expected:a number outside (2.66, 3.34) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number outside (2.66, 3.34) interval");
   msg.split("\n")[3].strip.should.equal("Actual:3.33333");
 }

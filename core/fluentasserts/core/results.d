@@ -123,9 +123,9 @@ class SourceResult : IResult
 
   override string toString()
   {
-    auto separator = leftJustify("", 20, '-') ~ "\n";
+    auto separator = leftJustify("", 20, '-');
 
-    return separator ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator ~ code ~ "\n" ~ separator;
+    return separator ~ "\n" ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator ~ "\n" ~ code ~ "\n" ~ separator;
   }
 
   void print(ResultPrinter printer) {
@@ -217,8 +217,7 @@ unittest
 test/missing.txt:10
 --------------------
 
---------------------
-`);
+--------------------`);
 }
 
 @("Source reporter should find the tested value on scope start")
@@ -328,7 +327,7 @@ class KeyResult(string key) : IResult {
       return "";
     }
 
-    return rightJustify(key ~ ":", indent, ' ') ~ printableValue ~ "\n";
+    return rightJustify(key ~ ":", indent, ' ') ~ printableValue;
   }
 
   void print(ResultPrinter printer)
@@ -340,9 +339,7 @@ class KeyResult(string key) : IResult {
   {
     pure string printableValue()
     {
-      string space = repeat(' ', indent - 1).array.to!string;
-
-      return value.split("\n").join("\\n\n" ~ space ~ ":");
+      return value.split("\n").join("\\n\n" ~ rightJustify(":", indent, ' '));
     }
   }
 }
@@ -351,49 +348,27 @@ class ExpectedActualResult : IResult
 {
   protected
   {
-    string expected;
-    string actual;
+    KeyResult!"Expected" expected;
+    KeyResult!"Actual" actual;
   }
 
   this(string expected, string actual)
   {
-    this.expected = expected;
-    this.actual = actual;
+    this.expected = new KeyResult!"Expected"(expected);
+    this.actual = new KeyResult!"Actual"(actual);
   }
 
   override string toString()
   {
-    string result = "";
+    auto line1 = expected.toString;
+    auto line2 = actual.toString;
 
-    if (expected != "")
-    {
-      result ~= "Expected:" ~ printValue(expected);
-    }
-
-    if (actual != "")
-    {
-      if (result.length > 0)
-      {
-        result ~= "\n";
-      }
-
-      result ~= "  Actual:" ~ printValue(actual);
-    }
-
-    return result;
+    return line1 != "" ? line1 ~ "\n" ~ line2 : line2;
   }
 
   void print(ResultPrinter printer)
   {
     printer.primary(toString ~ "\n");
-  }
-
-  private
-  {
-    pure string printValue(string value)
-    {
-      return value.split("\n").join("\\n\n        :");
-    }
   }
 }
 
@@ -415,8 +390,8 @@ unittest
 unittest
 {
   auto result = new ExpectedActualResult("data", "data");
-  result.toString.should.equal(`Expected:data
-  Actual:data`);
+  result.toString.should.equal(` Expected:data
+   Actual:data`);
 }
 
 @("ExpectedActual result should show one line of the expected and actual data")
@@ -424,7 +399,10 @@ unittest
 {
   auto result = new ExpectedActualResult("data\ndata", "data\ndata");
   result.toString.should.equal(
-      "Expected:data\\n\n" ~ "        :data\n" ~ "  Actual:data\\n\n" ~ "        :data");
+` Expected:data\n
+         :data
+   Actual:data\n
+         :data`);
 }
 
 class ExtraMissingResult : IResult
@@ -443,7 +421,10 @@ class ExtraMissingResult : IResult
 
   override string toString()
   {
-    return extra.toString ~ missing.toString;
+    auto line1 = extra.toString;
+    auto line2 = missing.toString;
+
+    return line1 != "" ? line1 ~ "\n" ~ line2 : line2;
   }
 
   void print(ResultPrinter printer)

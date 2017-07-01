@@ -132,6 +132,37 @@ class TestException : ReferenceException {
   }
 }
 
+/// Test Exception should sepparate the results by a new line
+unittest {
+  import std.stdio;
+  IResult[] results = [ 
+    cast(IResult) new MessageResult("message"),
+    cast(IResult) new SourceResult("test/missing.txt", 10), 
+    cast(IResult) new DiffResult("a", "b"), 
+    cast(IResult) new ExpectedActualResult("a", "b"), 
+    cast(IResult) new ExtraMissingResult("a", "b") ];
+
+  auto exception = new TestException(results, "unknown", 0);
+
+  exception.msg.should.equal(`message
+
+--------------------
+test/missing.txt:10
+--------------------
+
+--------------------
+
+Diff:
+[-a][+b]
+
+ Expected:a
+   Actual:b
+
+    Extra:a
+  Missing:b
+`);
+}
+
 @("TestException should concatenate all the Result strings")
 unittest {
   class TestResult : IResult {
