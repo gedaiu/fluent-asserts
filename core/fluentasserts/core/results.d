@@ -83,7 +83,7 @@ class MessageResult : IResult
 {
   private
   {
-    struct Message { 
+    struct Message {
       bool isValue;
       string text;
     }
@@ -93,7 +93,7 @@ class MessageResult : IResult
 
   this(string message)
   {
-    this.messages ~= Message(false, message.replace("\r", `\r`).replace("\n", `\n`).replace("\t", `\t`));
+    this.messages ~= Message(false, message.replace("\r", `←`).replace("\n", `↲`).replace("\t", `¤`));
   }
 
   override string toString()
@@ -102,7 +102,7 @@ class MessageResult : IResult
   }
 
   void addValue(string text) {
-    this.messages ~= Message(true, text.replace("\r", `\r`).replace("\n", `\n`).replace("\t", `\t`));
+    this.messages ~= Message(true, text.replace("\r", `←`).replace("\n", `↲`).replace("\t", `¤`));
   }
 
   void addText(string text) {
@@ -143,7 +143,7 @@ unittest
 unittest
 {
   auto result = new MessageResult("\t \r\n");
-  result.toString.should.equal(`\t \r\n`);
+  result.toString.should.equal(`¤ ←↲`);
 }
 
 @("Message result should reurn values as string")
@@ -163,7 +163,7 @@ unittest
   auto printer = new MockPrinter;
   result.print(printer);
 
-  printer.buffer.should.equal(`[primary:\t \r\n]` ~ "[primary:\n\n]");
+  printer.buffer.should.equal(`[primary:¤ ←↲]` ~ "[primary:\n\n]");
 }
 
 @("Message result should print values as info")
@@ -439,12 +439,12 @@ class KeyResult(string key) : IResult {
     int index;
     foreach(line; lines) {
       if(index > 0) {
-        printer.info(`\n`);
+        printer.info(`↲`);
         printer.primary("\n");
         printer.info(spaces);
       }
 
-      printer.primary(line);
+      printLine(line, printer);
 
       index++;
     }
@@ -454,6 +454,58 @@ class KeyResult(string key) : IResult {
 
   private
   {
+    struct Message {
+      bool isSpecial;
+      string text;
+    }
+
+    void printLine(string line, ResultPrinter printer) {
+      Message[] messages;
+
+      foreach(ch; line) {
+        auto special = isSpecial(ch);
+
+        if(messages.length == 0 || messages[messages.length - 1].isSpecial != special) {
+          messages ~= Message(special, "");
+        }
+
+        messages[messages.length - 1].text ~= toVisible(ch);
+      }
+
+      foreach(message; messages) {
+        if(message.isSpecial) {
+          printer.info(message.text);
+        } else {
+          printer.primary(message.text);
+        }
+      }
+    }
+
+    bool isSpecial(T)(T ch) {
+      if(ch == ' ' || ch == '\r' || ch == '\t') {
+        return true;
+      }
+
+      return false;
+    }
+
+    string toVisible(T)(T ch) {
+      if(ch == ' ') {
+        return "᛫";
+      }
+
+      if(ch == '\r') {
+        return `←`;
+      }
+
+      if(ch == '\t') {
+        return `¤`;
+      }
+
+
+      return ch.to!string;
+    }
+
     pure string printableValue()
     {
       return value.split("\n").join("\\n\n" ~ rightJustify(":", indent, ' '));
@@ -468,7 +520,7 @@ unittest {
 
   result.print(printer);
 
-  printer.buffer.should.equal(`[info:      key:][primary:row1][info:\n][primary:` ~ "\n" ~ `][info:         :][primary:row2][primary:` ~ "\n" ~ `]`);
+  printer.buffer.should.equal(`[info:      key:][primary:row1][info:↲][primary:` ~ "\n" ~ `][info:         :][primary:row2][primary:` ~ "\n" ~ `]`);
 }
 
 class ExpectedActualResult : IResult
