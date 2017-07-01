@@ -69,7 +69,7 @@ You can use fluent asserts with:
 - [Objects](api/objects.md)
 - [Strings](api/strings.md)
 - [Ranges and Arrays](api/ranges.md)
-- [Exceptions](api/exceptions.md)
+- [Callable](api/callable.md)
 - [Vibe.d Json](api/vibe-json.md)
 - [Vibe.d requests](api/vibe-requests.md)
 

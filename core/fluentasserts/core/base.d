@@ -55,12 +55,21 @@ mixin template ShouldCommons()
   import fluentasserts.core.results;
 
   auto be() {
+    addMessage(" be");
     return this;
   }
 
   auto not() {
     addMessage(" not");
     expectedValue = !expectedValue;
+    return this;
+  }
+
+  auto forceMessage(string message) {
+    messages = [];
+
+    addMessage(message);
+
     return this;
   }
 
@@ -158,11 +167,11 @@ class TestException : ReferenceException {
 /// Test Exception should sepparate the results by a new line
 unittest {
   import std.stdio;
-  IResult[] results = [ 
+  IResult[] results = [
     cast(IResult) new MessageResult("message"),
-    cast(IResult) new SourceResult("test/missing.txt", 10), 
-    cast(IResult) new DiffResult("a", "b"), 
-    cast(IResult) new ExpectedActualResult("a", "b"), 
+    cast(IResult) new SourceResult("test/missing.txt", 10),
+    cast(IResult) new DiffResult("a", "b"),
+    cast(IResult) new ExpectedActualResult("a", "b"),
     cast(IResult) new ExtraMissingResult("a", "b") ];
 
   auto exception = new TestException(results, "unknown", 0);
@@ -252,7 +261,6 @@ auto should(T)(lazy T testData) {
 
 @("because")
 unittest {
-  
   auto msg = ({
     true.should.equal(false).because("of test reasons");
   }).should.throwException!TestException.msg;

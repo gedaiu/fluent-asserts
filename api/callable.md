@@ -1,4 +1,4 @@
-# Exceptions API
+# Callable API
 
 [up](../README.md)
 
@@ -8,6 +8,7 @@ Here are the examples of how you can use the `should` function with [exceptions]
 
 - [Throw any exception](#throw-any-exception)
 - [Throw exception](#throw-exception)
+- [Execution time](#execution-time)
 
 ## Examples
 
@@ -51,4 +52,18 @@ Failing expectations
     }).should.not.throwException!CustomException;
 
     ({ }).should.throwException!CustomException;
+```
+
+### Execution time
+
+Success expectations
+```D
+    ({ }).should.haveExecutionTime.lessThan(1.msecs);
+```
+
+Failing expectations
+```D
+    ({
+      Thread.sleep(2.msecs);
+    }).should.haveExecutionTime.lessThan(1.msecs);
 ```
