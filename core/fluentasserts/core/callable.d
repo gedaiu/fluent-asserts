@@ -2,10 +2,20 @@ module fluentasserts.core.callable;
 
 public import fluentasserts.core.base;
 import std.string;
+import std.datetime;
 
 struct ShouldCallable(T) {
   private T callable;
   mixin ShouldCommons;
+
+  auto haveExecutionTime(string file = __FILE__, size_t line = __LINE__) {
+    auto begin = Clock.currTime;
+    callable();
+
+    auto tmpShould = should(Clock.currTime - begin).forceMessage(" have execution time");
+
+    return tmpShould;
+  }
 
   Throwable throwAnyException(string file = __FILE__, size_t line = __LINE__) {
     addMessage(" throw ");
@@ -35,7 +45,7 @@ struct ShouldCallable(T) {
     Message[] msg;
 
     if(hasException) {
-      msg = [ 
+      msg = [
         Message(false, "Got invalid exception type: `"),
         Message(true, t.msg),
         Message(false, "`")
@@ -98,4 +108,31 @@ unittest
   }
 
   thrown.should.equal(true);
+}
+
+@("Should be able to benchmark some code")
+unittest
+{
+  ({
+
+  }).should.haveExecutionTime.lessThan(1.seconds);
+}
+
+@("Should fail on benchmark timeout")
+unittest
+{
+  import core.thread;
+
+  TestException exception = null;
+
+  try {
+    ({
+      Thread.sleep(2.msecs);
+    }).should.haveExecutionTime.lessThan(1.msecs);
+  } catch(TestException e) {
+    exception = e;
+  }
+
+  exception.should.not.beNull.because("we wait 2 seconds");
+  exception.msg.split("\n")[0].should.startWith("}) should have execution time less than `1 ms`.");
 }
