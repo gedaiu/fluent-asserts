@@ -22,16 +22,23 @@ struct ShouldList(T) if(isInputRange!(T)) {
     addMessage("`" ~ valueList.to!string ~ "`");
     beginCheck;
 
-    bool allEqual = valueList.length == testData.length;
+    auto arrayTestData = testData.array;
+
+    bool allEqual = valueList.length == arrayTestData.length;
 
     foreach(i; 0..valueList.length) {
-      allEqual = allEqual && (valueList[i] == testData[i]);
+      allEqual = allEqual && (valueList[i] == arrayTestData[i]);
     }
 
     if(expectedValue) {
-      return result(allEqual,"", cast(IResult[]) [ new ExpectedActualResult(valueList.to!string, testData.to!string), new DiffResult(valueList.to!string, testData.to!string) ], file, line);
+      return result(allEqual,"", cast(IResult[]) [ 
+        new ExpectedActualResult(valueList.to!string, arrayTestData.to!string), 
+        new DiffResult(valueList.to!string, arrayTestData.to!string) 
+      ], file, line);
     } else {
-      return result(allEqual, cast(IResult) new ExpectedActualResult("not " ~ valueList.to!string, testData.to!string), file, line);
+      return result(allEqual, 
+        cast(IResult) new ExpectedActualResult("not " ~ valueList.to!string, arrayTestData.to!string), 
+        file, line);
     }
   }
 
@@ -56,9 +63,19 @@ struct ShouldList(T) if(isInputRange!(T)) {
     auto arePresent = indexes.keys.length == valueList.length;
 
     if(expectedValue) {
-      return result(arePresent, notFound.to!string ~ " are missing from " ~ testData.to!string ~ ".", new ExpectedActualResult("all of " ~ valueList.to!string, testData.to!string), file, line);
+      string isString = notFound.length == 1 ? "is" : "are";
+
+      return result(arePresent, 
+        notFound.to!string ~ " " ~ isString ~ " missing from " ~ testData.to!string ~ ".", 
+        new ExpectedActualResult("all of " ~ valueList.to!string, testData.to!string), 
+        file, line);
     } else {
-      return result(arePresent, found.to!string ~ " are present in " ~ testData.to!string ~ ".", new ExpectedActualResult("none of " ~ valueList.to!string, testData.to!string), file, line);
+      string isString = found.length == 1 ? "is" : "are";
+
+      return result(arePresent, 
+        found.to!string ~ " " ~ isString ~ " present in " ~ testData.to!string ~ ".", 
+        new ExpectedActualResult("none of " ~ valueList.to!string, testData.to!string), 
+        file, line);
     }
   }
 
@@ -178,7 +195,7 @@ unittest {
   msg.split("\n")[3].strip.should.equal("Actual:[1, 2, 3]");
 }
 
-@("range equals")
+/// range equals
 unittest {
   ({
     [1, 2, 3].map!"a".should.equal([1, 2, 3]);
@@ -221,4 +238,48 @@ unittest {
   msg.split("\n")[0].strip.should.startWith("[1, 2, 3].map!\"a\" should not equal `[1, 2, 3]`");
   msg.split("\n")[2].should.equal("Expected:not [1, 2, 3]");
   msg.split("\n")[3].strip.should.equal("Actual:[1, 2, 3]");
+}
+
+/// custom range asserts
+unittest {
+  struct Range {
+    int n;
+    int front() {
+      return n;
+    }
+    void popFront() {
+      ++n;
+    }
+    bool empty() {
+      return n == 3;
+    }
+  }
+
+  Range().should.equal([0,1,2]);
+  Range().should.contain([0,1]);
+  Range().should.contain(0);
+
+  auto msg = ({
+     Range().should.equal([0,1]);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].strip.should.startWith("Range() should equal `[0, 1]`");
+  msg.split("\n")[2].should.equal("Expected:[0, 1]");
+  msg.split("\n")[3].strip.should.equal("Actual:[0, 1, 2]");
+
+  msg = ({
+    Range().should.contain([2, 3]);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].strip.should.startWith("Range() should contain [2, 3]. [3] is missing from [0, 1, 2].");
+  msg.split("\n")[2].should.equal("Expected:all of [2, 3]");
+  msg.split("\n")[3].strip.should.equal("Actual:[0, 1, 2]");
+
+  msg = ({
+    Range().should.contain(3);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].strip.should.startWith("Range() should contain `3`. `3` is missing from [0, 1, 2].");
+  msg.split("\n")[2].should.equal("Expected:to contain `3`");
+  msg.split("\n")[3].strip.should.equal("Actual:[0, 1, 2]");
 }
