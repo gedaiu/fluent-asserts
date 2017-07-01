@@ -224,6 +224,12 @@ struct ShouldList(T) if(isInputRange!(T)) {
     addMessage(valueList.to!string);
     beginCheck;
 
+    auto comparison = ListComparison!U(testData.array, valueList);
+
+    auto missing = comparison.missing;
+    auto extra = comparison.extra;
+    auto common = comparison.common;
+
     ulong[size_t] indexes;
 
     foreach(value; testData) {
@@ -243,15 +249,18 @@ struct ShouldList(T) if(isInputRange!(T)) {
       string isString = notFound.length == 1 ? "is" : "are";
 
       return result(arePresent, 
-        notFound.to!string ~ " " ~ isString ~ " missing from " ~ testData.to!string ~ ".", 
-        new ExpectedActualResult("all of " ~ valueList.to!string, testData.to!string), 
-        file, line);
+        notFound.to!string ~ " " ~ isString ~ " missing from " ~ testData.to!string ~ ".", [
+          cast(IResult) new ExpectedActualResult("all of " ~ valueList.to!string, testData.to!string),
+          cast(IResult) new ExtraMissingResult("", notFound.to!string)
+        ], file, line);
     } else {
       string isString = found.length == 1 ? "is" : "are";
 
-      return result(arePresent, 
-        found.to!string ~ " " ~ isString ~ " present in " ~ testData.to!string ~ ".", 
-        new ExpectedActualResult("none of " ~ valueList.to!string, testData.to!string), 
+      return result(common.length != 0, 
+        common.to!string ~ " " ~ isString ~ " present in " ~ testData.to!string ~ ".", [
+          cast(IResult) new ExpectedActualResult("none of " ~ valueList.to!string, testData.to!string),
+          cast(IResult) new ExtraMissingResult(common.to!string, "")
+        ],
         file, line);
     }
   }
@@ -266,7 +275,17 @@ struct ShouldList(T) if(isInputRange!(T)) {
     auto isPresent = testData.canFind(value);
     auto msg = strVal ~ (isPresent ? " is present in " : " is missing from ") ~ testData.to!string ~ ".";
 
-    return result(isPresent, msg, new ExpectedActualResult("to contain `" ~ value.to!string ~ "`", testData.to!string), file, line);
+    if(expectedValue) {
+      return result(isPresent, msg, [ 
+        cast(IResult) new ExpectedActualResult("to contain `" ~ value.to!string ~ "`", testData.to!string),
+        cast(IResult) new ExtraMissingResult("", value.to!string)
+      ], file, line);
+    } else {
+      return result(isPresent, msg, [ 
+        cast(IResult) new ExpectedActualResult("to not contain `" ~ value.to!string ~ "`", testData.to!string),
+        cast(IResult) new ExtraMissingResult(value.to!string, "")
+      ], file, line);
+    }
   }
 }
 
@@ -365,19 +384,54 @@ unittest {
   ({
     [1, 2, 3].should.contain([2, 1]);
     [1, 2, 3].should.not.contain([4, 5, 6, 7]);
-  }).should.not.throwException!TestException;
 
-  ({
     [1, 2, 3].should.contain(1);
   }).should.not.throwException!TestException;
 
-  ({
+  auto msg = ({
     [1, 2, 3].should.contain([4, 5]);
-  }).should.throwException!TestException.msg.split('\n')[0].should.contain("[4, 5] are missing from [1, 2, 3]");
+  }).should.throwException!TestException.msg.split('\n');
+  
+  msg[0].should.equal("[1, 2, 3] should contain [4, 5]. [4, 5] are missing from [1, 2, 3].");
+  msg[2].strip.should.equal("Expected:all of [4, 5]");
+  msg[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[5].strip.should.equal("Missing:[4, 5]");
 
-  ({
+  msg = ({
+    [1, 2, 3].should.not.contain([2, 3]);
+  }).should.throwException!TestException.msg.split('\n');
+  
+  msg[0].should.equal("[1, 2, 3] should not contain [2, 3]. [2, 3] are present in [1, 2, 3].");
+  msg[2].strip.should.equal("Expected:none of [2, 3]");
+  msg[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[5].strip.should.equal("Extra:[2, 3]");
+
+  msg = ({
+    [1, 2, 3].should.not.contain([4, 3]);
+  }).should.throwException!TestException.msg.split('\n');
+  
+  msg[0].should.equal("[1, 2, 3] should not contain [4, 3]. [3] is present in [1, 2, 3].");
+  msg[2].strip.should.equal("Expected:none of [4, 3]");
+  msg[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[5].strip.should.equal("Extra:[3]");
+
+  msg = ({
     [1, 2, 3].should.contain(4);
-  }).should.throwException!TestException.msg.split('\n')[0].should.contain("`4` is missing from [1, 2, 3]");
+  }).should.throwException!TestException.msg.split('\n');
+  
+  msg[0].should.equal("[1, 2, 3] should contain `4`. `4` is missing from [1, 2, 3].");
+  msg[2].strip.should.equal("Expected:to contain `4`");
+  msg[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[5].strip.should.equal("Missing:4");
+
+  msg = ({
+    [1, 2, 3].should.not.contain(2);
+  }).should.throwException!TestException.msg.split('\n');
+  
+  msg[0].should.equal("[1, 2, 3] should not contain `2`. `2` is present in [1, 2, 3].");
+  msg[2].strip.should.equal("Expected:to not contain `2`");
+  msg[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[5].strip.should.equal("Extra:2");
 }
 
 @("array equals")
