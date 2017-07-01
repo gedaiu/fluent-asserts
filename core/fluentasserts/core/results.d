@@ -408,10 +408,10 @@ class KeyResult(string key) : IResult {
 
   private immutable {
     string value;
-    ulong indent;
+    size_t indent;
   }
 
-  this(string value, ulong indent = 10) {
+  this(string value, size_t indent = 10) {
     this.value = value;
     this.indent = indent;
   }
