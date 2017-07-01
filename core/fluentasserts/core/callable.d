@@ -32,8 +32,17 @@ struct ShouldCallable(T) {
     }
 
     auto hasException = t !is null;
+    Message[] msg;
 
-    simpleResult(hasException, hasException ? "Got invalid exception type: `" ~ t.msg ~ "`" : "" , file, line);
+    if(hasException) {
+      msg = [ 
+        Message(false, "Got invalid exception type: `"),
+        Message(true, t.msg),
+        Message(false, "`")
+       ];
+    }
+
+    simpleResult(hasException, msg , file, line);
 
     return t;
   }

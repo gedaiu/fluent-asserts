@@ -12,8 +12,8 @@ import std.string;
 
 struct ListComparison(T) {
   private {
-    const(T)[] referenceList;
-    const(T)[] list;
+    const T[] referenceList;
+    const T[] list;
   }
 
   this(const T[] reference, const T[] list) {
@@ -174,12 +174,12 @@ struct ShouldList(T) if(isInputRange!(T)) {
     }
 
     if(expectedValue) {
-      return result(allEqual,"", [
+      return result(allEqual, [], [
         cast(IResult) new ExpectedActualResult(valueList.to!string, arrayTestData.to!string),
         cast(IResult) new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, missing.length == 0 ? "" : missing.to!string) 
       ], file, line);
     } else {
-      return result(allEqual, "", [
+      return result(allEqual, [], [
         cast(IResult) new ExpectedActualResult("not " ~ valueList.to!string, arrayTestData.to!string),
         cast(IResult) new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, missing.length ==0 ? "" : missing.to!string) 
       ], file, line);
@@ -222,7 +222,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
       }
     }
 
-    return result(isSuccess, "", [ 
+    return result(isSuccess, [], [ 
           cast(IResult) new ExpectedActualResult("", testData.to!string), 
           cast(IResult) new ExtraMissingResult(extraString, missingString)
       ], file, line);
@@ -258,15 +258,25 @@ struct ShouldList(T) if(isInputRange!(T)) {
       string isString = notFound.length == 1 ? "is" : "are";
 
       return result(arePresent, 
-        notFound.to!string ~ " " ~ isString ~ " missing from " ~ testData.to!string ~ ".", [
+        [ Message(true, notFound.to!string),
+          Message(false, " " ~ isString ~ " missing from "),
+          Message(true, testData.to!string),
+          Message(false, ".")
+        ],
+        [
           cast(IResult) new ExpectedActualResult("all of " ~ valueList.to!string, testData.to!string),
           cast(IResult) new ExtraMissingResult("", notFound.to!string)
         ], file, line);
     } else {
       string isString = found.length == 1 ? "is" : "are";
 
-      return result(common.length != 0, 
-        common.to!string ~ " " ~ isString ~ " present in " ~ testData.to!string ~ ".", [
+      return result(common.length != 0,
+        [ Message(true, common.to!string),
+          Message(false, " " ~ isString ~ " present in "),
+          Message(true, testData.to!string),
+          Message(false, ".")
+        ],
+        [
           cast(IResult) new ExpectedActualResult("none of " ~ valueList.to!string, testData.to!string),
           cast(IResult) new ExtraMissingResult(common.to!string, "")
         ],
@@ -282,7 +292,12 @@ struct ShouldList(T) if(isInputRange!(T)) {
     beginCheck;
 
     auto isPresent = testData.canFind(value);
-    auto msg = value.to!string ~ (isPresent ? " is present in " : " is missing from ") ~ testData.to!string ~ ".";
+    auto msg = [
+      Message(true, value.to!string),
+      Message(false, isPresent ? " is present in " : " is missing from "),
+      Message(true, testData.to!string),
+      Message(false, ".")
+    ];
 
     if(expectedValue) {
       return result(isPresent, msg, [ 

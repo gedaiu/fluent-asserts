@@ -45,7 +45,13 @@ struct ShouldBaseType(T) {
     auto mode = isGreater ? "greater than" : "less than or equal to";
     auto expectedMode = isGreater ? "less than or equal to" : "greater than";
 
-    auto msg = "`" ~ testData.to!string ~ "` is " ~ mode ~ " `" ~ someValue.to!string ~"`.";
+    Message[] msg = [
+      Message(false, "`"),
+      Message(true, testData.to!string),
+      Message(false, "` is " ~ mode ~ " `"),
+      Message(true, someValue.to!string),
+      Message(false, "`.")
+    ];
 
     return result(isGreater, msg, new ExpectedActualResult(expectedMode  ~ " `" ~ someValue.to!string ~ "`", testData.to!string), file, line);
   }
@@ -60,7 +66,14 @@ struct ShouldBaseType(T) {
 
     auto isLess = testData < someValue;
 
-    auto msg = "`" ~ testData.to!string ~ "`" ~ (isLess ? " is less than" : " is greater or equal to") ~ " `" ~ someValue.to!string ~ "`.";
+    Message[] msg = [
+      Message(false, "`"),
+      Message(true, testData.to!string),
+      Message(false, isLess ? "` is less than `" : "` is greater or equal to `"),
+      Message(true, someValue.to!string),
+      Message(false, "`.")
+    ];
+
     auto expectedMode = isLess ? "greater or equal to" : "less than";
 
     return result(isLess, msg, new ExpectedActualResult(expectedMode ~ " `" ~ someValue.to!string ~ "`", testData.to!string), file, line);
@@ -83,18 +96,20 @@ struct ShouldBaseType(T) {
     auto isGreater = testData >= max;
     auto isBetween = !isLess && !isGreater;
 
-    string msg;
+    Message[] msg;
+
+
     auto interval = "a number " ~ (expectedValue ? "inside" : "outside") ~ " (" ~ min.to!string ~ ", " ~ max.to!string ~ ") interval";
 
     if(expectedValue) {
-      msg = "`" ~ testData.to!string ~ "`";
+      msg ~= [ Message(false, "`"), Message(true, testData.to!string), Message(false, "`") ];
 
       if(isLess) {
-        msg ~= " is less than or equal to `" ~ min.to!string ~ "`.";
+        msg ~= [ Message(false, " is less than or equal to `"), Message(true, min.to!string), Message(false, "`.") ];
       }
 
       if(isGreater) {
-        msg ~= " is greater than or equal to `" ~ max.to!string ~ "`.";
+        msg ~= [ Message(false, " is greater than or equal to `"), Message(true, max.to!string), Message(false, "`.") ];
       }
     }
 

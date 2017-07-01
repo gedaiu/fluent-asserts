@@ -94,21 +94,27 @@ mixin template ShouldCommons()
       mesageCheckIndex = messages.length;
     }
 
-    Result simpleResult(bool value, string msg, string file, size_t line) {
+    Result simpleResult(bool value, Message[] msg, string file, size_t line) {
       return result(value, msg, [ ], file, line);
     }
 
-    Result result(bool value, string msg, IResult res, string file, size_t line) {
+    Result result(bool value, Message[] msg, IResult res, string file, size_t line) {
       return result(value, msg, [ res ], file, line);
     }
 
     Result result(bool value, IResult res, string file, size_t line) {
-       return result(value, "", [ res ], file, line);
+       return result(value, [], [ res ], file, line);
     }
 
-    Result result(bool value, string msg, IResult[] res, const string file, const size_t line) {
+    Result result(bool value, Message[] msg, IResult[] res, const string file, const size_t line) {
       auto sourceResult = new SourceResult(file, line);
       auto finalMessage = new MessageResult(sourceResult.getValue ~ " should");
+
+      messages ~= Message(false, ".");
+
+      if(msg.length > 0) {
+        messages ~= Message(false, " ") ~ msg;
+      }
 
       foreach(message; messages) {
         if(message.isValue) {
@@ -116,12 +122,6 @@ mixin template ShouldCommons()
         } else {
           finalMessage.addText(message.text);
         }
-      }
-
-      finalMessage.addText(".");
-
-      if(msg != "") {
-        finalMessage.addText(" " ~ msg);
       }
 
       IResult[] results = res ~ cast(IResult) sourceResult;
