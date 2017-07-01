@@ -12,7 +12,8 @@ struct ShouldObject(T) {
   mixin ShouldCommons;
 
   auto beNull(const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("be null");
+    addMessage(" be ");
+    addValue("null");
     beginCheck;
 
     if(expectedValue) {

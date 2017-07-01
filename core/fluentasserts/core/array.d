@@ -153,8 +153,10 @@ struct ShouldList(T) if(isInputRange!(T)) {
 
   auto equal(T)(const T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
     import fluentasserts.core.basetype;
-    addMessage("equal");
-    addMessage("`" ~ valueList.to!string ~ "`");
+    addMessage(" equal");
+    addMessage(" `");
+    addValue(valueList.to!string);
+    addMessage("`");
     beginCheck;
 
     auto comparison = ListComparison!U(valueList, testData.array);
@@ -185,8 +187,8 @@ struct ShouldList(T) if(isInputRange!(T)) {
   }
 
   auto containOnly(const U[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("contain only");
-    addMessage(valueList.to!string);
+    addMessage(" contain only ");
+    addValue(valueList.to!string);
     beginCheck;
 
     auto comparison = ListComparison!U(testData.array, valueList);
@@ -227,8 +229,8 @@ struct ShouldList(T) if(isInputRange!(T)) {
   }
 
   auto contain(const U[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("contain");
-    addMessage(valueList.to!string);
+    addMessage(" contain ");
+    addValue(valueList.to!string);
     beginCheck;
 
     auto comparison = ListComparison!U(testData.array, valueList);
@@ -273,14 +275,14 @@ struct ShouldList(T) if(isInputRange!(T)) {
   }
 
   auto contain(const U value, const string file = __FILE__, const size_t line = __LINE__) {
-    auto strVal = "`" ~ value.to!string ~ "`";
+    addMessage(" contain `");
+    addValue(value.to!string);
+    addMessage("`");
 
-    addMessage("contain");
-    addMessage(strVal);
     beginCheck;
 
     auto isPresent = testData.canFind(value);
-    auto msg = strVal ~ (isPresent ? " is present in " : " is missing from ") ~ testData.to!string ~ ".";
+    auto msg = value.to!string ~ (isPresent ? " is present in " : " is missing from ") ~ testData.to!string ~ ".";
 
     if(expectedValue) {
       return result(isPresent, msg, [ 
@@ -327,7 +329,7 @@ unittest {
     [1, 2, 3].map!"a".should.contain(4);
   }).should.throwException!TestException.msg;
   
-  msg.split('\n')[0].should.contain("`4` is missing from [1, 2, 3]");
+  msg.split('\n')[0].should.contain("4 is missing from [1, 2, 3]");
   msg.split('\n')[2].strip.should.equal("Expected:to contain `4`");
   msg.split('\n')[3].strip.should.equal("Actual:[1, 2, 3]");
 }
@@ -426,7 +428,7 @@ unittest {
     [1, 2, 3].should.contain(4);
   }).should.throwException!TestException.msg.split('\n');
   
-  msg[0].should.equal("[1, 2, 3] should contain `4`. `4` is missing from [1, 2, 3].");
+  msg[0].should.equal("[1, 2, 3] should contain `4`. 4 is missing from [1, 2, 3].");
   msg[2].strip.should.equal("Expected:to contain `4`");
   msg[3].strip.should.equal("Actual:[1, 2, 3]");
   msg[5].strip.should.equal("Missing:4");
@@ -435,7 +437,7 @@ unittest {
     [1, 2, 3].should.not.contain(2);
   }).should.throwException!TestException.msg.split('\n');
   
-  msg[0].should.equal("[1, 2, 3] should not contain `2`. `2` is present in [1, 2, 3].");
+  msg[0].should.equal("[1, 2, 3] should not contain `2`. 2 is present in [1, 2, 3].");
   msg[2].strip.should.equal("Expected:to not contain `2`");
   msg[3].strip.should.equal("Actual:[1, 2, 3]");
   msg[5].strip.should.equal("Extra:2");
@@ -573,7 +575,7 @@ unittest {
     Range().should.contain(3);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.startWith("Range() should contain `3`. `3` is missing from [0, 1, 2].");
+  msg.split("\n")[0].strip.should.startWith("Range() should contain `3`. 3 is missing from [0, 1, 2].");
   msg.split("\n")[2].strip.should.equal("Expected:to contain `3`");
   msg.split("\n")[3].strip.should.equal("Actual:[0, 1, 2]");
 }

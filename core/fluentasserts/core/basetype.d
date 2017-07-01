@@ -17,8 +17,9 @@ struct ShouldBaseType(T) {
   alias within = this.between;
 
   auto equal(const T someValue, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("equal");
-    addMessage("`" ~ someValue.to!string ~ "`");
+    addMessage(" equal `");
+    addValue(someValue.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isSame = testData == someValue;
@@ -35,8 +36,9 @@ struct ShouldBaseType(T) {
   auto greaterThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
-    addMessage("be greater than");
-    addMessage("`" ~ someValue.to!string ~ "`");
+    addMessage(" be greater than `");
+    addValue(someValue.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isGreater = testData > someValue;
@@ -51,8 +53,9 @@ struct ShouldBaseType(T) {
   auto lessThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
-    addMessage("be less than");
-    addMessage("`" ~ someValue.to!string ~ "`");
+    addMessage(" be less than `");
+    addValue(someValue.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isLess = testData < someValue;
@@ -69,7 +72,11 @@ struct ShouldBaseType(T) {
     T min = limit1 < limit2 ? limit1 : limit2;
     T max = limit1 > limit2 ? limit1 : limit2;
 
-    addMessage("be between `" ~ min.to!string ~ "` and `" ~ max.to!string ~ "`");
+    addMessage(" be between `");
+    addValue(min.to!string);
+    addMessage("` and `");
+    addValue(max.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isLess = testData <= min;
@@ -97,7 +104,9 @@ struct ShouldBaseType(T) {
   auto approximately()(const T someValue, const T delta, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
-    addMessage("equal `" ~ someValue.to!string ~ "±" ~ delta.to!string ~ "`");
+    addMessage(" equal `");
+    addValue(someValue.to!string ~ "±" ~ delta.to!string);
+    addMessage("`");
     beginCheck;
 
     return between(someValue - delta, someValue + delta, file, line);

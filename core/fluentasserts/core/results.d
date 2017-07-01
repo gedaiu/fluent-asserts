@@ -17,6 +17,36 @@ interface ResultPrinter {
   void successReverse(string);
 }
 
+version(unittest) {
+  class MockPrinter : ResultPrinter {
+    string buffer;
+
+    void primary(string val) {
+      buffer ~= "[primary:" ~ val ~ "]";
+    }
+
+    void info(string val) {
+      buffer ~= "[info:" ~ val ~ "]";
+    }
+
+    void danger(string val) {
+      buffer ~= "[danger:" ~ val ~ "]";
+    }
+
+    void success(string val) {
+      buffer ~= "[success:" ~ val ~ "]";
+    }
+
+    void dangerReverse(string val) {
+      buffer ~= "[dangerReverse:" ~ val ~ "]";
+    }
+
+    void successReverse(string val) {
+      buffer ~= "[successReverse:" ~ val ~ "]";
+    }
+  }
+}
+
 class DefaultResultPrinter : ResultPrinter {
   void primary(string text) {
     write(text);
@@ -53,22 +83,47 @@ class MessageResult : IResult
 {
   private
   {
-    const string message;
+    struct Message { 
+      bool isValue;
+      string text;
+    }
+
+    Message[] messages;
   }
 
   this(string message)
   {
-    this.message = message;
+    this.messages ~= Message(false, message.replace("\r", `\r`).replace("\n", `\n`).replace("\t", `\t`));
   }
 
   override string toString()
   {
-    return message;
+    return messages.map!(a => a.text).join("").to!string;
+  }
+
+  void addValue(string text) {
+    this.messages ~= Message(true, text.replace("\r", `\r`).replace("\n", `\n`).replace("\t", `\t`));
+  }
+
+  void addText(string text) {
+    this.messages ~= Message(false, text);
+  }
+
+  void prependText(string text) {
+    this.messages = Message(false, text) ~ this.messages;
   }
 
   void print(ResultPrinter printer)
   {
-    printer.primary(toString ~ "\n");
+    foreach(message; messages) {
+      if(message.isValue) {
+        printer.info(message.text);
+      } else {
+        printer.primary(message.text);
+      }
+    }
+
+    printer.primary("\n\n");
   }
 }
 
@@ -82,6 +137,46 @@ unittest
 {
   auto result = new MessageResult("Message");
   result.toString.should.equal("Message");
+}
+
+@("Message result should replace the spacial chars")
+unittest
+{
+  auto result = new MessageResult("\t \r\n");
+  result.toString.should.equal(`\t \r\n`);
+}
+
+@("Message result should reurn values as string")
+unittest
+{
+  auto result = new MessageResult("text");
+  result.addValue("value");
+  result.addText("text");
+
+  result.toString.should.equal(`textvaluetext`);
+}
+
+@("Message result should print a string as primary")
+unittest
+{
+  auto result = new MessageResult("\t \r\n");
+  auto printer = new MockPrinter;
+  result.print(printer);
+
+  printer.buffer.should.equal(`[primary:\t \r\n]` ~ "[primary:\n\n]");
+}
+
+@("Message result should print values as info")
+unittest
+{
+  auto result = new MessageResult("text");
+  result.addValue("value");
+  result.addText("text");
+
+  auto printer = new MockPrinter;
+  result.print(printer);
+
+  printer.buffer.should.equal(`[primary:text][info:value][primary:text]` ~ "[primary:\n\n]");
 }
 
 class SourceResult : IResult
@@ -288,7 +383,7 @@ class DiffResult : IResult {
 
   void print(ResultPrinter printer) {
     auto result = diff_main(expected, actual);
-    printer.primary("Diff:");
+    printer.info("Diff:");
 
     foreach(diff; result) {
       if(diff.operation == Operation.EQUAL) {
@@ -305,7 +400,7 @@ class DiffResult : IResult {
 
     }
 
-    printer.primary("\n");
+    printer.primary("\n\n");
   }
 }
 
@@ -332,7 +427,29 @@ class KeyResult(string key) : IResult {
 
   void print(ResultPrinter printer)
   {
-    printer.primary(toString);
+    if(value == "") {
+      return;
+    }
+
+    printer.info(rightJustify(key ~ ":", indent, ' '));
+    auto lines = value.split("\n");
+
+    auto spaces = rightJustify(":", indent, ' ');
+
+    int index;
+    foreach(line; lines) {
+      if(index > 0) {
+        printer.info(`\n`);
+        printer.primary("\n");
+        printer.info(spaces);
+      }
+
+      printer.primary(line);
+
+      index++;
+    }
+
+    printer.primary("\n");
   }
 
   private
@@ -342,6 +459,16 @@ class KeyResult(string key) : IResult {
       return value.split("\n").join("\\n\n" ~ rightJustify(":", indent, ' '));
     }
   }
+}
+
+/// KeyResult should display spechial characters with different contexts
+unittest {
+  auto result = new KeyResult!"key"("row1\nrow2");
+  auto printer = new MockPrinter();
+
+  result.print(printer);
+
+  printer.buffer.should.equal(`[info:      key:][primary:row1][info:\n][primary:` ~ "\n" ~ `][info:         :][primary:row2][primary:` ~ "\n" ~ `]`);
 }
 
 class ExpectedActualResult : IResult
@@ -368,7 +495,9 @@ class ExpectedActualResult : IResult
 
   void print(ResultPrinter printer)
   {
-    printer.primary(toString ~ "\n");
+    expected.print(printer);
+    actual.print(printer);
+    printer.primary("\n");
   }
 }
 
@@ -429,6 +558,8 @@ class ExtraMissingResult : IResult
 
   void print(ResultPrinter printer)
   {
-    printer.primary(toString ~ "\n");
+    extra.print(printer);
+    missing.print(printer);
+    printer.primary("\n");
   }
 }

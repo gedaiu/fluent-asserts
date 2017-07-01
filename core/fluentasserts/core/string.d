@@ -14,8 +14,9 @@ struct ShouldString {
   mixin ShouldCommons;
 
   auto equal(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("equal");
-    addMessage("`" ~ someString.to!string ~ "`");
+    addMessage(" equal `");
+    addValue(someString.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isSame = testData == someString;
@@ -26,8 +27,9 @@ struct ShouldString {
   }
 
   auto contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("contain");
-    addMessage("`" ~ someStrings.to!string ~ "`");
+    addMessage(" contain `");
+    addValue(someStrings.to!string);
+    addMessage("`");
     beginCheck;
 
     if(expectedValue) {
@@ -44,8 +46,9 @@ struct ShouldString {
   }
 
   auto contain(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("contain");
-    addMessage("`" ~ someString ~ "`");
+    addMessage(" contain `");
+    addValue(someString);
+    addMessage("`");
     beginCheck;
 
     auto index = testData.indexOf(someString);
@@ -60,8 +63,9 @@ struct ShouldString {
   auto contain(const char someChar, const string file = __FILE__, const size_t line = __LINE__) {
     auto strVal = "`" ~ someChar.to!string ~ "`";
 
-    addMessage("contain");
-    addMessage(strVal);
+    addMessage(" contain `");
+    addValue(someChar.to!string);
+    addMessage("`");
     beginCheck;
 
     auto index = testData.indexOf(someChar);
@@ -75,8 +79,9 @@ struct ShouldString {
   auto startWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
     auto strVal = "`" ~ someString.to!string ~ "`";
 
-    addMessage("start with");
-    addMessage(strVal);
+    addMessage(" start with `");
+    addValue(strVal);
+    addMessage("`");
     beginCheck;
 
     auto index = testData.indexOf(someString);
@@ -90,8 +95,9 @@ struct ShouldString {
   auto endWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
     auto strVal = "`" ~ someString.to!string ~ "`";
 
-    addMessage("end with");
-    addMessage(strVal);
+    addMessage(" end with `");
+    addValue(someString.to!string);
+    addMessage("`");
     beginCheck;
 
     auto index = testData.lastIndexOf(someString);

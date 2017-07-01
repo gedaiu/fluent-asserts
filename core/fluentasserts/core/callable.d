@@ -8,7 +8,8 @@ struct ShouldCallable(T) {
   mixin ShouldCommons;
 
   Throwable throwAnyException(string file = __FILE__, size_t line = __LINE__) {
-    addMessage("throw any exception");
+    addMessage(" throw ");
+    addValue("any exception");
     beginCheck;
 
     return throwException!Exception(file, line);
@@ -16,7 +17,9 @@ struct ShouldCallable(T) {
 
   Throwable throwException(T)(string file = __FILE__, size_t line = __LINE__) {
     Throwable t;
-    addMessage("throw a `" ~ T.stringof ~ "` exception");
+    addMessage(" throw a `");
+    addValue(T.stringof);
+    addMessage("` exception");
 
     try {
       try {
