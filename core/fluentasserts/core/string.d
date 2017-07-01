@@ -14,84 +14,123 @@ struct ShouldString {
   mixin ShouldCommons;
 
   auto equal(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("equal");
-    addMessage("`" ~ someString.to!string ~ "`");
+    addMessage(" equal `");
+    addValue(someString.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isSame = testData == someString;
 
-    auto msg = "`" ~ testData ~ "` is" ~ (expectedValue ? " not" : "") ~ " equal to `" ~ someString ~ "`.";
+    Message[] msg = [
+      Message(false, "`"),
+      Message(true, testData),
+      Message(false, "` is" ~ (expectedValue ? " not" : "") ~ " equal to `"),
+      Message(true, someString),
+      Message(false, "`.")
+    ];
 
     return result(isSame, msg, cast(IResult[])[ new DiffResult(someString, testData) , new ExpectedActualResult(someString, testData) ], file, line);
   }
 
   auto contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("contain");
-    addMessage("`" ~ someStrings.to!string ~ "`");
+    addMessage(" contain `");
+    addValue(someStrings.to!string);
+    addMessage("`");
     beginCheck;
 
     if(expectedValue) {
       auto missingValues = someStrings.filter!(a => testData.indexOf(a) == -1).array;
-      auto msg = missingValues.to!string ~ " are missing from `" ~ testData ~ "`.";
+      Message[] msg = [
+        Message(true, missingValues.to!string),
+        Message(false, " are missing from `"),
+        Message(true, testData),
+        Message(false, "`.")
+      ];
 
       return result(missingValues.length == 0, msg, new ExpectedActualResult("to contain all " ~ someStrings.to!string, testData), file, line);
     } else {
       auto presentValues = someStrings.filter!(a => testData.indexOf(a) != -1).array;
-      auto msg = presentValues.to!string ~ " are present in `" ~ testData ~ "`.";
+      Message[] msg = [
+        Message(true, presentValues.to!string),
+        Message(false, " are present in `"),
+        Message(true, testData),
+        Message(false, "`.")
+      ];
 
       return result(presentValues.length != 0, msg, new ExpectedActualResult("to not contain any " ~ someStrings.to!string, testData), file, line);
     }
   }
 
   auto contain(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("contain");
-    addMessage("`" ~ someString ~ "`");
+    addMessage(" contain `");
+    addValue(someString);
+    addMessage("`");
     beginCheck;
 
     auto index = testData.indexOf(someString);
     auto isPresent = index >= 0;
 
-    auto msg = expectedValue ? "`" ~ someString ~ "` is missing from `" ~ testData ~ "`." : "`" ~ someString ~ "` is present in `" ~ testData ~ "`.";
+    Message[] msg = [
+      Message(false, "`"),
+      Message(true, someString),
+      Message(false, expectedValue ? "` is missing from `" : "` is present in `"),
+      Message(true, testData),
+      Message(false, "`.")
+    ];
+
     auto mode = expectedValue ? "to contain" : "to not contain";
 
     return result(isPresent, msg, new ExpectedActualResult(mode ~ " `" ~ someString ~ "`", testData), file, line);
   }
 
   auto contain(const char someChar, const string file = __FILE__, const size_t line = __LINE__) {
-    auto strVal = "`" ~ someChar.to!string ~ "`";
-
-    addMessage("contain");
-    addMessage(strVal);
+    addMessage(" contain `");
+    addValue(someChar.to!string);
+    addMessage("`");
     beginCheck;
 
     auto index = testData.indexOf(someChar);
     auto isPresent = index >= 0;
-    auto msg = strVal ~ (isPresent ? " is present" : " is not present") ~ " in `" ~ testData ~"`.";
+
+    Message[] msg = [
+      Message(false, "`"),
+      Message(true, someChar.to!string),
+      Message(false, isPresent ? "` is present in `" : "` is not present in `"),
+      Message(true, testData),
+      Message(false, "`.")
+    ];
+
     auto mode = expectedValue ? "to contain" : "to not contain";
 
     return result(isPresent, msg, new ExpectedActualResult(mode ~ " `" ~ someChar ~ "`", testData), file, line);
   }
 
   auto startWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
-    auto strVal = "`" ~ someString.to!string ~ "`";
-
-    addMessage("start with");
-    addMessage(strVal);
+    addMessage(" start with `");
+    addValue(someString.to!string);
+    addMessage("`");
     beginCheck;
 
     auto index = testData.indexOf(someString);
     auto doesStartWith = index == 0;
-    auto msg = "`" ~ testData ~ "`" ~ (doesStartWith ? " does start with " : " does not start with ") ~ strVal;
+
+    Message[] msg = [
+      Message(false, "`"),
+      Message(true, testData.to!string),
+      Message(false, expectedValue ? "` does not start with `" : "` does start with `"),
+      Message(true, someString.to!string),
+      Message(false, "`.")
+    ];
+
     auto mode = expectedValue ? "to start with " : "to not start with ";
 
-    return result(doesStartWith, msg, new ExpectedActualResult(mode ~ strVal, testData), file, line);
+    return result(doesStartWith, msg, new ExpectedActualResult(mode ~ "`" ~ someString.to!string ~ "`", testData), file, line);
   }
 
   auto endWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
-    auto strVal = "`" ~ someString.to!string ~ "`";
-
-    addMessage("end with");
-    addMessage(strVal);
+    addMessage(" end with `");
+    addValue(someString.to!string);
+    addMessage("`");
     beginCheck;
 
     auto index = testData.lastIndexOf(someString);
@@ -101,10 +140,18 @@ struct ShouldString {
     } else {
       auto doesEndWith = index == testData.length - 1;
     }
-    auto msg = "`" ~ testData ~ "`" ~ (doesEndWith ? " does end with " : " does not end with ") ~ strVal;
+
+    Message[] msg = [
+      Message(false, "`"),
+      Message(true, testData.to!string),
+      Message(false, expectedValue ? "` does not end with `" : "` does end with `"),
+      Message(true, someString.to!string),
+      Message(false, "`.")
+    ];
+
     auto mode = expectedValue ? "to end with " : "to not end with ";
 
-    return result(doesEndWith, msg, new ExpectedActualResult(mode ~ strVal, testData), file, line);
+    return result(doesEndWith, msg, new ExpectedActualResult(mode ~ "`" ~ someString.to!string ~ "`", testData), file, line);
   }
 }
 
@@ -119,8 +166,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain("`test string` does not start with `other`");
-  msg.split("\n")[2].should.contain("Expected:to start with `other`");
-  msg.split("\n")[3].should.contain("Actual:test string");
+  msg.split("\n")[2].strip.should.equal("Expected:to start with `other`");
+  msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   ({
     "test string".should.not.startWith("other");
@@ -131,7 +178,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain("`test string` does start with `test`");
-  msg.split("\n")[2].should.equal("Expected:to not start with `test`");
+  msg.split("\n")[2].strip.should.equal("Expected:to not start with `test`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   ({
@@ -143,7 +190,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain("`test string` does not start with `o`");
-  msg.split("\n")[2].should.equal("Expected:to start with `o`");
+  msg.split("\n")[2].strip.should.equal("Expected:to start with `o`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   ({
@@ -155,7 +202,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.contain("`test string` does start with `t`");
-  msg.split("\n")[2].should.equal("Expected:to not start with `t`");
+  msg.split("\n")[2].strip.should.equal("Expected:to not start with `t`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 }
 
@@ -170,7 +217,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain("`test string` does not end with `other`");
-  msg.split("\n")[2].should.equal("Expected:to end with `other`");
+  msg.split("\n")[2].strip.should.equal("Expected:to end with `other`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   ({
@@ -181,8 +228,8 @@ unittest {
     "test string".should.not.endWith("string");
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("\"test string\" should not end with `string`. `test string` does end with `string`");
-  msg.split("\n")[2].should.equal("Expected:to not end with `string`");
+  msg.split("\n")[0].should.equal("\"test string\" should not end with `string`. `test string` does end with `string`.");
+  msg.split("\n")[2].strip.should.equal("Expected:to not end with `string`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   ({
@@ -194,7 +241,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain("`test string` does not end with `t`");
-  msg.split("\n")[2].should.equal("Expected:to end with `t`");
+  msg.split("\n")[2].strip.should.equal("Expected:to end with `t`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   ({
@@ -206,7 +253,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain("`test string` does end with `g`");
-  msg.split("\n")[2].should.equal("Expected:to not end with `g`");
+  msg.split("\n")[2].strip.should.equal("Expected:to not end with `g`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 }
 
@@ -232,7 +279,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("\"test string\" should contain `[\"other\", \"message\"]`. [\"other\", \"message\"] are missing from `test string`.");
-  msg.split("\n")[2].should.equal("Expected:to contain all [\"other\", \"message\"]");
+  msg.split("\n")[2].strip.should.equal("Expected:to contain all [\"other\", \"message\"]");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   msg = ({
@@ -240,7 +287,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("\"test string\" should not contain `[\"test\", \"string\"]`. [\"test\", \"string\"] are present in `test string`.");
-  msg.split("\n")[2].should.equal("Expected:to not contain any [\"test\", \"string\"]");
+  msg.split("\n")[2].strip.should.equal("Expected:to not contain any [\"test\", \"string\"]");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   msg = ({
@@ -248,7 +295,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("\"test string\" should contain `other`. `other` is missing from `test string`.");
-  msg.split("\n")[2].should.equal("Expected:to contain `other`");
+  msg.split("\n")[2].strip.should.equal("Expected:to contain `other`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   msg = ({
@@ -256,7 +303,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("\"test string\" should not contain `test`. `test` is present in `test string`.");
-  msg.split("\n")[2].should.equal("Expected:to not contain `test`");
+  msg.split("\n")[2].strip.should.equal("Expected:to not contain `test`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   msg = ({
@@ -264,16 +311,16 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.contain("`o` is not present in `test string`");
-  msg.split("\n")[2].should.contain("Expected:to contain `o`");
-  msg.split("\n")[3].should.contain("Actual:test string");
+  msg.split("\n")[2].strip.should.equal("Expected:to contain `o`");
+  msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   msg = ({
     "test string".should.not.contain('t');
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("\"test string\" should not contain `t`. `t` is present in `test string`.");
-  msg.split("\n")[2].should.contain("Expected:to not contain `t`");
-  msg.split("\n")[3].should.contain("Actual:test string");
+  msg.split("\n")[2].strip.should.equal("Expected:to not contain `t`");
+  msg.split("\n")[3].strip.should.equal("Actual:test string");
 }
 
 @("string equal")

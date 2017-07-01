@@ -12,7 +12,8 @@ struct ShouldObject(T) {
   mixin ShouldCommons;
 
   auto beNull(const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("be null");
+    addMessage(" be ");
+    addValue("null");
     beginCheck;
 
     if(expectedValue) {
@@ -37,7 +38,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("o should not be null.");
-  msg.split("\n")[2].should.equal("Expected:a `Object` instance");
+  msg.split("\n")[2].strip.should.equal("Expected:a `Object` instance");
   msg.split("\n")[3].strip.should.equal("Actual:null");
 
   msg = ({
@@ -45,6 +46,6 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("(new Object) should be null.");
-  msg.split("\n")[2].should.equal("Expected:null");
-  msg.split("\n")[3].strip.should.equal("Actual:a `Object` instance");
+  msg.split("\n")[2].strip.should.equal("Expected:null");
+  msg.split("\n")[3].strip.strip.should.equal("Actual:a `Object` instance");
 }

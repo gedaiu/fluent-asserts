@@ -22,13 +22,13 @@ struct Result {
   bool willThrow;
   IResult[] results;
 
-  string message;
+  MessageResult message;
 
   string file;
   size_t line;
 
   void because(string reason) {
-    message = "Because " ~ reason ~ ", " ~ message;
+    message.prependText("Because " ~ reason ~ ", ");
   }
 
   void perform() {
@@ -36,12 +36,17 @@ struct Result {
       return;
     }
 
-    throw new TestException(cast(IResult) new MessageResult(message) ~ results, file, line);
+    throw new TestException(cast(IResult) message ~ results, file, line);
   }
 
   ~this() {
     this.perform;
   }
+}
+
+struct Message {
+  bool isValue;
+  string text;
 }
 
 mixin template ShouldCommons()
@@ -54,13 +59,13 @@ mixin template ShouldCommons()
   }
 
   auto not() {
-    addMessage("not");
+    addMessage(" not");
     expectedValue = !expectedValue;
     return this;
   }
 
   private {
-    string[] messages;
+    Message[] messages;
     ulong mesageCheckIndex;
 
     bool expectedValue = true;
@@ -70,7 +75,15 @@ mixin template ShouldCommons()
         return;
       }
 
-      messages ~= msg;
+      messages ~= Message(false, msg);
+    }
+
+    void addValue(string msg) {
+      if(mesageCheckIndex != 0) {
+        return;
+      }
+
+      messages ~= Message(true, msg);
     }
 
     void beginCheck() {
@@ -81,29 +94,39 @@ mixin template ShouldCommons()
       mesageCheckIndex = messages.length;
     }
 
-    Result simpleResult(bool value, string msg, string file, size_t line) {
+    Result simpleResult(bool value, Message[] msg, string file, size_t line) {
       return result(value, msg, [ ], file, line);
     }
 
-    Result result(bool value, string msg, IResult res, string file, size_t line) {
+    Result result(bool value, Message[] msg, IResult res, string file, size_t line) {
       return result(value, msg, [ res ], file, line);
     }
 
     Result result(bool value, IResult res, string file, size_t line) {
-       return result(value, "", [ res ], file, line);
+       return result(value, [], [ res ], file, line);
     }
 
-    Result result(bool value, string msg, IResult[] res, const string file, const size_t line) {
+    Result result(bool value, Message[] msg, IResult[] res, const string file, const size_t line) {
       auto sourceResult = new SourceResult(file, line);
-      auto message = sourceResult.getValue ~ " should " ~ messages.join(" ") ~ ".";
+      auto finalMessage = new MessageResult(sourceResult.getValue ~ " should");
 
-      if(msg != "") {
-        message ~= " " ~ msg;
+      messages ~= Message(false, ".");
+
+      if(msg.length > 0) {
+        messages ~= Message(false, " ") ~ msg;
+      }
+
+      foreach(message; messages) {
+        if(message.isValue) {
+          finalMessage.addValue(message.text);
+        } else {
+          finalMessage.addText(message.text);
+        }
       }
 
       IResult[] results = res ~ cast(IResult) sourceResult;
 
-      return Result(expectedValue != value, results, message, file, line);
+      return Result(expectedValue != value, results, finalMessage, file, line);
     }
   }
 }
@@ -130,6 +153,37 @@ class TestException : ReferenceException {
   void print(ResultPrinter printer) {
     results.each!(a => a.print(printer));
   }
+}
+
+/// Test Exception should sepparate the results by a new line
+unittest {
+  import std.stdio;
+  IResult[] results = [ 
+    cast(IResult) new MessageResult("message"),
+    cast(IResult) new SourceResult("test/missing.txt", 10), 
+    cast(IResult) new DiffResult("a", "b"), 
+    cast(IResult) new ExpectedActualResult("a", "b"), 
+    cast(IResult) new ExtraMissingResult("a", "b") ];
+
+  auto exception = new TestException(results, "unknown", 0);
+
+  exception.msg.should.equal(`message
+
+--------------------
+test/missing.txt:10
+--------------------
+
+--------------------
+
+Diff:
+[-a][+b]
+
+ Expected:a
+   Actual:b
+
+    Extra:a
+  Missing:b
+`);
 }
 
 @("TestException should concatenate all the Result strings")

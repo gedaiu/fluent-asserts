@@ -17,8 +17,9 @@ struct ShouldBaseType(T) {
   alias within = this.between;
 
   auto equal(const T someValue, const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage("equal");
-    addMessage("`" ~ someValue.to!string ~ "`");
+    addMessage(" equal `");
+    addValue(someValue.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isSame = testData == someValue;
@@ -35,15 +36,22 @@ struct ShouldBaseType(T) {
   auto greaterThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
-    addMessage("be greater than");
-    addMessage("`" ~ someValue.to!string ~ "`");
+    addMessage(" be greater than `");
+    addValue(someValue.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isGreater = testData > someValue;
     auto mode = isGreater ? "greater than" : "less than or equal to";
     auto expectedMode = isGreater ? "less than or equal to" : "greater than";
 
-    auto msg = "`" ~ testData.to!string ~ "` is " ~ mode ~ " `" ~ someValue.to!string ~"`.";
+    Message[] msg = [
+      Message(false, "`"),
+      Message(true, testData.to!string),
+      Message(false, "` is " ~ mode ~ " `"),
+      Message(true, someValue.to!string),
+      Message(false, "`.")
+    ];
 
     return result(isGreater, msg, new ExpectedActualResult(expectedMode  ~ " `" ~ someValue.to!string ~ "`", testData.to!string), file, line);
   }
@@ -51,13 +59,21 @@ struct ShouldBaseType(T) {
   auto lessThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
-    addMessage("be less than");
-    addMessage("`" ~ someValue.to!string ~ "`");
+    addMessage(" be less than `");
+    addValue(someValue.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isLess = testData < someValue;
 
-    auto msg = "`" ~ testData.to!string ~ "`" ~ (isLess ? " is less than" : " is greater or equal to") ~ " `" ~ someValue.to!string ~ "`.";
+    Message[] msg = [
+      Message(false, "`"),
+      Message(true, testData.to!string),
+      Message(false, isLess ? "` is less than `" : "` is greater or equal to `"),
+      Message(true, someValue.to!string),
+      Message(false, "`.")
+    ];
+
     auto expectedMode = isLess ? "greater or equal to" : "less than";
 
     return result(isLess, msg, new ExpectedActualResult(expectedMode ~ " `" ~ someValue.to!string ~ "`", testData.to!string), file, line);
@@ -69,25 +85,31 @@ struct ShouldBaseType(T) {
     T min = limit1 < limit2 ? limit1 : limit2;
     T max = limit1 > limit2 ? limit1 : limit2;
 
-    addMessage("be between `" ~ min.to!string ~ "` and `" ~ max.to!string ~ "`");
+    addMessage(" be between `");
+    addValue(min.to!string);
+    addMessage("` and `");
+    addValue(max.to!string);
+    addMessage("`");
     beginCheck;
 
     auto isLess = testData <= min;
     auto isGreater = testData >= max;
     auto isBetween = !isLess && !isGreater;
 
-    string msg;
+    Message[] msg;
+
+
     auto interval = "a number " ~ (expectedValue ? "inside" : "outside") ~ " (" ~ min.to!string ~ ", " ~ max.to!string ~ ") interval";
 
     if(expectedValue) {
-      msg = "`" ~ testData.to!string ~ "`";
+      msg ~= [ Message(false, "`"), Message(true, testData.to!string), Message(false, "`") ];
 
       if(isLess) {
-        msg ~= " is less than or equal to `" ~ min.to!string ~ "`.";
+        msg ~= [ Message(false, " is less than or equal to `"), Message(true, min.to!string), Message(false, "`.") ];
       }
 
       if(isGreater) {
-        msg ~= " is greater than or equal to `" ~ max.to!string ~ "`.";
+        msg ~= [ Message(false, " is greater than or equal to `"), Message(true, max.to!string), Message(false, "`.") ];
       }
     }
 
@@ -97,7 +119,9 @@ struct ShouldBaseType(T) {
   auto approximately()(const T someValue, const T delta, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
-    addMessage("equal `" ~ someValue.to!string ~ "±" ~ delta.to!string ~ "`");
+    addMessage(" equal `");
+    addValue(someValue.to!string ~ "±" ~ delta.to!string);
+    addMessage("`");
     beginCheck;
 
     return between(someValue - delta, someValue + delta, file, line);
@@ -116,16 +140,16 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should equal `6`.");
-  msg.split("\n")[2].should.equal("Expected:6");
-  msg.split("\n")[3].strip().should.equal("Actual:5");
+  msg.split("\n")[2].strip.should.equal("Expected:6");
+  msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
     5.should.not.equal(5);
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should not equal `5`.");
-  msg.split("\n")[2].should.equal("Expected:not 5");
-  msg.split("\n")[3].strip().should.equal("Actual:5");
+  msg.split("\n")[2].strip.should.equal("Expected:not 5");
+  msg.split("\n")[3].strip.should.equal("Actual:5");
 }
 
 @("bools equal")
@@ -140,7 +164,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("true should equal `false`.");
-  msg.split("\n")[2].should.equal("Expected:false");
+  msg.split("\n")[2].strip.should.equal("Expected:false");
   msg.split("\n")[3].strip.should.equal("Actual:true");
 
   msg = ({
@@ -148,7 +172,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("true should not equal `true`.");
-  msg.split("\n")[2].should.equal("Expected:false");
+  msg.split("\n")[2].strip.should.equal("Expected:false");
   msg.split("\n")[3].strip.should.equal("Actual:true");
 }
 
@@ -168,7 +192,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("5 should be greater than `5`. `5` is less than or equal to `5`.");
-  msg.split("\n")[2].should.equal("Expected:greater than `5`");
+  msg.split("\n")[2].strip.should.equal("Expected:greater than `5`");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -177,7 +201,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should not be greater than `4`. `5` is greater than `4`.");
-  msg.split("\n")[2].should.equal("Expected:less than or equal to `4`");
+  msg.split("\n")[2].strip.should.equal("Expected:less than or equal to `4`");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 }
 
@@ -197,7 +221,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should be less than `4`. `5` is greater or equal to `4`.");
-  msg.split("\n")[2].should.equal("Expected:less than `4`");
+  msg.split("\n")[2].strip.should.equal("Expected:less than `4`");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -228,7 +252,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should be between `5` and `6`. `5` is less than or equal to `5`.");
-  msg.split("\n")[2].should.equal("Expected:a number inside (5, 6) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number inside (5, 6) interval");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -237,7 +261,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].should.equal("5 should be between `4` and `5`. `5` is greater than or equal to `5`.");
-  msg.split("\n")[2].should.equal("Expected:a number inside (4, 5) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number inside (4, 5) interval");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -246,7 +270,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].strip.should.equal("5 should not be between `4` and `6`.");
-  msg.split("\n")[2].should.equal("Expected:a number outside (4, 6) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number outside (4, 6) interval");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
   msg = ({
@@ -255,7 +279,7 @@ unittest {
   }).should.throwException!TestException.msg;
   
   msg.split("\n")[0].strip.should.equal("5 should not be between `4` and `6`.");
-  msg.split("\n")[2].should.equal("Expected:a number outside (4, 6) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number outside (4, 6) interval");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 }
 
@@ -271,7 +295,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].strip.should.equal("(10f/3f) should equal `3±0.3`. `3.33333` is greater than or equal to `3.3`.");
-  msg.split("\n")[2].should.equal("Expected:a number inside (2.7, 3.3) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number inside (2.7, 3.3) interval");
   msg.split("\n")[3].strip.should.equal("Actual:3.33333");
 
   msg = ({
@@ -279,6 +303,6 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].strip.should.equal("(10f/3f) should not equal `3±0.34`.");
-  msg.split("\n")[2].should.equal("Expected:a number outside (2.66, 3.34) interval");
+  msg.split("\n")[2].strip.should.equal("Expected:a number outside (2.66, 3.34) interval");
   msg.split("\n")[3].strip.should.equal("Actual:3.33333");
 }

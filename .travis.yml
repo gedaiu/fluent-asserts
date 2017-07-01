@@ -1,5 +1,14 @@
 language: d
 sudo: false
+dist: trusty
+
+addons:
+  apt:
+    packages:
+    - libevent-dev
+    - libssl-dev
+    - pkg-config
+    - zlib1g-dev
 
 d:
   # order: latest DMD, oldest DMD, LDC/GDC, remaining DMD versions
@@ -8,6 +17,7 @@ d:
   # catching most DMD version related build failures early
   - ldc-1.1.0
   - ldc-1.2.0
+  - ldc-beta
   - dmd-2.070.2
   - dmd-2.071.2
   - dmd-2.072.2
@@ -19,4 +29,5 @@ d:
 matrix:
   allow_failures:
     - d: dmd-beta
+    - d: ldc-beta
 script: ./travis-ci.sh
