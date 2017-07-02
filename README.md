@@ -21,7 +21,11 @@ import fluent.asserts;
 3. Use it:
 ```D
     unittest {
-        true.should.equal(false);
+        true.should.equal(false).beacause("this is a failing assert");
+    }
+
+    unittest {
+        Assert.equal(true, false, "this is a failing assert");
     }
 ```
 
@@ -34,8 +38,11 @@ import fluent.asserts;
 
 # API Docs
 
-The library uses the `should` template in combination with
-[Uniform Function Call Syntax (UFCS)](https://dlang.org/spec/function.html#pseudo-member)
+The library provides the `should` template and the `Assert` struct.
+
+## Should
+
+`should` can be used in combination with [Uniform Function Call Syntax (UFCS)](https://dlang.org/spec/function.html#pseudo-member)
 
 ```D
 auto should(T)(lazy const T testData);
@@ -44,8 +51,8 @@ auto should(T)(lazy const T testData);
 So the following statements are equivalent
 
 ```D
-exepectedValue.should.equal(42);
-should(expectedValue).equal(42);
+testedValue.should.equal(42);
+should(testedValue).equal(42);
 ```
 
 In addition, the library provides the `not` and `because` modifiers that allow to improve your asserts.
@@ -53,7 +60,7 @@ In addition, the library provides the `not` and `because` modifiers that allow t
 `not` negates the assert condition:
 
 ```D
-exepectedValue.should.not.equal(42);
+testedValue.should.not.equal(42);
 ```
 
 `because` allows you to add a custom message:
@@ -61,6 +68,23 @@ exepectedValue.should.not.equal(42);
 ```D
     true.should.equal(false).because("of test reasons");
     ///will output this message: Because of test reasons, true should equal `false`.
+```
+
+## Assert
+
+`Assert` is a wrapper for the should struct that allows you to use the asserts with a different sintax.
+
+For example, the folowing lines are equivalent:
+```D
+    testedValue.should.equal(42);
+    Assert.equal(testedValue, 42);
+```
+
+All the asserts that are available using the `should` syntax are available with `Assert`. If you want to negate the check,
+just add `not` before the assert name:
+
+```D
+    Assert.notEqual(testedValue, 42);
 ```
 
 You can use fluent asserts with:

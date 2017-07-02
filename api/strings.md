@@ -19,6 +19,10 @@ Success expectations
 ```D
     "test string".should.equal("test string");
     "test string".should.not.equal("test");
+
+    /// or using the Assert utility
+    Assert.equal("test string", "test string");
+    Assert.notEqual("test string", "test");
 ```
 
 Failing expectations
@@ -32,8 +36,23 @@ Failing expectations
 Success expectations
 ```D
     "test string".should.contain(["string", "test"]);
+    "test string".should.not.contain(["other", "value"]);
+
     "test string".should.contain("string");
+    "test string".should.not.contain("other");
+
     "test string".should.contain('s');
+    "test string".should.not.contain('z');
+
+    /// or using the Assert utility
+    Assert.contain("test string", ["string", "test"]);
+    Assert.notContain("test string", ["other", "value"]);
+
+    Assert.contain("test string", "test");
+    Assert.notContain("test string", "other");
+
+    Assert.contain("test string", 't');
+    Assert.notContain("test string", 'z');
 ```
 
 Failing expectations
@@ -52,6 +71,13 @@ Success expectations
 
     "test string".should.startWith('t');
     "test string".should.not.startWith('o');
+
+    /// or using the Assert utility
+    Assert.startWith(test string", "test");
+    Assert.notStartWith("test string", "other");
+
+    Assert.startWith("test string", 't');
+    Assert.notStartWith(test string", 'o');
 ```
 
 Failing expectations
@@ -72,6 +98,13 @@ Success expectations
 
    "test string".should.endWith('g');
    "test string".should.not.endWith('w');
+
+    /// or using the Assert utility
+    Assert.endWith(test string", "string");
+    Assert.notEndWith("test string", "other");
+
+    Assert.endWith("test string", 'g');
+    Assert.notEndWith(test string", 'o');
 ```
 
 Failing expectations

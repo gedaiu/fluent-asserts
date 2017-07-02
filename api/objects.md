@@ -18,6 +18,10 @@ Success expectations
 
     o.should.beNull;
     (new Object).should.not.beNull;
+
+    /// or using the Assert utility
+    Assert.beNull(o);
+    Assert.notNull(new Object);
 ```
 
 Failing expectations
