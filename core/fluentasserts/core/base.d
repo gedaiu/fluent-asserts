@@ -271,14 +271,29 @@ unittest {
 struct Assert {
   static void opDispatch(string s, T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
+    auto sh = actual.should;
+
     static if(s[0..3] == "not") {
-      mixin("auto s = actual.should.not.be." ~ s[3..4].toLower ~ s[4..$] ~ "(expected, file, line);");
+      sh.not;
+      enum assertName = s[3..4].toLower ~ s[4..$];
     } else {
-      mixin("auto s = actual.should.be." ~ s ~ "(expected, file, line);");
+      enum assertName = s;
     }
 
+    static if(assertName == "greaterThan" ||
+              assertName == "lessThan" ||
+              assertName == "above" ||
+              assertName == "below" ||
+              assertName == "between" ||
+              assertName == "within" ||
+              assertName == "approximately") {
+      sh.be;
+    }
+
+    mixin("auto result = sh." ~ assertName ~ "(expected, file, line);");
+
     if(reason != "") {
-      s.because(reason);
+      result.because(reason);
     }
   }
 
