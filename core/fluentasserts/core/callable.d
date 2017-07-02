@@ -157,7 +157,7 @@ struct ShouldCallable(T) {
 
   auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
     addMessage(" throw ");
-    addValue("any exception");
+    addValue("something");
     beginCheck;
 
     return throwException!Throwable(file, line);
@@ -197,7 +197,7 @@ unittest
 unittest {
   ({
     assert(false, "test");
-  }).should.throwSomething.msg.should.equal("test");
+  }).should.throwSomething.withMessage.equal("test");
 }
 
 /// Should be able to catch a certain exception type
