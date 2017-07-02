@@ -267,3 +267,172 @@ unittest {
 
   msg.split("\n")[0].should.equal("Because of test reasons, true should equal `false`.");
 }
+
+struct Assert {
+  static void opDispatch(string s, T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto sh = actual.should;
+
+    static if(s[0..3] == "not") {
+      sh.not;
+      enum assertName = s[3..4].toLower ~ s[4..$];
+    } else {
+      enum assertName = s;
+    }
+
+    static if(assertName == "greaterThan" ||
+              assertName == "lessThan" ||
+              assertName == "above" ||
+              assertName == "below" ||
+              assertName == "between" ||
+              assertName == "within" ||
+              assertName == "approximately") {
+      sh.be;
+    }
+
+    mixin("auto result = sh." ~ assertName ~ "(expected, file, line);");
+
+    if(reason != "") {
+      result.because(reason);
+    }
+  }
+
+  static void between(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = actual.should.be.between(begin, end, file, line);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  static void notBetween(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = actual.should.not.be.between(begin, end, file, line);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  static void within(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = actual.should.be.within(begin, end, file, line);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  static void notWithin(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = actual.should.not.be.within(begin, end, file, line);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  static void approximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = actual.should.be.approximately(expected, delta, file, line);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  static void notApproximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = actual.should.not.be.approximately(expected, delta, file, line);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  static void beNull(T)(T actual, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = actual.should.beNull(file, line);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  static void notNull(T)(T actual, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = actual.should.not.beNull(file, line);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+}
+
+/// Assert should work for base types
+unittest {
+  Assert.equal(1, 1, "they are the same value");
+  Assert.notEqual(1, 2, "they are not the same value");
+
+  Assert.greaterThan(1, 0);
+  Assert.notGreaterThan(0, 1);
+
+  Assert.lessThan(0, 1);
+  Assert.notLessThan(1, 0);
+
+  Assert.above(1, 0);
+  Assert.notAbove(0, 1);
+
+  Assert.below(0, 1);
+  Assert.notBelow(1, 0);
+
+  Assert.between(1, 0, 2);
+  Assert.notBetween(3, 0, 2);
+
+  Assert.within(1, 0, 2);
+  Assert.notWithin(3, 0, 2);
+
+  Assert.approximately(1.5f, 1, 0.6f);
+  Assert.notApproximately(1.5f, 1, 0.2f);
+}
+
+/// Assert should work for objects
+unittest {
+  Object o = null;
+  Assert.beNull(o, "it's a null");
+  Assert.notNull(new Object, "it's not a null");
+}
+
+/// Assert should work for strings
+unittest {
+  Assert.equal("abcd", "abcd");
+  Assert.notEqual("abcd", "abwcd");
+
+  Assert.contain("abcd", "bc");
+  Assert.notContain("abcd", 'e');
+
+  Assert.startWith("abcd", "ab");
+  Assert.notStartWith("abcd", "bc");
+
+  Assert.startWith("abcd", 'a');
+  Assert.notStartWith("abcd", 'b');
+
+  Assert.endWith("abcd", "cd");
+  Assert.notEndWith("abcd", "bc");
+
+  Assert.endWith("abcd", 'd');
+  Assert.notEndWith("abcd", 'c');
+}
+
+/// Assert should work for ranges
+unittest {
+  Assert.equal([1, 2, 3], [1, 2, 3]);
+  Assert.notEqual([1, 2, 3], [1, 1, 3]);
+
+  Assert.contain([1, 2, 3], 3);
+  Assert.notContain([1, 2, 3], [5, 6]);
+
+  Assert.containOnly([1, 2, 3], [3, 2, 1]);
+  Assert.notContainOnly([1, 2, 3], [3, 1]);
+}
