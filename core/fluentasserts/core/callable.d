@@ -10,24 +10,26 @@ struct ThrowableProxy {
 
   private const {
     bool expectedValue;
-    const string file;
-    size_t line;
-    Throwable t;
+    bool rightType;
+    const string _file;
+    size_t _line;
   }
 
   private {
     Message[] messages;
     string reason;
     bool check;
+    Throwable t;
   }
 
-  this(Throwable t, bool expectedValue, Message[] messages, const string file, size_t line) {
+  this(Throwable t, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
     this.expectedValue = expectedValue;
-    this.file = file;
-    this.line = line;
+    this._file = file;
+    this._line = line;
     this.t = t;
     this.messages = messages;
     this.check = true;
+    this.rightType = rightType;
   }
 
   ~this() {
@@ -39,6 +41,13 @@ struct ThrowableProxy {
     check = false;
 
     return t.msg.dup.to!string;
+  }
+
+  auto original() {
+    checkException;
+    check = false;
+
+    return t;
   }
 
   auto file() {
@@ -69,21 +78,11 @@ struct ThrowableProxy {
     return t.next;
   }
 
-  auto toString() {
-    checkException;
-    check = false;
-
-    return t.toString;
-  }
-
-
   auto withMessage() {
     auto s = ShouldString(msg);
     check = false;
 
-    s.forceMessage(messages ~ Message(false, " with message"));
-
-    return s;
+    return s.forceMessage(messages ~ Message(false, " with message"));
   }
 
   private void checkException() {
@@ -93,11 +92,11 @@ struct ThrowableProxy {
 
     bool hasException = t !is null;
 
-    if(hasException == expectedValue) {
+    if(hasException == expectedValue && rightType) {
       return;
     }
 
-    auto sourceResult = new SourceResult(file, line);
+    auto sourceResult = new SourceResult(_file, _line);
 
     auto message = new MessageResult("");
 
@@ -127,7 +126,7 @@ struct ThrowableProxy {
       message.addText("` was thrown.");
     }
 
-    throw new TestException([ cast(IResult) message ], file, line);
+    throw new TestException([ cast(IResult) message ], _file, _line);
   }
 
   void because(string reason) {
@@ -156,8 +155,17 @@ struct ShouldCallable(T) {
     return throwException!Exception(file, line);
   }
 
+  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
+    addMessage(" throw ");
+    addValue("any exception");
+    beginCheck;
+
+    return throwException!Throwable(file, line);
+  }
+
   ThrowableProxy throwException(T)(string file = __FILE__, size_t line = __LINE__) {
     Throwable t;
+    bool rightType = true;
     addMessage(" throw a `");
     addValue(T.stringof);
     addMessage("`");
@@ -170,18 +178,26 @@ struct ShouldCallable(T) {
       }
     } catch(Throwable th) {
       t = th;
+      rightType = false;
     }
 
-    return ThrowableProxy(t, expectedValue, messages , file, line);
+    return ThrowableProxy(t, expectedValue, rightType, messages, file, line);
   }
 }
 
-@("Should be able to catch any exception")
+/// Should be able to catch any exception
 unittest
 {
   ({
     throw new Exception("test");
   }).should.throwAnyException.msg.should.equal("test");
+}
+
+/// Should be able to catch any assert
+unittest {
+  ({
+    assert(false, "test");
+  }).should.throwSomething.msg.should.equal("test");
 }
 
 /// Should be able to catch a certain exception type
@@ -195,7 +211,20 @@ unittest
 
   ({
     throw new CustomException("test");
-  }).should.throwException!CustomException.msg.should.equal("test");
+  }).should.throwException!CustomException.withMessage.equal("test");
+
+
+  bool hasException;
+  try {
+    ({
+      throw new Exception("test");
+    }).should.throwException!CustomException.withMessage.equal("test");
+  } catch(TestException t) {
+    hasException = true;
+    t.msg.split("\n")[0].should.equal("}) should throw a `CustomException`. An exception of type `object.Exception` saying `test` was thrown.");
+  }
+
+  hasException.should.equal(true).because("we want to catch a CustomException not an Exception");
 }
 
 /// Should print a nice message for exception message asserts
