@@ -59,6 +59,10 @@ mixin template ShouldCommons()
     return this;
   }
 
+  auto should() {
+    return this;
+  }
+
   auto not() {
     addMessage(" not");
     expectedValue = !expectedValue;
@@ -69,6 +73,12 @@ mixin template ShouldCommons()
     messages = [];
 
     addMessage(message);
+
+    return this;
+  }
+
+  auto forceMessage(Message[] messages) {
+    this.messages = messages;
 
     return this;
   }
