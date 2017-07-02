@@ -41,6 +41,42 @@ struct ThrowableProxy {
     return t.msg.dup.to!string;
   }
 
+  auto file() {
+    checkException;
+    check = false;
+
+    return t.file;
+  }
+
+  auto info() {
+    checkException;
+    check = false;
+
+    return t.info;
+  }
+
+  auto line() {
+    checkException;
+    check = false;
+
+    return t.line;
+  }
+
+  auto next() {
+    checkException;
+    check = false;
+
+    return t.next;
+  }
+
+  auto toString() {
+    checkException;
+    check = false;
+
+    return t.toString;
+  }
+
+
   auto withMessage() {
     auto s = ShouldString(msg);
     check = false;
