@@ -21,7 +21,7 @@ import fluent.asserts;
 3. Use it:
 ```D
     unittest {
-        true.should.equal(false).beacause("this is a failing assert");
+        true.should.equal(false).because("this is a failing assert");
     }
 
     unittest {
