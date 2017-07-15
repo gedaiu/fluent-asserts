@@ -12,6 +12,7 @@ struct ResultGlyphs {
     string tab;
     string carriageReturn;
     string newline;
+    string space;
 
     string sourceIndicator;
     string sourceLineSeparator;
@@ -26,6 +27,7 @@ struct ResultGlyphs {
     ResultGlyphs.tab = `¤`;
     ResultGlyphs.carriageReturn = `←`;
     ResultGlyphs.newline = `↲`;
+    ResultGlyphs.space = `᛫`;
 
     ResultGlyphs.sourceIndicator = ">";
     ResultGlyphs.sourceLineSeparator = ":";
@@ -534,7 +536,7 @@ class KeyResult(string key) : IResult {
     int index;
     foreach(line; lines) {
       if(index > 0) {
-        printer.info(`↲`);
+        printer.info(ResultGlyphs.newline);
         printer.primary("\n");
         printer.info(spaces);
       }
@@ -586,17 +588,16 @@ class KeyResult(string key) : IResult {
 
     string toVisible(T)(T ch) {
       if(ch == ' ') {
-        return "᛫";
+        return ResultGlyphs.space;
       }
 
       if(ch == '\r') {
-        return `←`;
+        return ResultGlyphs.carriageReturn;
       }
 
       if(ch == '\t') {
-        return `¤`;
+        return ResultGlyphs.tab;
       }
-
 
       return ch.to!string;
     }
@@ -610,12 +611,30 @@ class KeyResult(string key) : IResult {
 
 /// KeyResult should display special characters with different contexts
 unittest {
-  auto result = new KeyResult!"key"("row1\nrow2");
+  auto result = new KeyResult!"key"("row1\n \trow2");
   auto printer = new MockPrinter();
 
   result.print(printer);
 
-  printer.buffer.should.equal(`[info:      key:][primary:row1][info:↲][primary:` ~ "\n" ~ `][info:         :][primary:row2][primary:` ~ "\n" ~ `]`);
+  printer.buffer.should.equal(`[info:      key:][primary:row1][info:↲][primary:` ~ "\n" ~ `][info:         :][info:᛫¤][primary:row2][primary:` ~ "\n" ~ `]`);
+}
+
+/// KeyResult should display custom glyphs with different contexts
+unittest {
+  scope(exit) {
+    ResultGlyphs.resetDefaults;
+  }
+
+  ResultGlyphs.newline = `\n`;
+  ResultGlyphs.tab = `\t`;
+  ResultGlyphs.space = ` `;
+
+  auto result = new KeyResult!"key"("row1\n \trow2");
+  auto printer = new MockPrinter();
+
+  result.print(printer);
+
+  printer.buffer.should.equal(`[info:      key:][primary:row1][info:\n][primary:` ~ "\n" ~ `][info:         :][info: \t][primary:row2][primary:` ~ "\n" ~ `]`);
 }
 
 class ExpectedActualResult : IResult
