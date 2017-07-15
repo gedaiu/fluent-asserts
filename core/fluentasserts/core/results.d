@@ -15,6 +15,11 @@ struct ResultGlyphs {
 
     string sourceIndicator;
     string sourceLineSeparator;
+
+    string diffBegin;
+    string diffEnd;
+    string diffInsert;
+    string diffDelete;
   }
 
   static resetDefaults() {
@@ -24,6 +29,11 @@ struct ResultGlyphs {
 
     ResultGlyphs.sourceIndicator = ">";
     ResultGlyphs.sourceLineSeparator = ":";
+
+    ResultGlyphs.diffBegin = "[";
+    ResultGlyphs.diffEnd = "]";
+    ResultGlyphs.diffInsert = "+";
+    ResultGlyphs.diffDelete = "-";
   }
 }
 
@@ -428,12 +438,12 @@ class DiffResult : IResult {
     this.actual = actual;
   }
 
-  private string getResult(const Diff d) pure {
+  private string getResult(const Diff d) {
     final switch(d.operation) {
         case Operation.DELETE:
-          return "[-" ~ d.text ~ "]";
+          return ResultGlyphs.diffBegin ~ ResultGlyphs.diffDelete ~ d.text ~ ResultGlyphs.diffEnd;
         case Operation.INSERT:
-          return "[+" ~ d.text ~ "]";
+          return ResultGlyphs.diffBegin ~ ResultGlyphs.diffInsert ~ d.text ~ ResultGlyphs.diffEnd;
         case Operation.EQUAL:
           return d.text;
     }
@@ -465,6 +475,28 @@ class DiffResult : IResult {
 
     printer.primary("\n\n");
   }
+}
+
+/// DiffResult should find the differences
+unittest {
+  auto diff = new DiffResult("abc", "asc");
+  diff.toString.should.equal("Diff:\na[-b][+s]c");
+}
+
+
+/// DiffResult should use the custom glyphs
+unittest {
+  scope(exit) {
+    ResultGlyphs.resetDefaults;
+  }
+
+  ResultGlyphs.diffBegin = "{";
+  ResultGlyphs.diffEnd = "}";
+  ResultGlyphs.diffInsert = "!";
+  ResultGlyphs.diffDelete = "?";
+  
+  auto diff = new DiffResult("abc", "asc");
+  diff.toString.should.equal("Diff:\na{?b}{!s}c");
 }
 
 class KeyResult(string key) : IResult {
@@ -576,7 +608,7 @@ class KeyResult(string key) : IResult {
   }
 }
 
-/// KeyResult should display spechial characters with different contexts
+/// KeyResult should display special characters with different contexts
 unittest {
   auto result = new KeyResult!"key"("row1\nrow2");
   auto printer = new MockPrinter();
