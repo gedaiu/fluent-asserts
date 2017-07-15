@@ -97,6 +97,18 @@ You can use fluent asserts with:
 - [Vibe.d Json](api/vibe-json.md)
 - [Vibe.d requests](api/vibe-requests.md)
 
+# Do you already have a lot of tests?
+
+If you want to get the failure location for failing tests written using the `DLang's assert` you can use the
+fluent assert handler which will add extra information to the default assert message.
+
+```D
+    shared static this() {
+        import fluent.asserts;
+        setupFluentHandler;
+    }
+```
+
 # License
 
 MIT. See LICENSE for details.
