@@ -7,6 +7,49 @@ import std.conv;
 import std.range;
 import std.string;
 
+struct ResultGlyphs {
+  static {
+    string tab;
+    string carriageReturn;
+    string newline;
+    string space;
+
+    string sourceIndicator;
+    string sourceLineSeparator;
+
+    string diffBegin;
+    string diffEnd;
+    string diffInsert;
+    string diffDelete;
+  }
+
+  static resetDefaults() {
+    version(windows) {
+      ResultGlyphs.tab = `\t`;
+      ResultGlyphs.carriageReturn = `\r`;
+      ResultGlyphs.newline = `\n`;
+      ResultGlyphs.space = ` `;
+    } else {
+      ResultGlyphs.tab = `¤`;
+      ResultGlyphs.carriageReturn = `←`;
+      ResultGlyphs.newline = `↲`;
+      ResultGlyphs.space = `᛫`;
+    }
+
+    ResultGlyphs.sourceIndicator = ">";
+    ResultGlyphs.sourceLineSeparator = ":";
+
+    ResultGlyphs.diffBegin = "[";
+    ResultGlyphs.diffEnd = "]";
+    ResultGlyphs.diffInsert = "+";
+    ResultGlyphs.diffDelete = "-";
+  }
+}
+
+static this() {
+  ResultGlyphs.resetDefaults;
+}
+
 interface ResultPrinter {
   void primary(string);
   void info(string);
@@ -91,9 +134,9 @@ class MessageResult : IResult
     Message[] messages;
   }
 
-  this(string message)
+  this(string message) nothrow
   {
-    this.messages ~= Message(false, message.replace("\r", `←`).replace("\n", `↲`).replace("\t", `¤`));
+    add(false, message);
   }
 
   override string toString()
@@ -101,8 +144,15 @@ class MessageResult : IResult
     return messages.map!(a => a.text).join("").to!string;
   }
 
+  void add(bool isValue, string message) nothrow {
+    this.messages ~= Message(isValue, message
+      .replace("\r", ResultGlyphs.carriageReturn)
+      .replace("\n", ResultGlyphs.newline)
+      .replace("\t", ResultGlyphs.tab));
+  }
+
   void addValue(string text) {
-    this.messages ~= Message(true, text.replace("\r", `←`).replace("\n", `↲`).replace("\t", `¤`));
+    add(true, text);
   }
 
   void addText(string text) {
@@ -144,6 +194,21 @@ unittest
 {
   auto result = new MessageResult("\t \r\n");
   result.toString.should.equal(`¤ ←↲`);
+}
+
+@("Message result should replace the spacial chars with the custom glyphs")
+unittest
+{
+  scope(exit) {
+    ResultGlyphs.resetDefaults;
+  }
+
+  ResultGlyphs.tab = `\t`;
+  ResultGlyphs.carriageReturn  = `\r`;
+  ResultGlyphs.newline = `\n`;
+
+  auto result = new MessageResult("\t \r\n");
+  result.toString.should.equal(`\t \r\n`);
 }
 
 @("Message result should reurn values as string")
@@ -190,7 +255,7 @@ class SourceResult : IResult
     string value;
   }
 
-  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6)
+  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) nothrow
   {
     this.file = fileName;
     this.line = line;
@@ -200,15 +265,17 @@ class SourceResult : IResult
       return;
     }
 
-    auto file = File(fileName);
+    try {
+      auto file = File(fileName);
 
-    auto rawCode = file.byLine().map!(a => a.to!string).take(line + range).array;
+      auto rawCode = file.byLine().map!(a => a.to!string).take(line + range).array;
 
-    code = rawCode.enumerate(1).dropExactly(range < line ? line - range : 0)
-      .map!(a => (a[0] == line ? ">" : " ") ~ rightJustifier(a[0].to!string, 5)
-          .to!string ~ ": " ~ a[1]).take(range * 2 - 1).join("\n").to!string;
+      code = rawCode.enumerate(1).dropExactly(range < line ? line - range : 0)
+        .map!(a => (a[0] == line ? ResultGlyphs.sourceIndicator : " ") ~ rightJustifier(a[0].to!string, 5)
+            .to!string ~ ResultGlyphs.sourceLineSeparator ~ " " ~ a[1]).take(range * 2 - 1).join("\n").to!string;
 
-    value = evaluatedValue(rawCode);
+      value = evaluatedValue(rawCode);
+    } catch(Throwable t) {}
   }
 
   string getValue()
@@ -216,7 +283,7 @@ class SourceResult : IResult
     return value;
   }
 
-  override string toString()
+  override string toString() nothrow
   {
     auto separator = leftJustify("", 20, '-');
 
@@ -228,9 +295,9 @@ class SourceResult : IResult
 
     foreach (line; this.code.split("\n"))
     {
-      auto index = line.indexOf(':') + 1;
+      auto index = line.indexOf(ResultGlyphs.sourceLineSeparator) + 1;
 
-      if (line[0] != '>')
+      if (line.indexOf(ResultGlyphs.sourceIndicator) == 0)
       {
         printer.info(line[0 .. index]);
         printer.primary(line[index .. $] ~ " ");
@@ -302,6 +369,23 @@ unittest
   msg.should.contain(">   10: line 10");
 }
 
+@("TestException should use a custom line indicator")
+unittest
+{
+  scope(exit) {
+    ResultGlyphs.resetDefaults;
+  }
+
+  ResultGlyphs.sourceIndicator = "*";
+  ResultGlyphs.sourceLineSeparator = "|";
+
+  auto result = new SourceResult("test/example.txt", 10);
+  auto msg = result.toString;
+
+  msg.should.contain("test/example.txt:10");
+  msg.should.contain("*   10| line 10");
+}
+
 @("TestException should ignore missing files")
 unittest
 {
@@ -365,12 +449,12 @@ class DiffResult : IResult {
     this.actual = actual;
   }
 
-  private string getResult(const Diff d) pure {
+  private string getResult(const Diff d) {
     final switch(d.operation) {
         case Operation.DELETE:
-          return "[-" ~ d.text ~ "]";
+          return ResultGlyphs.diffBegin ~ ResultGlyphs.diffDelete ~ d.text ~ ResultGlyphs.diffEnd;
         case Operation.INSERT:
-          return "[+" ~ d.text ~ "]";
+          return ResultGlyphs.diffBegin ~ ResultGlyphs.diffInsert ~ d.text ~ ResultGlyphs.diffEnd;
         case Operation.EQUAL:
           return d.text;
     }
@@ -402,6 +486,28 @@ class DiffResult : IResult {
 
     printer.primary("\n\n");
   }
+}
+
+/// DiffResult should find the differences
+unittest {
+  auto diff = new DiffResult("abc", "asc");
+  diff.toString.should.equal("Diff:\na[-b][+s]c");
+}
+
+
+/// DiffResult should use the custom glyphs
+unittest {
+  scope(exit) {
+    ResultGlyphs.resetDefaults;
+  }
+
+  ResultGlyphs.diffBegin = "{";
+  ResultGlyphs.diffEnd = "}";
+  ResultGlyphs.diffInsert = "!";
+  ResultGlyphs.diffDelete = "?";
+  
+  auto diff = new DiffResult("abc", "asc");
+  diff.toString.should.equal("Diff:\na{?b}{!s}c");
 }
 
 class KeyResult(string key) : IResult {
@@ -439,7 +545,7 @@ class KeyResult(string key) : IResult {
     int index;
     foreach(line; lines) {
       if(index > 0) {
-        printer.info(`↲`);
+        printer.info(ResultGlyphs.newline);
         printer.primary("\n");
         printer.info(spaces);
       }
@@ -491,17 +597,16 @@ class KeyResult(string key) : IResult {
 
     string toVisible(T)(T ch) {
       if(ch == ' ') {
-        return "᛫";
+        return ResultGlyphs.space;
       }
 
       if(ch == '\r') {
-        return `←`;
+        return ResultGlyphs.carriageReturn;
       }
 
       if(ch == '\t') {
-        return `¤`;
+        return ResultGlyphs.tab;
       }
-
 
       return ch.to!string;
     }
@@ -513,14 +618,32 @@ class KeyResult(string key) : IResult {
   }
 }
 
-/// KeyResult should display spechial characters with different contexts
+/// KeyResult should display special characters with different contexts
 unittest {
-  auto result = new KeyResult!"key"("row1\nrow2");
+  auto result = new KeyResult!"key"("row1\n \trow2");
   auto printer = new MockPrinter();
 
   result.print(printer);
 
-  printer.buffer.should.equal(`[info:      key:][primary:row1][info:↲][primary:` ~ "\n" ~ `][info:         :][primary:row2][primary:` ~ "\n" ~ `]`);
+  printer.buffer.should.equal(`[info:      key:][primary:row1][info:↲][primary:` ~ "\n" ~ `][info:         :][info:᛫¤][primary:row2][primary:` ~ "\n" ~ `]`);
+}
+
+/// KeyResult should display custom glyphs with different contexts
+unittest {
+  scope(exit) {
+    ResultGlyphs.resetDefaults;
+  }
+
+  ResultGlyphs.newline = `\n`;
+  ResultGlyphs.tab = `\t`;
+  ResultGlyphs.space = ` `;
+
+  auto result = new KeyResult!"key"("row1\n \trow2");
+  auto printer = new MockPrinter();
+
+  result.print(printer);
+
+  printer.buffer.should.equal(`[info:      key:][primary:row1][info:\n][primary:` ~ "\n" ~ `][info:         :][info: \t][primary:row2][primary:` ~ "\n" ~ `]`);
 }
 
 class ExpectedActualResult : IResult
