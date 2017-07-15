@@ -12,3 +12,4 @@ generated.d
 /fluent-asserts-vibe-test-library
 trial.json
 trial-stats.csv
+coverage/

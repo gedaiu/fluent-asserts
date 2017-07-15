@@ -12,12 +12,18 @@ struct ResultGlyphs {
     string tab;
     string carriageReturn;
     string newline;
+
+    string sourceIndicator;
+    string sourceLineSeparator;
   }
 
   static resetDefaults() {
     ResultGlyphs.tab = `¤`;
     ResultGlyphs.carriageReturn = `←`;
     ResultGlyphs.newline = `↲`;
+
+    ResultGlyphs.sourceIndicator = ">";
+    ResultGlyphs.sourceLineSeparator = ":";
   }
 }
 
@@ -245,8 +251,8 @@ class SourceResult : IResult
     auto rawCode = file.byLine().map!(a => a.to!string).take(line + range).array;
 
     code = rawCode.enumerate(1).dropExactly(range < line ? line - range : 0)
-      .map!(a => (a[0] == line ? ">" : " ") ~ rightJustifier(a[0].to!string, 5)
-          .to!string ~ ": " ~ a[1]).take(range * 2 - 1).join("\n").to!string;
+      .map!(a => (a[0] == line ? ResultGlyphs.sourceIndicator : " ") ~ rightJustifier(a[0].to!string, 5)
+          .to!string ~ ResultGlyphs.sourceLineSeparator ~ " " ~ a[1]).take(range * 2 - 1).join("\n").to!string;
 
     value = evaluatedValue(rawCode);
   }
@@ -268,9 +274,9 @@ class SourceResult : IResult
 
     foreach (line; this.code.split("\n"))
     {
-      auto index = line.indexOf(':') + 1;
+      auto index = line.indexOf(ResultGlyphs.sourceLineSeparator) + 1;
 
-      if (line[0] != '>')
+      if (line.indexOf(ResultGlyphs.sourceIndicator) == 0)
       {
         printer.info(line[0 .. index]);
         printer.primary(line[index .. $] ~ " ");
@@ -340,6 +346,23 @@ unittest
 
   msg.should.contain("test/example.txt:10");
   msg.should.contain(">   10: line 10");
+}
+
+@("TestException should use a custom line indicator")
+unittest
+{
+  scope(exit) {
+    ResultGlyphs.resetDefaults;
+  }
+
+  ResultGlyphs.sourceIndicator = "*";
+  ResultGlyphs.sourceLineSeparator = "|";
+
+  auto result = new SourceResult("test/example.txt", 10);
+  auto msg = result.toString;
+
+  msg.should.contain("test/example.txt:10");
+  msg.should.contain("*   10| line 10");
 }
 
 @("TestException should ignore missing files")
