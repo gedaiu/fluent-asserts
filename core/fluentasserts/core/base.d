@@ -451,7 +451,7 @@ void fluentHandler(string file, ulong line, string msg) nothrow {
   import core.exception;
 
   auto message = new MessageResult("Assert failed. " ~ msg);
-  auto source = new SourceResult(file, line);
+  auto source = new SourceResult(file, line.to!size_t);
 
   throw new AssertError(message.toString ~ "\n\n" ~ source.toString, file, line.to!size_t);
 }
