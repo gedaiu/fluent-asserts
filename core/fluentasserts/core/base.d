@@ -447,13 +447,13 @@ unittest {
   Assert.notContainOnly([1, 2, 3], [3, 1]);
 }
 
-void fluentHandler(string file, ulong line, string msg) nothrow {
+void fluentHandler(string file, size_t line, string msg) nothrow {
   import core.exception;
 
   auto message = new MessageResult("Assert failed. " ~ msg);
-  auto source = new SourceResult(file, line.to!size_t);
+  auto source = new SourceResult(file, line);
 
-  throw new AssertError(message.toString ~ "\n\n" ~ source.toString, file, line.to!size_t);
+  throw new AssertError(message.toString ~ "\n\n" ~ source.toString, file, line);
 }
 
 void setupFluentHandler() {
