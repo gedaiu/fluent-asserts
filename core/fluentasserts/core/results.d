@@ -9,9 +9,15 @@ import std.string;
 
 struct ResultGlyphs {
   static {
-    string tab = `¤`;
-    string carriageReturn  = `←`;
-    string newline = `↲`;
+    string tab;
+    string carriageReturn;
+    string newline;
+  }
+
+  static resetDefaults() {
+    ResultGlyphs.tab = `¤`;
+    ResultGlyphs.carriageReturn = `←`;
+    ResultGlyphs.newline = `↲`;
   }
 }
 
@@ -159,6 +165,7 @@ unittest
 {
   auto result = new MessageResult("\t \r\n");
   result.toString.should.equal(`¤ ←↲`);
+  ResultGlyphs.resetDefaults;
 }
 
 @("Message result should replace the spacial chars with the custom glyphs")
