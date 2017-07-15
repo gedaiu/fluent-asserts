@@ -7,6 +7,14 @@ import std.conv;
 import std.range;
 import std.string;
 
+struct ResultGlyphs {
+  static {
+    string tab = `¤`;
+    string carriageReturn  = `←`;
+    string newline = `↲`;
+  }
+}
+
 interface ResultPrinter {
   void primary(string);
   void info(string);
@@ -93,7 +101,7 @@ class MessageResult : IResult
 
   this(string message)
   {
-    this.messages ~= Message(false, message.replace("\r", `←`).replace("\n", `↲`).replace("\t", `¤`));
+    add(false, message);
   }
 
   override string toString()
@@ -101,8 +109,15 @@ class MessageResult : IResult
     return messages.map!(a => a.text).join("").to!string;
   }
 
+  void add(bool isValue, string message) {
+    this.messages ~= Message(isValue, message
+      .replace("\r", ResultGlyphs.carriageReturn)
+      .replace("\n", ResultGlyphs.newline)
+      .replace("\t", ResultGlyphs.tab));
+  }
+
   void addValue(string text) {
-    this.messages ~= Message(true, text.replace("\r", `←`).replace("\n", `↲`).replace("\t", `¤`));
+    add(true, text);
   }
 
   void addText(string text) {
@@ -144,6 +159,17 @@ unittest
 {
   auto result = new MessageResult("\t \r\n");
   result.toString.should.equal(`¤ ←↲`);
+}
+
+@("Message result should replace the spacial chars with the custom glyphs")
+unittest
+{
+  ResultGlyphs.tab = `\t`;
+  ResultGlyphs.carriageReturn  = `\r`;
+  ResultGlyphs.newline = `\n`;
+
+  auto result = new MessageResult("\t \r\n");
+  result.toString.should.equal(`\t \r\n`);
 }
 
 @("Message result should reurn values as string")
