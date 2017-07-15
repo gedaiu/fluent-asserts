@@ -163,9 +163,12 @@ unittest
 @("Message result should replace the spacial chars")
 unittest
 {
+  scope(exit) {
+    ResultGlyphs.resetDefaults;
+  }
+
   auto result = new MessageResult("\t \r\n");
   result.toString.should.equal(`¤ ←↲`);
-  ResultGlyphs.resetDefaults;
 }
 
 @("Message result should replace the spacial chars with the custom glyphs")
