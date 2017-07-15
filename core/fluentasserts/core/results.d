@@ -21,6 +21,10 @@ struct ResultGlyphs {
   }
 }
 
+static this() {
+  ResultGlyphs.resetDefaults;
+}
+
 interface ResultPrinter {
   void primary(string);
   void info(string);
