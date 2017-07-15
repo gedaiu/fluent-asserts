@@ -24,10 +24,17 @@ struct ResultGlyphs {
   }
 
   static resetDefaults() {
-    ResultGlyphs.tab = `¤`;
-    ResultGlyphs.carriageReturn = `←`;
-    ResultGlyphs.newline = `↲`;
-    ResultGlyphs.space = `᛫`;
+    version(windows) {
+      ResultGlyphs.tab = `\t`;
+      ResultGlyphs.carriageReturn = `\r`;
+      ResultGlyphs.newline = `\n`;
+      ResultGlyphs.space = ` `;
+    } else {
+      ResultGlyphs.tab = `¤`;
+      ResultGlyphs.carriageReturn = `←`;
+      ResultGlyphs.newline = `↲`;
+      ResultGlyphs.space = `᛫`;
+    }
 
     ResultGlyphs.sourceIndicator = ">";
     ResultGlyphs.sourceLineSeparator = ":";
