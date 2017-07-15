@@ -134,7 +134,7 @@ class MessageResult : IResult
     Message[] messages;
   }
 
-  this(string message)
+  this(string message) nothrow
   {
     add(false, message);
   }
@@ -144,7 +144,7 @@ class MessageResult : IResult
     return messages.map!(a => a.text).join("").to!string;
   }
 
-  void add(bool isValue, string message) {
+  void add(bool isValue, string message) nothrow {
     this.messages ~= Message(isValue, message
       .replace("\r", ResultGlyphs.carriageReturn)
       .replace("\n", ResultGlyphs.newline)
@@ -255,7 +255,7 @@ class SourceResult : IResult
     string value;
   }
 
-  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6)
+  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) nothrow
   {
     this.file = fileName;
     this.line = line;
@@ -265,15 +265,17 @@ class SourceResult : IResult
       return;
     }
 
-    auto file = File(fileName);
+    try {
+      auto file = File(fileName);
 
-    auto rawCode = file.byLine().map!(a => a.to!string).take(line + range).array;
+      auto rawCode = file.byLine().map!(a => a.to!string).take(line + range).array;
 
-    code = rawCode.enumerate(1).dropExactly(range < line ? line - range : 0)
-      .map!(a => (a[0] == line ? ResultGlyphs.sourceIndicator : " ") ~ rightJustifier(a[0].to!string, 5)
-          .to!string ~ ResultGlyphs.sourceLineSeparator ~ " " ~ a[1]).take(range * 2 - 1).join("\n").to!string;
+      code = rawCode.enumerate(1).dropExactly(range < line ? line - range : 0)
+        .map!(a => (a[0] == line ? ResultGlyphs.sourceIndicator : " ") ~ rightJustifier(a[0].to!string, 5)
+            .to!string ~ ResultGlyphs.sourceLineSeparator ~ " " ~ a[1]).take(range * 2 - 1).join("\n").to!string;
 
-    value = evaluatedValue(rawCode);
+      value = evaluatedValue(rawCode);
+    } catch(Throwable t) {}
   }
 
   string getValue()
@@ -281,7 +283,7 @@ class SourceResult : IResult
     return value;
   }
 
-  override string toString()
+  override string toString() nothrow
   {
     auto separator = leftJustify("", 20, '-');
 

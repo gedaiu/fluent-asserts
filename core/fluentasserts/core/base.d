@@ -446,3 +446,34 @@ unittest {
   Assert.containOnly([1, 2, 3], [3, 2, 1]);
   Assert.notContainOnly([1, 2, 3], [3, 1]);
 }
+
+void fluentHandler(string file, ulong line, string msg) nothrow {
+  import core.exception;
+
+  auto message = new MessageResult("Assert failed. " ~ msg);
+  auto source = new SourceResult(file, line);
+
+  throw new AssertError(message.toString ~ "\n\n" ~ source.toString, file, line);
+}
+
+void setupFluentHandler() {
+  import core.exception;
+  core.exception.assertHandler = &fluentHandler;
+}
+
+/// It should call the fluent handler
+unittest {
+  setupFluentHandler;
+  scope(exit) core.exception.assertHandler = null;
+
+  bool thrown = false;
+
+  try {
+    assert(false, "What?");
+  } catch(Throwable t) {
+    thrown = true;
+    t.msg.should.startWith("Assert failed. What?\n");
+  }
+
+  thrown.should.equal(true);
+}
