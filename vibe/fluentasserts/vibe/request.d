@@ -59,8 +59,9 @@ final class RequestRouter
 		}
 		else static if (is(T == Json))
 		{
-			preparedRequest.json = data;
-			return send(data.to!string);
+			send(data.toPrettyString);
+			preparedRequest.json = data.toPrettyString.parseJsonString;
+			return send(data.toPrettyString);
 		}
 		else
 		{
@@ -226,6 +227,7 @@ final class RequestRouter
 		callback(response)();
 
 		performExpected(response);
+
 	}
 
 	void checkResponse(ref string data) {
