@@ -53,7 +53,8 @@ final class RequestRouter
 	{
 		static if (is(T == string))
 		{
-			preparedRequest.bodyReader = new MemoryStream(cast(ubyte[]) data);
+			import vibe.stream.memory;
+			preparedRequest.bodyReader = createMemoryStream(cast(ubyte[]) data);
 			return this;
 		}
 		else static if (is(T == Json))
@@ -199,10 +200,11 @@ final class RequestRouter
 	{
 		import vibe.stream.operations : readAllUTF8;
 		import vibe.inet.webform;
+		import vibe.stream.memory;
 
 		auto data = new ubyte[5000];
 
-		MemoryStream stream = new MemoryStream(data);
+		MemoryStream stream = createMemoryStream(data);
 		HTTPServerResponse res = createTestHTTPServerResponse(stream);
 		res.statusCode = 404;
 
