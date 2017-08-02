@@ -463,6 +463,8 @@ void setupFluentHandler() {
 
 /// It should call the fluent handler
 unittest {
+  import core.exception;
+
   setupFluentHandler;
   scope(exit) core.exception.assertHandler = null;
 
