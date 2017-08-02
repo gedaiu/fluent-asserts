@@ -61,7 +61,7 @@ final class RequestRouter
 		{
 			send(data.toPrettyString);
 			preparedRequest.json = data.toPrettyString.parseJsonString;
-			return send(data.toPrettyString);
+			return this;
 		}
 		else
 		{
@@ -209,14 +209,6 @@ final class RequestRouter
 		HTTPServerResponse res = createTestHTTPServerResponse(stream);
 		res.statusCode = 404;
 
-		auto ptype = "Content-Type" in preparedRequest.headers;
-
-		if (ptype) {
-			parseFormData(preparedRequest.form, preparedRequest.files, *ptype, preparedRequest.bodyReader, 5000);
-		}
-
-		parseURLEncodedForm(preparedRequest.queryString, preparedRequest.query);
-
 		router.handleRequest(preparedRequest, res);
 
 		string responseString = (cast(string) data).toStringz.to!string;
@@ -227,7 +219,6 @@ final class RequestRouter
 		callback(response)();
 
 		performExpected(response);
-
 	}
 
 	void checkResponse(ref string data) {
