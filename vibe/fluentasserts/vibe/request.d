@@ -59,8 +59,9 @@ final class RequestRouter
 		}
 		else static if (is(T == Json))
 		{
-			send(data.toPrettyString);
-			preparedRequest.json = data.toPrettyString.parseJsonString;
+			requestBody = data.toPrettyString;
+			preparedRequest.bodyReader = createMemoryStream(cast(ubyte[]) requestBody);
+			preparedRequest.json = data;
 			return this;
 		}
 		else
