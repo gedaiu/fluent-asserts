@@ -291,20 +291,21 @@ class SourceResult : IResult
   }
 
   void print(ResultPrinter printer) {
-    printer.info(file ~ ":" ~ line.to!string ~ "\n");
+    printer.info(file ~ ":" ~ line.to!string);
+    printer.primary("\n");
 
     foreach (line; this.code.split("\n"))
     {
       auto index = line.indexOf(ResultGlyphs.sourceLineSeparator) + 1;
 
-      if (line.indexOf(ResultGlyphs.sourceIndicator) == 0)
+      if (line.indexOf(ResultGlyphs.sourceIndicator) != 0)
       {
         printer.info(line[0 .. index]);
         printer.primary(line[index .. $] ~ " ");
       }
       else
       {
-        printer.danger(line);
+        printer.dangerReverse(line);
       }
 
       printer.primary("\n");
@@ -434,6 +435,21 @@ unittest
   result.getValue.should.equal("[1, 2, 3]");
 }
 
+/// Source reporter should print the source code
+unittest
+{
+  auto result = new SourceResult("test/values.d", 36);
+  auto printer = new MockPrinter();
+
+  result.print(printer);
+
+  auto lines = printer.buffer.split("[primary:\n]");
+
+  lines[0].should.equal(`[info:test/values.d:36]`);
+  lines[1].should.equal(`[info:    31:][primary: unittest { ]`);
+  lines[6].should.equal(`[dangerReverse:>   36:     .contain(4);]`);
+}
+
 class DiffResult : IResult {
   import ddmp.diff;
 
@@ -505,7 +521,7 @@ unittest {
   ResultGlyphs.diffEnd = "}";
   ResultGlyphs.diffInsert = "!";
   ResultGlyphs.diffDelete = "?";
-  
+
   auto diff = new DiffResult("abc", "asc");
   diff.toString.should.equal("Diff:\na{?b}{!s}c");
 }
