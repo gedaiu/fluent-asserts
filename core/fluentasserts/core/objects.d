@@ -88,8 +88,6 @@ unittest {
   msg.split("\n")[2].strip.should.equal("Expected:a `SomeClass` instance");
   msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");
 
-  someObject.should.not.be.instanceOf!OtherClass;
-
   msg = ({
     otherObject.should.not.be.instanceOf!OtherClass;
   }).should.should.throwException!TestException.msg;
