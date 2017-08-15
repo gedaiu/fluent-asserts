@@ -454,7 +454,7 @@ unittest {
 
 	void checkStringData(HTTPServerRequest req, HTTPServerResponse)
 	{
-		req.bodyReader.peek.assumeUTF.should.equal("raw string");
+		req.bodyReader.peek.assumeUTF.to!string.should.equal("raw string");
 	}
 
 	router.any("*", &checkStringData);
