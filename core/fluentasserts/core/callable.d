@@ -5,7 +5,7 @@ import std.string;
 import std.datetime;
 import std.conv;
 
-struct ThrowableProxy {
+struct ThrowableProxy(T : Throwable) {
   import fluentasserts.core.results;
 
   private const {
@@ -19,10 +19,10 @@ struct ThrowableProxy {
     Message[] messages;
     string reason;
     bool check;
-    Throwable t;
+    T t;
   }
 
-  this(Throwable t, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
+  this(T t, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
     this.expectedValue = expectedValue;
     this._file = file;
     this._line = line;
@@ -181,7 +181,7 @@ struct ShouldCallable(T) {
       rightType = false;
     }
 
-    return ThrowableProxy(t, expectedValue, rightType, messages, file, line);
+    return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
   }
 }
 
