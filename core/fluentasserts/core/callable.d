@@ -19,14 +19,16 @@ struct ThrowableProxy(T : Throwable) {
     Message[] messages;
     string reason;
     bool check;
-    T t;
+    Throwable thrown;
+    T thrownTyped;
   }
 
-  this(T t, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
+  this(Throwable thrown, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
     this.expectedValue = expectedValue;
     this._file = file;
     this._line = line;
-    this.t = t;
+    this.thrown = thrown;
+    if (rightType) this.thrownTyped = cast(T)(thrownTyped);
     this.messages = messages;
     this.check = true;
     this.rightType = rightType;
@@ -40,42 +42,42 @@ struct ThrowableProxy(T : Throwable) {
     checkException;
     check = false;
 
-    return t.msg.dup.to!string;
+    return thrown.msg.dup.to!string;
   }
 
   auto original() {
     checkException;
     check = false;
 
-    return t;
+    return thrownTyped;
   }
 
   auto file() {
     checkException;
     check = false;
 
-    return t.file;
+    return thrown.file;
   }
 
   auto info() {
     checkException;
     check = false;
 
-    return t.info;
+    return thrown.info;
   }
 
   auto line() {
     checkException;
     check = false;
 
-    return t.line;
+    return thrown.line;
   }
 
   auto next() {
     checkException;
     check = false;
 
-    return t.next;
+    return thrown.next;
   }
 
   auto withMessage() {
@@ -90,7 +92,7 @@ struct ThrowableProxy(T : Throwable) {
       return;
     }
 
-    bool hasException = t !is null;
+    bool hasException = thrown !is null;
 
     if(hasException == expectedValue && rightType) {
       return;
@@ -116,13 +118,13 @@ struct ThrowableProxy(T : Throwable) {
 
     message.addText(".");
 
-    if(t is null) {
+    if(thrown is null) {
       message.addText(" Nothing was thrown.");
     } else {
       message.addText(" An exception of type `");
-      message.addValue(t.classinfo.name);
+      message.addValue(thrown.classinfo.name);
       message.addText("` saying `");
-      message.addValue(t.msg);
+      message.addValue(thrown.msg);
       message.addText("` was thrown.");
     }
 
@@ -163,7 +165,7 @@ struct ShouldCallable(T) {
     return throwException!Throwable(file, line);
   }
 
-  ThrowableProxy throwException(T)(string file = __FILE__, size_t line = __LINE__) {
+  ThrowableProxy!T throwException(T)(string file = __FILE__, size_t line = __LINE__) {
     Throwable t;
     bool rightType = true;
     addMessage(" throw a `");
