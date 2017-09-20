@@ -28,7 +28,7 @@ struct ThrowableProxy(T : Throwable) {
     this._file = file;
     this._line = line;
     this.thrown = thrown;
-    if (rightType) this.thrownTyped = cast(T)(thrownTyped);
+    if (rightType) this.thrownTyped = cast(T)thrown;
     this.messages = messages;
     this.check = true;
     this.rightType = rightType;
@@ -227,6 +227,28 @@ unittest
   }
 
   hasException.should.equal(true).because("we want to catch a CustomException not an Exception");
+}
+
+/// Should be able to retrieve a typed version of a custom exception
+unittest
+{
+  class CustomException : Exception {
+    int data;
+    this(int data, string msg, string fileName = "", size_t line = 0, Throwable next = null) {
+      super(msg, fileName, line, next);
+
+      this.data = data;
+    }
+  }
+
+  auto thrown = ({
+    throw new CustomException(2, "test");
+  }).should.throwException!CustomException.original;
+
+  thrown.should.not.beNull;
+  thrown.should.instanceOf!CustomException;
+  thrown.msg.should.equal("test");
+  thrown.data.should.equal(2);
 }
 
 /// Should print a nice message for exception message asserts
