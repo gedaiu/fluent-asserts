@@ -5,7 +5,7 @@ import std.string;
 import std.datetime;
 import std.conv;
 
-struct ThrowableProxy {
+struct ThrowableProxy(T : Throwable) {
   import fluentasserts.core.results;
 
   private const {
@@ -19,14 +19,16 @@ struct ThrowableProxy {
     Message[] messages;
     string reason;
     bool check;
-    Throwable t;
+    Throwable thrown;
+    T thrownTyped;
   }
 
-  this(Throwable t, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
+  this(Throwable thrown, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
     this.expectedValue = expectedValue;
     this._file = file;
     this._line = line;
-    this.t = t;
+    this.thrown = thrown;
+    if (rightType) this.thrownTyped = cast(T)thrown;
     this.messages = messages;
     this.check = true;
     this.rightType = rightType;
@@ -40,42 +42,42 @@ struct ThrowableProxy {
     checkException;
     check = false;
 
-    return t.msg.dup.to!string;
+    return thrown.msg.dup.to!string;
   }
 
   auto original() {
     checkException;
     check = false;
 
-    return t;
+    return thrownTyped;
   }
 
   auto file() {
     checkException;
     check = false;
 
-    return t.file;
+    return thrown.file;
   }
 
   auto info() {
     checkException;
     check = false;
 
-    return t.info;
+    return thrown.info;
   }
 
   auto line() {
     checkException;
     check = false;
 
-    return t.line;
+    return thrown.line;
   }
 
   auto next() {
     checkException;
     check = false;
 
-    return t.next;
+    return thrown.next;
   }
 
   auto withMessage() {
@@ -90,7 +92,7 @@ struct ThrowableProxy {
       return;
     }
 
-    bool hasException = t !is null;
+    bool hasException = thrown !is null;
 
     if(hasException == expectedValue && rightType) {
       return;
@@ -116,13 +118,13 @@ struct ThrowableProxy {
 
     message.addText(".");
 
-    if(t is null) {
+    if(thrown is null) {
       message.addText(" Nothing was thrown.");
     } else {
       message.addText(" An exception of type `");
-      message.addValue(t.classinfo.name);
+      message.addValue(thrown.classinfo.name);
       message.addText("` saying `");
-      message.addValue(t.msg);
+      message.addValue(thrown.msg);
       message.addText("` was thrown.");
     }
 
@@ -163,7 +165,7 @@ struct ShouldCallable(T) {
     return throwException!Throwable(file, line);
   }
 
-  ThrowableProxy throwException(T)(string file = __FILE__, size_t line = __LINE__) {
+  ThrowableProxy!T throwException(T)(string file = __FILE__, size_t line = __LINE__) {
     Throwable t;
     bool rightType = true;
     addMessage(" throw a `");
@@ -181,7 +183,7 @@ struct ShouldCallable(T) {
       rightType = false;
     }
 
-    return ThrowableProxy(t, expectedValue, rightType, messages, file, line);
+    return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
   }
 }
 
@@ -225,6 +227,28 @@ unittest
   }
 
   hasException.should.equal(true).because("we want to catch a CustomException not an Exception");
+}
+
+/// Should be able to retrieve a typed version of a custom exception
+unittest
+{
+  class CustomException : Exception {
+    int data;
+    this(int data, string msg, string fileName = "", size_t line = 0, Throwable next = null) {
+      super(msg, fileName, line, next);
+
+      this.data = data;
+    }
+  }
+
+  auto thrown = ({
+    throw new CustomException(2, "test");
+  }).should.throwException!CustomException.original;
+
+  thrown.should.not.beNull;
+  thrown.should.instanceOf!CustomException;
+  thrown.msg.should.equal("test");
+  thrown.data.should.equal(2);
 }
 
 /// Should print a nice message for exception message asserts
