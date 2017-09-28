@@ -6,6 +6,7 @@ import std.algorithm;
 import std.conv;
 import std.range;
 import std.string;
+import std.exception;
 
 struct ResultGlyphs {
   static {
@@ -242,212 +243,6 @@ unittest
   result.print(printer);
 
   printer.buffer.should.equal(`[primary:text][info:value][primary:text]` ~ "[primary:\n\n]");
-}
-
-class SourceResult : IResult
-{
-  private const
-  {
-    string file;
-    size_t line;
-
-    string code;
-    string value;
-  }
-
-  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) nothrow
-  {
-    this.file = fileName;
-    this.line = line;
-
-    if (!fileName.exists)
-    {
-      return;
-    }
-
-    try {
-      auto file = File(fileName);
-
-      auto rawCode = file.byLine().map!(a => a.to!string).take(line + range).array;
-
-      code = rawCode.enumerate(1).dropExactly(range < line ? line - range : 0)
-        .map!(a => (a[0] == line ? ResultGlyphs.sourceIndicator : " ") ~ rightJustifier(a[0].to!string, 5)
-            .to!string ~ ResultGlyphs.sourceLineSeparator ~ " " ~ a[1]).take(range * 2 - 1).join("\n").to!string;
-
-      value = evaluatedValue(rawCode);
-    } catch(Throwable t) {}
-  }
-
-  string getValue()
-  {
-    return value;
-  }
-
-  override string toString() nothrow
-  {
-    auto separator = leftJustify("", 20, '-');
-
-    return separator ~ "\n" ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator ~ "\n" ~ code ~ "\n" ~ separator;
-  }
-
-  void print(ResultPrinter printer) {
-    printer.info(file ~ ":" ~ line.to!string);
-    printer.primary("\n");
-
-    foreach (line; this.code.split("\n"))
-    {
-      auto index = line.indexOf(ResultGlyphs.sourceLineSeparator) + 1;
-
-      if (line.indexOf(ResultGlyphs.sourceIndicator) != 0)
-      {
-        printer.info(line[0 .. index]);
-        printer.primary(line[index .. $] ~ " ");
-      }
-      else
-      {
-        printer.dangerReverse(line);
-      }
-
-      printer.primary("\n");
-    }
-
-    printer.primary("\n");
-  }
-
-  private
-  {
-    auto evaluatedValue(string[] rawCode)
-    {
-      string result = "";
-
-      auto value = rawCode.take(line).filter!(a => a.indexOf("//") == -1)
-        .map!(a => a.strip).join("");
-
-      auto end = valueEndIndex(value);
-
-      if (end > 0)
-      {
-        auto begin = valueBeginIndex(value[0 .. end]);
-
-        if (begin > 0)
-        {
-          result = value[begin .. end];
-        }
-      }
-
-      return result;
-    }
-
-    auto valueBeginIndex(string value)
-    {
-      auto tokens = ["{", ";", "*/", "+/"];
-
-      auto positions = tokens.map!(a => [value.lastIndexOf(a), a.length]).filter!(a => a[0] != -1)
-        .map!(a => a[0] + a[1]).array;
-
-      if (positions.length == 0)
-      {
-        return -1;
-      }
-
-      return positions.sort!("a > b").front;
-    }
-
-    auto valueEndIndex(string value)
-    {
-      return value.lastIndexOf(".should");
-    }
-  }
-}
-
-@("TestException should read the code from the file")
-unittest
-{
-  auto result = new SourceResult("test/example.txt", 10);
-  auto msg = result.toString;
-
-  msg.should.contain("test/example.txt:10");
-  msg.should.contain(">   10: line 10");
-}
-
-@("TestException should use a custom line indicator")
-unittest
-{
-  scope(exit) {
-    ResultGlyphs.resetDefaults;
-  }
-
-  ResultGlyphs.sourceIndicator = "*";
-  ResultGlyphs.sourceLineSeparator = "|";
-
-  auto result = new SourceResult("test/example.txt", 10);
-  auto msg = result.toString;
-
-  msg.should.contain("test/example.txt:10");
-  msg.should.contain("*   10| line 10");
-}
-
-@("TestException should ignore missing files")
-unittest
-{
-  auto result = new SourceResult("test/missing.txt", 10);
-  auto msg = result.toString;
-
-  msg.should.equal(`--------------------
-test/missing.txt:10
---------------------
-
---------------------`);
-}
-
-@("Source reporter should find the tested value on scope start")
-unittest
-{
-  auto result = new SourceResult("test/values.d", 4);
-  result.getValue.should.equal("[1, 2, 3]");
-}
-
-@("Source reporter should find the tested value after a statment")
-unittest
-{
-  auto result = new SourceResult("test/values.d", 12);
-  result.getValue.should.equal("[1, 2, 3]");
-}
-
-@("Source reporter should find the tested value after a */ comment")
-unittest
-{
-  auto result = new SourceResult("test/values.d", 20);
-  result.getValue.should.equal("[1, 2, 3]");
-}
-
-@("Source reporter should find the tested value after a +/ comment")
-unittest
-{
-  auto result = new SourceResult("test/values.d", 28);
-  result.getValue.should.equal("[1, 2, 3]");
-}
-
-@("Source reporter should find the tested value after a // comment")
-unittest
-{
-  auto result = new SourceResult("test/values.d", 36);
-  result.getValue.should.equal("[1, 2, 3]");
-}
-
-/// Source reporter should print the source code
-unittest
-{
-  auto result = new SourceResult("test/values.d", 36);
-  auto printer = new MockPrinter();
-
-  result.print(printer);
-
-  auto lines = printer.buffer.split("[primary:\n]");
-
-  lines[0].should.equal(`[info:test/values.d:36]`);
-  lines[1].should.equal(`[info:    31:][primary: unittest { ]`);
-  lines[6].should.equal(`[dangerReverse:>   36:     .contain(4);]`);
 }
 
 class DiffResult : IResult {
@@ -753,4 +548,254 @@ class ExtraMissingResult : IResult
     missing.print(printer);
     printer.primary("\n");
   }
+}
+
+
+import dparse.ast;
+import dparse.lexer;
+import dparse.parser;
+
+
+/// An alternative to SourceResult that uses
+// DParse to get the source code
+class SourceResult : IResult
+{
+  private const
+  {
+    string file;
+    size_t line;
+
+    //string code;
+    //string value;
+
+    Token[] tokens;
+  }
+
+  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) nothrow
+  {
+    this.file = fileName;
+    this.line = line;
+
+    if (!fileName.exists)
+    {
+      return;
+    }
+
+    try {
+      const(Token)[] tokens = fileToDTokens(fileName);
+
+      size_t startLine = 0;
+      size_t endLine = 0;
+
+      bool found = false;
+      foreach(token; tokens) {
+        if(!found && str(token.type) == "{") {
+          startLine = token.line;
+        }
+
+        if(line == token.line) {
+          found = true;
+        }
+
+        if(found && str(token.type) == "}") {
+          endLine = token.line;
+          break;
+        }
+      }
+
+      import std.stdio;
+
+      this.tokens = tokens
+        .filter!(token => token.line >= startLine && token.line <= endLine)
+          .array;
+    } catch(Throwable t) { }
+  }
+
+  string getValue() {
+    foreach(token; tokens) {
+      writeln("?",token.text, "?", str(token.type));
+    }
+
+    return tokens
+      .filter!(token => token.line == line)
+      .until!(token => token.text == "should")
+      .map!(token => token.text == "" ? str(token.type) : token.text)
+        .array.join.to!string[0..$-1];
+  }
+
+  override string toString() nothrow
+  {
+    string result = file ~ ":" ~ line.to!string;
+    size_t line = tokens[0].line - 1;
+    size_t column = 1;
+    bool afterErrorLine = false;
+
+    foreach(token; this.tokens.filter!(token => token != tok!"whitespace")) {
+      string prefix = "";
+
+      foreach(lineNumber; line..token.line) {
+        if(lineNumber < this.line -1 || afterErrorLine) {
+          prefix ~= "\n" ~ rightJustify((lineNumber+1).to!string, 6, ' ') ~ ": ";
+        } else {
+          prefix ~= "\n>" ~ rightJustify((lineNumber+1).to!string, 5, ' ') ~ ": ";
+        }
+      }
+
+      if(token.line != line) {
+        column = 1;
+      }
+
+      prefix ~= ' '.repeat.take(token.column - column).array;
+
+      auto stringRepresentation = token.text == "" ? str(token.type) : token.text;
+      result ~= prefix ~ stringRepresentation;
+      line = token.line;
+      column = token.column + stringRepresentation.length;
+
+      if(token.line >= this.line && str(token.type) == ";") {
+        afterErrorLine = true;
+      }
+    }
+
+    return result;
+  }
+
+  void print(ResultPrinter printer) {
+
+  }
+}
+
+@("TestException should read the code from the file")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 26);
+  auto msg = result.toString;
+
+  msg.should.equal("test/values.d:26\n" ~
+                   "    23: unittest {\n" ~
+                   "    24:   /++/\n" ~
+                   "    25: \n" ~
+                   ">   26:   [1, 2, 3]\n" ~
+                   ">   27:     .should\n" ~
+                   ">   28:     .contain(4);\n" ~
+                   "    29: }");
+}
+
+/// Converts a file to D tokens provided by libDParse.
+/// All the whitespaces are ignored
+const(Token)[] fileToDTokens(string fileName) nothrow {
+  try {
+    auto f = File(fileName);
+    immutable ulong fileSize = f.size();
+    ubyte[] fileBytes = new ubyte[](fileSize);
+
+    if(f.rawRead(fileBytes).length != fileSize) {
+      return [];
+    }
+
+    StringCache cache = StringCache(StringCache.defaultBucketCount);
+
+    LexerConfig config;
+    config.stringBehavior = StringBehavior.source;
+    config.fileName = fileName;
+    config.commentBehavior = CommentBehavior.noIntern;
+
+    auto lexer = DLexer(fileBytes, config, &cache);
+    const(Token)[] tokens = lexer.array;
+
+    return tokens;
+  } catch {
+    return [];
+  }
+}
+
+
+@("TestException should read the code from the file")
+unittest
+{
+  auto result = new SourceResult("test/example.txt", 10);
+  auto msg = result.toString;
+
+  msg.should.contain("test/example.txt:10");
+  msg.should.contain(">   10: line 10");
+}
+
+@("TestException should use a custom line indicator")
+unittest
+{
+  scope(exit) {
+    ResultGlyphs.resetDefaults;
+  }
+
+  ResultGlyphs.sourceIndicator = "*";
+  ResultGlyphs.sourceLineSeparator = "|";
+
+  auto result = new SourceResult("test/example.txt", 10);
+  auto msg = result.toString;
+
+  msg.should.contain("test/example.txt:10");
+  msg.should.contain("*   10| line 10");
+}
+
+@("TestException should ignore missing files")
+unittest
+{
+  auto result = new SourceResult("test/missing.txt", 10);
+  auto msg = result.toString;
+
+  msg.should.equal(`--------------------
+test/missing.txt:10
+--------------------
+
+--------------------`);
+}
+
+@("Source reporter should find the tested value on scope start")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 4);
+  result.getValue.should.equal("[1, 2, 3]");
+}
+
+@("Source reporter should find the tested value after a statment")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 12);
+  result.getValue.should.equal("[1, 2, 3]");
+}
+
+@("Source reporter should find the tested value after a */ comment")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 20);
+  result.getValue.should.equal("[1, 2, 3]");
+}
+
+@("Source reporter should find the tested value after a +/ comment")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 28);
+  result.getValue.should.equal("[1, 2, 3]");
+}
+
+@("Source reporter should find the tested value after a // comment")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 36);
+  result.getValue.should.equal("[1, 2, 3]");
+}
+
+/// Source reporter should print the source code
+unittest
+{
+  auto result = new SourceResult("test/values.d", 36);
+  auto printer = new MockPrinter();
+
+  result.print(printer);
+
+  auto lines = printer.buffer.split("[primary:\n]");
+
+  lines[0].should.equal(`[info:test/values.d:36]`);
+  lines[1].should.equal(`[info:    31:][primary: unittest { ]`);
+  lines[6].should.equal(`[dangerReverse:>   36:     .contain(4);]`);
 }
