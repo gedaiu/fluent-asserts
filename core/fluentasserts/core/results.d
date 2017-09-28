@@ -565,9 +565,6 @@ class SourceResult : IResult
     string file;
     size_t line;
 
-    //string code;
-    //string value;
-
     Token[] tokens;
   }
 
@@ -661,7 +658,41 @@ class SourceResult : IResult
   }
 
   void print(ResultPrinter printer) {
+    printer.info(file ~ ":" ~ line.to!string);
+    size_t line = tokens[0].line - 1;
+    size_t column = 1;
+    bool afterErrorLine = false;
 
+    foreach(token; this.tokens.filter!(token => token != tok!"whitespace")) {
+      string prefix = "";
+
+      foreach(lineNumber; line..token.line) {
+        printer.primary("\n");
+
+        if(lineNumber < this.line -1 || afterErrorLine) {
+          printer.info(rightJustify((lineNumber+1).to!string, 6, ' ') ~ ": ");
+        } else {
+          printer.info(">" ~ rightJustify((lineNumber+1).to!string, 5, ' ') ~ ": ");
+        }
+      }
+
+      if(token.line != line) {
+        column = 1;
+      }
+
+      prefix ~= ' '.repeat.take(token.column - column).array;
+
+      auto stringRepresentation = token.text == "" ? str(token.type) : token.text;
+      result ~= prefix ~ stringRepresentation;
+      line = token.line;
+      column = token.column + stringRepresentation.length;
+
+      if(token.line >= this.line && str(token.type) == ";") {
+        afterErrorLine = true;
+      }
+    }
+
+    return result;
   }
 }
 
