@@ -604,20 +604,26 @@ class SourceResult : IResult
 
       this.tokens = tokens
         .filter!(token => token.line >= startLine && token.line <= endLine)
-          .array;
+          .array.dup;
     } catch(Throwable t) { }
   }
 
   string getValue() {
-    foreach(token; tokens) {
-      writeln("?",token.text, "?", str(token.type));
-    }
+    "=====".writeln(tokens.filter!(token => token.line == line).map!(token => str(token.type) ~ ":" ~ token.text.idup ~ ":\n").array.join);
 
-    return tokens
+    auto valueTokens = tokens
       .filter!(token => token.line == line)
       .until!(token => token.text == "should")
-      .map!(token => token.text == "" ? str(token.type) : token.text)
-        .array.join.to!string[0..$-1];
+      .map!(token => token.text == "" ? str(token.type) : token.text.idup)
+      .array;
+
+    string result = "";
+    foreach(token; valueTokens[0..$-1]) {
+      writeln("?",token, "?", result);
+      result ~= token.dup;
+    }
+
+    return result;
   }
 
   override string toString() nothrow
@@ -658,14 +664,12 @@ class SourceResult : IResult
   }
 
   void print(ResultPrinter printer) {
-    printer.info(file ~ ":" ~ line.to!string);
+    writeln(toString);/*file ~ ":" ~ line.to!string);
     size_t line = tokens[0].line - 1;
     size_t column = 1;
     bool afterErrorLine = false;
 
     foreach(token; this.tokens.filter!(token => token != tok!"whitespace")) {
-      string prefix = "";
-
       foreach(lineNumber; line..token.line) {
         printer.primary("\n");
 
@@ -680,10 +684,15 @@ class SourceResult : IResult
         column = 1;
       }
 
-      prefix ~= ' '.repeat.take(token.column - column).array;
+      printer.primary(' '.repeat.take(token.column - column).array);
 
-      auto stringRepresentation = token.text == "" ? str(token.type) : token.text;
-      result ~= prefix ~ stringRepresentation;
+      auto stringRepresentation = token.text == "" || !? str(token.type) : token.text;
+
+
+      writeln("?", stringRepresentation, ":", str(token.type) , "?");
+
+      printer.info(stringRepresentation);
+
       line = token.line;
       column = token.column + stringRepresentation.length;
 
@@ -692,7 +701,7 @@ class SourceResult : IResult
       }
     }
 
-    return result;
+    printer.primary("\n");*/
   }
 }
 
