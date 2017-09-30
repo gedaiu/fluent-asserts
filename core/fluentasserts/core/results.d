@@ -560,6 +560,10 @@ import dparse.parser;
 // DParse to get the source code
 class SourceResult : IResult
 {
+  static private {
+    const(Token)[][string] fileTokens;
+  }
+
   private const
   {
     string file;
@@ -579,7 +583,7 @@ class SourceResult : IResult
     }
 
     try {
-      const(Token)[] tokens = fileToDTokens(fileName);
+      const(Token)[] tokens = getFileTokens(fileName);
 
       size_t startLine = 0;
       size_t endLine = 0;
@@ -608,26 +612,72 @@ class SourceResult : IResult
     } catch(Throwable t) { }
   }
 
-  string getValue() {
-    "=====".writeln(tokens.filter!(token => token.line == line).map!(token => str(token.type) ~ ":" ~ token.text.idup ~ ":\n").array.join);
-
-    auto valueTokens = tokens
-      .filter!(token => token.line == line)
-      .until!(token => token.text == "should")
-      .map!(token => token.text == "" ? str(token.type) : token.text.idup)
-      .array;
-
-    string result = "";
-    foreach(token; valueTokens[0..$-1]) {
-      writeln("?",token, "?", result);
-      result ~= token.dup;
+  static const(Token)[] getFileTokens(string fileName) {
+    if(fileName !in fileTokens) {
+      fileTokens[fileName] = fileToDTokens(fileName);
     }
 
-    return result;
+    return fileTokens[fileName];
+  }
+
+  string getValue() {
+
+    size_t startIndex = 0;
+    size_t possibleStartIndex = 0;
+    size_t endIndex = 0;
+    int paranthesisCount = 0;
+
+    foreach(index, token; tokens) {
+      auto type = str(token.type);
+
+      if(type == "{" || type == ";") {
+        if(paranthesisCount == 0) {
+          possibleStartIndex = index + 1;
+          startIndex = index + 1;
+        } else {
+          possibleStartIndex = index + 1;
+        }
+      }
+
+      if(type == "(") {
+        if(paranthesisCount == 0) {
+          startIndex = index;
+        }
+
+        paranthesisCount++;
+      }
+
+      if(type == ")") {
+        paranthesisCount--;
+      }
+
+      if(token.text == "should") {
+        if(paranthesisCount > 0) {
+          startIndex = possibleStartIndex;
+        }
+
+        endIndex = index - 1;
+        break;
+      }
+    }
+
+    auto valueTokens = tokens[startIndex..endIndex];
+
+    string result = "";
+
+    foreach(token; valueTokens.filter!(a => str(a.type) != "comment")) {
+      result ~= token.text == "" ? str(token.type) : token.text;
+    }
+
+    return result.strip;
   }
 
   override string toString() nothrow
   {
+    if(tokens.length == 0) {
+      return "";
+    }
+
     string result = file ~ ":" ~ line.to!string;
     size_t line = tokens[0].line - 1;
     size_t column = 1;
@@ -663,8 +713,14 @@ class SourceResult : IResult
     return result;
   }
 
-  void print(ResultPrinter printer) {
-    writeln(toString);/*file ~ ":" ~ line.to!string);
+  void print(ResultPrinter printer)
+  {
+    if(tokens.length == 0) {
+      return;
+    }
+
+    printer.info(file ~ ":" ~ line.to!string);
+
     size_t line = tokens[0].line - 1;
     size_t column = 1;
     bool afterErrorLine = false;
@@ -674,9 +730,9 @@ class SourceResult : IResult
         printer.primary("\n");
 
         if(lineNumber < this.line -1 || afterErrorLine) {
-          printer.info(rightJustify((lineNumber+1).to!string, 6, ' ') ~ ": ");
+          printer.primary(rightJustify((lineNumber+1).to!string, 6, ' ') ~ ":");
         } else {
-          printer.info(">" ~ rightJustify((lineNumber+1).to!string, 5, ' ') ~ ": ");
+          printer.dangerReverse(">" ~ rightJustify((lineNumber+1).to!string, 5, ' ') ~ ":");
         }
       }
 
@@ -686,12 +742,15 @@ class SourceResult : IResult
 
       printer.primary(' '.repeat.take(token.column - column).array);
 
-      auto stringRepresentation = token.text == "" || !? str(token.type) : token.text;
+      auto stringRepresentation = token.text == "" ? str(token.type) : token.text;
 
-
-      writeln("?", stringRepresentation, ":", str(token.type) , "?");
-
-      printer.info(stringRepresentation);
+      if(token.text == "") {
+        printer.info(str(token.type));
+      } else if(str(token.type).indexOf("Literal") != -1) {
+        printer.success(token.text);
+      } else {
+        printer.primary(token.text);
+      }
 
       line = token.line;
       column = token.column + stringRepresentation.length;
@@ -701,7 +760,7 @@ class SourceResult : IResult
       }
     }
 
-    printer.primary("\n");*/
+    printer.primary("\n");
   }
 }
 
@@ -738,43 +797,15 @@ const(Token)[] fileToDTokens(string fileName) nothrow {
     LexerConfig config;
     config.stringBehavior = StringBehavior.source;
     config.fileName = fileName;
-    config.commentBehavior = CommentBehavior.noIntern;
+    config.commentBehavior = CommentBehavior.intern;
 
     auto lexer = DLexer(fileBytes, config, &cache);
     const(Token)[] tokens = lexer.array;
 
-    return tokens;
+    return tokens.map!(token => const Token(token.type, token.text.idup, token.line, token.column, token.index)).array;
   } catch {
     return [];
   }
-}
-
-
-@("TestException should read the code from the file")
-unittest
-{
-  auto result = new SourceResult("test/example.txt", 10);
-  auto msg = result.toString;
-
-  msg.should.contain("test/example.txt:10");
-  msg.should.contain(">   10: line 10");
-}
-
-@("TestException should use a custom line indicator")
-unittest
-{
-  scope(exit) {
-    ResultGlyphs.resetDefaults;
-  }
-
-  ResultGlyphs.sourceIndicator = "*";
-  ResultGlyphs.sourceLineSeparator = "|";
-
-  auto result = new SourceResult("test/example.txt", 10);
-  auto msg = result.toString;
-
-  msg.should.contain("test/example.txt:10");
-  msg.should.contain("*   10| line 10");
 }
 
 @("TestException should ignore missing files")
@@ -836,6 +867,6 @@ unittest
   auto lines = printer.buffer.split("[primary:\n]");
 
   lines[0].should.equal(`[info:test/values.d:36]`);
-  lines[1].should.equal(`[info:    31:][primary: unittest { ]`);
-  lines[6].should.equal(`[dangerReverse:>   36:     .contain(4);]`);
+  lines[1].should.equal(`[primary:    31:][primary:][info:unittest][primary: ][info:{]`);
+  lines[6].should.equal(`[dangerReverse:>   36:][primary:    ][info:.][primary:][primary:contain][primary:][info:(][primary:][success:4][primary:][info:)][primary:][info:;]`);
 }

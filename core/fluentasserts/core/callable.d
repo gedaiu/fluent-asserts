@@ -221,7 +221,7 @@ unittest
     }).should.throwException!CustomException.withMessage.equal("test");
   } catch(TestException t) {
     hasException = true;
-    t.msg.split("\n")[0].should.equal("({ }) should throw a `CustomException`. An exception of type `object.Exception` saying `test` was thrown.");
+    t.msg.split("\n")[2].should.equal("    }) should throw a `CustomException`. An exception of type `object.Exception` saying `test` was thrown.");
   }
 
   hasException.should.equal(true).because("we want to catch a CustomException not an Exception");
@@ -247,7 +247,7 @@ unittest
   }
 
   t.should.not.beNull;
-  t.msg.split("\n")[0].should.equal("({  }) should throw a `CustomException` with message equal `other`. `test` is not equal to `other`.");
+  t.msg.split("\n")[0].should.equal("({↲      throw new CustomException(\"test\");↲    }) should throw a `CustomException` with message equal `other`. `test` is not equal to `other`.");
 }
 
 /// Should fail if an exception is not thrown
@@ -274,7 +274,7 @@ unittest
     }).should.not.throwAnyException;
   } catch(TestException e) {
     thrown = true;
-    e.msg.split("\n")[0].should.equal("({  }) should not throw any exception. An exception of type `object.Exception` saying `test` was thrown.");
+    e.msg.split("\n")[2].should.equal("    }) should not throw any exception. An exception of type `object.Exception` saying `test` was thrown.");
   }
 
   thrown.should.equal(true);
@@ -304,5 +304,5 @@ unittest
   }
 
   exception.should.not.beNull.because("we wait 2 seconds");
-  exception.msg.split("\n")[0].should.startWith("({  }) should have execution time less than `1 ms`.");
+  exception.msg.split("\n")[0].should.startWith("({↲      Thread.sleep(2.msecs);↲    }) should have execution time less than `1 ms`.");
 }
