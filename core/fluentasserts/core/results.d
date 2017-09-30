@@ -792,7 +792,7 @@ unittest
 const(Token)[] fileToDTokens(string fileName) nothrow {
   try {
     auto f = File(fileName);
-    immutable ulong fileSize = f.size();
+    immutable auto fileSize = f.size();
     ubyte[] fileBytes = new ubyte[](fileSize);
 
     if(f.rawRead(fileBytes).length != fileSize) {
