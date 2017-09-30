@@ -661,6 +661,10 @@ class SourceResult : IResult
       }
     }
 
+    if(endIndex < startIndex) {
+      return "";
+    }
+
     auto valueTokens = tokens[startIndex..endIndex];
 
     string result = "";
@@ -674,11 +678,14 @@ class SourceResult : IResult
 
   override string toString() nothrow
   {
+    auto separator = leftJustify("", 20, '-');
+    string result = separator ~ "\n" ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator;
+
     if(tokens.length == 0) {
-      return "";
+      return result;
     }
 
-    string result = file ~ ":" ~ line.to!string;
+
     size_t line = tokens[0].line - 1;
     size_t column = 1;
     bool afterErrorLine = false;
@@ -770,7 +777,7 @@ unittest
   auto result = new SourceResult("test/values.d", 26);
   auto msg = result.toString;
 
-  msg.should.equal("test/values.d:26\n" ~
+  msg.should.equal("--------------------\ntest/values.d:26\n--------------------\n" ~
                    "    23: unittest {\n" ~
                    "    24:   /++/\n" ~
                    "    25: \n" ~
@@ -816,8 +823,6 @@ unittest
 
   msg.should.equal(`--------------------
 test/missing.txt:10
---------------------
-
 --------------------`);
 }
 

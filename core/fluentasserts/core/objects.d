@@ -84,8 +84,6 @@ unittest {
     otherObject.should.be.instanceOf!SomeClass;
   }).should.throwException!TestException.msg;
 
-  msg.writeln("$$$$$$");
-
   msg.split("\n")[0].should.equal("otherObject should be instance of `SomeClass`.");
   msg.split("\n")[2].strip.should.equal("Expected:a `SomeClass` instance");
   msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");

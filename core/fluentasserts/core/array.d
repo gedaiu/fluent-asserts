@@ -325,15 +325,9 @@ unittest {
   }).should.not.throwException!TestException;
 
   auto msg = ({
-
-    import std.stdio;
-    "!!!!!!!!!!!!!!!!!!!!".writeln;
-
     [1, 2, 3].map!"a".should.contain([4, 5]);
   }).should.throwException!TestException.msg;
 
-  import std.stdio;
-  "???????????????????????".writeln;
   msg.split('\n')[0].should.equal("[1, 2, 3].map!\"a\" should contain [4, 5]. [4, 5] are missing from [1, 2, 3].");
   msg.split('\n')[2].strip.should.equal("Expected:all of [4, 5]");
   msg.split('\n')[3].strip.should.equal("Actual:[1, 2, 3]");
