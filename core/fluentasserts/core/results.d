@@ -793,7 +793,7 @@ const(Token)[] fileToDTokens(string fileName) nothrow {
   try {
     auto f = File(fileName);
     immutable auto fileSize = f.size();
-    ubyte[] fileBytes = new ubyte[](fileSize);
+    ubyte[] fileBytes = new ubyte[](fileSize.to!size_t);
 
     if(f.rawRead(fileBytes).length != fileSize) {
       return [];
