@@ -583,13 +583,13 @@ class SourceResult : IResult
     }
 
     try {
-      const(Token)[] tokens = getFileTokens(fileName);
+      updateFileTokens(fileName);
 
       size_t startLine = 0;
       size_t endLine = 0;
 
       bool found = false;
-      foreach(token; tokens) {
+      foreach(token; fileTokens[fileName]) {
         if(!found && str(token.type) == "{") {
           startLine = token.line;
         }
@@ -604,24 +604,21 @@ class SourceResult : IResult
         }
       }
 
-      import std.stdio;
-
-      this.tokens = tokens
+      this.tokens = fileTokens[fileName]
         .filter!(token => token.line >= startLine && token.line <= endLine)
-          .array.dup;
+          .array;
+
     } catch(Throwable t) { }
   }
 
-  static const(Token)[] getFileTokens(string fileName) {
+  static void updateFileTokens(string fileName) {
     if(fileName !in fileTokens) {
-      fileTokens[fileName] = fileToDTokens(fileName);
+      fileTokens[fileName] = [];
+      splitMultilinetokens(fileToDTokens(fileName), fileTokens[fileName]);
     }
-
-    return fileTokens[fileName];
   }
 
   string getValue() {
-
     size_t startIndex = 0;
     size_t possibleStartIndex = 0;
     size_t endIndex = 0;
@@ -670,7 +667,11 @@ class SourceResult : IResult
     string result = "";
 
     foreach(token; valueTokens.filter!(a => str(a.type) != "comment")) {
-      result ~= token.text == "" ? str(token.type) : token.text;
+      if(str(token.type) == "whitespace" && token.text == "") {
+        result ~= "\n";
+      } else {
+        result ~= token.text == "" ? str(token.type) : token.text;
+      }
     }
 
     return result.strip;
@@ -684,7 +685,6 @@ class SourceResult : IResult
     if(tokens.length == 0) {
       return result;
     }
-
 
     size_t line = tokens[0].line - 1;
     size_t column = 1;
@@ -705,10 +705,15 @@ class SourceResult : IResult
         column = 1;
       }
 
-      prefix ~= ' '.repeat.take(token.column - column).array;
+      if(token.column > column) {
+        prefix ~= ' '.repeat.take(token.column - column).array;
+      }
 
       auto stringRepresentation = token.text == "" ? str(token.type) : token.text;
-      result ~= prefix ~ stringRepresentation;
+
+      auto lines = stringRepresentation.split("\n");
+
+      result ~= prefix ~ lines[0];
       line = token.line;
       column = token.column + stringRepresentation.length;
 
@@ -747,11 +752,13 @@ class SourceResult : IResult
         column = 1;
       }
 
-      printer.primary(' '.repeat.take(token.column - column).array);
+      if(token.column > column) {
+        printer.primary(' '.repeat.take(token.column - column).array);
+      }
 
       auto stringRepresentation = token.text == "" ? str(token.type) : token.text;
 
-      if(token.text == "") {
+      if(token.text == "" && str(token.type) != "whitespace") {
         printer.info(str(token.type));
       } else if(str(token.type).indexOf("Literal") != -1) {
         printer.success(token.text);
@@ -767,7 +774,7 @@ class SourceResult : IResult
       }
     }
 
-    printer.primary("\n");
+    printer.primary("\n\n");
   }
 }
 
@@ -785,6 +792,29 @@ unittest
                    ">   27:     .should\n" ~
                    ">   28:     .contain(4);\n" ~
                    "    29: }");
+}
+
+
+@("TestException should print the lines before multiline tokens")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 45);
+  auto msg = result.toString;
+
+  msg.should.equal("--------------------\ntest/values.d:45\n--------------------\n" ~
+                   "    40: unittest {\n" ~
+                   "    41:   /*\n" ~
+                   "    42:   Multi line comment\n" ~
+                   "    43:   */\n" ~
+                   "    44: \n" ~
+                   ">   45:   `multi\n" ~
+                   ">   46:   line\n" ~
+                   ">   47:   string`\n" ~
+                   ">   48:     .should\n" ~
+                   ">   49:     .contain(`multi\n" ~
+                   ">   50:   line\n" ~
+                   ">   51:   string`);\n" ~
+                   "    52: }");
 }
 
 /// Converts a file to D tokens provided by libDParse.
@@ -872,6 +902,29 @@ unittest
   auto lines = printer.buffer.split("[primary:\n]");
 
   lines[0].should.equal(`[info:test/values.d:36]`);
-  lines[1].should.equal(`[primary:    31:][primary:][info:unittest][primary: ][info:{]`);
-  lines[6].should.equal(`[dangerReverse:>   36:][primary:    ][info:.][primary:][primary:contain][primary:][info:(][primary:][success:4][primary:][info:)][primary:][info:;]`);
+  lines[1].should.equal(`[primary:    31:][info:unittest][primary: ][info:{]`);
+  lines[6].should.equal(`[dangerReverse:>   36:][primary:    ][info:.][primary:contain][info:(][success:4][info:)][info:;]`);
+}
+
+/// split multiline tokens in multiple single line tokens with the same type
+void splitMultilinetokens(const(Token)[] tokens, ref const(Token)[] result) nothrow {
+
+  try {
+    foreach(token; tokens) {
+      auto pieces = token.text.idup.split("\n");
+
+      if(pieces.length <= 1) {
+        result ~= const Token(token.type, token.text.dup, token.line, token.column, token.index);
+      } else {
+        size_t line = token.line;
+        size_t column = token.column;
+
+        foreach(textPiece; pieces) {
+          result ~= const Token(token.type, textPiece, line, column, token.index);
+          line++;
+          column = 1;
+        }
+      }
+    }
+  } catch {}
 }

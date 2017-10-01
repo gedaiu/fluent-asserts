@@ -35,3 +35,18 @@ unittest {
     .should
     .contain(4);
 }
+
+
+unittest {
+  /*
+  Multi line comment
+  */
+
+  `multi
+  line
+  string`
+    .should
+    .contain(`multi
+  line
+  string`);
+}

@@ -13,3 +13,7 @@ generated.d
 trial.json
 trial-stats.csv
 coverage/
+trial-core
+trial-root
+trial_core.d
+trial_root.d
