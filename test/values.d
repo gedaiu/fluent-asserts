@@ -50,3 +50,15 @@ unittest {
   line
   string`);
 }
+
+unittest {
+  Assert.equal(5, 6);
+  Assert.notEqual((5+1), 5);
+  Assert.equal((5, (11)));
+}
+
+unittest {
+  5.should.equal(6);
+  (5+1).should.equal(5);
+  (5, (11)).should.equal(3);
+}

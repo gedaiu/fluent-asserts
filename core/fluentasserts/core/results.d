@@ -622,6 +622,10 @@ class SourceResult : IResult
     size_t startIndex = 0;
     size_t possibleStartIndex = 0;
     size_t endIndex = 0;
+
+    size_t lastStartIndex = 0;
+    size_t lastEndIndex = 0;
+
     int paranthesisCount = 0;
 
     foreach(index, token; tokens) {
@@ -634,6 +638,8 @@ class SourceResult : IResult
         } else {
           possibleStartIndex = index + 1;
         }
+
+        endIndex = 0;
       }
 
       if(type == "(") {
@@ -654,7 +660,56 @@ class SourceResult : IResult
         }
 
         endIndex = index - 1;
-        break;
+
+        if(token.line >= line) {
+          break;
+        }
+
+        lastStartIndex = startIndex;
+        lastEndIndex = endIndex;
+      }
+    }
+
+    if(endIndex == 0 && lastEndIndex != 0) {
+      endIndex = lastEndIndex;
+      startIndex = lastStartIndex;
+    }
+
+    if(endIndex == 0) {
+      paranthesisCount = 0;
+      startIndex = 0;
+      bool foundAssert = false;
+
+      foreach(index, token; tokens) {
+        auto type = str(token.type);
+
+        if(foundAssert) {
+          if(type == "(") {
+            if(startIndex == 0) {
+              startIndex = index + 1;
+            }
+
+            paranthesisCount++;
+          }
+
+          if(type == ")") {
+            paranthesisCount--;
+          }
+
+          if(type == "," && paranthesisCount == 1) {
+            endIndex = index;
+            break;
+          }
+
+          if(paranthesisCount == 0 && startIndex > 0) {
+            endIndex = index;
+            break;
+          }
+        }
+
+        if(token.text == "Assert" && token.line == line) {
+          foundAssert = true;
+        }
       }
     }
 
@@ -889,6 +944,32 @@ unittest
 {
   auto result = new SourceResult("test/values.d", 36);
   result.getValue.should.equal("[1, 2, 3]");
+}
+
+@("Source reporter should find the tested value from an assert utility")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 55);
+  result.getValue.should.equal("5");
+
+  result = new SourceResult("test/values.d", 56);
+  result.getValue.should.equal("(5+1)");
+
+  result = new SourceResult("test/values.d", 57);
+  result.getValue.should.equal("(5, (11))");
+}
+
+@("Source reporter should get the value from multiple should asserts")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 61);
+  result.getValue.should.equal("5");
+
+  result = new SourceResult("test/values.d", 62);
+  result.getValue.should.equal("(5+1)");
+
+  result = new SourceResult("test/values.d", 63);
+  result.getValue.should.equal("(5, (11))");
 }
 
 /// Source reporter should print the source code
