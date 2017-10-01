@@ -82,7 +82,7 @@ unittest {
 
   auto msg = ({
     otherObject.should.be.instanceOf!SomeClass;
-  }).should.should.throwException!TestException.msg;
+  }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("otherObject should be instance of `SomeClass`.");
   msg.split("\n")[2].strip.should.equal("Expected:a `SomeClass` instance");
@@ -90,7 +90,7 @@ unittest {
 
   msg = ({
     otherObject.should.not.be.instanceOf!OtherClass;
-  }).should.should.throwException!TestException.msg;
+  }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("otherObject should not be instance of `OtherClass`.");
   msg.split("\n")[2].strip.should.equal("Expected:not a `OtherClass` instance");
