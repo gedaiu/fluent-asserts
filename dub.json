@@ -23,6 +23,7 @@
 					"version": "*",
 					"optional": true
 				},
+				"libdparse": "~>0.7.1",
 				"ddmp": "~>0.0.1-0.dev.2"
 			}
 		},
