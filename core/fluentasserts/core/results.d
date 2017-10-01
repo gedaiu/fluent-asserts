@@ -895,7 +895,7 @@ const(Token)[] fileToDTokens(string fileName) nothrow {
     const(Token)[] tokens = lexer.array;
 
     return tokens.map!(token => const Token(token.type, token.text.idup, token.line, token.column, token.index)).array;
-  } catch {
+  } catch(Throwable) {
     return [];
   }
 }
@@ -1007,5 +1007,5 @@ void splitMultilinetokens(const(Token)[] tokens, ref const(Token)[] result) noth
         }
       }
     }
-  } catch {}
+  } catch(Throwable) {}
 }
