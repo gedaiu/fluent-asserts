@@ -200,7 +200,7 @@ unittest {
   msg = ({
     "test string".should.not.startWith('t');
   }).should.throwException!TestException.msg;
-  
+
   msg.split("\n")[0].should.contain("`test string` does start with `t`");
   msg.split("\n")[2].strip.should.equal("Expected:to not start with `t`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
@@ -309,7 +309,7 @@ unittest {
   msg = ({
     "test string".should.contain('o');
   }).should.throwException!TestException.msg;
-  
+
   msg.split("\n")[0].should.contain("`o` is not present in `test string`");
   msg.split("\n")[2].strip.should.equal("Expected:to contain `o`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
@@ -317,7 +317,7 @@ unittest {
   msg = ({
     "test string".should.not.contain('t');
   }).should.throwException!TestException.msg;
-  
+
   msg.split("\n")[0].should.equal("\"test string\" should not contain `t`. `t` is present in `test string`.");
   msg.split("\n")[2].strip.should.equal("Expected:to not contain `t`");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
@@ -336,12 +336,21 @@ unittest {
   auto msg = ({
     "test string".should.equal("test");
   }).should.throwException!TestException.msg;
-  
+
   msg.split("\n")[0].should.equal("\"test string\" should equal `test`. `test string` is not equal to `test`.");
 
   msg = ({
     "test string".should.not.equal("test string");
   }).should.throwException!TestException.msg;
-  
+
   msg.split("\n")[0].should.equal("\"test string\" should not equal `test string`. `test string` is equal to `test string`.");
+
+  msg = ({
+    ubyte[] data = [115, 111, 109, 101, 32, 100, 97, 116, 97, 0, 0];
+    data.assumeUTF.to!string.should.equal("some data");
+  }).should.throwException!TestException.msg;
+
+  msg.should.contain(`Actual:some data\0\0`);
+  msg.should.contain("data.assumeUTF.to!string should equal `some data`. `some data\\0\\0` is not equal to `some data`.");
+  msg.should.contain(`some data[+\0\0]`);
 }

@@ -14,6 +14,7 @@ struct ResultGlyphs {
     string carriageReturn;
     string newline;
     string space;
+    string nullChar;
 
     string sourceIndicator;
     string sourceLineSeparator;
@@ -30,11 +31,13 @@ struct ResultGlyphs {
       ResultGlyphs.carriageReturn = `\r`;
       ResultGlyphs.newline = `\n`;
       ResultGlyphs.space = ` `;
+      ResultGlyphs.nullChar = `␀`;
     } else {
       ResultGlyphs.tab = `¤`;
       ResultGlyphs.carriageReturn = `←`;
       ResultGlyphs.newline = `↲`;
       ResultGlyphs.space = `᛫`;
+      ResultGlyphs.nullChar = `\0`;
     }
 
     ResultGlyphs.sourceIndicator = ">";
@@ -149,6 +152,7 @@ class MessageResult : IResult
     this.messages ~= Message(isValue, message
       .replace("\r", ResultGlyphs.carriageReturn)
       .replace("\n", ResultGlyphs.newline)
+      .replace("\0", ResultGlyphs.nullChar)
       .replace("\t", ResultGlyphs.tab));
   }
 
@@ -256,8 +260,8 @@ class DiffResult : IResult {
 
   this(string expected, string actual)
   {
-    this.expected = expected;
-    this.actual = actual;
+    this.expected = expected.replace("\0", ResultGlyphs.nullChar);
+    this.actual = actual.replace("\0", ResultGlyphs.nullChar);
   }
 
   private string getResult(const Diff d) {
@@ -305,7 +309,6 @@ unittest {
   diff.toString.should.equal("Diff:\na[-b][+s]c");
 }
 
-
 /// DiffResult should use the custom glyphs
 unittest {
   scope(exit) {
@@ -329,7 +332,7 @@ class KeyResult(string key) : IResult {
   }
 
   this(string value, size_t indent = 10) {
-    this.value = value;
+    this.value = value.replace("\0", ResultGlyphs.nullChar);
     this.indent = indent;
   }
 
