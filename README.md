@@ -6,7 +6,7 @@
 
 [Writing unit tests is easy with Dlang](https://dlang.org/spec/unittest.html). The `unittest` block allows you to start writing tests and to be productive with no special setup.
 
-Unfortunately the [assert expresion](https://dlang.org/spec/expression.html#AssertExpression) does not help you to write expressive asserts, and in case of a failure it's hard to find why an assert failed. The `fluent-asserts` library allows you to more naturally specify the expected outcome of a TDD or BDD-style test.
+Unfortunately the [assert expression](https://dlang.org/spec/expression.html#AssertExpression) does not help you to write expressive asserts, and in case of a failure it's hard to find why an assert failed. The `fluent-asserts` library allows you to more naturally specify the expected outcome of a TDD or BDD-style test.
 
 ## To begin
 
@@ -72,9 +72,9 @@ testedValue.should.not.equal(42);
 
 ## Assert
 
-`Assert` is a wrapper for the should struct that allows you to use the asserts with a different sintax.
+`Assert` is a wrapper for the should struct that allows you to use the asserts with a different syntax.
 
-For example, the folowing lines are equivalent:
+For example, the following lines are equivalent:
 ```D
     testedValue.should.equal(42);
     Assert.equal(testedValue, 42);
@@ -99,7 +99,7 @@ You can use fluent asserts with:
 
 # Do you already have a lot of tests?
 
-If you want to get the failure location for failing tests written using the `DLang's assert` you can use the
+If you want to get the failure location for failing tests written using the `Dlang's assert` you can use the
 fluent assert handler which will add extra information to the default assert message.
 
 ```D
