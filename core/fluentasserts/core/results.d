@@ -553,11 +553,9 @@ class ExtraMissingResult : IResult
   }
 }
 
-
 import dparse.ast;
 import dparse.lexer;
 import dparse.parser;
-
 
 /// An alternative to SourceResult that uses
 // DParse to get the source code
