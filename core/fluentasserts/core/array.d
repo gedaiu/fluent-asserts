@@ -10,6 +10,15 @@ import std.range;
 import std.array;
 import std.string;
 
+
+U[] toValueList(U, V)(V expectedValueList) {
+  static if(is(U == immutable) || is(U == const)) {
+    return expectedValueList.array.idup;
+  } else {
+    return expectedValueList.array.dup;
+  }
+}
+
 struct ListComparison(T) {
   private {
     T[] referenceList;
@@ -17,7 +26,7 @@ struct ListComparison(T) {
   }
 
   this(U, V)(U reference, V list) {
-    this.referenceList = reference.dup;
+    this.referenceList = toValueList!T(reference);
     this.list = list;
   }
 
@@ -151,18 +160,10 @@ struct ShouldList(T) if(isInputRange!(T)) {
   alias U = ElementType!T;
   mixin ShouldCommons;
 
-  private U[] toValueList(V)(V expectedValueList) {
-    static if(is(U == immutable) || is(U == const)) {
-      return expectedValueList.array.idup;
-    } else {
-      return expectedValueList.array.dup;
-    }
-  }
-
   auto equal(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
     import fluentasserts.core.basetype;
 
-    U[] valueList = toValueList(expectedValueList);
+    U[] valueList = toValueList!U(expectedValueList);
 
     addMessage(" equal");
     addMessage(" `");
@@ -198,7 +199,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
   }
 
   auto containOnly(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
-    U[] valueList = toValueList(expectedValueList);
+    U[] valueList = toValueList!U(expectedValueList);
 
     addMessage(" contain only ");
     addValue(valueList.to!string);
@@ -243,7 +244,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
 
   auto contain(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
 
-    U[] valueList = toValueList(expectedValueList);
+    U[] valueList = toValueList!U(expectedValueList);
 
     addMessage(" contain ");
     addValue(valueList.to!string);
