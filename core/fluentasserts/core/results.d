@@ -53,7 +53,6 @@ struct ResultGlyphs {
 static this() {
   ResultGlyphs.resetDefaults;
 }
-
 interface ResultPrinter {
   void primary(string);
   void info(string);
@@ -92,6 +91,21 @@ version(unittest) {
       buffer ~= "[successReverse:" ~ val ~ "]";
     }
   }
+}
+
+struct WhiteIntervals {
+  size_t left;
+  size_t right;
+}
+
+WhiteIntervals getWhiteIntervals(string text) {
+  auto stripText = text.strip;
+
+  if(stripText == "") {
+    return WhiteIntervals(0, 0);
+  }
+
+  return WhiteIntervals(text.indexOf(stripText[0]), text.lastIndexOf(stripText[stripText.length - 1]));
 }
 
 class DefaultResultPrinter : ResultPrinter {
@@ -194,14 +208,14 @@ unittest
   result.toString.should.equal("Message");
 }
 
-@("Message result should replace the spacial chars")
+@("Message result should replace the special chars")
 unittest
 {
   auto result = new MessageResult("\t \r\n");
   result.toString.should.equal(`¤ ←↲`);
 }
 
-@("Message result should replace the spacial chars with the custom glyphs")
+@("Message result should replace the special chars with the custom glyphs")
 unittest
 {
   scope(exit) {
@@ -216,7 +230,7 @@ unittest
   result.toString.should.equal(`\t \r\n`);
 }
 
-@("Message result should reurn values as string")
+@("Message result should return values as string")
 unittest
 {
   auto result = new MessageResult("text");
@@ -382,14 +396,18 @@ class KeyResult(string key) : IResult {
     void printLine(string line, ResultPrinter printer) {
       Message[] messages;
 
-      foreach(ch; line) {
-        auto special = isSpecial(ch);
+      auto whiteIntervals = line.getWhiteIntervals;
+
+      foreach(size_t index, ch; line) {
+        bool showSpaces = index < whiteIntervals.left || index >= whiteIntervals.right;
+
+        auto special = isSpecial(ch, showSpaces);
 
         if(messages.length == 0 || messages[messages.length - 1].isSpecial != special) {
           messages ~= Message(special, "");
         }
 
-        messages[messages.length - 1].text ~= toVisible(ch);
+        messages[messages.length - 1].text ~= toVisible(ch, showSpaces);
       }
 
       foreach(message; messages) {
@@ -401,16 +419,20 @@ class KeyResult(string key) : IResult {
       }
     }
 
-    bool isSpecial(T)(T ch) {
-      if(ch == ' ' || ch == '\r' || ch == '\t') {
+    bool isSpecial(T)(T ch, bool showSpaces) {
+      if(ch == ' ' && showSpaces) {
+        return true;
+      }
+
+      if(ch == '\r' || ch == '\t') {
         return true;
       }
 
       return false;
     }
 
-    string toVisible(T)(T ch) {
-      if(ch == ' ') {
+    string toVisible(T)(T ch, bool showSpaces) {
+      if(ch == ' ' && showSpaces) {
         return ResultGlyphs.space;
       }
 
@@ -430,6 +452,33 @@ class KeyResult(string key) : IResult {
       return value.split("\n").join("\\n\n" ~ rightJustify(":", indent, ' '));
     }
   }
+}
+
+/// KeyResult should not dispaly spaces between words with special chars
+unittest {
+  auto result = new KeyResult!"key"(" row1  row2 ");
+  auto printer = new MockPrinter();
+
+  result.print(printer);
+  printer.buffer.should.equal(`[info:      key:][info:᛫][primary:row1  row2][info:᛫][primary:` ~ "\n" ~ `]`);
+}
+
+/// KeyResult should dispaly spaces with special chars on space lines
+unittest {
+  auto result = new KeyResult!"key"("   ");
+  auto printer = new MockPrinter();
+
+  result.print(printer);
+  printer.buffer.should.equal(`[info:      key:][info:᛫᛫᛫][primary:` ~ "\n" ~ `]`);
+}
+
+/// KeyResult should display no char for empty lines
+unittest {
+  auto result = new KeyResult!"key"("");
+  auto printer = new MockPrinter();
+
+  result.print(printer);
+  printer.buffer.should.equal(``);
 }
 
 /// KeyResult should display special characters with different contexts
