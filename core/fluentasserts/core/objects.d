@@ -8,7 +8,7 @@ import std.stdio;
 import std.traits;
 
 struct ShouldObject(T) {
-  private const T testData;
+  private T testData;
 
   mixin ShouldCommons;
 
@@ -34,6 +34,17 @@ struct ShouldObject(T) {
     cast(IResult) new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ "a `" ~ U.stringof ~ "` instance",
                                            "a `" ~ T.stringof ~ "` instance"),
                                            file, line);
+  }
+
+  auto equal(U)(U instance, const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" equal ");
+    addValue("`" ~ U.stringof ~ "`");
+    beginCheck;
+
+    bool isEqual = testData.opEquals(instance);
+
+    return result(isEqual, [] ,
+      cast(IResult) new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ instance.toString, testData.toString), file, line);
   }
 }
 
@@ -95,4 +106,32 @@ unittest {
   msg.split("\n")[0].should.equal("otherObject should not be instance of `OtherClass`.");
   msg.split("\n")[2].strip.should.equal("Expected:not a `OtherClass` instance");
   msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");
+}
+
+/// object equal
+unittest {
+  class TestEqual {
+    private int value;
+
+    this(int value) {
+      this.value = value;
+    }
+  }
+
+  auto instance = new TestEqual(1);
+
+  instance.should.equal(instance);
+  instance.should.not.equal(new TestEqual(1));
+
+  auto msg = ({
+    instance.should.not.equal(instance);
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("instance should not equal `TestEqual`.");
+
+  msg = ({
+    instance.should.equal(new TestEqual(1));
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("instance should equal `TestEqual`.");
 }
