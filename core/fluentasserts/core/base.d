@@ -15,6 +15,7 @@ import std.range;
 import std.conv;
 import std.string;
 import std.file;
+import std.datetime;
 import std.range.primitives;
 
 struct Result {
@@ -237,6 +238,168 @@ unittest {
   count.should.equal(3);
 }
 
+struct ThrowableProxy(T : Throwable) {
+  import fluentasserts.core.results;
+
+  private const {
+    bool expectedValue;
+    bool rightType;
+    const string _file;
+    size_t _line;
+  }
+
+  private {
+    Message[] messages;
+    string reason;
+    bool check;
+    Throwable thrown;
+    T thrownTyped;
+  }
+
+  this(Throwable thrown, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
+    this.expectedValue = expectedValue;
+    this._file = file;
+    this._line = line;
+    this.thrown = thrown;
+    if (rightType) this.thrownTyped = cast(T)thrown;
+    this.messages = messages;
+    this.check = true;
+    this.rightType = rightType;
+  }
+
+  ~this() {
+    checkException;
+  }
+
+  auto msg() {
+    checkException;
+    check = false;
+
+    return thrown.msg.dup.to!string;
+  }
+
+  auto original() {
+    checkException;
+    check = false;
+
+    return thrownTyped;
+  }
+
+  auto file() {
+    checkException;
+    check = false;
+
+    return thrown.file;
+  }
+
+  auto info() {
+    checkException;
+    check = false;
+
+    return thrown.info;
+  }
+
+  auto line() {
+    checkException;
+    check = false;
+
+    return thrown.line;
+  }
+
+  auto next() {
+    checkException;
+    check = false;
+
+    return thrown.next;
+  }
+
+  auto withMessage() {
+    auto s = ShouldString(msg);
+    check = false;
+
+    return s.forceMessage(messages ~ Message(false, " with message"));
+  }
+
+  private void checkException() {
+    if(!check) {
+      return;
+    }
+
+    bool hasException = thrown !is null;
+
+    if(hasException == expectedValue && rightType) {
+      return;
+    }
+
+    auto sourceResult = new SourceResult(_file, _line);
+    auto message = new MessageResult("");
+
+    if(reason != "") {
+      message.addText("Because " ~ reason ~ ", ");
+    }
+
+    message.addText(sourceResult.getValue ~ " should");
+
+    foreach(msg; messages) {
+      if(msg.isValue) {
+        message.addValue(msg.text);
+      } else {
+        message.addText(msg.text);
+      }
+    }
+
+    message.addText(".");
+
+    if(thrown is null) {
+      message.addText(" Nothing was thrown.");
+    } else {
+      message.addText(" An exception of type `");
+      message.addValue(thrown.classinfo.name);
+      message.addText("` saying `");
+      message.addValue(thrown.msg);
+      message.addText("` was thrown.");
+    }
+
+    throw new TestException([ cast(IResult) message ], _file, _line);
+  }
+
+  void because(string reason) {
+    this.reason = reason;
+  }
+}
+
+struct ValueEvaluation(T) {
+  Throwable throwable;
+  Duration duration;
+
+  T value;
+}
+
+auto evaluate(T)(lazy T testData) {
+  auto begin = Clock.currTime;
+
+  try {
+    auto value = testData;
+    auto duration = Clock.currTime - begin;
+
+    return ValueEvaluation!T(null, duration, value);
+  } catch(Throwable t) {
+    return ValueEvaluation!T(t, Clock.currTime - begin);
+  }
+}
+
+/// evaluate should capture an exception
+unittest {
+  int value() {
+    throw new Exception("message");
+  }
+
+  ValueEvaluation!int result = evaluate(value);
+
+  result.throwable.should.not.beNull;
+  result.throwable.msg.should.equal("message");
+}
+
 auto should(T)(lazy T testData) {
   version(Have_fluent_asserts_vibe) {
     import vibe.data.json;
@@ -251,7 +414,10 @@ auto should(T)(lazy T testData) {
     enum returned = false;
   }
 
-  static if(!returned) {
+  static if(is(T == void)) {
+    auto callable = ({ testData; });
+    return ShouldCallable!(typeof(callable))(callable);
+  } else static if(!returned) {
     static if(is(T == class)) {
       return ShouldObject!T(testData);
     } else static if(is(T == string)) {
@@ -261,7 +427,9 @@ auto should(T)(lazy T testData) {
     } else static if(isCallable!T) {
       return ShouldCallable!T(testData);
     } else {
-      return ShouldBaseType!T(testData);
+      auto finalTestData = evaluate(testData);
+
+      return ShouldBaseType!T(finalTestData);
     }
   }
 }
