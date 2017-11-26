@@ -10,6 +10,15 @@ import std.range;
 import std.array;
 import std.string;
 
+
+U[] toValueList(U, V)(V expectedValueList) {
+  static if(is(U == immutable) || is(U == const)) {
+    return expectedValueList.array.idup;
+  } else {
+    return expectedValueList.array.dup;
+  }
+}
+
 struct ListComparison(T) {
   private {
     T[] referenceList;
@@ -17,7 +26,7 @@ struct ListComparison(T) {
   }
 
   this(U, V)(U reference, V list) {
-    this.referenceList = reference;
+    this.referenceList = toValueList!T(reference);
     this.list = list;
   }
 
@@ -151,8 +160,11 @@ struct ShouldList(T) if(isInputRange!(T)) {
   alias U = ElementType!T;
   mixin ShouldCommons;
 
-  auto equal(T)(T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
+  auto equal(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
     import fluentasserts.core.basetype;
+
+    U[] valueList = toValueList!U(expectedValueList);
+
     addMessage(" equal");
     addMessage(" `");
     addValue(valueList.to!string);
@@ -186,7 +198,9 @@ struct ShouldList(T) if(isInputRange!(T)) {
     }
   }
 
-  auto containOnly(U[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
+  auto containOnly(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
+    U[] valueList = toValueList!U(expectedValueList);
+
     addMessage(" contain only ");
     addValue(valueList.to!string);
     beginCheck;
@@ -228,7 +242,10 @@ struct ShouldList(T) if(isInputRange!(T)) {
       ], file, line);
   }
 
-  auto contain(U[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
+  auto contain(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
+
+    U[] valueList = toValueList!U(expectedValueList);
+
     addMessage(" contain ");
     addValue(valueList.to!string);
     beginCheck;
@@ -349,6 +366,30 @@ unittest {
   msg.split('\n')[3].strip.should.equal("Actual:[1, 2, 3]");
 }
 
+/// const range contain
+unittest {
+  const(int)[] data = [1, 2, 3];
+  data.map!"a".should.contain([2, 1]);
+  data.map!"a".should.contain(data);
+  [1, 2, 3].should.contain(data);
+
+  ({
+    data.map!"a * 4".should.not.contain(data);
+  }).should.not.throwAnyException;
+}
+
+/// immutable range contain
+unittest {
+  immutable(int)[] data = [1, 2, 3];
+  data.map!"a".should.contain([2, 1]);
+  data.map!"a".should.contain(data);
+  [1, 2, 3].should.contain(data);
+
+  ({
+    data.map!"a * 4".should.not.contain(data);
+  }).should.not.throwAnyException;
+}
+
 /// contain only
 unittest {
   ({
@@ -401,6 +442,31 @@ unittest {
   msg.split('\n')[0].should.equal("[2, 2] should not contain only [2, 2].");
   msg.split('\n')[2].strip.should.equal("Actual:[2, 2]");
   msg.split('\n')[4].strip.should.equal("Extra:[2, 2]");
+}
+
+
+/// const range containOnly
+unittest {
+  const(int)[] data = [1, 2, 3];
+  data.map!"a".should.containOnly([3, 2, 1]);
+  data.map!"a".should.containOnly(data);
+  [1, 2, 3].should.containOnly(data);
+
+  ({
+    data.map!"a * 4".should.not.containOnly(data);
+  }).should.not.throwAnyException;
+}
+
+/// immutable range containOnly
+unittest {
+  immutable(int)[] data = [1, 2, 3];
+  data.map!"a".should.containOnly([2, 1, 3]);
+  data.map!"a".should.containOnly(data);
+  [1, 2, 3].should.containOnly(data);
+
+  ({
+    data.map!"a * 4".should.not.containOnly(data);
+  }).should.not.throwAnyException;
 }
 
 /// array contain
@@ -522,6 +588,18 @@ unittest {
   }).should.throwException!TestException.withMessage.startWith("[TestStruct(2)] should equal `[TestStruct(1, null)]`");
 }
 
+/// const array equal
+unittest {
+  const(string)[] constValue = ["test", "string"];
+  immutable(string)[] immutableValue = ["test", "string"];
+
+  constValue.should.equal(["test", "string"]);
+  immutableValue.should.equal(["test", "string"]);
+
+  ["test", "string"].should.equal(constValue);
+  ["test", "string"].should.equal(immutableValue);
+}
+
 version(unittest) {
   class TestEqualsClass {
     int value;
@@ -631,4 +709,46 @@ unittest {
   msg.split("\n")[0].strip.should.startWith("Range() should contain `3`. 3 is missing from [0, 1, 2].");
   msg.split("\n")[2].strip.should.equal("Expected:to contain `3`");
   msg.split("\n")[3].strip.should.equal("Actual:[0, 1, 2]");
+}
+
+/// custom const range equals
+unittest {
+  struct ConstRange {
+    int n;
+    const(int) front() {
+      return n;
+    }
+
+    void popFront() {
+      ++n;
+    }
+
+    bool empty() {
+      return n == 3;
+    }
+  }
+
+  [0,1,2].should.equal(ConstRange());
+  ConstRange().should.equal([0,1,2]);
+}
+
+/// custom immutable range equals
+unittest {
+  struct ImmutableRange {
+    int n;
+    immutable(int) front() {
+      return n;
+    }
+
+    void popFront() {
+      ++n;
+    }
+
+    bool empty() {
+      return n == 3;
+    }
+  }
+
+  [0,1,2].should.equal(ImmutableRange());
+  ImmutableRange().should.equal([0,1,2]);
 }
