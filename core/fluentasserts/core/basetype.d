@@ -9,6 +9,12 @@ import std.algorithm;
 
 struct ShouldBaseType(T) {
   private const T testData;
+  private ValueEvaluation!T valueEvaluation;
+
+  this(ValueEvaluation!T valueEvaluation) {
+    testData = valueEvaluation.value;
+    this.valueEvaluation = valueEvaluation;
+  }
 
   mixin ShouldCommons;
 
@@ -125,6 +131,24 @@ struct ShouldBaseType(T) {
     beginCheck;
 
     return between(someValue - delta, someValue + delta, file, line);
+  }
+
+  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" throw ");
+    addValue("any exception");
+    beginCheck;
+
+    return throwException!Exception(file, line);
+  }
+
+  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" throw a `");
+    addValue(T.stringof);
+    addMessage("`");
+
+    bool rightType = (cast(T) valueEvaluation.throwable) !is null;
+
+    return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, rightType, messages, file, line);
   }
 }
 
@@ -305,4 +329,27 @@ unittest {
   msg.split("\n")[0].strip.should.equal("(10f/3f) should not be equal `3±0.34`.");
   msg.split("\n")[2].strip.should.equal("Expected:a value outside (2.66, 3.34) interval");
   msg.split("\n")[3].strip.should.equal("Actual:3.33333");
+}
+
+
+/// should throw exceptions for delegates that return basic types
+unittest {
+  int value() {
+    throw new Exception("not implemented");
+  }
+
+  void voidValue() {
+    throw new Exception("not implemented");
+  }
+
+  void noException() { }
+
+  value().should.throwAnyException.withMessage.equal("not implemented");
+  voidValue().should.throwAnyException.withMessage.equal("not implemented");
+
+  auto msg = ({
+    noException.should.throwAnyException;
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("noException should throw any exception. Nothing was thrown.");
 }

@@ -8,137 +8,6 @@ import std.traits;
 
 import fluentasserts.core.results;
 
-struct ThrowableProxy(T : Throwable) {
-  import fluentasserts.core.results;
-
-  private const {
-    bool expectedValue;
-    bool rightType;
-    const string _file;
-    size_t _line;
-  }
-
-  private {
-    Message[] messages;
-    string reason;
-    bool check;
-    Throwable thrown;
-    T thrownTyped;
-  }
-
-  this(Throwable thrown, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
-    this.expectedValue = expectedValue;
-    this._file = file;
-    this._line = line;
-    this.thrown = thrown;
-    if (rightType) this.thrownTyped = cast(T)thrown;
-    this.messages = messages;
-    this.check = true;
-    this.rightType = rightType;
-  }
-
-  ~this() {
-    checkException;
-  }
-
-  auto msg() {
-    checkException;
-    check = false;
-
-    return thrown.msg.dup.to!string;
-  }
-
-  auto original() {
-    checkException;
-    check = false;
-
-    return thrownTyped;
-  }
-
-  auto file() {
-    checkException;
-    check = false;
-
-    return thrown.file;
-  }
-
-  auto info() {
-    checkException;
-    check = false;
-
-    return thrown.info;
-  }
-
-  auto line() {
-    checkException;
-    check = false;
-
-    return thrown.line;
-  }
-
-  auto next() {
-    checkException;
-    check = false;
-
-    return thrown.next;
-  }
-
-  auto withMessage() {
-    auto s = ShouldString(msg);
-    check = false;
-
-    return s.forceMessage(messages ~ Message(false, " with message"));
-  }
-
-  private void checkException() {
-    if(!check) {
-      return;
-    }
-
-    bool hasException = thrown !is null;
-
-    if(hasException == expectedValue && rightType) {
-      return;
-    }
-
-    auto sourceResult = new SourceResult(_file, _line);
-
-    auto message = new MessageResult("");
-
-    if(reason != "") {
-      message.addText("Because " ~ reason ~ ", ");
-    }
-
-    message.addText(sourceResult.getValue ~ " should");
-
-    foreach(msg; messages) {
-      if(msg.isValue) {
-        message.addValue(msg.text);
-      } else {
-        message.addText(msg.text);
-      }
-    }
-
-    message.addText(".");
-
-    if(thrown is null) {
-      message.addText(" Nothing was thrown.");
-    } else {
-      message.addText(" An exception of type `");
-      message.addValue(thrown.classinfo.name);
-      message.addText("` saying `");
-      message.addValue(thrown.msg);
-      message.addText("` was thrown.");
-    }
-
-    throw new TestException([ cast(IResult) message ], _file, _line);
-  }
-
-  void because(string reason) {
-    this.reason = reason;
-  }
-}
-
 struct ShouldCallable(T) {
   private T callable;
   mixin ShouldCommons;
@@ -147,7 +16,7 @@ struct ShouldCallable(T) {
     auto begin = Clock.currTime;
     callable();
 
-    auto tmpShould = ShouldBaseType!Duration(Clock.currTime - begin).forceMessage(" have execution time");
+    auto tmpShould = ShouldBaseType!Duration(evaluate(Clock.currTime - begin)).forceMessage(" have execution time");
 
     return tmpShould;
   }
