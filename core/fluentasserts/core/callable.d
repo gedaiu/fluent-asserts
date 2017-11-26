@@ -4,6 +4,9 @@ public import fluentasserts.core.base;
 import std.string;
 import std.datetime;
 import std.conv;
+import std.traits;
+
+import fluentasserts.core.results;
 
 struct ThrowableProxy(T : Throwable) {
   import fluentasserts.core.results;
@@ -185,6 +188,30 @@ struct ShouldCallable(T) {
 
     return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
   }
+
+  auto beNull(string file = __FILE__, size_t line = __LINE__) {
+    addMessage(" be ");
+    addValue("null");
+    beginCheck;
+
+    bool isNull = callable is null;
+
+    string expected;
+
+    static if(isDelegate!callable) {
+      string actual = callable.ptr.to!string;
+    } else {
+      string actual = (cast(void*)callable).to!string;
+    }
+
+    if(expectedValue) {
+      expected = "null";
+    } else {
+      expected = "not null";
+    }
+
+    return result(isNull, [], new ExpectedActualResult(expected, actual), file, line);
+  }
 }
 
 /// Should be able to catch any exception
@@ -329,4 +356,28 @@ unittest
 
   exception.should.not.beNull.because("we wait 2 seconds");
   exception.msg.split("\n")[0].should.startWith("({↲      Thread.sleep(2.msecs);↲    }) should have execution time less than `1 ms`.");
+}
+
+/// It should check if a delagate is null
+unittest {
+  void delegate() action;
+  action.should.beNull;
+
+  ({ }).should.not.beNull;
+
+  auto msg = ({
+    action.should.not.beNull;
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("action should not be null.");
+  msg.should.contain("Expected:not null");
+  msg.should.contain("Actual:null");
+
+  msg = ({
+    ({ }).should.beNull;
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("}) should be null.");
+  msg.should.contain("Expected:null");
+  msg.should.not.contain("Actual:null");
 }
