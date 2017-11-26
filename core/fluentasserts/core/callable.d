@@ -4,6 +4,7 @@ public import fluentasserts.core.base;
 import std.string;
 import std.datetime;
 import std.conv;
+import std.traits;
 
 import fluentasserts.core.results;
 
@@ -196,7 +197,12 @@ struct ShouldCallable(T) {
     bool isNull = callable is null;
 
     string expected;
-    string actual = (cast(void*) callable).to!string;
+
+    static if(isDelegate!callable) {
+      string actual = callable.ptr.to!string;
+    } else {
+      string actual = (cast(void*)callable).to!string;
+    }
 
     if(expectedValue) {
       expected = "null";
