@@ -10,6 +10,7 @@ Here are the examples of how you can use the `should` function with [exceptions]
 - [Throw any exception](#throw-any-exception)
 - [Throw something](#throw-something)
 - [Execution time](#execution-time)
+- [Be null](#be-null)
 
 ## Examples
 
@@ -96,4 +97,22 @@ Failing expectations
     ({
       Thread.sleep(2.msecs);
     }).should.haveExecutionTime.lessThan(1.msecs);
+```
+
+### Be null
+
+Success expectations
+```D
+    void delegate() action;
+    action.should.beNull;
+
+    ({ }).should.not.beNull;
+```
+
+Failing expectations
+```D
+    void delegate() action;
+    action.should.not.beNull;
+
+    ({ }).should.beNull;
 ```
