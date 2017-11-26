@@ -5,8 +5,7 @@ public import fluentasserts.core.string;
 public import fluentasserts.core.objects;
 public import fluentasserts.core.basetype;
 public import fluentasserts.core.callable;
-
-import fluentasserts.core.results;
+public import fluentasserts.core.results;
 
 import std.traits;
 import std.stdio;
