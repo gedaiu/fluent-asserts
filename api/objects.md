@@ -8,6 +8,7 @@ Here are the examples of how you can use the `should` template with [objects](ht
 
 - [Be null](#be-null)
 - [Instance of](#instance-of)
+- [Equal](#equal)
 
 ## Examples
 
@@ -60,4 +61,30 @@ Failing expectations
 ```D
   otherObject.should.be.instanceOf!SomeClass;
   otherObject.should.not.be.instanceOf!OtherClass;
+```
+
+### Equal
+
+```D
+  class TestEqual {
+    private int value;
+
+    this(int value) {
+      this.value = value;
+    }
+  }
+
+  auto instance = new TestEqual(1);
+```
+
+Success expectations
+```D
+  instance.should.equal(instance);
+  instance.should.not.equal(new TestEqual(1));
+```
+
+Failing expectations
+```D
+  instance.should.not.equal(instance);
+  instance.should.equal(new TestEqual(1));
 ```
