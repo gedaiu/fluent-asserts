@@ -354,3 +354,15 @@ unittest {
   msg.should.contain("data.assumeUTF.to!string should equal `some data`. `some data\\0\\0` is not equal to `some data`.");
   msg.should.contain(`some data[+\0\0]`);
 }
+
+@("const string equal")
+unittest {
+  const string constValue = "test string";
+  immutable string immutableValue = "test string";
+
+  constValue.should.equal("test string");
+  immutableValue.should.equal("test string");
+
+  "test string".should.equal(constValue);
+  "test string".should.equal(immutableValue);
+}
