@@ -84,6 +84,22 @@ mixin template ShouldCommons()
     return this;
   }
 
+  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" throw ");
+    addValue("any exception");
+    beginCheck;
+
+    return throwException!Exception(file, line);
+  }
+
+  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" throw a `");
+    addValue(T.stringof);
+    addMessage("`");
+
+    return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, messages, file, line);
+  }
+
   private {
     Message[] messages;
     ulong mesageCheckIndex;
@@ -161,22 +177,6 @@ mixin template ShouldCommons()
       }
 
       return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
-    }
-
-    auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
-      addMessage(" throw ");
-      addValue("any exception");
-      beginCheck;
-
-      return throwException!Exception(file, line);
-    }
-
-    auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
-      addMessage(" throw a `");
-      addValue(T.stringof);
-      addMessage("`");
-
-      return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, messages, file, line);
     }
   }
 }
@@ -410,12 +410,23 @@ auto evaluate(T)(lazy T testData) {
 
   try {
     auto value = testData;
-    auto duration = Clock.currTime - begin;
 
+    static if(isCallable!T) {
+      if(value !is null) {
+        begin = Clock.currTime;
+        value();
+      }
+    }
+
+    auto duration = Clock.currTime - begin;
     r.value = value;
     r.evaluation = ValueEvaluation(null, duration);
   } catch(Throwable t) {
     r.evaluation = ValueEvaluation(t, Clock.currTime - begin);
+
+    static if(isCallable!T) {
+      r.value = testData;
+    }
   }
 
   return r;
@@ -428,6 +439,18 @@ unittest {
   }
 
   auto result = evaluate(value);
+
+  result.evaluation.throwable.should.not.beNull;
+  result.evaluation.throwable.msg.should.equal("message");
+}
+
+/// evaluate should capture an exception thrown by a callable
+unittest {
+  void value() {
+    throw new Exception("message");
+  }
+
+  auto result = evaluate(&value);
 
   result.evaluation.throwable.should.not.beNull;
   result.evaluation.throwable.msg.should.equal("message");
