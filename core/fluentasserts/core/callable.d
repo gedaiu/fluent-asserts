@@ -13,7 +13,9 @@ struct ShouldCallable(T) {
     T callable;
     ValueEvaluation valueEvaluation;
   }
+
   mixin ShouldCommons;
+  mixin ShouldThrowableCommons;
 
   this(lazy T callable) {
     auto result = callable.evaluate;

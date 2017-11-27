@@ -17,6 +17,7 @@ struct ShouldBaseType(T) {
   }
 
   mixin ShouldCommons;
+  mixin ShouldThrowableCommons;
 
   alias above = this.greaterThan;
   alias below = this.lessThan;
