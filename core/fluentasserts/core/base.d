@@ -243,7 +243,6 @@ struct ThrowableProxy(T : Throwable) {
 
   private const {
     bool expectedValue;
-    bool rightType;
     const string _file;
     size_t _line;
   }
@@ -256,15 +255,14 @@ struct ThrowableProxy(T : Throwable) {
     T thrownTyped;
   }
 
-  this(Throwable thrown, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
+  this(Throwable thrown, bool expectedValue, Message[] messages, const string file, size_t line) {
     this.expectedValue = expectedValue;
     this._file = file;
     this._line = line;
     this.thrown = thrown;
-    if (rightType) this.thrownTyped = cast(T)thrown;
+    this.thrownTyped = cast(T) thrown;
     this.messages = messages;
     this.check = true;
-    this.rightType = rightType;
   }
 
   ~this() {
@@ -326,8 +324,9 @@ struct ThrowableProxy(T : Throwable) {
     }
 
     bool hasException = thrown !is null;
+    bool hasTypedException = thrownTyped !is null;
 
-    if(hasException == expectedValue && rightType) {
+    if(hasException == expectedValue && hasTypedException == expectedValue) {
       return;
     }
 

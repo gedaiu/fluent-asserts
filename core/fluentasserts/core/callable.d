@@ -37,6 +37,24 @@ struct ShouldCallable(T) {
     return throwException!Throwable(file, line);
   }
 
+  ThrowableProxy!T throwExceptionImplementation(T)(Throwable t, string file = __FILE__, size_t line = __LINE__) {
+    addMessage(" throw a `");
+    addValue(T.stringof);
+    addMessage("`");
+
+    bool rightType = true;
+    if(t !is null) {
+      T castedThrowable = cast(T) t;
+      rightType = castedThrowable !is null;
+    }
+
+    import std.stdio;
+    writeln("expectedValue: ", expectedValue);
+    writeln("rightType: ", rightType);
+
+    return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
+  }
+
   ThrowableProxy!T throwException(T)(string file = __FILE__, size_t line = __LINE__) {
     Throwable t;
     bool rightType = true;
@@ -55,7 +73,7 @@ struct ShouldCallable(T) {
       rightType = false;
     }
 
-    return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
+    return ThrowableProxy!T(t, expectedValue, messages, file, line);
   }
 
   auto beNull(string file = __FILE__, size_t line = __LINE__) {
