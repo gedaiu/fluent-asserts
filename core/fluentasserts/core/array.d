@@ -147,10 +147,10 @@ unittest {
 
 struct ShouldList(T) if(isInputRange!(T)) {
   private T testData;
-  private ValueEvaluation valueEvaluation;
 
   alias U = ElementType!T;
   mixin ShouldCommons;
+  mixin DisabledShouldThrowableCommons;
 
   auto equal(T)(T[] valueList, const string file = __FILE__, const size_t line = __LINE__) {
     import fluentasserts.core.basetype;
