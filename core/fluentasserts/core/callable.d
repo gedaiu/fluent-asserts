@@ -9,15 +9,23 @@ import std.traits;
 import fluentasserts.core.results;
 
 struct ShouldCallable(T) {
-  private T callable;
-  private ValueEvaluation valueEvaluation;
+  private {
+    T callable;
+    ValueEvaluation valueEvaluation;
+  }
   mixin ShouldCommons;
 
-  auto haveExecutionTime(string file = __FILE__, size_t line = __LINE__) {
-    auto begin = Clock.currTime;
-    callable();
+  this(lazy T callable) {
+    auto result = callable.evaluate;
 
-    auto tmpShould = ShouldBaseType!Duration(evaluate(Clock.currTime - begin)).forceMessage(" have execution time");
+    valueEvaluation = result.evaluation;
+    this.callable = result.value;
+  }
+
+  auto haveExecutionTime(string file = __FILE__, size_t line = __LINE__) {
+    import std.stdio;
+    writeln("valueEvaluation.duration:", valueEvaluation.duration);
+    auto tmpShould = ShouldBaseType!Duration(evaluate(valueEvaluation.duration)).forceMessage(" have execution time");
 
     return tmpShould;
   }
@@ -36,22 +44,6 @@ struct ShouldCallable(T) {
     beginCheck;
 
     return throwException!Throwable(file, line);
-  }
-
-  ThrowableProxy!T throwException(T)(string file = __FILE__, size_t line = __LINE__) {
-    Throwable t;
-    bool rightType = true;
-    addMessage(" throw a `");
-    addValue(T.stringof);
-    addMessage("`");
-
-    try {
-      callable();
-    } catch(Throwable th) {
-      t = th;
-    }
-
-    return ThrowableProxy!T(t, expectedValue, messages, file, line);
   }
 
   auto beNull(string file = __FILE__, size_t line = __LINE__) {
@@ -219,7 +211,7 @@ unittest
     exception = e;
   }
 
-  exception.should.not.beNull.because("we wait 2 seconds");
+  exception.should.not.beNull.because("we wait 20 milliseconds");
   exception.msg.split("\n")[0].should.startWith("({↲      Thread.sleep(2.msecs);↲    }) should have execution time less than `1 ms`.");
 }
 
