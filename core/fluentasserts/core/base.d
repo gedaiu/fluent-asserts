@@ -15,7 +15,9 @@ import std.range;
 import std.conv;
 import std.string;
 import std.file;
+import std.datetime;
 import std.range.primitives;
+import std.typecons;
 
 struct Result {
   bool willThrow;
@@ -46,6 +48,62 @@ struct Result {
 struct Message {
   bool isValue;
   string text;
+}
+
+mixin template DisabledShouldThrowableCommons() {
+  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
+    static assert("`throwSomething` does not work for arrays and ranges");
+  }
+
+  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
+    static assert("`throwAnyException` does not work for arrays and ranges");
+  }
+
+  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
+    static assert("`throwException` does not work for arrays and ranges");
+  }
+}
+
+mixin template ShouldThrowableCommons() {
+  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
+    addMessage(" throw ");
+    addValue("something");
+    beginCheck;
+
+    return throwException!Throwable(file, line);
+  }
+
+  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" throw ");
+    addValue("any exception");
+    beginCheck;
+
+    return throwException!Exception(file, line);
+  }
+
+  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" throw a `");
+    addValue(T.stringof);
+    addMessage("`");
+
+    return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, messages, file, line);
+  }
+
+  private {
+    ThrowableProxy!T throwExceptionImplementation(T)(Throwable t, string file = __FILE__, size_t line = __LINE__) {
+      addMessage(" throw a `");
+      addValue(T.stringof);
+      addMessage("`");
+
+      bool rightType = true;
+      if(t !is null) {
+        T castedThrowable = cast(T) t;
+        rightType = castedThrowable !is null;
+      }
+
+      return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
+    }
+  }
 }
 
 mixin template ShouldCommons()
@@ -237,13 +295,201 @@ unittest {
   count.should.equal(3);
 }
 
+struct ThrowableProxy(T : Throwable) {
+  import fluentasserts.core.results;
+
+  private const {
+    bool expectedValue;
+    const string _file;
+    size_t _line;
+  }
+
+  private {
+    Message[] messages;
+    string reason;
+    bool check;
+    Throwable thrown;
+    T thrownTyped;
+  }
+
+  this(Throwable thrown, bool expectedValue, Message[] messages, const string file, size_t line) {
+    this.expectedValue = expectedValue;
+    this._file = file;
+    this._line = line;
+    this.thrown = thrown;
+    this.thrownTyped = cast(T) thrown;
+    this.messages = messages;
+    this.check = true;
+  }
+
+  ~this() {
+    checkException;
+  }
+
+  auto msg() {
+    checkException;
+    check = false;
+
+    return thrown.msg.dup.to!string;
+  }
+
+  auto original() {
+    checkException;
+    check = false;
+
+    return thrownTyped;
+  }
+
+  auto file() {
+    checkException;
+    check = false;
+
+    return thrown.file;
+  }
+
+  auto info() {
+    checkException;
+    check = false;
+
+    return thrown.info;
+  }
+
+  auto line() {
+    checkException;
+    check = false;
+
+    return thrown.line;
+  }
+
+  auto next() {
+    checkException;
+    check = false;
+
+    return thrown.next;
+  }
+
+  auto withMessage() {
+    auto s = ShouldString(msg);
+    check = false;
+
+    return s.forceMessage(messages ~ Message(false, " with message"));
+  }
+
+  private void checkException() {
+    if(!check) {
+      return;
+    }
+
+    bool hasException = thrown !is null;
+    bool hasTypedException = thrownTyped !is null;
+
+    if(hasException == expectedValue && hasTypedException == expectedValue) {
+      return;
+    }
+
+    auto sourceResult = new SourceResult(_file, _line);
+    auto message = new MessageResult("");
+
+    if(reason != "") {
+      message.addText("Because " ~ reason ~ ", ");
+    }
+
+    message.addText(sourceResult.getValue ~ " should");
+
+    foreach(msg; messages) {
+      if(msg.isValue) {
+        message.addValue(msg.text);
+      } else {
+        message.addText(msg.text);
+      }
+    }
+
+    message.addText(".");
+
+    if(thrown is null) {
+      message.addText(" Nothing was thrown.");
+    } else {
+      message.addText(" An exception of type `");
+      message.addValue(thrown.classinfo.name);
+      message.addText("` saying `");
+      message.addValue(thrown.msg);
+      message.addText("` was thrown.");
+    }
+
+    throw new TestException([ cast(IResult) message ], _file, _line);
+  }
+
+  void because(string reason) {
+    this.reason = reason;
+  }
+}
+
+struct ValueEvaluation {
+  Throwable throwable;
+  Duration duration;
+}
+
+auto evaluate(T)(lazy T testData) {
+  auto begin = Clock.currTime;
+  alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
+
+  Result r;
+
+  try {
+    auto value = testData;
+
+    static if(isCallable!T) {
+      if(value !is null) {
+        begin = Clock.currTime;
+        value();
+      }
+    }
+
+    auto duration = Clock.currTime - begin;
+    r.value = value;
+    r.evaluation = ValueEvaluation(null, duration);
+  } catch(Throwable t) {
+    r.evaluation = ValueEvaluation(t, Clock.currTime - begin);
+
+    static if(isCallable!T) {
+      r.value = testData;
+    }
+  }
+
+  return r;
+}
+
+/// evaluate should capture an exception
+unittest {
+  int value() {
+    throw new Exception("message");
+  }
+
+  auto result = evaluate(value);
+
+  result.evaluation.throwable.should.not.beNull;
+  result.evaluation.throwable.msg.should.equal("message");
+}
+
+/// evaluate should capture an exception thrown by a callable
+unittest {
+  void value() {
+    throw new Exception("message");
+  }
+
+  auto result = evaluate(&value);
+
+  result.evaluation.throwable.should.not.beNull;
+  result.evaluation.throwable.msg.should.equal("message");
+}
+
 auto should(T)(lazy T testData) {
   version(Have_fluent_asserts_vibe) {
     import vibe.data.json;
 
     static if(is(T == Json)) {
       enum returned = true;
-      return ShouldString(testData.to!string);
+      return ShouldString(testData.to!string.evaluate);
     } else {
       enum returned = false;
     }
@@ -251,17 +497,20 @@ auto should(T)(lazy T testData) {
     enum returned = false;
   }
 
-  static if(!returned) {
+  static if(is(T == void)) {
+    auto callable = ({ testData; });
+    return ShouldCallable!(typeof(callable))(callable);
+  } else static if(!returned) {
     static if(is(T == class)) {
-      return ShouldObject!T(testData);
+      return ShouldObject!T(testData.evaluate);
     } else static if(is(T == string)) {
-      return ShouldString(testData);
+      return ShouldString(testData.evaluate);
     } else static if(isInputRange!T) {
       return ShouldList!T(testData);
     } else static if(isCallable!T) {
       return ShouldCallable!T(testData);
     } else {
-      return ShouldBaseType!T(testData);
+      return ShouldBaseType!T(testData.evaluate);
     }
   }
 }
