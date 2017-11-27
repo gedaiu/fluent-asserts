@@ -17,6 +17,7 @@ import std.string;
 import std.file;
 import std.datetime;
 import std.range.primitives;
+import std.typecons;
 
 struct Result {
   bool willThrow;
@@ -146,6 +147,36 @@ mixin template ShouldCommons()
       IResult[] results = res ~ cast(IResult) sourceResult;
 
       return Result(expectedValue != value, results, finalMessage, file, line);
+    }
+
+    ThrowableProxy!T throwExceptionImplementation(T)(Throwable t, string file = __FILE__, size_t line = __LINE__) {
+      addMessage(" throw a `");
+      addValue(T.stringof);
+      addMessage("`");
+
+      bool rightType = true;
+      if(t !is null) {
+        T castedThrowable = cast(T) t;
+        rightType = castedThrowable !is null;
+      }
+
+      return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
+    }
+
+    auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
+      addMessage(" throw ");
+      addValue("any exception");
+      beginCheck;
+
+      return throwException!Exception(file, line);
+    }
+
+    auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
+      addMessage(" throw a `");
+      addValue(T.stringof);
+      addMessage("`");
+
+      return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, messages, file, line);
     }
   }
 }
@@ -367,24 +398,27 @@ struct ThrowableProxy(T : Throwable) {
   }
 }
 
-struct ValueEvaluation(T) {
+struct ValueEvaluation {
   Throwable throwable;
   Duration duration;
-
-  T value;
 }
 
 auto evaluate(T)(lazy T testData) {
   auto begin = Clock.currTime;
+  alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
+  Result r;
 
   try {
     auto value = testData;
     auto duration = Clock.currTime - begin;
 
-    return ValueEvaluation!T(null, duration, value);
+    r.value = value;
+    r.evaluation = ValueEvaluation(null, duration);
   } catch(Throwable t) {
-    return ValueEvaluation!T(t, Clock.currTime - begin);
+    r.evaluation = ValueEvaluation(t, Clock.currTime - begin);
   }
+
+  return r;
 }
 
 /// evaluate should capture an exception
@@ -393,10 +427,10 @@ unittest {
     throw new Exception("message");
   }
 
-  ValueEvaluation!int result = evaluate(value);
+  auto result = evaluate(value);
 
-  result.throwable.should.not.beNull;
-  result.throwable.msg.should.equal("message");
+  result.evaluation.throwable.should.not.beNull;
+  result.evaluation.throwable.msg.should.equal("message");
 }
 
 auto should(T)(lazy T testData) {

@@ -10,6 +10,7 @@ import std.array;
 
 struct ShouldString {
   private const string testData;
+  private ValueEvaluation valueEvaluation;
 
   mixin ShouldCommons;
 
