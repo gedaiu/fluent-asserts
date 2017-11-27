@@ -50,6 +50,62 @@ struct Message {
   string text;
 }
 
+mixin template DisabledShouldThrowableCommons() {
+  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
+    static assert("`throwSomething` does not work for arrays and ranges");
+  }
+
+  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
+    static assert("`throwAnyException` does not work for arrays and ranges");
+  }
+
+  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
+    static assert("`throwException` does not work for arrays and ranges");
+  }
+}
+
+mixin template ShouldThrowableCommons() {
+  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
+    addMessage(" throw ");
+    addValue("something");
+    beginCheck;
+
+    return throwException!Throwable(file, line);
+  }
+
+  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" throw ");
+    addValue("any exception");
+    beginCheck;
+
+    return throwException!Exception(file, line);
+  }
+
+  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" throw a `");
+    addValue(T.stringof);
+    addMessage("`");
+
+    return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, messages, file, line);
+  }
+
+  private {
+    ThrowableProxy!T throwExceptionImplementation(T)(Throwable t, string file = __FILE__, size_t line = __LINE__) {
+      addMessage(" throw a `");
+      addValue(T.stringof);
+      addMessage("`");
+
+      bool rightType = true;
+      if(t !is null) {
+        T castedThrowable = cast(T) t;
+        rightType = castedThrowable !is null;
+      }
+
+      return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
+    }
+  }
+}
+
 mixin template ShouldCommons()
 {
   import std.string;
@@ -82,30 +138,6 @@ mixin template ShouldCommons()
     this.messages = messages;
 
     return this;
-  }
-
-  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
-    addMessage(" throw ");
-    addValue("something");
-    beginCheck;
-
-    return throwException!Throwable(file, line);
-  }
-
-  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage(" throw ");
-    addValue("any exception");
-    beginCheck;
-
-    return throwException!Exception(file, line);
-  }
-
-  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage(" throw a `");
-    addValue(T.stringof);
-    addMessage("`");
-
-    return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, messages, file, line);
   }
 
   private {
@@ -171,20 +203,6 @@ mixin template ShouldCommons()
       IResult[] results = res ~ cast(IResult) sourceResult;
 
       return Result(expectedValue != value, results, finalMessage, file, line);
-    }
-
-    ThrowableProxy!T throwExceptionImplementation(T)(Throwable t, string file = __FILE__, size_t line = __LINE__) {
-      addMessage(" throw a `");
-      addValue(T.stringof);
-      addMessage("`");
-
-      bool rightType = true;
-      if(t !is null) {
-        T castedThrowable = cast(T) t;
-        rightType = castedThrowable !is null;
-      }
-
-      return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
     }
   }
 }
@@ -414,6 +432,7 @@ struct ValueEvaluation {
 auto evaluate(T)(lazy T testData) {
   auto begin = Clock.currTime;
   alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
+
   Result r;
 
   try {
@@ -491,9 +510,7 @@ auto should(T)(lazy T testData) {
     } else static if(isCallable!T) {
       return ShouldCallable!T(testData);
     } else {
-      auto finalTestData = evaluate(testData);
-
-      return ShouldBaseType!T(finalTestData);
+      return ShouldBaseType!T(testData.evaluate);
     }
   }
 }
