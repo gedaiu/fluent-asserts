@@ -9,6 +9,7 @@ import std.traits;
 
 struct ShouldObject(T) {
   private const T testData;
+  private ValueEvaluation valueEvaluation;
 
   mixin ShouldCommons;
 

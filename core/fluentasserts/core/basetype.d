@@ -9,11 +9,11 @@ import std.algorithm;
 
 struct ShouldBaseType(T) {
   private const T testData;
-  private ValueEvaluation!T valueEvaluation;
+  private ValueEvaluation valueEvaluation;
 
-  this(ValueEvaluation!T valueEvaluation) {
+  this(U)(U valueEvaluation) {
     testData = valueEvaluation.value;
-    this.valueEvaluation = valueEvaluation;
+    this.valueEvaluation = valueEvaluation.evaluation;
   }
 
   mixin ShouldCommons;
@@ -131,22 +131,6 @@ struct ShouldBaseType(T) {
     beginCheck;
 
     return between(someValue - delta, someValue + delta, file, line);
-  }
-
-  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage(" throw ");
-    addValue("any exception");
-    beginCheck;
-
-    return throwException!Exception(file, line);
-  }
-
-  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage(" throw a `");
-    addValue(T.stringof);
-    addMessage("`");
-
-    return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, messages, file, line);
   }
 }
 
@@ -328,7 +312,6 @@ unittest {
   msg.split("\n")[2].strip.should.equal("Expected:a value outside (2.66, 3.34) interval");
   msg.split("\n")[3].strip.should.equal("Actual:3.33333");
 }
-
 
 /// should throw exceptions for delegates that return basic types
 unittest {

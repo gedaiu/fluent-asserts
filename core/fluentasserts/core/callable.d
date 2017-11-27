@@ -10,6 +10,7 @@ import fluentasserts.core.results;
 
 struct ShouldCallable(T) {
   private T callable;
+  private ValueEvaluation valueEvaluation;
   mixin ShouldCommons;
 
   auto haveExecutionTime(string file = __FILE__, size_t line = __LINE__) {
@@ -37,24 +38,6 @@ struct ShouldCallable(T) {
     return throwException!Throwable(file, line);
   }
 
-  ThrowableProxy!T throwExceptionImplementation(T)(Throwable t, string file = __FILE__, size_t line = __LINE__) {
-    addMessage(" throw a `");
-    addValue(T.stringof);
-    addMessage("`");
-
-    bool rightType = true;
-    if(t !is null) {
-      T castedThrowable = cast(T) t;
-      rightType = castedThrowable !is null;
-    }
-
-    import std.stdio;
-    writeln("expectedValue: ", expectedValue);
-    writeln("rightType: ", rightType);
-
-    return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
-  }
-
   ThrowableProxy!T throwException(T)(string file = __FILE__, size_t line = __LINE__) {
     Throwable t;
     bool rightType = true;
@@ -63,14 +46,9 @@ struct ShouldCallable(T) {
     addMessage("`");
 
     try {
-      try {
-        callable();
-      } catch(T e) {
-        t = e;
-      }
+      callable();
     } catch(Throwable th) {
       t = th;
-      rightType = false;
     }
 
     return ThrowableProxy!T(t, expectedValue, messages, file, line);
