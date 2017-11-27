@@ -93,7 +93,7 @@ unittest
     }).should.throwException!CustomException.withMessage.equal("test");
   } catch(TestException t) {
     hasException = true;
-    t.msg.split("\n")[2].should.equal("    }) should throw a `CustomException`. An exception of type `object.Exception` saying `test` was thrown.");
+    t.msg.should.contain("    }) should throw a `CustomException`. An exception of type `object.Exception` saying `test` was thrown.");
   }
 
   hasException.should.equal(true).because("we want to catch a CustomException not an Exception");
