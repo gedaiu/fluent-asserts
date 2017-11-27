@@ -106,6 +106,35 @@ unittest {
   msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");
 }
 
+/// object instanceOf interface
+unittest {
+  interface MyInterface {};
+  class BaseClass : MyInterface { }
+  class OtherClass { }
+
+  auto someObject = new BaseClass;
+  auto otherObject = new OtherClass;
+
+  someObject.should.be.instanceOf!MyInterface;
+
+  auto msg = ({
+    otherObject.should.be.instanceOf!MyInterface;
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("otherObject should be instance of `MyInterface`.");
+  msg.split("\n")[2].strip.should.equal("Expected:a `MyInterface` instance");
+  msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");
+
+  msg = ({
+    someObject.should.not.be.instanceOf!MyInterface;
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("someObject should not be instance of `MyInterface`.");
+  msg.split("\n")[2].strip.should.equal("Expected:not a `MyInterface` instance");
+  msg.split("\n")[3].strip.should.equal("Actual:a `BaseClass` instance");
+}
+
+
 /// object equal
 unittest {
   class TestEqual {
