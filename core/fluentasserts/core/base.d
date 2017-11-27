@@ -489,7 +489,7 @@ auto should(T)(lazy T testData) {
 
     static if(is(T == Json)) {
       enum returned = true;
-      return ShouldString(testData.to!string);
+      return ShouldString(testData.to!string.evaluate);
     } else {
       enum returned = false;
     }
