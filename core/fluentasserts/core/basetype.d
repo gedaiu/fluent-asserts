@@ -11,9 +11,9 @@ struct ShouldBaseType(T) {
   private const T testData;
   private ValueEvaluation valueEvaluation;
 
-  this(U)(U valueEvaluation) {
-    testData = valueEvaluation.value;
-    this.valueEvaluation = valueEvaluation.evaluation;
+  this(U)(U value) {
+    valueEvaluation = value.evaluation;
+    testData = value.value;
   }
 
   mixin ShouldCommons;

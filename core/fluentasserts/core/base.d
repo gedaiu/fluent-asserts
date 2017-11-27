@@ -504,7 +504,7 @@ auto should(T)(lazy T testData) {
     static if(is(T == class)) {
       return ShouldObject!T(testData.evaluate);
     } else static if(is(T == string)) {
-      return ShouldString(testData);
+      return ShouldString(testData.evaluate);
     } else static if(isInputRange!T) {
       return ShouldList!T(testData);
     } else static if(isCallable!T) {
