@@ -378,11 +378,15 @@ unittest {
 
   value().should.throwAnyException.withMessage.equal("not implemented");
 
-  auto msg = ({
+  bool thrown;
+  try {
     noException.should.throwAnyException;
-  }).should.throwException!TestException.msg;
+  } catch(TestException e) {
+    e.msg.should.startWith("noException should throw any exception. Nothing was thrown.");
+    thrown = true;
+  }
 
-  msg.should.startWith("noException should throw any exception. Nothing was thrown.");
+  thrown.should.equal(true);
 }
 
 @("const string equal")

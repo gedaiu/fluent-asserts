@@ -329,13 +329,17 @@ unittest {
   value().should.throwAnyException.withMessage.equal("not implemented");
   voidValue().should.throwAnyException.withMessage.equal("not implemented");
 
-  auto msg = ({
-    noException.should.throwAnyException;
-  }).should.throwException!TestException.msg;
-
-  msg.should.startWith("noException should throw any exception. Nothing was thrown.");
-
   bool thrown;
+
+  try {
+    noException.should.throwAnyException;
+  } catch (TestException e) {
+    e.msg.should.startWith("noException should throw any exception. Nothing was thrown.");
+    thrown = true;
+  }
+  thrown.should.equal(true);
+
+  thrown = false;
 
   try {
     voidValue().should.not.throwAnyException;
