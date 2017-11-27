@@ -146,9 +146,7 @@ struct ShouldBaseType(T) {
     addValue(T.stringof);
     addMessage("`");
 
-    bool rightType = (cast(T) valueEvaluation.throwable) !is null;
-
-    return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, rightType, messages, file, line);
+    return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, messages, file, line);
   }
 }
 
@@ -352,4 +350,15 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.should.startWith("noException should throw any exception. Nothing was thrown.");
+
+  bool thrown;
+
+  try {
+    voidValue().should.not.throwAnyException;
+  } catch(TestException e) {
+    thrown = true;
+    e.msg.split("\n")[0].should.equal("() should not throw any exception. An exception of type `object.Exception` saying `not implemented` was thrown.");
+  }
+
+  thrown.should.equal(true);
 }
