@@ -84,6 +84,14 @@ mixin template ShouldCommons()
     return this;
   }
 
+  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
+    addMessage(" throw ");
+    addValue("something");
+    beginCheck;
+
+    return throwException!Throwable(file, line);
+  }
+
   auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
     addMessage(" throw ");
     addValue("any exception");

@@ -30,22 +30,6 @@ struct ShouldCallable(T) {
     return tmpShould;
   }
 
-  auto throwAnyException(string file = __FILE__, size_t line = __LINE__) {
-    addMessage(" throw ");
-    addValue("any exception");
-    beginCheck;
-
-    return throwException!Exception(file, line);
-  }
-
-  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
-    addMessage(" throw ");
-    addValue("something");
-    beginCheck;
-
-    return throwException!Throwable(file, line);
-  }
-
   auto beNull(string file = __FILE__, size_t line = __LINE__) {
     addMessage(" be ");
     addValue("null");
