@@ -9,10 +9,22 @@ import std.algorithm;
 import std.array;
 
 struct ShouldString {
-  private const string testData;
-  private ValueEvaluation valueEvaluation;
+  private {
+    const string testData;
+    ValueEvaluation valueEvaluation;
+  }
 
   mixin ShouldCommons;
+  mixin ShouldThrowableCommons;
+
+  this(string value) {
+    testData = value;
+  }
+
+  this(U)(U value) {
+    valueEvaluation = value.evaluation;
+    testData = value.value;
+  }
 
   auto equal(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage(" equal `");
@@ -354,4 +366,21 @@ unittest {
   msg.should.contain(`Actual:some data\0\0`);
   msg.should.contain("data.assumeUTF.to!string should equal `some data`. `some data\\0\\0` is not equal to `some data`.");
   msg.should.contain(`some data[+\0\0]`);
+}
+
+/// should throw exceptions for delegates that return basic types
+unittest {
+  string value() {
+    throw new Exception("not implemented");
+  }
+
+  string noException() { return null; }
+
+  value().should.throwAnyException.withMessage.equal("not implemented");
+
+  auto msg = ({
+    noException.should.throwAnyException;
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("noException should throw any exception. Nothing was thrown.");
 }
