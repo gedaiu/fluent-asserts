@@ -384,3 +384,15 @@ unittest {
 
   msg.should.startWith("noException should throw any exception. Nothing was thrown.");
 }
+
+@("const string equal")
+unittest {
+  const string constValue = "test string";
+  immutable string immutableValue = "test string";
+
+  constValue.should.equal("test string");
+  immutableValue.should.equal("test string");
+
+  "test string".should.equal(constValue);
+  "test string".should.equal(immutableValue);
+}

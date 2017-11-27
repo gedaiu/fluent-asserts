@@ -8,8 +8,10 @@ import std.stdio;
 import std.traits;
 
 struct ShouldObject(T) {
-  private const T testData;
-  private ValueEvaluation valueEvaluation;
+  private {
+    T testData;
+    ValueEvaluation valueEvaluation;
+  }
 
   mixin ShouldCommons;
   mixin ShouldThrowableCommons;
@@ -41,6 +43,15 @@ struct ShouldObject(T) {
     cast(IResult) new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ "a `" ~ U.stringof ~ "` instance",
                                            "a `" ~ T.stringof ~ "` instance"),
                                            file, line);
+  }
+
+  auto equal(U)(U instance, const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" equal ");
+    addValue("`" ~ U.stringof ~ "`");
+    beginCheck;
+
+    return result(testData == instance, [] ,
+      cast(IResult) new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ instance.toString, testData.toString), file, line);
   }
 }
 
@@ -121,4 +132,32 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.should.startWith("noException should throw any exception. Nothing was thrown.");
+}
+
+/// object equal
+unittest {
+  class TestEqual {
+    private int value;
+
+    this(int value) {
+      this.value = value;
+    }
+  }
+
+  auto instance = new TestEqual(1);
+
+  instance.should.equal(instance);
+  instance.should.not.equal(new TestEqual(1));
+
+  auto msg = ({
+    instance.should.not.equal(instance);
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("instance should not equal `TestEqual`.");
+
+  msg = ({
+    instance.should.equal(new TestEqual(1));
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("instance should equal `TestEqual`.");
 }
