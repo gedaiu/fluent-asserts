@@ -502,7 +502,7 @@ auto should(T)(lazy T testData) {
     return ShouldCallable!(typeof(callable))(callable);
   } else static if(!returned) {
     static if(is(T == class)) {
-      return ShouldObject!T(testData);
+      return ShouldObject!T(testData.evaluate);
     } else static if(is(T == string)) {
       return ShouldString(testData);
     } else static if(isInputRange!T) {

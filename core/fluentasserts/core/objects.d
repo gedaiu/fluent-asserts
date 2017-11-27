@@ -12,6 +12,12 @@ struct ShouldObject(T) {
   private ValueEvaluation valueEvaluation;
 
   mixin ShouldCommons;
+  mixin ShouldThrowableCommons;
+
+  this(U)(U value) {
+    this.valueEvaluation = value.evaluation;
+    this.testData = value.value;
+  }
 
   auto beNull(const string file = __FILE__, const size_t line = __LINE__) {
     addMessage(" be ");
@@ -96,4 +102,23 @@ unittest {
   msg.split("\n")[0].should.equal("otherObject should not be instance of `OtherClass`.");
   msg.split("\n")[2].strip.should.equal("Expected:not a `OtherClass` instance");
   msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");
+}
+
+/// should throw exceptions for delegates that return basic types
+unittest {
+  class SomeClass { }
+
+  SomeClass value() {
+    throw new Exception("not implemented");
+  }
+
+  SomeClass noException() { return null; }
+
+  value().should.throwAnyException.withMessage.equal("not implemented");
+
+  auto msg = ({
+    noException.should.throwAnyException;
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("noException should throw any exception. Nothing was thrown.");
 }
