@@ -108,7 +108,7 @@ unittest {
 
 /// object instanceOf interface
 unittest {
-  interface MyInterface {};
+  interface MyInterface { }
   class BaseClass : MyInterface { }
   class OtherClass { }
 
@@ -133,7 +133,6 @@ unittest {
   msg.split("\n")[2].strip.should.equal("Expected:not a `MyInterface` instance");
   msg.split("\n")[3].strip.should.equal("Actual:a `BaseClass` instance");
 }
-
 
 /// object equal
 unittest {
