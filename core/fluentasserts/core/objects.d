@@ -41,9 +41,7 @@ struct ShouldObject(T) {
     addValue("`" ~ U.stringof ~ "`");
     beginCheck;
 
-    bool isEqual = testData.opEquals(instance);
-
-    return result(isEqual, [] ,
+    return result(testData == instance, [] ,
       cast(IResult) new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ instance.toString, testData.toString), file, line);
   }
 }
