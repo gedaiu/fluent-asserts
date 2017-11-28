@@ -8,185 +8,28 @@ import std.traits;
 
 import fluentasserts.core.results;
 
-struct ThrowableProxy(T : Throwable) {
-  import fluentasserts.core.results;
-
-  private const {
-    bool expectedValue;
-    bool rightType;
-    const string _file;
-    size_t _line;
-  }
-
-  private {
-    Message[] messages;
-    string reason;
-    bool check;
-    Throwable thrown;
-    T thrownTyped;
-  }
-
-  this(Throwable thrown, bool expectedValue, bool rightType, Message[] messages, const string file, size_t line) {
-    this.expectedValue = expectedValue;
-    this._file = file;
-    this._line = line;
-    this.thrown = thrown;
-    if (rightType) this.thrownTyped = cast(T)thrown;
-    this.messages = messages;
-    this.check = true;
-    this.rightType = rightType;
-  }
-
-  ~this() {
-    checkException;
-  }
-
-  auto msg() {
-    checkException;
-    check = false;
-
-    return thrown.msg.dup.to!string;
-  }
-
-  auto original() {
-    checkException;
-    check = false;
-
-    return thrownTyped;
-  }
-
-  auto file() {
-    checkException;
-    check = false;
-
-    return thrown.file;
-  }
-
-  auto info() {
-    checkException;
-    check = false;
-
-    return thrown.info;
-  }
-
-  auto line() {
-    checkException;
-    check = false;
-
-    return thrown.line;
-  }
-
-  auto next() {
-    checkException;
-    check = false;
-
-    return thrown.next;
-  }
-
-  auto withMessage() {
-    auto s = ShouldString(msg);
-    check = false;
-
-    return s.forceMessage(messages ~ Message(false, " with message"));
-  }
-
-  private void checkException() {
-    if(!check) {
-      return;
-    }
-
-    bool hasException = thrown !is null;
-
-    if(hasException == expectedValue && rightType) {
-      return;
-    }
-
-    auto sourceResult = new SourceResult(_file, _line);
-
-    auto message = new MessageResult("");
-
-    if(reason != "") {
-      message.addText("Because " ~ reason ~ ", ");
-    }
-
-    message.addText(sourceResult.getValue ~ " should");
-
-    foreach(msg; messages) {
-      if(msg.isValue) {
-        message.addValue(msg.text);
-      } else {
-        message.addText(msg.text);
-      }
-    }
-
-    message.addText(".");
-
-    if(thrown is null) {
-      message.addText(" Nothing was thrown.");
-    } else {
-      message.addText(" An exception of type `");
-      message.addValue(thrown.classinfo.name);
-      message.addText("` saying `");
-      message.addValue(thrown.msg);
-      message.addText("` was thrown.");
-    }
-
-    throw new TestException([ cast(IResult) message ], _file, _line);
-  }
-
-  void because(string reason) {
-    this.reason = reason;
-  }
-}
-
 struct ShouldCallable(T) {
-  private T callable;
+  private {
+    T callable;
+    ValueEvaluation valueEvaluation;
+  }
+
   mixin ShouldCommons;
+  mixin ShouldThrowableCommons;
+
+  this(lazy T callable) {
+    auto result = callable.evaluate;
+
+    valueEvaluation = result.evaluation;
+    this.callable = result.value;
+  }
 
   auto haveExecutionTime(string file = __FILE__, size_t line = __LINE__) {
-    auto begin = Clock.currTime;
-    callable();
-
-    auto tmpShould = ShouldBaseType!Duration(Clock.currTime - begin).forceMessage(" have execution time");
+    import std.stdio;
+    writeln("valueEvaluation.duration:", valueEvaluation.duration);
+    auto tmpShould = ShouldBaseType!Duration(evaluate(valueEvaluation.duration)).forceMessage(" have execution time");
 
     return tmpShould;
-  }
-
-  auto throwAnyException(string file = __FILE__, size_t line = __LINE__) {
-    addMessage(" throw ");
-    addValue("any exception");
-    beginCheck;
-
-    return throwException!Exception(file, line);
-  }
-
-  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
-    addMessage(" throw ");
-    addValue("something");
-    beginCheck;
-
-    return throwException!Throwable(file, line);
-  }
-
-  ThrowableProxy!T throwException(T)(string file = __FILE__, size_t line = __LINE__) {
-    Throwable t;
-    bool rightType = true;
-    addMessage(" throw a `");
-    addValue(T.stringof);
-    addMessage("`");
-
-    try {
-      try {
-        callable();
-      } catch(T e) {
-        t = e;
-      }
-    } catch(Throwable th) {
-      t = th;
-      rightType = false;
-    }
-
-    return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
   }
 
   auto beNull(string file = __FILE__, size_t line = __LINE__) {
@@ -250,7 +93,7 @@ unittest
     }).should.throwException!CustomException.withMessage.equal("test");
   } catch(TestException t) {
     hasException = true;
-    t.msg.split("\n")[2].should.equal("    }) should throw a `CustomException`. An exception of type `object.Exception` saying `test` was thrown.");
+    t.msg.should.contain("    }) should throw a `CustomException`. An exception of type `object.Exception` saying `test` was thrown.");
   }
 
   hasException.should.equal(true).because("we want to catch a CustomException not an Exception");
@@ -354,7 +197,7 @@ unittest
     exception = e;
   }
 
-  exception.should.not.beNull.because("we wait 2 seconds");
+  exception.should.not.beNull.because("we wait 20 milliseconds");
   exception.msg.split("\n")[0].should.startWith("({↲      Thread.sleep(2.msecs);↲    }) should have execution time less than `1 ms`.");
 }
 

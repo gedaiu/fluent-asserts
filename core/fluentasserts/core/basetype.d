@@ -9,8 +9,15 @@ import std.algorithm;
 
 struct ShouldBaseType(T) {
   private const T testData;
+  private ValueEvaluation valueEvaluation;
+
+  this(U)(U value) {
+    valueEvaluation = value.evaluation;
+    testData = value.value;
+  }
 
   mixin ShouldCommons;
+  mixin ShouldThrowableCommons;
 
   alias above = this.greaterThan;
   alias below = this.lessThan;
@@ -305,4 +312,41 @@ unittest {
   msg.split("\n")[0].strip.should.equal("(10f/3f) should not be equal `3±0.34`.");
   msg.split("\n")[2].strip.should.equal("Expected:a value outside (2.66, 3.34) interval");
   msg.split("\n")[3].strip.should.equal("Actual:3.33333");
+}
+
+/// should throw exceptions for delegates that return basic types
+unittest {
+  int value() {
+    throw new Exception("not implemented");
+  }
+
+  void voidValue() {
+    throw new Exception("not implemented");
+  }
+
+  void noException() { }
+
+  value().should.throwAnyException.withMessage.equal("not implemented");
+  voidValue().should.throwAnyException.withMessage.equal("not implemented");
+
+  bool thrown;
+
+  try {
+    noException.should.throwAnyException;
+  } catch (TestException e) {
+    e.msg.should.startWith("noException should throw any exception. Nothing was thrown.");
+    thrown = true;
+  }
+  thrown.should.equal(true);
+
+  thrown = false;
+
+  try {
+    voidValue().should.not.throwAnyException;
+  } catch(TestException e) {
+    thrown = true;
+    e.msg.split("\n")[0].should.equal("() should not throw any exception. An exception of type `object.Exception` saying `not implemented` was thrown.");
+  }
+
+  thrown.should.equal(true);
 }
