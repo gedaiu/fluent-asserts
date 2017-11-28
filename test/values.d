@@ -62,3 +62,15 @@ unittest {
   (5+1).should.equal(5);
   (5, (11)).should.equal(3);
 }
+
+unittest {
+  foreach(value; array) {
+
+  }
+
+  found.should.equal(1);
+}
+
+unittest {
+  found(4).should.equal(1);
+}

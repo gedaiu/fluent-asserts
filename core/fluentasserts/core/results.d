@@ -1022,6 +1022,20 @@ unittest
   result.getValue.should.equal("(5, (11))");
 }
 
+@("Source reporter should get the value after a scope")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 71);
+  result.getValue.should.equal("found");
+}
+
+@("Source reporter should get a function call value")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 75);
+  result.getValue.should.equal("found(4)");
+}
+
 /// Source reporter should print the source code
 unittest
 {
