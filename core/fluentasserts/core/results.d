@@ -606,6 +606,64 @@ import dparse.ast;
 import dparse.lexer;
 import dparse.parser;
 
+string toString(const(Token)[] tokens) {
+  string result;
+
+  foreach(token; tokens.filter!(a => str(a.type) != "comment")) {
+    if(str(token.type) == "whitespace" && token.text == "") {
+      result ~= "\n";
+    } else {
+     result ~= token.text == "" ? str(token.type) : token.text;
+    }
+  }
+
+  return result;
+}
+
+const(Token)[] getScope(const(Token)[] tokens, size_t line) nothrow {
+  bool found;
+  size_t startToken;
+  size_t endToken = tokens.length;
+  int paranthesisCount = 0;
+
+  foreach(i, token; tokens) {
+    string type = str(token.type);
+
+    if(!found && paranthesisCount == 0 && type == "{") {
+      startToken = i + 1;
+    }
+
+    if(type == "{") {
+      paranthesisCount++;
+    }
+
+    if(type == "}") {
+      paranthesisCount--;
+    }
+
+    if(line == token.line) {
+      found = true;
+    }
+
+    if(found && type == "}" && paranthesisCount == 0) {
+      endToken = i;
+      break;
+    }
+  }
+
+  return tokens[startToken .. endToken];
+}
+
+/// Get tokens from a scope that contains a lambda
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  getScope(tokens, 81).toString.strip.should.equal("({
+    ({ }).should.beNull;
+  }).should.throwException!TestException.msg;");
+}
+
 /// An alternative to SourceResult that uses
 // DParse to get the source code
 class SourceResult : IResult
@@ -634,31 +692,9 @@ class SourceResult : IResult
 
     try {
       updateFileTokens(fileName);
+    } catch (Throwable t) {}
 
-      size_t startLine = 0;
-      size_t endLine = 0;
-
-      bool found = false;
-      foreach(token; fileTokens[fileName]) {
-        if(!found && str(token.type) == "{") {
-          startLine = token.line;
-        }
-
-        if(line == token.line) {
-          found = true;
-        }
-
-        if(found && str(token.type) == "}") {
-          endLine = token.line;
-          break;
-        }
-      }
-
-      this.tokens = fileTokens[fileName]
-        .filter!(token => token.line >= startLine && token.line <= endLine)
-          .array;
-
-    } catch(Throwable t) { }
+    this.tokens = getScope(fileTokens[fileName], line);
   }
 
   static void updateFileTokens(string fileName) {
@@ -680,14 +716,18 @@ class SourceResult : IResult
 
     foreach(index, token; tokens) {
       auto type = str(token.type);
-
-      if(type == "{" || type == ";") {
+      1.writeln(":",paranthesisCount,":", startIndex, " ", type, " ", token.text);
+      if(type == "{" || type == ";" || type == "}") {
+        2.writeln;
         if(paranthesisCount == 0) {
+          3.writeln;
           possibleStartIndex = index + 1;
           startIndex = index + 1;
         } else {
+          4.writeln;
           possibleStartIndex = index + 1;
         }
+        5.writeln;
 
         endIndex = 0;
       }
@@ -720,10 +760,25 @@ class SourceResult : IResult
       }
     }
 
+    writeln("endIndex:", endIndex, " startIndex:", startIndex);
     if(endIndex == 0 && lastEndIndex != 0) {
       endIndex = lastEndIndex;
       startIndex = lastStartIndex;
     }
+///////
+    writeln("endIndex:", endIndex, " startIndex:", startIndex);
+    size_t i;
+    foreach(token; tokens.filter!(a => str(a.type) != "comment")) {
+      //write("(", i, ")");
+      if(str(token.type) == "whitespace" && token.text == "") {
+        write("\n");
+      } else {
+        write(token.text == "" ? str(token.type) : token.text);
+      }
+
+      i++;
+    }
+/////////
 
     if(endIndex == 0) {
       paranthesisCount = 0;
@@ -1034,6 +1089,15 @@ unittest
 {
   auto result = new SourceResult("test/values.d", 75);
   result.getValue.should.equal("found(4)");
+}
+
+@("Source reporter should parse nested lambdas")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 81);
+  result.getValue.should.equal("({
+    ({ }).should.beNull;
+  })");
 }
 
 /// Source reporter should print the source code
