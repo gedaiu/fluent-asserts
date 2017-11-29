@@ -74,3 +74,9 @@ unittest {
 unittest {
   found(4).should.equal(1);
 }
+
+unittest {
+  ({
+    ({ }).should.beNull;
+  }).should.throwException!TestException.msg;
+}
