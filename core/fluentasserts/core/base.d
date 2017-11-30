@@ -433,7 +433,6 @@ auto evaluate(T)(lazy T testData) {
   auto begin = Clock.currTime;
   alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
 
-  Result r;
 
   try {
     auto value = testData;
@@ -446,17 +445,17 @@ auto evaluate(T)(lazy T testData) {
     }
 
     auto duration = Clock.currTime - begin;
-    r.value = value;
-    r.evaluation = ValueEvaluation(null, duration);
+
+    return Result(value, ValueEvaluation(null, duration));
   } catch(Throwable t) {
-    r.evaluation = ValueEvaluation(t, Clock.currTime - begin);
+    T result;
 
     static if(isCallable!T) {
-      r.value = testData;
+      result = testData;
     }
-  }
 
-  return r;
+    return Result(result, ValueEvaluation(t, Clock.currTime - begin));
+  }
 }
 
 /// evaluate should capture an exception
