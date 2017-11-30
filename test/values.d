@@ -80,3 +80,7 @@ unittest {
     ({ }).should.beNull;
   }).should.throwException!TestException.msg;
 }
+
+unittest {
+  [1, 2, 3].map!"a".should.throwException!TestException.msg;
+}
