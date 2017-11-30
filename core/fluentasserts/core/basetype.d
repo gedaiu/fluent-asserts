@@ -345,7 +345,7 @@ unittest {
     voidValue().should.not.throwAnyException;
   } catch(TestException e) {
     thrown = true;
-    e.msg.split("\n")[0].should.equal("() should not throw any exception. An exception of type `object.Exception` saying `not implemented` was thrown.");
+    e.msg.split("\n")[0].should.equal("voidValue() should not throw any exception. An exception of type `object.Exception` saying `not implemented` was thrown.");
   }
 
   thrown.should.equal(true);
