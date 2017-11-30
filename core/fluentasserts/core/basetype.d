@@ -350,3 +350,10 @@ unittest {
 
   thrown.should.equal(true);
 }
+
+/// it should compile const comparison
+unittest
+{
+  const actual = 42;
+  actual.should.equal(42);
+}
