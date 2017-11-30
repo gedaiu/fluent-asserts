@@ -84,3 +84,8 @@ unittest {
 unittest {
   [1, 2, 3].map!"a".should.throwException!TestException.msg;
 }
+
+unittest {
+  Assert.equal([ new Value(1), new Value(2) ], [1, 3]);
+  [ new Value(1), new Value(2) ].should.equal([1, 2]);
+}

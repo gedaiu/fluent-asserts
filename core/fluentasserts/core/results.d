@@ -731,9 +731,6 @@ unittest {
 
   auto result = getPreviousIdentifier(tokens, scopeResult.begin);
 
-  writeln(result, " ", scopeResult.begin);
-  tokens[result .. scopeResult.begin].toString.writeln("===>");
-
   tokens[result .. scopeResult.begin].toString.strip.should.equal(`unittest`);
 }
 
@@ -807,11 +804,12 @@ auto getParameter(const(Token)[] tokens, size_t startToken) {
 
   foreach(i; startToken..tokens.length) {
     string type = str(tokens[i].type);
-    if(type == "(") {
+
+    if(type == "(" || type == "[") {
       paranthesisCount++;
     }
 
-    if(type == ")") {
+    if(type == ")" || type == "]") {
       if(paranthesisCount == 0) {
         return i;
       }
@@ -842,6 +840,16 @@ unittest {
   tokens[begin .. end].toString.strip.should.equal(`(5, (11))`);
 }
 
+/// Get the first list parameter from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto begin = getAssertIndex(tokens, 89) + 4;
+  auto end = getParameter(tokens, begin);
+  tokens[begin .. end].toString.strip.should.equal(`[ new Value(1), new Value(2) ]`);
+}
+
 /// Get the previous array identifier from a list of tokens
 unittest {
   const(Token)[] tokens = [];
@@ -853,6 +861,19 @@ unittest {
   auto result = getPreviousIdentifier(tokens, end);
 
   tokens[result .. end].toString.strip.should.equal(`[1, 2, 3]`);
+}
+
+/// Get the previous array of instances identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 90);
+  auto end = scopeResult.end - 16;
+
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[result .. end].toString.strip.should.equal(`[ new Value(1), new Value(2) ]`);
 }
 
 size_t getShouldIndex(const(Token)[] tokens, size_t startLine) {
