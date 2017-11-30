@@ -14,6 +14,8 @@ import std.string;
 U[] toValueList(U, V)(V expectedValueList) {
   static if(is(U == immutable) || is(U == const)) {
     return expectedValueList.array.idup;
+  } else static if(is(V == void[])) {
+    return [];
   } else {
     return expectedValueList.array.dup;
   }
@@ -443,6 +445,12 @@ unittest {
   msg.split('\n')[0].should.equal("[2, 2] should not contain only [2, 2].");
   msg.split('\n')[2].strip.should.equal("Actual:[2, 2]");
   msg.split('\n')[4].strip.should.equal("Extra:[2, 2]");
+}
+
+/// contain only with  void array
+unittest {
+  int[] list;
+  list.should.containOnly([]);
 }
 
 
