@@ -7,6 +7,7 @@ import std.conv;
 import std.range;
 import std.string;
 import std.exception;
+import std.typecons;
 
 struct ResultGlyphs {
   static {
@@ -606,6 +607,302 @@ import dparse.ast;
 import dparse.lexer;
 import dparse.parser;
 
+string toString(const(Token)[] tokens) {
+  string result;
+
+  foreach(token; tokens.filter!(a => str(a.type) != "comment")) {
+    if(str(token.type) == "whitespace" && token.text == "") {
+      result ~= "\n";
+    } else {
+     result ~= token.text == "" ? str(token.type) : token.text;
+    }
+  }
+
+  return result;
+}
+
+auto getScope(const(Token)[] tokens, size_t line) nothrow {
+  bool found;
+  size_t beginToken;
+  size_t endToken = tokens.length;
+  int paranthesisCount = 0;
+
+  foreach(i, token; tokens) {
+    string type = str(token.type);
+
+    if(!found && paranthesisCount == 0 && type == "{") {
+      beginToken = i;
+    }
+
+    if(type == "{") {
+      paranthesisCount++;
+    }
+
+    if(type == "}") {
+      paranthesisCount--;
+    }
+
+    if(line == token.line) {
+      found = true;
+    }
+
+    if(found && type == "}" && paranthesisCount == 0) {
+      endToken = i + 1;
+      break;
+    }
+  }
+
+  return const Tuple!(size_t, "begin", size_t, "end")(beginToken, endToken);
+}
+
+/// Get tokens from a scope that contains a lambda
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto result = getScope(tokens, 81);
+
+  tokens[result.begin .. result.end].toString.strip.should.equal(`{
+  ({
+    ({ }).should.beNull;
+  }).should.throwException!TestException.msg;
+
+}`);
+}
+
+size_t getPreviousIdentifier(const(Token)[] tokens, size_t startIndex) {
+  enforce(startIndex > 0);
+  enforce(startIndex < tokens.length);
+
+  size_t paranthesisCount;
+  bool foundIdentifier;
+
+  foreach(i; 0..startIndex) {
+    auto index = startIndex - i - 1;
+    auto type = str(tokens[index].type);
+
+    if(type == "(") {
+      paranthesisCount--;
+    }
+
+    if(type == ")") {
+      paranthesisCount++;
+    }
+
+    if(paranthesisCount != 0) {
+      continue;
+    }
+
+    if(type == "unittest") {
+      return index;
+    }
+
+    if(type == "{" || type == "}") {
+      return index + 1;
+    }
+
+    if(type == ";") {
+      return index + 1;
+    }
+
+    if(type == ".") {
+      foundIdentifier = false;
+    }
+
+    if(type == "identifier" && foundIdentifier) {
+      foundIdentifier = true;
+      continue;
+    }
+
+    if(foundIdentifier) {
+      return index;
+    }
+  }
+
+  return 0;
+}
+
+/// Get the the previous unittest identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 81);
+
+  auto result = getPreviousIdentifier(tokens, scopeResult.begin);
+
+  tokens[result .. scopeResult.begin].toString.strip.should.equal(`unittest`);
+}
+
+/// Get the the previous paranthesis identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 63);
+
+  auto end = scopeResult.end - 11;
+
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[result .. end].toString.strip.should.equal(`(5, (11))`);
+}
+
+/// Get the the previous function call identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 75);
+
+  auto end = scopeResult.end - 11;
+
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[result .. end].toString.strip.should.equal(`found(4)`);
+}
+
+/// Get the the previous map!"" identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 85);
+
+  auto end = scopeResult.end - 12;
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[result .. end].toString.strip.should.equal(`[1, 2, 3].map!"a"`);
+}
+
+size_t getAssertIndex(const(Token)[] tokens, size_t startLine) {
+  auto assertTokens = tokens
+    .enumerate
+    .filter!(a => a[1].text == "Assert")
+    .filter!(a => a[1].line <= startLine)
+    .array;
+
+  if(assertTokens.length == 0) {
+    return 0;
+  }
+
+  return assertTokens[assertTokens.length - 1].index;
+}
+
+/// Get the index of the Assert structure identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto result = getAssertIndex(tokens, 55);
+
+  tokens[result .. result + 4].toString.strip.should.equal(`Assert.equal(`);
+}
+
+auto getParameter(const(Token)[] tokens, size_t startToken) {
+  size_t paranthesisCount;
+
+  foreach(i; startToken..tokens.length) {
+    string type = str(tokens[i].type);
+
+    if(type == "(" || type == "[") {
+      paranthesisCount++;
+    }
+
+    if(type == ")" || type == "]") {
+      if(paranthesisCount == 0) {
+        return i;
+      }
+
+      paranthesisCount--;
+    }
+
+    if(paranthesisCount > 0) {
+      continue;
+    }
+
+    if(type == ",") {
+      return i;
+    }
+  }
+
+
+  return 0;
+}
+
+/// Get the first parameter from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto begin = getAssertIndex(tokens, 57) + 4;
+  auto end = getParameter(tokens, begin);
+  tokens[begin .. end].toString.strip.should.equal(`(5, (11))`);
+}
+
+/// Get the first list parameter from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto begin = getAssertIndex(tokens, 89) + 4;
+  auto end = getParameter(tokens, begin);
+  tokens[begin .. end].toString.strip.should.equal(`[ new Value(1), new Value(2) ]`);
+}
+
+/// Get the previous array identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 4);
+  auto end = scopeResult.end - 13;
+
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[result .. end].toString.strip.should.equal(`[1, 2, 3]`);
+}
+
+/// Get the previous array of instances identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 90);
+  auto end = scopeResult.end - 16;
+
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[result .. end].toString.strip.should.equal(`[ new Value(1), new Value(2) ]`);
+}
+
+size_t getShouldIndex(const(Token)[] tokens, size_t startLine) {
+  auto shouldTokens = tokens
+    .enumerate
+    .filter!(a => a[1].text == "should")
+    .filter!(a => a[1].line <= startLine)
+    .array;
+
+  if(shouldTokens.length == 0) {
+    return 0;
+  }
+
+  return shouldTokens[shouldTokens.length - 1].index;
+}
+
+/// Get the index of the should call
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto result = getShouldIndex(tokens, 4);
+
+  auto token = tokens[result];
+  token.line.should.equal(3);
+  token.text.should.equal(`should`);
+  str(token.type).text.should.equal(`identifier`);
+}
+
 /// An alternative to SourceResult that uses
 // DParse to get the source code
 class SourceResult : IResult
@@ -635,30 +932,12 @@ class SourceResult : IResult
     try {
       updateFileTokens(fileName);
 
-      size_t startLine = 0;
-      size_t endLine = 0;
+      auto result = getScope(fileTokens[fileName], line);
+      auto begin = getPreviousIdentifier(fileTokens[fileName], result.begin);
 
-      bool found = false;
-      foreach(token; fileTokens[fileName]) {
-        if(!found && str(token.type) == "{") {
-          startLine = token.line;
-        }
-
-        if(line == token.line) {
-          found = true;
-        }
-
-        if(found && str(token.type) == "}") {
-          endLine = token.line;
-          break;
-        }
-      }
-
-      this.tokens = fileTokens[fileName]
-        .filter!(token => token.line >= startLine && token.line <= endLine)
-          .array;
-
-    } catch(Throwable t) { }
+      this.tokens = fileTokens[fileName][begin .. result.end];
+    } catch (Throwable t) {
+    }
   }
 
   static void updateFileTokens(string fileName) {
@@ -677,109 +956,25 @@ class SourceResult : IResult
     size_t lastEndIndex = 0;
 
     int paranthesisCount = 0;
+    size_t begin;
+    size_t end = getShouldIndex(tokens, line);
 
-    foreach(index, token; tokens) {
-      auto type = str(token.type);
+    if(end != 0) {
+      begin = tokens.getPreviousIdentifier(end - 1);
 
-      if(type == "{" || type == ";") {
-        if(paranthesisCount == 0) {
-          possibleStartIndex = index + 1;
-          startIndex = index + 1;
-        } else {
-          possibleStartIndex = index + 1;
-        }
-
-        endIndex = 0;
-      }
-
-      if(type == "(") {
-        if(paranthesisCount == 0) {
-          startIndex = index;
-        }
-
-        paranthesisCount++;
-      }
-
-      if(type == ")") {
-        paranthesisCount--;
-      }
-
-      if(token.text == "should") {
-        if(paranthesisCount > 0) {
-          startIndex = possibleStartIndex;
-        }
-
-        endIndex = index - 1;
-
-        if(token.line >= line) {
-          break;
-        }
-
-        lastStartIndex = startIndex;
-        lastEndIndex = endIndex;
-      }
+      return tokens[begin .. end - 1].toString.strip;
     }
 
-    if(endIndex == 0 && lastEndIndex != 0) {
-      endIndex = lastEndIndex;
-      startIndex = lastStartIndex;
+    auto beginAssert = getAssertIndex(tokens, line);
+
+    if(beginAssert > 0) {
+      begin = beginAssert + 4;
+      end = getParameter(tokens, begin);
+
+      return tokens[begin .. end].toString.strip;
     }
 
-    if(endIndex == 0) {
-      paranthesisCount = 0;
-      startIndex = 0;
-      bool foundAssert = false;
-
-      foreach(index, token; tokens) {
-        auto type = str(token.type);
-
-        if(foundAssert) {
-          if(type == "(") {
-            if(startIndex == 0) {
-              startIndex = index + 1;
-            }
-
-            paranthesisCount++;
-          }
-
-          if(type == ")") {
-            paranthesisCount--;
-          }
-
-          if(type == "," && paranthesisCount == 1) {
-            endIndex = index;
-            break;
-          }
-
-          if(paranthesisCount == 0 && startIndex > 0) {
-            endIndex = index;
-            break;
-          }
-        }
-
-        if(token.text == "Assert" && token.line == line) {
-          foundAssert = true;
-        }
-      }
-    }
-
-    if(endIndex < startIndex) {
-      return "";
-    }
-
-    auto valueTokens = tokens[startIndex..endIndex];
-
-    string result = "";
-
-    foreach(token; valueTokens.filter!(a => str(a.type) != "comment")) {
-      if(str(token.type) == "whitespace" && token.text == "") {
-        result ~= "\n";
-      } else {
-        result ~= token.text == "" ? str(token.type) : token.text;
-      }
-    }
-
-    return result.strip;
+    return "";
   }
 
   override string toString() nothrow
@@ -898,7 +1093,6 @@ unittest
                    ">   28:     .contain(4);\n" ~
                    "    29: }");
 }
-
 
 @("TestException should print the lines before multiline tokens")
 unittest
@@ -1020,6 +1214,29 @@ unittest
 
   result = new SourceResult("test/values.d", 63);
   result.getValue.should.equal("(5, (11))");
+}
+
+@("Source reporter should get the value after a scope")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 71);
+  result.getValue.should.equal("found");
+}
+
+@("Source reporter should get a function call value")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 75);
+  result.getValue.should.equal("found(4)");
+}
+
+@("Source reporter should parse nested lambdas")
+unittest
+{
+  auto result = new SourceResult("test/values.d", 81);
+  result.getValue.should.equal("({
+    ({ }).should.beNull;
+  })");
 }
 
 /// Source reporter should print the source code

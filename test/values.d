@@ -62,3 +62,30 @@ unittest {
   (5+1).should.equal(5);
   (5, (11)).should.equal(3);
 }
+
+unittest {
+  foreach(value; array) {
+
+  }
+
+  found.should.equal(1);
+}
+
+unittest {
+  found(4).should.equal(1);
+}
+
+unittest {
+  ({
+    ({ }).should.beNull;
+  }).should.throwException!TestException.msg;
+}
+
+unittest {
+  [1, 2, 3].map!"a".should.throwException!TestException.msg;
+}
+
+unittest {
+  Assert.equal([ new Value(1), new Value(2) ], [1, 3]);
+  [ new Value(1), new Value(2) ].should.equal([1, 2]);
+}
