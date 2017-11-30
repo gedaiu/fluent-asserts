@@ -25,8 +25,6 @@ struct ShouldCallable(T) {
   }
 
   auto haveExecutionTime(string file = __FILE__, size_t line = __LINE__) {
-    import std.stdio;
-    writeln("valueEvaluation.duration:", valueEvaluation.duration);
     auto tmpShould = ShouldBaseType!Duration(evaluate(valueEvaluation.duration)).forceMessage(" have execution time");
 
     return tmpShould;
