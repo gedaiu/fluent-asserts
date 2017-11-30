@@ -220,7 +220,7 @@ unittest {
     ({ }).should.beNull;
   }).should.throwException!TestException.msg;
 
-  msg.should.startWith("}) should be null.");
-  msg.should.contain("Expected:null");
-  msg.should.not.contain("Actual:null");
+  msg.should.startWith("({ }) should be null.");
+  msg.should.contain("Expected:null\n");
+  msg.should.not.contain("Actual:null\n");
 }
