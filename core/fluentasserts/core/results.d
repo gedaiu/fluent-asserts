@@ -671,9 +671,6 @@ unittest {
 }
 
 size_t getPreviousIdentifier(const(Token)[] tokens, size_t startIndex) {
-  writeln("===================");
-  tokens.toString.writeln;
-
   enforce(startIndex > 0);
   enforce(startIndex < tokens.length);
 
@@ -682,10 +679,8 @@ size_t getPreviousIdentifier(const(Token)[] tokens, size_t startIndex) {
 
   foreach(i; 0..startIndex) {
     auto index = startIndex - i - 1;
-    3.writeln("index: ", index, " len:", tokens.length);
     auto type = str(tokens[index].type);
 
-    4.writeln(" ", type, "?", tokens[index].text, "?");
     if(type == "(") {
       paranthesisCount--;
     }
@@ -778,15 +773,76 @@ unittest {
   auto scopeResult = getScope(tokens, 85);
 
   auto end = scopeResult.end - 12;
-
   auto result = getPreviousIdentifier(tokens, end);
-
-  tokens[scopeResult.begin .. end].toString.writeln("???????");
 
   tokens[result .. end].toString.strip.should.equal(`[1, 2, 3].map!"a"`);
 }
 
-/// Get the the previous array identifier from a list of tokens
+size_t getAssertIndex(const(Token)[] tokens, size_t startLine) {
+  auto assertTokens = tokens
+    .enumerate
+    .filter!(a => a[1].text == "Assert")
+    .filter!(a => a[1].line <= startLine)
+    .array;
+
+  if(assertTokens.length == 0) {
+    return 0;
+  }
+
+  return assertTokens[assertTokens.length - 1].index;
+}
+
+/// Get the index of the Assert structure identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto result = getAssertIndex(tokens, 55);
+
+  tokens[result .. result + 4].toString.strip.should.equal(`Assert.equal(`);
+}
+
+auto getParameter(const(Token)[] tokens, size_t startToken) {
+  size_t paranthesisCount;
+
+  foreach(i; startToken..tokens.length) {
+    string type = str(tokens[i].type);
+    if(type == "(") {
+      paranthesisCount++;
+    }
+
+    if(type == ")") {
+      if(paranthesisCount == 0) {
+        return i;
+      }
+
+      paranthesisCount--;
+    }
+
+    if(paranthesisCount > 0) {
+      continue;
+    }
+
+    if(type == ",") {
+      return i;
+    }
+  }
+
+
+  return 0;
+}
+
+/// Get the first parameter from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto begin = getAssertIndex(tokens, 57) + 4;
+  auto end = getParameter(tokens, begin);
+  tokens[begin .. end].toString.strip.should.equal(`(5, (11))`);
+}
+
+/// Get the previous array identifier from a list of tokens
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -856,7 +912,7 @@ class SourceResult : IResult
       updateFileTokens(fileName);
 
       auto result = getScope(fileTokens[fileName], line);
-      auto begin = result.begin;//getPreviousIdentifier(fileTokens[fileName], result.begin);
+      auto begin = getPreviousIdentifier(fileTokens[fileName], result.begin);
 
       this.tokens = fileTokens[fileName][begin .. result.end];
     } catch (Throwable t) {
@@ -879,17 +935,25 @@ class SourceResult : IResult
     size_t lastEndIndex = 0;
 
     int paranthesisCount = 0;
+    size_t begin;
+    size_t end = getShouldIndex(tokens, line);
 
-    auto end = getShouldIndex(tokens, line);
-    writeln("end: ", end);
+    if(end != 0) {
+      begin = tokens.getPreviousIdentifier(end - 1);
 
-    if(end == 0) {
-      return "";
+      return tokens[begin .. end - 1].toString.strip;
     }
 
-    auto begin = tokens.getPreviousIdentifier(end - 1);
+    auto beginAssert = getAssertIndex(tokens, line);
 
-    return tokens[begin .. end - 1].toString.strip;
+    if(beginAssert > 0) {
+      begin = beginAssert + 4;
+      end = getParameter(tokens, begin);
+
+      return tokens[begin .. end].toString.strip;
+    }
+
+    return "";
   }
 
   override string toString() nothrow
