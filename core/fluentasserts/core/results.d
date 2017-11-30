@@ -7,6 +7,7 @@ import std.conv;
 import std.range;
 import std.string;
 import std.exception;
+import std.typecons;
 
 struct ResultGlyphs {
   static {
@@ -620,9 +621,9 @@ string toString(const(Token)[] tokens) {
   return result;
 }
 
-const(Token)[] getScope(const(Token)[] tokens, size_t line) nothrow {
+auto getScope(const(Token)[] tokens, size_t line) nothrow {
   bool found;
-  size_t startToken;
+  size_t beginToken;
   size_t endToken = tokens.length;
   int paranthesisCount = 0;
 
@@ -630,7 +631,7 @@ const(Token)[] getScope(const(Token)[] tokens, size_t line) nothrow {
     string type = str(token.type);
 
     if(!found && paranthesisCount == 0 && type == "{") {
-      startToken = i + 1;
+      beginToken = i;
     }
 
     if(type == "{") {
@@ -646,12 +647,12 @@ const(Token)[] getScope(const(Token)[] tokens, size_t line) nothrow {
     }
 
     if(found && type == "}" && paranthesisCount == 0) {
-      endToken = i;
+      endToken = i + 1;
       break;
     }
   }
 
-  return tokens[startToken .. endToken];
+  return const Tuple!(size_t, "begin", size_t, "end")(beginToken, endToken);
 }
 
 /// Get tokens from a scope that contains a lambda
@@ -659,9 +660,170 @@ unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
 
-  getScope(tokens, 81).toString.strip.should.equal("({
+  auto result = getScope(tokens, 81);
+
+  tokens[result.begin .. result.end].toString.strip.should.equal(`{
+  ({
     ({ }).should.beNull;
-  }).should.throwException!TestException.msg;");
+  }).should.throwException!TestException.msg;
+
+}`);
+}
+
+size_t getPreviousIdentifier(const(Token)[] tokens, size_t startIndex) {
+  writeln("===================");
+  tokens.toString.writeln;
+
+  enforce(startIndex > 0);
+  enforce(startIndex < tokens.length);
+
+  size_t paranthesisCount;
+  bool foundIdentifier;
+
+  foreach(i; 0..startIndex) {
+    auto index = startIndex - i - 1;
+    3.writeln("index: ", index, " len:", tokens.length);
+    auto type = str(tokens[index].type);
+
+    4.writeln(" ", type, "?", tokens[index].text, "?");
+    if(type == "(") {
+      paranthesisCount--;
+    }
+
+    if(type == ")") {
+      paranthesisCount++;
+    }
+
+    if(paranthesisCount != 0) {
+      continue;
+    }
+
+    if(type == "unittest") {
+      return index;
+    }
+
+    if(type == "{" || type == "}") {
+      return index + 1;
+    }
+
+    if(type == ";") {
+      return index + 1;
+    }
+
+    if(type == ".") {
+      foundIdentifier = false;
+    }
+
+    if(type == "identifier" && foundIdentifier) {
+      foundIdentifier = true;
+      continue;
+    }
+
+    if(foundIdentifier) {
+      return index;
+    }
+  }
+
+  return 0;
+}
+
+/// Get the the previous unittest identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 81);
+
+  auto result = getPreviousIdentifier(tokens, scopeResult.begin);
+
+  writeln(result, " ", scopeResult.begin);
+  tokens[result .. scopeResult.begin].toString.writeln("===>");
+
+  tokens[result .. scopeResult.begin].toString.strip.should.equal(`unittest`);
+}
+
+/// Get the the previous paranthesis identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 63);
+
+  auto end = scopeResult.end - 11;
+
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[result .. end].toString.strip.should.equal(`(5, (11))`);
+}
+
+/// Get the the previous function call identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 75);
+
+  auto end = scopeResult.end - 11;
+
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[result .. end].toString.strip.should.equal(`found(4)`);
+}
+
+/// Get the the previous map!"" identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 85);
+
+  auto end = scopeResult.end - 12;
+
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[scopeResult.begin .. end].toString.writeln("???????");
+
+  tokens[result .. end].toString.strip.should.equal(`[1, 2, 3].map!"a"`);
+}
+
+/// Get the the previous array identifier from a list of tokens
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto scopeResult = getScope(tokens, 4);
+  auto end = scopeResult.end - 13;
+
+  auto result = getPreviousIdentifier(tokens, end);
+
+  tokens[result .. end].toString.strip.should.equal(`[1, 2, 3]`);
+}
+
+size_t getShouldIndex(const(Token)[] tokens, size_t startLine) {
+  auto shouldTokens = tokens
+    .enumerate
+    .filter!(a => a[1].text == "should")
+    .filter!(a => a[1].line <= startLine)
+    .array;
+
+  if(shouldTokens.length == 0) {
+    return 0;
+  }
+
+  return shouldTokens[shouldTokens.length - 1].index;
+}
+
+/// Get the index of the should call
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto result = getShouldIndex(tokens, 4);
+
+  auto token = tokens[result];
+  token.line.should.equal(3);
+  token.text.should.equal(`should`);
+  str(token.type).text.should.equal(`identifier`);
 }
 
 /// An alternative to SourceResult that uses
@@ -692,9 +854,13 @@ class SourceResult : IResult
 
     try {
       updateFileTokens(fileName);
-    } catch (Throwable t) {}
 
-    this.tokens = getScope(fileTokens[fileName], line);
+      auto result = getScope(fileTokens[fileName], line);
+      auto begin = result.begin;//getPreviousIdentifier(fileTokens[fileName], result.begin);
+
+      this.tokens = fileTokens[fileName][begin .. result.end];
+    } catch (Throwable t) {
+    }
   }
 
   static void updateFileTokens(string fileName) {
@@ -714,127 +880,16 @@ class SourceResult : IResult
 
     int paranthesisCount = 0;
 
-    foreach(index, token; tokens) {
-      auto type = str(token.type);
-      1.writeln(":",paranthesisCount,":", startIndex, " ", type, " ", token.text);
-      if(type == "{" || type == ";" || type == "}") {
-        2.writeln;
-        if(paranthesisCount == 0) {
-          3.writeln;
-          possibleStartIndex = index + 1;
-          startIndex = index + 1;
-        } else {
-          4.writeln;
-          possibleStartIndex = index + 1;
-        }
-        5.writeln;
+    auto end = getShouldIndex(tokens, line);
+    writeln("end: ", end);
 
-        endIndex = 0;
-      }
-
-      if(type == "(") {
-        if(paranthesisCount == 0) {
-          startIndex = index;
-        }
-
-        paranthesisCount++;
-      }
-
-      if(type == ")") {
-        paranthesisCount--;
-      }
-
-      if(token.text == "should") {
-        if(paranthesisCount > 0) {
-          startIndex = possibleStartIndex;
-        }
-
-        endIndex = index - 1;
-
-        if(token.line >= line) {
-          break;
-        }
-
-        lastStartIndex = startIndex;
-        lastEndIndex = endIndex;
-      }
-    }
-
-    writeln("endIndex:", endIndex, " startIndex:", startIndex);
-    if(endIndex == 0 && lastEndIndex != 0) {
-      endIndex = lastEndIndex;
-      startIndex = lastStartIndex;
-    }
-///////
-    writeln("endIndex:", endIndex, " startIndex:", startIndex);
-    size_t i;
-    foreach(token; tokens.filter!(a => str(a.type) != "comment")) {
-      //write("(", i, ")");
-      if(str(token.type) == "whitespace" && token.text == "") {
-        write("\n");
-      } else {
-        write(token.text == "" ? str(token.type) : token.text);
-      }
-
-      i++;
-    }
-/////////
-
-    if(endIndex == 0) {
-      paranthesisCount = 0;
-      startIndex = 0;
-      bool foundAssert = false;
-
-      foreach(index, token; tokens) {
-        auto type = str(token.type);
-
-        if(foundAssert) {
-          if(type == "(") {
-            if(startIndex == 0) {
-              startIndex = index + 1;
-            }
-
-            paranthesisCount++;
-          }
-
-          if(type == ")") {
-            paranthesisCount--;
-          }
-
-          if(type == "," && paranthesisCount == 1) {
-            endIndex = index;
-            break;
-          }
-
-          if(paranthesisCount == 0 && startIndex > 0) {
-            endIndex = index;
-            break;
-          }
-        }
-
-        if(token.text == "Assert" && token.line == line) {
-          foundAssert = true;
-        }
-      }
-    }
-
-    if(endIndex < startIndex) {
+    if(end == 0) {
       return "";
     }
 
-    auto valueTokens = tokens[startIndex..endIndex];
+    auto begin = tokens.getPreviousIdentifier(end - 1);
 
-    string result = "";
-
-    foreach(token; valueTokens.filter!(a => str(a.type) != "comment")) {
-      if(str(token.type) == "whitespace" && token.text == "") {
-        result ~= "\n";
-      } else {
-        result ~= token.text == "" ? str(token.type) : token.text;
-      }
-    }
-
-    return result.strip;
+    return tokens[begin .. end - 1].toString.strip;
   }
 
   override string toString() nothrow
@@ -953,7 +1008,6 @@ unittest
                    ">   28:     .contain(4);\n" ~
                    "    29: }");
 }
-
 
 @("TestException should print the lines before multiline tokens")
 unittest
