@@ -26,12 +26,34 @@ exception message is:
     }).should.throwException!CustomException.msg.should.equal("test");
 ```
 
+or
+
+```D
+    void myFunction() {
+        throw new CustomException("test");
+    }
+
+    /// This way of testing exceptions does not work with
+    /// functions that return arrays or ranges
+    myFunction.should.throwException!CustomException.msg.should.equal("test");
+```
+
 The `ThrowableProxy` it also have a `withMessage` method that returns a new `should` structure, initialized with the exception message:
 
 ```D
     ({
         throw new CustomException("test");
     }).should.throwException!CustomException.withMessage.equal("test");
+```
+
+or
+
+```D
+    void myFunction() {
+        throw new CustomException("test");
+    }
+
+    myFunction.should.throwException!CustomException.withMessage.equal("test");
 ```
 
 Success expectations
