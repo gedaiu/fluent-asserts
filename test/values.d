@@ -89,3 +89,17 @@ unittest {
   Assert.equal([ new Value(1), new Value(2) ], [1, 3]);
   [ new Value(1), new Value(2) ].should.equal([1, 2]);
 }
+
+unittest {
+  describe("when there are 2 android devices and one is not healthy", {
+    MockDevice device1;
+    MockDevice device2;
+
+    it("should throw an exception if we request 2 android devices", {
+      ({
+        auto result = [ device1.idup, device2.idup ].filterBy(RunOptions("", "android", 2)).array;
+      }).should.throwException!DeviceException.withMessage.equal("You requested 2 `androdid` devices, but there is only 1 healthy.");
+    });
+  });
+}
+
