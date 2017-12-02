@@ -628,7 +628,7 @@ auto getScope(const(Token)[] tokens, size_t line) nothrow {
   size_t endToken = tokens.length;
   int paranthesisCount = 0;
   int scopeLevel;
-  ulong[size_t] paranthesisLevels;
+  size_t[size_t] paranthesisLevels;
 
   foreach(i, token; tokens) {
     string type = str(token.type);
