@@ -39,5 +39,22 @@
 				"openssl": "*"
 			}
 		}
+	],
+
+	"configurations": [
+		{
+			"name": "trial",
+			"sourcePaths": ["./core", "./vibe"],
+			"importPaths": ["./core", "./vibe"],
+			"dependencies": {
+				"libdparse": "~>0.7.1",
+				"ddmp": "~>0.0.1-0.dev.2",
+				"vibe-d:data": "*",
+				"vibe-d:http": "*",
+				"fluent-asserts:core": "*",
+				"openssl": "*"
+			},
+			"versions": ["Have_fluent_asserts_vibe"]
+		}
 	]
 }
