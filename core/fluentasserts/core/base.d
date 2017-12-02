@@ -28,8 +28,10 @@ struct Result {
   string file;
   size_t line;
 
+  private string reason;
+
   void because(string reason) {
-    message.prependText("Because " ~ reason ~ ", ");
+    this.reason = "Because " ~ reason ~ ", ";
   }
 
   void perform() {
@@ -37,7 +39,11 @@ struct Result {
       return;
     }
 
-    throw new TestException(cast(IResult) message ~ results, file, line);
+    auto sourceResult = new SourceResult(file, line);
+    message.prependValue(sourceResult.getValue);
+    message.prependText(reason);
+
+    throw new TestException(cast(IResult) message ~ results ~ sourceResult, file, line);
   }
 
   ~this() {
@@ -179,12 +185,11 @@ mixin template ShouldCommons()
     }
 
     Result result(bool value, IResult res, string file, size_t line) {
-       return result(value, [], [ res ], file, line);
+      return result(value, [], [ res ], file, line);
     }
 
     Result result(bool value, Message[] msg, IResult[] res, const string file, const size_t line) {
-      auto sourceResult = new SourceResult(file, line);
-      auto finalMessage = new MessageResult(sourceResult.getValue ~ " should");
+      auto finalMessage = new MessageResult(" should");
 
       messages ~= Message(false, ".");
 
@@ -200,9 +205,7 @@ mixin template ShouldCommons()
         }
       }
 
-      IResult[] results = res ~ cast(IResult) sourceResult;
-
-      return Result(expectedValue != value, results, finalMessage, file, line);
+      return Result(expectedValue != value, res, finalMessage, file, line);
     }
   }
 }
