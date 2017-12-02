@@ -139,7 +139,7 @@ unittest
   }
 
   t.should.not.beNull;
-  t.msg.split("\n")[0].should.equal("({↲      throw new CustomException(\"test\");↲    }) should throw a `CustomException` with message equal `other`. `test` is not equal to `other`.");
+  t.msg.should.startWith("({\n      throw new CustomException(\"test\");\n    }) should throw a `CustomException` with message equal `other`. `test` is not equal to `other`.");
 }
 
 /// Should fail if an exception is not thrown
@@ -196,7 +196,7 @@ unittest
   }
 
   exception.should.not.beNull.because("we wait 20 milliseconds");
-  exception.msg.split("\n")[0].should.startWith("({↲      Thread.sleep(2.msecs);↲    }) should have execution time less than `1 ms`.");
+  exception.msg.should.startWith("({\n      Thread.sleep(2.msecs);\n    }) should have execution time less than `1 ms`.");
 }
 
 /// It should check if a delagate is null
