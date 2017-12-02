@@ -183,6 +183,10 @@ class MessageResult : IResult
     this.messages = Message(false, text) ~ this.messages;
   }
 
+  void prependValue(string text) {
+    this.messages = Message(true, text) ~ this.messages;
+  }
+
   void print(ResultPrinter printer)
   {
     foreach(message; messages) {
