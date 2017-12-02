@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/gedaiu/fluent-asserts.svg?branch=master)](https://travis-ci.org/gedaiu/fluent-asserts)
+[![Line Coverage](https://szabobogdan3.gitlab.io/fluent-asserts-coverage/coverage-shield.svg)](https://szabobogdan3.gitlab.io/fluent-asserts-coverage/)
 [![DUB Version](https://img.shields.io/dub/v/fluent-asserts.svg)](https://code.dlang.org/packages/fluent-asserts)
 [![DUB Installs](https://img.shields.io/dub/dt/fluent-asserts.svg)](https://code.dlang.org/packages/fluent-asserts)
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/gedaiu/fluent-asserts.svg)](http://isitmaintained.com/project/gedaiu/fluent-asserts "Percentage of issues still open")
