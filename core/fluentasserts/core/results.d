@@ -622,19 +622,19 @@ string toString(const(Token)[] tokens) {
 }
 
 auto getScope(const(Token)[] tokens, size_t line) nothrow {
-  bool found;
+  bool foundScope;
+  bool foundAssert;
   size_t beginToken;
   size_t endToken = tokens.length;
   int paranthesisCount = 0;
+  int scopeLevel;
+  ulong[size_t] paranthesisLevels;
 
   foreach(i, token; tokens) {
     string type = str(token.type);
 
-    if(!found && paranthesisCount == 0 && type == "{") {
-      beginToken = i;
-    }
-
     if(type == "{") {
+      paranthesisLevels[paranthesisCount] = i;
       paranthesisCount++;
     }
 
@@ -643,16 +643,123 @@ auto getScope(const(Token)[] tokens, size_t line) nothrow {
     }
 
     if(line == token.line) {
-      found = true;
+      foundScope = true;
     }
 
-    if(found && type == "}" && paranthesisCount == 0) {
-      endToken = i + 1;
-      break;
+    if(foundScope) {
+      if(token.text == "should" || token.text == "assert" || token.text == "Assert") {
+        foundAssert = true;
+        scopeLevel = paranthesisCount;
+      }
+
+      if(type == "}" && paranthesisCount <= scopeLevel) {
+        beginToken = paranthesisLevels[paranthesisCount];
+        endToken = i + 1;
+
+        break;
+      }
     }
+
   }
 
   return const Tuple!(size_t, "begin", size_t, "end")(beginToken, endToken);
+}
+
+/// Get the spec function and scope that contains a lambda
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto result = getScope(tokens, 101);
+  auto identifierStart = getPreviousIdentifier(tokens, result.begin);
+
+  tokens[identifierStart .. result.end].toString.strip.should.equal("it(\"should throw an exception if we request 2 android devices\", {
+      ({
+        auto result = [ device1.idup, device2.idup ].filterBy(RunOptions(\"\", \"android\", 2)).array;
+      }).should.throwException!DeviceException.withMessage.equal(\"You requested 2 `androdid` devices, but there is only 1 healthy.\");
+    }");
+}
+
+size_t getFunctionEnd(const(Token)[] tokens, size_t start) {
+  int paranthesisCount;
+  size_t result = start;
+
+  // iterate the parameters
+  foreach(i, token; tokens[start .. $]) {
+    string type = str(token.type);
+
+    if(type == "(") {
+      paranthesisCount++;
+    }
+
+    if(type == ")") {
+      paranthesisCount--;
+    }
+
+    if(type == "{" && paranthesisCount == 0) {
+      result = start + i;
+      break;
+    }
+
+    if(type == ";" && paranthesisCount == 0) {
+      return start + i;
+    }
+  }
+
+  paranthesisCount = 0;
+  // iterate the scope
+  foreach(i, token; tokens[result .. $]) {
+    string type = str(token.type);
+
+    if(type == "{") {
+      paranthesisCount++;
+    }
+
+    if(type == "}") {
+      paranthesisCount--;
+
+      if(paranthesisCount == 0) {
+        result = result + i;
+        break;
+      }
+    }
+  }
+
+  return result;
+}
+
+/// Get the end of a spec function with a lambda
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto result = getScope(tokens, 101);
+  auto identifierStart = getPreviousIdentifier(tokens, result.begin);
+  auto functionEnd = getFunctionEnd(tokens, identifierStart);
+
+  tokens[identifierStart .. functionEnd].toString.strip.should.equal("it(\"should throw an exception if we request 2 android devices\", {
+      ({
+        auto result = [ device1.idup, device2.idup ].filterBy(RunOptions(\"\", \"android\", 2)).array;
+      }).should.throwException!DeviceException.withMessage.equal(\"You requested 2 `androdid` devices, but there is only 1 healthy.\");
+    })");
+}
+
+
+/// Get the end of an unittest function with a lambda
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+
+  auto result = getScope(tokens, 81);
+  auto identifierStart = getPreviousIdentifier(tokens, result.begin);
+  auto functionEnd = getFunctionEnd(tokens, identifierStart) + 1;
+
+  tokens[identifierStart .. functionEnd].toString.strip.should.equal("unittest {
+  ({
+    ({ }).should.beNull;
+  }).should.throwException!TestException.msg;
+
+}");
 }
 
 /// Get tokens from a scope that contains a lambda
@@ -674,7 +781,7 @@ size_t getPreviousIdentifier(const(Token)[] tokens, size_t startIndex) {
   enforce(startIndex > 0);
   enforce(startIndex < tokens.length);
 
-  size_t paranthesisCount;
+  int paranthesisCount;
   bool foundIdentifier;
 
   foreach(i; 0..startIndex) {
@@ -687,6 +794,10 @@ size_t getPreviousIdentifier(const(Token)[] tokens, size_t startIndex) {
 
     if(type == ")") {
       paranthesisCount++;
+    }
+
+    if(paranthesisCount < 0) {
+      return getPreviousIdentifier(tokens, index - 1);
     }
 
     if(paranthesisCount != 0) {
@@ -702,6 +813,10 @@ size_t getPreviousIdentifier(const(Token)[] tokens, size_t startIndex) {
     }
 
     if(type == ";") {
+      return index + 1;
+    }
+
+    if(type == "=") {
       return index + 1;
     }
 
@@ -931,11 +1046,12 @@ class SourceResult : IResult
 
     try {
       updateFileTokens(fileName);
-
       auto result = getScope(fileTokens[fileName], line);
-      auto begin = getPreviousIdentifier(fileTokens[fileName], result.begin);
 
-      this.tokens = fileTokens[fileName][begin .. result.end];
+      auto begin = getPreviousIdentifier(fileTokens[fileName], result.begin);
+      auto end = getFunctionEnd(fileTokens[fileName], begin) + 1;
+
+      this.tokens = fileTokens[fileName][begin .. end];
     } catch (Throwable t) {
     }
   }
