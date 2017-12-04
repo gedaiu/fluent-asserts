@@ -43,7 +43,11 @@
 
 	"configurations": [
 		{
-			"name": "library"
+			"name": "library",
+			"sourcePaths": ["./source"],
+			"dependencies": {
+				"fluent-asserts:core": "*"
+			}
 		},
 		{
 			"name": "trial",
