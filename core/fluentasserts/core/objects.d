@@ -52,7 +52,7 @@ struct ShouldObject(T) {
     beginCheck;
 
     return result(testData == instance, [] ,
-      cast(IResult) new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ instance.to!string, testData.to!string), file, line);
+      new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ instance.to!string, testData.to!string), file, line);
   }
 }
 
@@ -207,4 +207,10 @@ unittest
     }).should.throwException!TestException.msg;
 
     msg.should.startWith("nullObject should equal `Object`.");
+
+    msg = ({
+      (new Object).should.equal(null);
+    }).should.throwException!TestException.msg;
+
+    msg.should.startWith("(new Object) should equal `typeof(null)`.");
 }
