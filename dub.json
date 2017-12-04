@@ -45,6 +45,7 @@
 		{
 			"name": "library",
 			"sourcePaths": ["./source"],
+			"importPaths": ["./source"],
 			"dependencies": {
 				"fluent-asserts:core": "*"
 			}
