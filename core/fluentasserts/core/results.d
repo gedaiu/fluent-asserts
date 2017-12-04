@@ -630,6 +630,7 @@ auto getScope(const(Token)[] tokens, size_t line) nothrow {
   bool foundAssert;
   size_t beginToken;
   size_t endToken = tokens.length;
+
   int paranthesisCount = 0;
   int scopeLevel;
   size_t[size_t] paranthesisLevels;
@@ -651,7 +652,7 @@ auto getScope(const(Token)[] tokens, size_t line) nothrow {
     }
 
     if(foundScope) {
-      if(token.text == "should" || token.text == "assert" || token.text == "Assert") {
+      if(token.text == "should" || token.text == "Assert" || type == "assert" || type == ";") {
         foundAssert = true;
         scopeLevel = paranthesisCount;
       }
@@ -663,7 +664,6 @@ auto getScope(const(Token)[] tokens, size_t line) nothrow {
         break;
       }
     }
-
   }
 
   return const Tuple!(size_t, "begin", size_t, "end")(beginToken, endToken);
@@ -681,6 +681,32 @@ unittest {
       ({
         auto result = [ device1.idup, device2.idup ].filterBy(RunOptions(\"\", \"android\", 2)).array;
       }).should.throwException!DeviceException.withMessage.equal(\"You requested 2 `androdid` devices, but there is only 1 healthy.\");
+    }");
+}
+
+/// Get the a method scope and signature
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/class.d"), tokens);
+
+  auto result = getScope(tokens, 10);
+  auto identifierStart = getPreviousIdentifier(tokens, result.begin);
+
+  tokens[identifierStart .. result.end].toString.strip.should.equal("void bar() {
+        assert(false);
+    }");
+}
+
+/// Get the a method scope without assert
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("test/class.d"), tokens);
+
+  auto result = getScope(tokens, 14);
+  auto identifierStart = getPreviousIdentifier(tokens, result.begin);
+
+  tokens[identifierStart .. result.end].toString.strip.should.equal("void bar2() {
+        enforce(false);
     }");
 }
 
