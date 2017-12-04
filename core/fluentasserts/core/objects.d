@@ -6,6 +6,7 @@ import fluentasserts.core.results;
 import std.string;
 import std.stdio;
 import std.traits;
+import std.conv;
 
 struct ShouldObject(T) {
   private {
@@ -51,7 +52,7 @@ struct ShouldObject(T) {
     beginCheck;
 
     return result(testData == instance, [] ,
-      cast(IResult) new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ instance.toString, testData.toString), file, line);
+      new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ instance.to!string, testData.to!string), file, line);
   }
 }
 
@@ -194,4 +195,22 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.should.startWith("instance should equal `TestEqual`.");
+}
+
+/// null object comparison
+unittest
+{
+    Object nullObject;
+
+    auto msg = ({
+      nullObject.should.equal(new Object);
+    }).should.throwException!TestException.msg;
+
+    msg.should.startWith("nullObject should equal `Object`.");
+
+    msg = ({
+      (new Object).should.equal(null);
+    }).should.throwException!TestException.msg;
+
+    msg.should.startWith("(new Object) should equal `typeof(null)`.");
 }
