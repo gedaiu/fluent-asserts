@@ -503,7 +503,7 @@ auto should(T)(lazy T testData) {
     auto callable = ({ testData; });
     return ShouldCallable!(typeof(callable))(callable);
   } else static if(!returned) {
-    static if(is(T == class)) {
+    static if(is(T == class) || is(T == interface)) {
       return ShouldObject!T(testData.evaluate);
     } else static if(is(T == string)) {
       return ShouldString(testData.evaluate);
