@@ -124,7 +124,11 @@ unittest {
   class OtherClass { }
 
   auto someObject = new BaseClass;
+  MyInterface someInterface = new BaseClass;
   auto otherObject = new OtherClass;
+
+  someInterface.should.be.instanceOf!MyInterface;
+  someInterface.should.be.instanceOf!BaseClass;
 
   someObject.should.be.instanceOf!MyInterface;
 
