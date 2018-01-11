@@ -70,6 +70,13 @@ unittest {
   }).should.throwSomething.withMessage.equal("test");
 }
 
+/// Should be able to use with message without a custom assert
+unittest {
+  ({
+    assert(false, "test");
+  }).should.throwSomething.withMessage("test");
+}
+
 /// Should be able to catch a certain exception type
 unittest
 {
