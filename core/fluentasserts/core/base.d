@@ -388,6 +388,13 @@ struct ThrowableProxy(T : Throwable) {
     return s.forceMessage(messages ~ Message(false, " with message"));
   }
 
+  auto withMessage(string expectedMessage) {
+    auto s = ShouldString(msg);
+    check = false;
+
+    return s.forceMessage(messages ~ Message(false, " with message")).equal(expectedMessage);
+  }
+
   private void checkException() {
     if(!check) {
       return;
