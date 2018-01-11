@@ -47,8 +47,8 @@ Success expectations
     [0.350, 0.501, 0.341].should.not.be.approximately([0.350, 0.501], 0.001);
 
     /// or using the Assert utility
-    Assert.equal([[0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.01);
-    Assert.notEqual([0.350, 0.501, 0.341], [0.350, 0.501], 0.01);
+    Assert.approximately([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.01);
+    Assert.notApproximately([0.350, 0.501, 0.341], [0.350, 0.501], 0.01);
 ```
 
 Failing expectations
@@ -56,7 +56,7 @@ Failing expectations
     [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.0001);
 
     /// or using the Assert utility
-    Assert.equal([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.0001);
+    Assert.approximately([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.0001);
 ```
 
 ### Contain

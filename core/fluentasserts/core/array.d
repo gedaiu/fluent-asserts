@@ -836,3 +836,9 @@ unittest {
   msg.should.contain("Expected:[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
   msg.should.contain("Missing:[0.5±0.0001, 0.34±0.0001]");
 }
+
+/// approximately equals with Assert
+unittest {
+  Assert.approximately([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.01);
+  Assert.notApproximately([0.350, 0.501, 0.341], [0.350, 0.501], 0.0001);
+}
