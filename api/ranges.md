@@ -7,6 +7,7 @@ Here are the examples of how you can use the `should` template with [ranges](htt
 ## Summary
 
 - [Equal](#equal)
+- [Approximately](#approximately)
 - [Contain](#contain)
 - [ContainOnly](#containOnly)
 
@@ -33,6 +34,29 @@ Failing expectations
     /// or using the Assert utility
     Assert.equal([1, 2, 3], [1, 3, 1]);
     Assert.notEqual([1, 2, 3], [1, 2, 3]);
+```
+
+### Approximately
+
+Success expectations
+```D
+    [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.01);
+
+    [0.350, 0.501, 0.341].should.not.be.approximately([0.35, 0.50, 0.34], 0.00001);
+    [0.350, 0.501, 0.341].should.not.be.approximately([0.501, 0.350, 0.341], 0.001);
+    [0.350, 0.501, 0.341].should.not.be.approximately([0.350, 0.501], 0.001);
+
+    /// or using the Assert utility
+    Assert.equal([[0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.01);
+    Assert.notEqual([0.350, 0.501, 0.341], [0.350, 0.501], 0.01);
+```
+
+Failing expectations
+```D
+    [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.0001);
+
+    /// or using the Assert utility
+    Assert.equal([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.0001);
 ```
 
 ### Contain
