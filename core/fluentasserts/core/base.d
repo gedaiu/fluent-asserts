@@ -39,11 +39,17 @@ struct Result {
       return;
     }
 
-    auto sourceResult = new SourceResult(file, line);
-    message.prependValue(sourceResult.getValue);
-    message.prependText(reason);
+    IResult[] results = message ~ results;
 
-    throw new TestException(cast(IResult) message ~ results ~ sourceResult, file, line);
+    version(DisableSourceResult) {} else {
+      auto sourceResult = new SourceResult(file, line);
+      message.prependValue(sourceResult.getValue);
+      message.prependText(reason);
+
+      results ~= sourceResult;
+    }
+
+    throw new TestException(results, file, line);
   }
 
   ~this() {
