@@ -42,7 +42,11 @@ struct ShouldString {
       Message(false, "`.")
     ];
 
-    return result(isSame, msg, cast(IResult[])[ new DiffResult(someString, testData) , new ExpectedActualResult(someString, testData) ], file, line);
+    version(DisableDiffResult) {
+        return result(isSame, msg, cast(IResult[])[ new ExpectedActualResult(someString, testData) ], file, line);
+    } else {
+      return result(isSame, msg, cast(IResult[])[ new DiffResult(someString, testData), new ExpectedActualResult(someString, testData) ], file, line);
+    }
   }
 
   auto contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
