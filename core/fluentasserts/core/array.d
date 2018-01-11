@@ -13,10 +13,11 @@ import std.math;
 
 
 U[] toValueList(U, V)(V expectedValueList) {
-  static if(is(U == immutable) || is(U == const)) {
-    return expectedValueList.array.idup;
-  } else static if(is(V == void[])) {
+
+  static if(is(V == void[])) {
     return [];
+  } else static if(is(U == immutable) || is(U == const)) {
+    return expectedValueList.array.idup;
   } else {
     return expectedValueList.array.dup;
   }
@@ -841,4 +842,11 @@ unittest {
 unittest {
   Assert.approximately([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.01);
   Assert.notApproximately([0.350, 0.501, 0.341], [0.350, 0.501], 0.0001);
+}
+
+/// immutable string
+unittest {
+  immutable string[] someList;
+
+  someList.should.equal([]);
 }
