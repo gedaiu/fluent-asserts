@@ -12,10 +12,11 @@ import std.string;
 
 
 U[] toValueList(U, V)(V expectedValueList) {
-  static if(is(U == immutable) || is(U == const)) {
-    return expectedValueList.array.idup;
-  } else static if(is(V == void[])) {
+
+  static if(is(V == void[])) {
     return [];
+  } else static if(is(U == immutable) || is(U == const)) {
+    return expectedValueList.array.idup;
   } else {
     return expectedValueList.array.dup;
   }
@@ -760,4 +761,11 @@ unittest {
 
   [0,1,2].should.equal(ImmutableRange());
   ImmutableRange().should.equal([0,1,2]);
+}
+
+/// immutable string
+unittest {
+  immutable string[] someList;
+
+  someList.should.equal([]);
 }
