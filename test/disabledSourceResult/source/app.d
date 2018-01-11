@@ -11,8 +11,9 @@ int main()
 	try {
 		0.should.equal(1);
 	} catch (TestException e) {
+		auto pos = e.msg.indexOf("source/app.d");
 		e.msg.writeln;
-		return e.msg.indexOf("source/app.d") == -1;
+		return pos != -1;
 	}
 
 	return 1;

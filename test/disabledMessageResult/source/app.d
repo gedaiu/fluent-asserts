@@ -12,7 +12,7 @@ int main()
 		0.should.equal(1);
 	} catch (TestException e) {
 		e.msg.writeln;
-		return e.msg.indexOf("should equal `1`.") == -1;
+		return e.msg.indexOf("should equal `1`.") != -1;
 	}
 
 	return 1;

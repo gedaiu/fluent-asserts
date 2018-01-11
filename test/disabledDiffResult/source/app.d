@@ -12,7 +12,7 @@ int main()
 		"a".should.equal("b");
 	} catch (TestException e) {
 		e.msg.writeln;
-		return e.msg.indexOf("Diff:") == -1;
+		return e.msg.indexOf("Diff:") != -1;
 	}
 
 	return 1;
