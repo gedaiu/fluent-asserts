@@ -25,3 +25,8 @@ fi
 if ! $($DC --version | grep -q 1.0.0); then
   dub --root=test/disabledSourceResult --compiler=$DC --arch=x86_64
 fi
+
+# run a build for DisableMessageResult
+if ! $($DC --version | grep -q 1.0.0); then
+  dub --root=test/disabledMessageResult --compiler=$DC --arch=x86_64
+fi
