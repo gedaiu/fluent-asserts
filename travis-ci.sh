@@ -20,3 +20,8 @@ dub test :vibe --compiler=$DC
 if ! $($DC --version | grep -q 1.0.0); then
   dub --root=test/unit-threaded --compiler=$DC --arch=x86_64
 fi
+
+# run a build for DisableSourceResult
+if ! $($DC --version | grep -q 1.0.0); then
+  dub --root=test/disabledSourceResult --compiler=$DC --arch=x86_64
+fi
