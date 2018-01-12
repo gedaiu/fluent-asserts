@@ -9,6 +9,7 @@ import std.traits;
 import std.range;
 import std.array;
 import std.string;
+import std.math;
 
 
 U[] toValueList(U, V)(V expectedValueList) {
@@ -26,11 +27,13 @@ struct ListComparison(T) {
   private {
     T[] referenceList;
     T[] list;
+    double maxRelDiff;
   }
 
-  this(U, V)(U reference, V list) {
+  this(U, V)(U reference, V list, double maxRelDiff = 0) {
     this.referenceList = toValueList!T(reference);
     this.list = list;
+    this.maxRelDiff = maxRelDiff;
   }
 
   T[] missing() {
@@ -39,7 +42,11 @@ struct ListComparison(T) {
     auto tmpList = list.dup;
 
     foreach(element; referenceList) {
-      auto index = tmpList.countUntil(element);
+      static if(std.traits.isNumeric!(T)) {
+        auto index = tmpList.countUntil!(a => approxEqual(element, a, maxRelDiff));
+      } else {
+        auto index = tmpList.countUntil(element);
+      }
 
       if(index == -1) {
         result ~= element;
@@ -57,7 +64,11 @@ struct ListComparison(T) {
     auto tmpReferenceList = referenceList.dup;
 
     foreach(element; list) {
-      auto index = tmpReferenceList.countUntil(element);
+      static if(isFloatingPoint!(T)) {
+        auto index = tmpReferenceList.countUntil!(a => approxEqual(element, a, maxRelDiff));
+      } else {
+        auto index = tmpReferenceList.countUntil(element);
+      }
 
       if(index == -1) {
         result ~= element;
@@ -79,7 +90,11 @@ struct ListComparison(T) {
         break;
       }
 
-      auto index = tmpList.countUntil(element);
+      static if(isFloatingPoint!(T)) {
+        auto index = tmpList.countUntil!(a => approxEqual(element, a, maxRelDiff));
+      } else {
+        auto index = tmpList.countUntil(element);
+      }
 
       if(index >= 0) {
         result ~= element;
@@ -165,8 +180,6 @@ struct ShouldList(T) if(isInputRange!(T)) {
   mixin DisabledShouldThrowableCommons;
 
   auto equal(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
-    import fluentasserts.core.basetype;
-
     U[] valueList = toValueList!U(expectedValueList);
 
     addMessage(" equal");
@@ -175,29 +188,72 @@ struct ShouldList(T) if(isInputRange!(T)) {
     addMessage("`");
     beginCheck;
 
-    auto comparison = ListComparison!U(valueList, testData.array);
+    return approximately(expectedValueList, 0, file, line);
+  }
+
+  auto approximately(V)(V expectedValueList, double maxRelDiff = 1e-05, const string file = __FILE__, const size_t line = __LINE__) {
+    import fluentasserts.core.basetype;
+
+    U[] valueList = toValueList!U(expectedValueList);
+
+    addMessage(" approximately");
+    addMessage(" `");
+    addValue(valueList.to!string);
+    addMessage("`");
+    beginCheck;
+
+    auto comparison = ListComparison!U(valueList, testData.array, maxRelDiff);
 
     auto missing = comparison.missing;
     auto extra = comparison.extra;
     auto common = comparison.common;
 
     auto arrayTestData = testData.array;
+    auto strArrayTestData = arrayTestData.to!string;
+
+    static if(std.traits.isNumeric!(U)) {
+      string strValueList;
+
+      if(maxRelDiff == 0) {
+        strValueList = valueList.to!string;
+      } else {
+        strValueList = "[" ~ valueList.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ") ~ "]";
+      }
+    } else {
+      auto strValueList = valueList.to!string;
+    }
+
+    static if(std.traits.isNumeric!(U)) {
+      string strMissing;
+
+      if(maxRelDiff == 0 || missing.length == 0) {
+        strMissing = missing.length == 0 ? "" : missing.to!string;
+      } else {
+        strMissing = "[" ~ missing.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ") ~ "]";
+      }
+    } else {
+      string strMissing = missing.length == 0 ? "" : missing.to!string;
+    }
 
     bool allEqual = valueList.length == arrayTestData.length;
 
     foreach(i; 0..valueList.length) {
-      allEqual = allEqual && (valueList[i] == arrayTestData[i]);
+      static if(std.traits.isNumeric!(U)) {
+        allEqual = allEqual && approxEqual(valueList[i], arrayTestData[i], maxRelDiff);
+      } else {
+        allEqual = allEqual && (valueList[i] == arrayTestData[i]);
+      }
     }
 
     if(expectedValue) {
       return result(allEqual, [], [
-        cast(IResult) new ExpectedActualResult(valueList.to!string, arrayTestData.to!string),
-        cast(IResult) new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, missing.length == 0 ? "" : missing.to!string)
+        cast(IResult) new ExpectedActualResult(strValueList, strArrayTestData),
+        cast(IResult) new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, strMissing)
       ], file, line);
     } else {
       return result(allEqual, [], [
-        cast(IResult) new ExpectedActualResult("not " ~ valueList.to!string, arrayTestData.to!string),
-        cast(IResult) new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, missing.length ==0 ? "" : missing.to!string)
+        cast(IResult) new ExpectedActualResult("not " ~ strValueList, strArrayTestData),
+        cast(IResult) new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, strMissing)
       ], file, line);
     }
   }
@@ -761,6 +817,31 @@ unittest {
 
   [0,1,2].should.equal(ImmutableRange());
   ImmutableRange().should.equal([0,1,2]);
+}
+
+/// approximately equals
+unittest {
+  [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.01);
+
+  ({
+    [0.350, 0.501, 0.341].should.not.be.approximately([0.35, 0.50, 0.34], 0.00001);
+    [0.350, 0.501, 0.341].should.not.be.approximately([0.501, 0.350, 0.341], 0.001);
+    [0.350, 0.501, 0.341].should.not.be.approximately([0.350, 0.501], 0.001);
+    [0.350, 0.501].should.not.be.approximately([0.350, 0.501, 0.341], 0.001);
+  }).should.not.throwAnyException;
+
+  auto msg = ({
+    [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.0001);
+  }).should.throwException!TestException.msg;
+
+  msg.should.contain("Expected:[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
+  msg.should.contain("Missing:[0.5±0.0001, 0.34±0.0001]");
+}
+
+/// approximately equals with Assert
+unittest {
+  Assert.approximately([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.01);
+  Assert.notApproximately([0.350, 0.501, 0.341], [0.350, 0.501], 0.0001);
 }
 
 /// immutable string
