@@ -8,6 +8,8 @@ import std.conv;
 import std.algorithm;
 import std.array;
 
+@safe:
+
 struct ShouldString {
   private {
     const string testData;
@@ -26,7 +28,7 @@ struct ShouldString {
     testData = value.value;
   }
 
-  auto equal(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
+  auto equal(const string someString, const string file = __FILE__, const size_t line = __LINE__) @trusted {
     addMessage(" equal `");
     addValue(someString.to!string);
     addMessage("`");
@@ -43,7 +45,7 @@ struct ShouldString {
     ];
 
     version(DisableDiffResult) {
-        return result(isSame, msg, cast(IResult[])[ new ExpectedActualResult(someString, testData) ], file, line);
+      return result(isSame, msg, cast(IResult[])[ new ExpectedActualResult(someString, testData) ], file, line);
     } else {
       return result(isSame, msg, cast(IResult[])[ new DiffResult(someString, testData), new ExpectedActualResult(someString, testData) ], file, line);
     }
