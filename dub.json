@@ -1,68 +1,65 @@
 {
-	"name": "fluent-asserts",
-	"authors": [
-		"Szabo Bogdan"
-	],
-	"description": "Fluent assertions done right",
-	"copyright": "Copyright © 2017, Szabo Bogdan",
-	"license": "MIT",
-	"homepage": "http://fluentasserts.szabobogdan.com/",
-
-	"dependencies": {
-		"fluent-asserts:core": "*"
-	},
+  "name": "fluent-asserts",
+  "authors": [
+    "Szabo Bogdan"
+  ],
+  "description": "Fluent assertions done right",
+  "copyright": "Copyright © 2017, Szabo Bogdan",
+  "license": "MIT",
+  "homepage": "http://fluentasserts.szabobogdan.com/",
+  "dependencies": {
+    "libdparse": "~>0.7.2-alpha.3",
+    "ddmp": "~>0.0.1-0.dev.2",
+    "unit-threaded": {
+      "version": "*",
+      "optional": true
+    },
+    "vibe-d:data": {
+      "version": "*",
+      "optional": true
+    },
+    "vibe-d:http": {
+      "version": "*",
+      "optional": true
+    }
+  },
 
 	"subPackages": [
 		{
 			"name": "core",
 			"targetType": "library",
-			"sourcePaths": ["core"],
-			"importPaths": ["core"],
+			"sourcePaths": ["source"],
+			"importPaths": ["source"],
 			"dependencies": {
-				"unit-threaded": {
-					"version": "*",
-					"optional": true
-				},
-				"libdparse": "~>0.7.2-alpha.3",
-				"ddmp": "~>0.0.1-0.dev.2"
 			}
-		},
-		{
-			"name": "vibe",
-			"targetType": "library",
-			"sourcePaths": ["vibe"],
-			"importPaths": ["vibe"],
-			"dependencies": {
-				"vibe-d:data": "*",
-				"vibe-d:http": "*",
-				"fluent-asserts:core": "*",
-				"openssl": "*"
-			}
-		}
-	],
+    }
+  ], 
 
-	"configurations": [
-		{
-			"name": "library",
-			"sourcePaths": ["./source"],
-			"importPaths": ["./source"],
-			"dependencies": {
-				"fluent-asserts:core": "*"
-			}
-		},
-		{
-			"name": "trial",
-			"sourcePaths": ["./core", "./vibe"],
-			"importPaths": ["./core", "./vibe"],
-			"dependencies": {
-				"libdparse": "~>0.7.2-alpha.3",
-				"ddmp": "~>0.0.1-0.dev.2",
-				"vibe-d:data": "*",
-				"vibe-d:http": "*",
-				"fluent-asserts:core": "*",
-				"openssl": "*"
-			},
-			"versions": ["Have_fluent_asserts_vibe"]
-		}
-	]
+  "configurations": [
+    {
+      "name": "library",
+      "sourcePaths": [
+        "./source"
+      ],
+      "importPaths": [
+        "./source"
+      ]
+    },
+    {
+      "name": "trial",
+      "sourcePaths": [
+        "./source"
+      ],
+      "importPaths": [
+        "./source"
+      ],
+      "dependencies": {
+        "libdparse": "~>0.7.2-alpha.3",
+        "ddmp": "~>0.0.1-0.dev.2",
+        "vibe-d:data": "*",
+        "vibe-d:http": "*",
+        "openssl": "*"
+      }
+    }
+  ]
 }

@@ -503,7 +503,7 @@ unittest {
 }
 
 auto should(T)(lazy T testData) {
-  version(Have_fluent_asserts_vibe) {
+  version(Have_vibe_d_data) {
     import vibe.data.json;
 
     static if(is(T == Json)) {
