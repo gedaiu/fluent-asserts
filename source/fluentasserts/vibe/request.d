@@ -1,5 +1,7 @@
 module fluentasserts.vibe.request;
 
+version(Have_vibe_d_http):
+
 import vibe.inet.url;
 import vibe.http.router;
 import vibe.http.form;

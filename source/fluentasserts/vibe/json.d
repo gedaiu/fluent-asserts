@@ -1,5 +1,7 @@
 module fluentasserts.vibe.json;
 
+version(Have_vibe_d_data):
+
 import std.exception, std.conv;
 
 import vibe.data.json;

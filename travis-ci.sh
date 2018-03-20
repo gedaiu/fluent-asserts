@@ -13,8 +13,7 @@ dub build --combined -b release --compiler=$DC
 dub clean --all-packages
 
 # run unit tests
-dub test :core --compiler=$DC
-dub test :vibe --compiler=$DC
+dub test --compiler=$DC
 
 # run a build for unit-threaded
 if ! $($DC --version | grep -q 1.0.0); then

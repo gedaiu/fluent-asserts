@@ -9,25 +9,49 @@ import std.string;
 import std.exception;
 import std.typecons;
 
+import dparse.lexer;
+import dparse.parser;
+
 @safe:
 
+/// Glyphs used to display special chars in the results
 struct ResultGlyphs {
   static {
+    /// Glyph for the tab char
     string tab;
+
+    /// Glyph for the \r char
     string carriageReturn;
+
+    /// Glyph for the \n char
     string newline;
+
+    /// Glyph for the space char
     string space;
+
+    /// Glyph for the \0 char
     string nullChar;
 
+    /// Glyph that indicates the error line
     string sourceIndicator;
+
+    /// Glyph that sepparates the line number 
     string sourceLineSeparator;
 
+    /// Glyph for the diff begin indicator
     string diffBegin;
+
+    /// Glyph for the diff end indicator
     string diffEnd;
+
+    /// Glyph that marks an inserted text in diff
     string diffInsert;
+
+    /// Glyph that marks deleted text in diff
     string diffDelete;
   }
 
+  /// Set the default values. The values are 
   static resetDefaults() {
     version(windows) {
       ResultGlyphs.tab = `\t`;
@@ -56,6 +80,8 @@ struct ResultGlyphs {
 static this() {
   ResultGlyphs.resetDefaults;
 }
+
+/// 
 interface ResultPrinter {
   void primary(string);
   void info(string);
@@ -607,10 +633,6 @@ class ExtraMissingResult : IResult
     printer.primary("\n");
   }
 }
-
-import dparse.ast;
-import dparse.lexer;
-import dparse.parser;
 
 string toString(const(Token)[] tokens) {
   string result;
