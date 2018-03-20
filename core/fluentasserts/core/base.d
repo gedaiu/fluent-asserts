@@ -19,6 +19,8 @@ import std.datetime;
 import std.range.primitives;
 import std.typecons;
 
+@safe:
+
 struct Result {
   bool willThrow;
   IResult[] results;
@@ -449,7 +451,7 @@ struct ValueEvaluation {
   Duration duration;
 }
 
-auto evaluate(T)(lazy T testData) {
+auto evaluate(T)(lazy T testData) @trusted {
   auto begin = Clock.currTime;
   alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
 
@@ -727,7 +729,7 @@ void setupFluentHandler() {
 }
 
 /// It should call the fluent handler
-unittest {
+@trusted unittest {
   import core.exception;
 
   setupFluentHandler;

@@ -8,6 +8,8 @@ import std.traits;
 
 import fluentasserts.core.results;
 
+@safe:
+
 struct ShouldCallable(T) {
   private {
     T callable;
@@ -127,7 +129,7 @@ unittest
 }
 
 /// Should print a nice message for exception message asserts
-unittest
+@trusted unittest
 {
   class CustomException : Exception {
     this(string msg, string fileName = "", size_t line = 0, Throwable next = null) {

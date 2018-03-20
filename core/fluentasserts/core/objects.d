@@ -8,6 +8,8 @@ import std.stdio;
 import std.traits;
 import std.conv;
 
+@safe:
+
 struct ShouldObject(T) {
   private {
     T testData;
@@ -22,7 +24,7 @@ struct ShouldObject(T) {
     this.testData = value.value;
   }
 
-  auto beNull(const string file = __FILE__, const size_t line = __LINE__) {
+  auto beNull(const string file = __FILE__, const size_t line = __LINE__) @trusted {
     addMessage(" be ");
     addValue("null");
     beginCheck;
@@ -34,7 +36,7 @@ struct ShouldObject(T) {
     }
   }
 
-  auto instanceOf(U)(const string file = __FILE__, const size_t line = __LINE__) {
+  auto instanceOf(U)(const string file = __FILE__, const size_t line = __LINE__) @trusted {
     addValue(" instance of `" ~ U.stringof ~ "`");
     beginCheck;
 
@@ -46,7 +48,7 @@ struct ShouldObject(T) {
                                            file, line);
   }
 
-  auto equal(U)(U instance, const string file = __FILE__, const size_t line = __LINE__) {
+  auto equal(U)(U instance, const string file = __FILE__, const size_t line = __LINE__) @trusted {
     addMessage(" equal ");
     addValue("`" ~ U.stringof ~ "`");
     beginCheck;

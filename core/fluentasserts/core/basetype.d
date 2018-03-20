@@ -7,6 +7,8 @@ import std.string;
 import std.conv;
 import std.algorithm;
 
+@safe:
+
 struct ShouldBaseType(T) {
   private const T testData;
   private ValueEvaluation valueEvaluation;
