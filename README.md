@@ -16,26 +16,27 @@ Unfortunately the [assert expression](https://dlang.org/spec/expression.html#Ass
 
 2. Import it:
 
-in dub.json
-```json
-    ...
-    "configurations": [
+    in `dub.json`:
+    ```json
         ...
-        {
-            "name": "unittest",
-            "dependencies": {
-                "fluent-asserts": "~>0.9.0",
-                ...
-            }
-        },
+        "configurations": [
+            ...
+            {
+                "name": "unittest",
+                "dependencies": {
+                    "fluent-asserts": "~>0.9.0",
+                    ...
+                }
+            },
+            ...
+        ]
         ...
-    ]
-    ...
-```
-
-```D
-version(unittest) import fluent.asserts;
-```
+    ```
+    
+    in your source files:
+    ```D
+    version(unittest) import fluent.asserts;
+    ```
 
 3. Use it:
 ```D
