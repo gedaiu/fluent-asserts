@@ -6,6 +6,8 @@ import vibe.data.json;
 import fluentasserts.core.base;
 import fluentasserts.core.results;
 
+@safe:
+
 string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE__) {
   string[] list;
 
@@ -17,7 +19,7 @@ string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE
     throw new TestException(results, file, line);
   }
 
-  foreach(string key, Json value; obj) {
+  foreach(string key, Json value; obj.byKeyValue) {
     list ~= key;
   }
 

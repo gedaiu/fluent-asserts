@@ -15,6 +15,8 @@ import std.exception;
 import fluentasserts.core.base;
 import fluentasserts.core.results;
 
+@safe:
+
 RequestRouter request(URLRouter router)
 {
 	return new RequestRouter(router);
@@ -60,7 +62,7 @@ final class RequestRouter
 		else static if (is(T == Json))
 		{
 			requestBody = data.toPrettyString;
-			preparedRequest.bodyReader = createMemoryStream(cast(ubyte[]) requestBody);
+			() @trusted { preparedRequest.bodyReader = createMemoryStream(cast(ubyte[]) requestBody); }();
 			preparedRequest.json = data;
 			return this;
 		}
@@ -198,7 +200,7 @@ final class RequestRouter
 		end((Response response) => { });
 	}
 
-	void end(T)(T callback)
+	void end(T)(T callback) @trusted
 	{
 		import vibe.stream.operations : readAllUTF8;
 		import vibe.inet.webform;
