@@ -23,18 +23,12 @@
       "optional": true
     }
   },
-
-	"subPackages": [
-		{
-			"name": "core",
-			"targetType": "library",
-			"sourcePaths": ["source"],
-			"importPaths": ["source"],
-			"dependencies": {
-			}
+  "subPackages": [
+    {
+      "name": "core",
+      "targetType": "library"
     }
-  ], 
-
+  ],
   "configurations": [
     {
       "name": "library",
