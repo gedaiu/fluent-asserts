@@ -9,7 +9,7 @@
 
 	"dependencies": {
 		"fluent-asserts": {
-			"path": "../../",
+			"path": "../../"
 		},
 		"unit-threaded": "*"
 	}
