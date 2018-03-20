@@ -11,6 +11,7 @@ import std.array;
 import std.string;
 import std.math;
 
+@safe:
 
 U[] toValueList(U, V)(V expectedValueList) {
 
@@ -36,7 +37,7 @@ struct ListComparison(T) {
     this.maxRelDiff = maxRelDiff;
   }
 
-  T[] missing() {
+  T[] missing() @trusted {
     T[] result;
 
     auto tmpList = list.dup;
@@ -58,7 +59,7 @@ struct ListComparison(T) {
     return result;
   }
 
-  T[] extra() {
+  T[] extra() @trusted {
     T[] result;
 
     auto tmpReferenceList = referenceList.dup;
@@ -80,7 +81,7 @@ struct ListComparison(T) {
     return result;
   }
 
-  T[] common() {
+  T[] common() @trusted {
     T[] result;
 
     auto tmpList = list.dup;
@@ -179,7 +180,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
   mixin ShouldCommons;
   mixin DisabledShouldThrowableCommons;
 
-  auto equal(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
+  auto equal(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) @trusted {
     U[] valueList = toValueList!U(expectedValueList);
 
     addMessage(" equal");
@@ -191,7 +192,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
     return approximately(expectedValueList, 0, file, line);
   }
 
-  auto approximately(V)(V expectedValueList, double maxRelDiff = 1e-05, const string file = __FILE__, const size_t line = __LINE__) {
+  auto approximately(V)(V expectedValueList, double maxRelDiff = 1e-05, const string file = __FILE__, const size_t line = __LINE__) @trusted {
     import fluentasserts.core.basetype;
 
     U[] valueList = toValueList!U(expectedValueList);
@@ -302,7 +303,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
       ], file, line);
   }
 
-  auto contain(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
+  auto contain(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) @trusted {
 
     U[] valueList = toValueList!U(expectedValueList);
 
@@ -361,7 +362,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
     }
   }
 
-  auto contain(U value, const string file = __FILE__, const size_t line = __LINE__) {
+  auto contain(U value, const string file = __FILE__, const size_t line = __LINE__) @trusted {
     addMessage(" contain `");
     addValue(value.to!string);
     addMessage("`");

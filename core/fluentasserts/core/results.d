@@ -9,6 +9,8 @@ import std.string;
 import std.exception;
 import std.typecons;
 
+@safe:
+
 struct ResultGlyphs {
   static {
     string tab;
@@ -294,12 +296,11 @@ class DiffResult : IResult {
     }
   }
 
-  override string toString()
-  {
+  override string toString() @trusted {
     return "Diff:\n" ~ diff_main(expected, actual).map!(a => getResult(a)).join("");
   }
 
-  void print(ResultPrinter printer) {
+  void print(ResultPrinter printer) @trusted {
     auto result = diff_main(expected, actual);
     printer.info("Diff:");
 
@@ -1064,8 +1065,7 @@ class SourceResult : IResult
     Token[] tokens;
   }
 
-  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) nothrow
-  {
+  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) nothrow @trusted {
     this.file = fileName;
     this.line = line;
 
@@ -1264,7 +1264,7 @@ unittest
 
 /// Converts a file to D tokens provided by libDParse.
 /// All the whitespaces are ignored
-const(Token)[] fileToDTokens(string fileName) nothrow {
+const(Token)[] fileToDTokens(string fileName) nothrow @trusted {
   try {
     auto f = File(fileName);
     immutable auto fileSize = f.size();
@@ -1401,7 +1401,7 @@ unittest
 }
 
 /// split multiline tokens in multiple single line tokens with the same type
-void splitMultilinetokens(const(Token)[] tokens, ref const(Token)[] result) nothrow {
+void splitMultilinetokens(const(Token)[] tokens, ref const(Token)[] result) nothrow @trusted {
 
   try {
     foreach(token; tokens) {
