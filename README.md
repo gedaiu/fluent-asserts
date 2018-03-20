@@ -15,8 +15,26 @@ Unfortunately the [assert expression](https://dlang.org/spec/expression.html#Ass
 [https://code.dlang.org/packages/fluent-asserts](https://code.dlang.org/packages/fluent-asserts)
 
 2. Import it:
+
+in dub.json
+```json
+    ...
+    "configurations": [
+        ...
+        {
+            "name": "unittest",
+            "dependencies": {
+                "fluent-asserts": "~>0.9.0",
+                ...
+            }
+        },
+        ...
+    ]
+    ...
+```
+
 ```D
-import fluent.asserts;
+version(unittest) import fluent.asserts;
 ```
 
 3. Use it:
