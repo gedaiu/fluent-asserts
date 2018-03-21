@@ -21,11 +21,16 @@ string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE
     throw new TestException(results, file, line);
   }
 
-  foreach(string key, Json value; obj.byKeyValue) {
-    list ~= key;
-  }
+  static if(typeof(obj.byKeyValue).stringof == "Rng") {
+    foreach(string key, Json value; obj.byKeyValue) {
+      list ~= key;
+    }
 
-  return list;
+    return list;
+  } else {
+    pragma(msg, "Json.keys is not compatible with your vibe.d version");
+    assert(false, "Json.keys is not compatible with your vibe.d version");
+  }
 }
 
 version(unittest) {
