@@ -17,7 +17,7 @@ import std.exception;
 import fluentasserts.core.base;
 import fluentasserts.core.results;
 
-@safe:
+//@safe:
 
 RequestRouter request(URLRouter router)
 {
@@ -210,12 +210,20 @@ final class RequestRouter
 
 		auto data = new ubyte[5000];
 
-		MemoryStream stream = createMemoryStream(data);
+		static if(__traits(compiles, createMemoryStream(data) )) {
+			MemoryStream stream = createMemoryStream(data);
+		} else {
+			MemoryStream stream = new MemoryStream(data);
+		}
+
 		HTTPServerResponse res = createTestHTTPServerResponse(stream);
 		res.statusCode = 404;
 
-		import vibe.stream.memory;
-		preparedRequest.bodyReader = createMemoryStream(cast(ubyte[]) requestBody);
+		static if(__traits(compiles, createMemoryStream(data) )) {
+			preparedRequest.bodyReader = createMemoryStream(cast(ubyte[]) requestBody);
+		} else {
+			preparedRequest.bodyReader = new MemoryStream(cast(ubyte[]) requestBody);
+		}
 
 		router.handleRequest(preparedRequest, res);
 
