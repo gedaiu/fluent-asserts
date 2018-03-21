@@ -54,7 +54,8 @@
         "ddmp": "~>0.0.1-0.dev.3",
         "vibe-d:data": "*",
         "vibe-d:http": "*",
-        "openssl": "*"
+        "openssl": "*",
+        "trial:lifecycle-core": "0.7.0-alpha.1"
       }
     }
   ]
