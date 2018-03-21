@@ -41,19 +41,13 @@
     {
       "name": "library",
       "sourcePaths": [
-        "./source"
-      ],
-      "importPaths": [
-        "./source"
+        "source"
       ]
     },
     {
       "name": "trial",
       "sourcePaths": [
-        "./source"
-      ],
-      "importPaths": [
-        "./source"
+        "source"
       ],
       "dependencies": {
         "libdparse": "~>0.8.0-alpha.5",
