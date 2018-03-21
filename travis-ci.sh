@@ -16,24 +16,17 @@ dub clean --all-packages
 dub test --compiler=$DC
 
 # run a build for unit-threaded
-if ! $($DC --version | grep -q 1.0.0); then
-  dub --root=test/unit-threaded --compiler=$DC --arch=x86_64
-fi
+dub --root=test/unit-threaded --compiler=$DC --arch=x86_64
 
 # run a build for DisableSourceResult
-if ! $($DC --version | grep -q 1.0.0); then
-  dub --root=test/disabledSourceResult --compiler=$DC --arch=x86_64
-fi
+dub --root=test/disabledSourceResult --compiler=$DC --arch=x86_64
 
 # run a build for DisableMessageResult
-if ! $($DC --version | grep -q 1.0.0); then
-  dub --root=test/disabledMessageResult --compiler=$DC --arch=x86_64
-fi
+dub --root=test/disabledMessageResult --compiler=$DC --arch=x86_64
 
 # run a build for DisableDiffResult
-if ! $($DC --version | grep -q 2.073); then
-  dub --root=test/disabledDiffResult --compiler=$DC --arch=x86_64
-fi
+dub --root=test/disabledDiffResult --compiler=$DC --arch=x86_64
+
 
 # run a build for vibe-d 0.8
 if ! $($DC --version | grep -q '2.073\|2.074\|2.075\|2.076\|2.077\|2.078\|2.079'); then
