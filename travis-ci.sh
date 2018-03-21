@@ -30,7 +30,7 @@ dub --root=test/disabledDiffResult --compiler=$DC --arch=x86_64
 
 # run a build for vibe-d 0.8
 if ! $($DC --version | grep -q '2.073\|2.074\|2.075\|2.076\|2.077\|2.078\|2.079'); then
-  dub --root=test/vibe-0.7 --compiler=$DC --arch=x86_64
+  dub --root=test/vibe-0.8 --compiler=$DC --arch=x86_64
 fi
 
 # run a build for vibe-d 0.7

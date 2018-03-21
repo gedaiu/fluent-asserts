@@ -5,7 +5,7 @@
 	],
 	"description": "A minimal D application.",
 	"copyright": "Copyright © 2018, Bogdan Szabo",
-	"license": "proprietary",
+	"license": "MIT",
 	"dependencies": {
 		"vibe-d:core": "~>0.7.32",
 		"vibe-d:redis": "~>0.7.32",
