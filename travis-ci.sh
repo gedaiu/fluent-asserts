@@ -2,8 +2,6 @@
 
 set -e -x -o pipefail
 
-export DC=dmd
-
 # test for successful 32-bit build
 if [ "$DC" == "dmd" ]; then
 	dub build --combined --arch=x86
