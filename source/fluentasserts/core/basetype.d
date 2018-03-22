@@ -7,7 +7,7 @@ import std.string;
 import std.conv;
 import std.algorithm;
 
-@safe:
+@trusted:
 
 struct ShouldBaseType(T) {
   private const T testData;
