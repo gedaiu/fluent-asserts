@@ -517,7 +517,7 @@ auto should(T)(lazy T testData) {
 
     static if(is(T == Json)) {
       enum returned = true;
-      return ShouldString(testData.to!string.evaluate);
+      return ShouldBaseType!T(testData.evaluate);
     } else {
       enum returned = false;
     }

@@ -37,11 +37,6 @@ version(unittest) {
   import fluentasserts.core.base;
 }
 
-@("Should work on Json string values")
-unittest {
-  Json("text").should.equal("text");
-}
-
 @("Empty Json object keys")
 unittest {
   Json.emptyObject.keys.length.should.equal(0);
@@ -64,4 +59,9 @@ unittest {
   ({
     obj.keys.should.contain(["key1", "key2"]);
   }).should.throwAnyException.msg.should.startWith("Invalid Json type.");
+}
+
+/// It should be able to compare 2 empty json objects
+unittest {
+  Json.emptyObject.should.equal(Json.emptyObject);
 }
