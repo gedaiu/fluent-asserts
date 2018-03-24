@@ -12,8 +12,14 @@ fi
 dub build --combined -b release --compiler=$DC
 dub clean --all-packages
 
+# build Trial
+git clone git@github.com:gedaiu/trial.git
+cd trial
+dub build :runner
+cd ..
+
 # run unit tests
-dub test --compiler=$DC
+./trial/trial --compiler=$DC
 
 # run a build for unit-threaded
 dub --root=test/unit-threaded --compiler=$DC --arch=x86_64
