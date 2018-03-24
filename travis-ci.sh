@@ -13,7 +13,7 @@ dub build --combined -b release --compiler=$DC
 dub clean --all-packages
 
 # build Trial
-git clone git@github.com:gedaiu/trial.git
+git clone https://github.com/gedaiu/trial.git
 cd trial
 dub build :runner
 cd ..
