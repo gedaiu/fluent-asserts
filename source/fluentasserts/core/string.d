@@ -13,7 +13,6 @@ import std.array;
 struct ShouldString {
   private {
     const string testData;
-    ValueEvaluation valueEvaluation;
   }
 
   mixin ShouldCommons;
@@ -29,6 +28,8 @@ struct ShouldString {
   }
 
   auto equal(const string someString, const string file = __FILE__, const size_t line = __LINE__) @trusted {
+    validateException;
+
     addMessage(" equal `");
     addValue(someString.to!string);
     addMessage("`");
@@ -52,6 +53,8 @@ struct ShouldString {
   }
 
   auto contain(const string[] someStrings, const string file = __FILE__, const size_t line = __LINE__) {
+    validateException;
+
     addMessage(" contain `");
     addValue(someStrings.to!string);
     addMessage("`");
@@ -81,6 +84,8 @@ struct ShouldString {
   }
 
   auto contain(const string someString, const string file = __FILE__, const size_t line = __LINE__) {
+    validateException;
+
     addMessage(" contain `");
     addValue(someString);
     addMessage("`");
@@ -103,6 +108,8 @@ struct ShouldString {
   }
 
   auto contain(const char someChar, const string file = __FILE__, const size_t line = __LINE__) {
+    validateException;
+
     addMessage(" contain `");
     addValue(someChar.to!string);
     addMessage("`");
@@ -125,6 +132,8 @@ struct ShouldString {
   }
 
   auto startWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
+    validateException;
+
     addMessage(" start with `");
     addValue(someString.to!string);
     addMessage("`");
@@ -147,6 +156,8 @@ struct ShouldString {
   }
 
   auto endWith(T)(const T someString, const string file = __FILE__, const size_t line = __LINE__) {
+    validateException;
+
     addMessage(" end with `");
     addValue(someString.to!string);
     addMessage("`");
@@ -172,6 +183,37 @@ struct ShouldString {
 
     return result(doesEndWith, msg, new ExpectedActualResult(mode ~ "`" ~ someString.to!string ~ "`", testData), file, line);
   }
+}
+
+/// When there is a lazy string that throws an it should throw that exception
+unittest {
+  string someLazyString() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyString.should.equal("");
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyString.should.contain("");
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyString.should.contain([""]);
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyString.should.contain(' ');
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyString.should.startWith(" ");
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyString.should.endWith(" ");
+  }).should.throwAnyException.withMessage("This is it.");
 }
 
 @("string startWith")

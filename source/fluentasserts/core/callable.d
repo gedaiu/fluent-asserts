@@ -13,7 +13,6 @@ import fluentasserts.core.results;
 struct ShouldCallable(T) {
   private {
     T callable;
-    ValueEvaluation valueEvaluation;
   }
 
   mixin ShouldCommons;
@@ -27,12 +26,16 @@ struct ShouldCallable(T) {
   }
 
   auto haveExecutionTime(string file = __FILE__, size_t line = __LINE__) {
+    validateException;
+
     auto tmpShould = ShouldBaseType!Duration(evaluate(valueEvaluation.duration)).forceMessage(" have execution time");
 
     return tmpShould;
   }
 
   auto beNull(string file = __FILE__, size_t line = __LINE__) {
+    validateException;
+
     addMessage(" be ");
     addValue("null");
     beginCheck;

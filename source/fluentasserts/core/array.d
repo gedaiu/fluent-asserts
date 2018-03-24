@@ -391,6 +391,30 @@ struct ShouldList(T) if(isInputRange!(T)) {
   }
 }
 
+
+/// When there is a lazy array that throws an it should throw that exception
+unittest {
+  int[] someLazyArray() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyArray.should.equal([]);
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyArray.should.approximately([], 3);
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyArray.should.contain([]);
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyArray.should.contain(3);
+  }).should.throwAnyException.withMessage("This is it.");
+}
+
 @("range contain")
 unittest {
   ({

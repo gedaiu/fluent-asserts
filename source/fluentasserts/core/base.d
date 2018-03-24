@@ -129,6 +129,14 @@ mixin template ShouldCommons()
   import std.string;
   import fluentasserts.core.results;
 
+  private ValueEvaluation valueEvaluation;
+
+  private void validateException() {
+    if(valueEvaluation.throwable !is null) {
+      throw valueEvaluation.throwable;
+    }
+  }
+
   auto be() {
     addMessage(" be");
     return this;
@@ -454,7 +462,6 @@ struct ValueEvaluation {
 auto evaluate(T)(lazy T testData) @trusted {
   auto begin = Clock.currTime;
   alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
-
 
   try {
     auto value = testData;

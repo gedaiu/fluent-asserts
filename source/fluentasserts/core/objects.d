@@ -13,7 +13,6 @@ import std.conv;
 struct ShouldObject(T) {
   private {
     T testData;
-    ValueEvaluation valueEvaluation;
   }
 
   mixin ShouldCommons;
@@ -25,6 +24,8 @@ struct ShouldObject(T) {
   }
 
   auto beNull(const string file = __FILE__, const size_t line = __LINE__) @trusted {
+    validateException;
+
     addMessage(" be ");
     addValue("null");
     beginCheck;
@@ -37,6 +38,8 @@ struct ShouldObject(T) {
   }
 
   auto instanceOf(U)(const string file = __FILE__, const size_t line = __LINE__) @trusted {
+    validateException;
+
     addValue(" instance of `" ~ U.stringof ~ "`");
     beginCheck;
 
@@ -49,6 +52,8 @@ struct ShouldObject(T) {
   }
 
   auto equal(U)(U instance, const string file = __FILE__, const size_t line = __LINE__) @trusted {
+    validateException;
+
     addMessage(" equal ");
     addValue("`" ~ U.stringof ~ "`");
     beginCheck;
@@ -56,6 +61,26 @@ struct ShouldObject(T) {
     return result(testData == instance, [] ,
       new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ instance.to!string, testData.to!string), file, line);
   }
+}
+
+
+/// When there is a lazy object that throws an it should throw that exception
+unittest {
+  Object someLazyObject() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyObject.should.not.beNull;
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyObject.should.be.instanceOf!Object;
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyObject.should.equal(new Object);
+  }).should.throwAnyException.withMessage("This is it.");
 }
 
 /// object beNull
@@ -117,7 +142,6 @@ unittest {
   msg.split("\n")[2].strip.should.equal("Expected:not a `OtherClass` instance");
   msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");
 }
-
 
 /// object instanceOf interface
 unittest {

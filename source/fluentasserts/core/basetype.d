@@ -11,7 +11,6 @@ import std.algorithm;
 
 struct ShouldBaseType(T) {
   private const T testData;
-  private ValueEvaluation valueEvaluation;
 
   this(U)(U value) {
     valueEvaluation = value.evaluation;
@@ -26,6 +25,8 @@ struct ShouldBaseType(T) {
   alias within = this.between;
 
   auto equal(const T someValue, const string file = __FILE__, const size_t line = __LINE__) {
+    validateException;
+
     addMessage(" equal `");
     addValue(someValue.to!string);
     addMessage("`");
@@ -45,6 +46,8 @@ struct ShouldBaseType(T) {
   auto greaterThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
+    validateException;
+
     addMessage(" greater than `");
     addValue(someValue.to!string);
     addMessage("`");
@@ -68,6 +71,8 @@ struct ShouldBaseType(T) {
   auto lessThan()(const T someValue, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
+    validateException;
+
     addMessage(" less than `");
     addValue(someValue.to!string);
     addMessage("`");
@@ -91,6 +96,8 @@ struct ShouldBaseType(T) {
   auto between()(const T limit1, const T limit2, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
+    validateException;
+
     T min = limit1 < limit2 ? limit1 : limit2;
     T max = limit1 > limit2 ? limit1 : limit2;
 
@@ -128,6 +135,8 @@ struct ShouldBaseType(T) {
   auto approximately()(const T someValue, const T delta, const string file = __FILE__, const size_t line = __LINE__)
   if(!is(T == bool))
   {
+    validateException;
+
     addMessage(" equal `");
     addValue(someValue.to!string ~ "±" ~ delta.to!string);
     addMessage("`");
@@ -135,6 +144,33 @@ struct ShouldBaseType(T) {
 
     return between(someValue - delta, someValue + delta, file, line);
   }
+}
+
+/// When there is a lazy number that throws an it should throw that exception
+unittest {
+  int someLazyInt() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyInt.should.equal(3);
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyInt.should.be.greaterThan(3);
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyInt.should.be.lessThan(3);
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyInt.should.be.between(3, 4);
+  }).should.throwAnyException.withMessage("This is it.");
+
+  ({
+    someLazyInt.should.be.approximately(3, 4);
+  }).should.throwAnyException.withMessage("This is it.");
 }
 
 @("numbers equal")
