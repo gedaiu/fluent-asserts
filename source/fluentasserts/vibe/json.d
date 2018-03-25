@@ -389,11 +389,11 @@ unittest {
     Json(4).should.equal("5");
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("Json(4) should equal `5`.");
+  msg.split("\n")[0].should.equal("Json(4) should equal `5`. They have different types `Json.Type.int_` != `string`.");
 
   msg = ({
     Json(4).should.equal(Json("5"));
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("Json(4) should equal `5`.");
+  msg.split("\n")[0].should.equal("Json(4) should equal `5`. They have different types `Json.Type.int_` != `Json.Type.string`.");
 }
