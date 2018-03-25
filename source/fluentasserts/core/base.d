@@ -514,10 +514,11 @@ unittest {
 auto should(T)(lazy T testData) {
   version(Have_vibe_d_data) {
     import vibe.data.json;
+    import fluentasserts.vibe.json;
 
     static if(is(T == Json)) {
       enum returned = true;
-      return ShouldBaseType!T(testData.evaluate);
+      return ShouldJson!T(testData.evaluate);
     } else {
       enum returned = false;
     }

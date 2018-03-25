@@ -391,7 +391,6 @@ struct ShouldList(T) if(isInputRange!(T)) {
   }
 }
 
-
 /// When there is a lazy array that throws an it should throw that exception
 unittest {
   int[] someLazyArray() {
