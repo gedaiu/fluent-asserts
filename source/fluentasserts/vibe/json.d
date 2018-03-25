@@ -382,3 +382,18 @@ unittest {
 
   msg.split("\n")[0].should.equal("Json(4) should equal `5`.");
 }
+
+/// It throws on comparing an integer Json with a string
+unittest {
+  auto msg = ({
+    Json(4).should.equal("5");
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(4) should equal `5`.");
+
+  msg = ({
+    Json(4).should.equal(Json("5"));
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(4) should equal `5`.");
+}
