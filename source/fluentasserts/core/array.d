@@ -11,18 +11,19 @@ import std.array;
 import std.string;
 import std.math;
 
-@safe:
 
-U[] toValueList(U, V)(V expectedValueList) {
+U[] toValueList(U, V)(V expectedValueList) @trusted {
 
   static if(is(V == void[])) {
     return [];
   } else static if(is(U == immutable) || is(U == const)) {
     return expectedValueList.array.idup;
   } else {
-    return expectedValueList.array.dup;
+    return cast(U[]) expectedValueList.array.dup;
   }
 }
+
+@safe:
 
 struct ListComparison(T) {
   private {

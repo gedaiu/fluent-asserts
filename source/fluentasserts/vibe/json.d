@@ -60,6 +60,30 @@ unittest {
 }
 
 
+auto unpackJsonArray(T : U[], U)(Json data) if(!isArray!U && isBasicType!U) {
+  return data.byValue.map!(a => a.to!U).array.dup;
+}
+
+auto unpackJsonArray(T : U[], U)(Json data) if(!isArray!U && is(Unqual!U == Json)) {
+  U[] result;
+
+  foreach(element; data.byValue) {
+    result ~= element;
+  }
+
+  return result;
+}
+
+auto unpackJsonArray(T : U[], U)(Json data) if(isArray!(U) && !isSomeString!(U[])) {
+  U[] result;
+
+  foreach(element; data.byValue) {
+    result ~= unpackJsonArray!(U)(element);
+  }
+
+  return result;
+}
+
 struct ShouldJson(T) {
   private const T testData;
 
@@ -70,7 +94,6 @@ struct ShouldJson(T) {
 
   mixin ShouldCommons;
   mixin ShouldThrowableCommons;
-
 
   auto validateJsonType(const T someValue, const string file, const size_t line) {
     auto haveSameType = someValue.type == testData.type;
@@ -193,20 +216,21 @@ struct ShouldJson(T) {
 
     validateException;
 
-    static if(is(U == string) || std.traits.isNumeric!U || is(U == bool)) {
-      U[] nativeVal;
+    Unqual!U[] nativeVal;
 
-      try {
-        nativeVal = testData.byValue.map!(a => a.to!U).array.dup;
-      } catch(ConvException e) {
-        addMessage(". ");
-        if(e.msg.length > 0 && e.msg[0].toUpper == e.msg[0]) {
-          addValue(e.msg);
-        } else {
-          addMessage("During conversion ");
-          addValue(e.msg);
-        }
+    try {
+      nativeVal = unpackJsonArray!(U[])(testData);
+    } catch(Exception e) {
+      addMessage(". ");
+      if(e.msg.length > 0 && e.msg[0].toUpper == e.msg[0]) {
+        addValue(e.msg);
+      } else {
+        addMessage("During conversion ");
+        addValue(e.msg);
       }
+    }
+
+    static if(is(U == string) || std.traits.isNumeric!U || is(U == bool)) {
 
       if(expectedValue) {
         auto typeResult = validateJsonType!(U[])(file, line);
@@ -219,13 +243,20 @@ struct ShouldJson(T) {
       } else {
         return nativeVal.should.not.equal(someArray, file, line);
       }
-    } else static if(is(U == Json)) {
-      Json[] nativeVal;
+    } else static if(isArray!U) {
+      if(expectedValue) {
+        auto typeResult = validateJsonType!(U[])(file, line);
 
-      foreach(value; testData.byValue) {
-        nativeVal ~= value;
+        if(typeResult.willThrow) {
+          return typeResult;
+        }
+
+        return nativeVal.should.equal(someArray, file, line);
+      } else {
+        return nativeVal.should.not.equal(someArray, file, line);
       }
-
+    } else static if(is(U == Json)) {
+      
       if(expectedValue) {
         auto typeResult = validateJsonType!(U[])(file, line);
 
@@ -590,4 +621,57 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("Json(elements) should equal `5`. They have incompatible types `Json.Type.array` != `Json.Type.string`.");
+}
+
+/// It should be able to compare two nested arrays
+unittest {
+  Json[] element1 = [Json(1), Json(2)];
+  Json[] element2 = [Json(10), Json(20)];
+
+  Json[] elements = [Json(element1), Json(element2)];
+  Json[] otherElements = [Json(element1), Json(element2), Json(element1)];
+
+  Json(elements).should.equal([element1, element2]);
+  Json(elements).should.not.equal([element1, element2, element1]);
+
+  Json(elements).should.equal(Json(elements));
+  Json(elements).should.not.equal(Json(otherElements));
+
+  auto msg = ({
+    Json(elements).should.equal(otherElements);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(elements) should equal `[[1,2], [10,20], [1,2]]`.");
+
+  msg = ({
+    Json(elements).should.equal(Json(otherElements));
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(elements) should equal `[[1,2], [10,20], [1,2]]`.");
+}
+
+/// It should be able to compare two nested arrays with different levels
+unittest {
+  Json nestedElement = Json([Json(1), Json(2)]);
+
+  Json[] elements = [nestedElement, Json(1)];
+  Json[] otherElements = [nestedElement, Json(1), nestedElement];
+
+  Json(elements).should.equal([nestedElement, Json(1)]);
+  Json(elements).should.not.equal([nestedElement, Json(1), nestedElement]);
+
+  Json(elements).should.equal(Json(elements));
+  Json(elements).should.not.equal(Json(otherElements));
+
+  auto msg = ({
+    Json(elements).should.equal(otherElements);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(elements) should equal `[[1,2], 1, [1,2]]`.");
+
+  msg = ({
+    Json(elements).should.equal(Json(otherElements));
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(elements) should equal `[[1,2], 1, [1,2]]`.");
 }

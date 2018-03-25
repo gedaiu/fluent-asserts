@@ -516,7 +516,7 @@ auto should(T)(lazy T testData) {
     import vibe.data.json;
     import fluentasserts.vibe.json;
 
-    static if(is(T == Json)) {
+    static if(is(Unqual!T == Json)) {
       enum returned = true;
       return ShouldJson!T(testData.evaluate);
     } else {
