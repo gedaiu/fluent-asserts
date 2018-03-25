@@ -203,6 +203,10 @@ struct ShouldJson(T) {
         return equal(someValue.to!double, file, line);
       }
 
+      if(testData.type == Json.Type.bool_) {
+        return equal(someValue.to!bool, file, line);
+      }
+
       auto isSame = testData == someValue;
       auto expected = expectedValue ? someValue.to!string : ("not " ~ someValue.to!string);
 
@@ -438,4 +442,40 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("Json(4f) should equal `5`. They have incompatible types `Json.Type.float_` != `Json.Type.string`.");
+}
+
+/// It should be able to compare two booleans
+unittest {
+  Json(true).should.equal(true);
+  Json(true).should.not.equal(false);
+
+  Json(true).should.equal(Json(true));
+  Json(true).should.not.equal(Json(false));
+
+  auto msg = ({
+    Json(true).should.equal(false);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(true) should equal `false`.");
+
+  msg = ({
+    Json(true).should.equal(Json(false));
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(true) should equal `false`.");
+}
+
+/// It throws on comparing an bool Json with a string
+unittest {
+  auto msg = ({
+    Json(true).should.equal("5");
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(true) should equal `5`. They have incompatible types `Json.Type.bool_` != `string`.");
+
+  msg = ({
+    Json(true).should.equal(Json("5"));
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(true) should equal `5`. They have incompatible types `Json.Type.bool_` != `Json.Type.string`.");
 }
