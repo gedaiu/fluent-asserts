@@ -3,6 +3,7 @@ module fluentasserts.vibe.json;
 version(Have_vibe_d_data):
 
 import std.exception, std.conv, std.traits;
+import std.array, std.algorithm;
 
 import vibe.data.json;
 import fluentasserts.core.base;
@@ -123,6 +124,13 @@ struct ShouldJson(T) {
       expected = "a " ~ U.stringof ~ " or Json.Type." ~ someType.to!string;
     }
 
+    static if(isArray!U && !isSomeString!U) {
+      someType = Json.Type.array;
+      haveSameType = someType == testData.type;
+
+      expected = "a " ~ U.stringof ~ "[] or Json.Type." ~ someType.to!string;
+    }
+
     if(expected == "") {
       expected = "a Json.Type." ~ someType.to!string;
     }
@@ -139,7 +147,7 @@ struct ShouldJson(T) {
     return result(haveSameType, msg, [ new ExpectedActualResult(expected, actual) ], file, line);
   }
 
-  auto equal(U)(const U someValue, const string file = __FILE__, const size_t line = __LINE__) {
+  auto equal(U)(const U someValue, const string file = __FILE__, const size_t line = __LINE__) if(!isArray!U || isSomeString!U) {
     addMessage(" equal `");
     addValue(someValue.to!string);
     addMessage("`");
@@ -151,7 +159,6 @@ struct ShouldJson(T) {
         nativeVal = testData.to!U;
       } catch(ConvException e) {
         addMessage(". ");
-
         if(e.msg.length > 0 && e.msg[0].toUpper == e.msg[0]) {
           addValue(e.msg);
         } else {
@@ -159,7 +166,6 @@ struct ShouldJson(T) {
           addValue(e.msg);
         }
       }
-
       validateException;
 
       if(expectedValue) {
@@ -176,7 +182,63 @@ struct ShouldJson(T) {
     } else static if(is(U == Json)) {
       return equalJson(someValue, file, line);
     } else {
-      static assert("You can not compare `" ~ U.stringof ~ "` with `Json`");
+      static assert(false, "You can not validate `Json` against `" ~ U.stringof ~ "`");
+    }
+  }
+
+  auto equal(U)(const U[] someArray, const string file = __FILE__, const size_t line = __LINE__) {
+    addMessage(" equal `");
+    addValue(someArray.to!string);
+    addMessage("`");
+
+    validateException;
+
+    static if(is(U == string) || std.traits.isNumeric!U || is(U == bool)) {
+      U[] nativeVal;
+
+      try {
+        nativeVal = testData.byValue.map!(a => a.to!U).array.dup;
+      } catch(ConvException e) {
+        addMessage(". ");
+        if(e.msg.length > 0 && e.msg[0].toUpper == e.msg[0]) {
+          addValue(e.msg);
+        } else {
+          addMessage("During conversion ");
+          addValue(e.msg);
+        }
+      }
+
+      if(expectedValue) {
+        auto typeResult = validateJsonType!(U[])(file, line);
+
+        if(typeResult.willThrow) {
+          return typeResult;
+        }
+
+        return nativeVal.should.equal(someArray, file, line);
+      } else {
+        return nativeVal.should.not.equal(someArray, file, line);
+      }
+    } else static if(is(U == Json)) {
+      Json[] nativeVal;
+
+      foreach(value; testData.byValue) {
+        nativeVal ~= value;
+      }
+
+      if(expectedValue) {
+        auto typeResult = validateJsonType!(U[])(file, line);
+
+        if(typeResult.willThrow) {
+          return typeResult;
+        }
+
+        return nativeVal.should.equal(someArray, file, line);
+      } else {
+        return nativeVal.should.not.equal(someArray, file, line);
+      }
+    } else {
+      static assert(false, "You can not validate `Json` against `" ~ U.stringof ~ "`");
     }
   }
 
@@ -205,6 +267,16 @@ struct ShouldJson(T) {
 
       if(testData.type == Json.Type.bool_) {
         return equal(someValue.to!bool, file, line);
+      }
+
+      if(testData.type == Json.Type.array) {
+        Json[] values;
+
+        foreach(value; someValue.byValue) {
+          values ~= value;
+        }
+
+        return equal(values, file, line);
       }
 
       auto isSame = testData == someValue;
@@ -465,7 +537,7 @@ unittest {
   msg.split("\n")[0].should.equal("Json(true) should equal `false`.");
 }
 
-/// It throws on comparing an bool Json with a string
+/// It throws on comparing a bool Json with a string
 unittest {
   auto msg = ({
     Json(true).should.equal("5");
@@ -478,4 +550,44 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("Json(true) should equal `5`. They have incompatible types `Json.Type.bool_` != `Json.Type.string`.");
+}
+
+/// It should be able to compare two arrays
+unittest {
+  Json[] elements = [Json(1), Json(2)];
+  Json[] otherElements = [Json(1), Json(2), Json(3)];
+
+  Json(elements).should.equal([1, 2]);
+  Json(elements).should.not.equal([1, 2, 3]);
+
+  Json(elements).should.equal(Json(elements));
+  Json(elements).should.not.equal(Json(otherElements));
+
+  auto msg = ({
+    Json(elements).should.equal(otherElements);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(elements) should equal `[1, 2, 3]`.");
+
+  msg = ({
+    Json(elements).should.equal(otherElements);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(elements) should equal `[1, 2, 3]`.");
+}
+
+/// It throws on comparing a Json array with a string
+unittest {
+  Json[] elements = [Json(1), Json(2)];
+  auto msg = ({
+    Json(elements).should.equal("5");
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(elements) should equal `5`. They have incompatible types `Json.Type.array` != `string`.");
+
+  msg = ({
+    Json(elements).should.equal(Json("5"));
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(elements) should equal `5`. They have incompatible types `Json.Type.array` != `Json.Type.string`.");
 }
