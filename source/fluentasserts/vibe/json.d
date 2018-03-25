@@ -99,7 +99,8 @@ struct ShouldJson(T) {
       expected = "a string or Json.Type." ~ someType.to!string;
     }
 
-    static if(is(U == byte) || is(U == short) || is(U == int) || is(U == long)) {
+    static if(is(U == byte) || is(U == short) || is(U == int) || is(U == long) ||
+              is(U == ubyte) || is(U == ushort) || is(U == uint) || is(U == ulong)) {
       someType = Json.Type.int_;
 
       expected = "a " ~ U.stringof ~ " or Json.Type." ~ someType.to!string;
@@ -140,10 +141,23 @@ struct ShouldJson(T) {
     addValue(someValue.to!string);
     addMessage("`");
 
-    validateException;
+    static if(is(U == string) || std.traits.isNumeric!U || is(U == bool)) {
+      U nativeVal;
 
-    static if(is(U == string)) {
-      string strVal = testData.to!string;
+      try {
+        nativeVal = testData.to!U;
+      } catch(ConvException e) {
+        addMessage(". ");
+
+        if(e.msg.length > 0 && e.msg[0].toUpper == e.msg[0]) {
+          addValue(e.msg);
+        } else {
+          addMessage("During conversion ");
+          addValue(e.msg);
+        }
+      }
+
+      validateException;
 
       if(expectedValue) {
         auto typeResult = validateJsonType!U(file, line);
@@ -152,20 +166,10 @@ struct ShouldJson(T) {
           return typeResult;
         }
 
-        return strVal.should.equal(someValue, file, line);
+        return nativeVal.should.equal(someValue, file, line);
       } else {
-        return strVal.should.not.equal(someValue, file, line);
+        return nativeVal.should.not.equal(someValue, file, line);
       }
-    } static if(std.traits.isNumeric!U || is(U == bool)) {
-      if(expectedValue) {
-        auto typeResult = validateJsonType!U(file, line);
-
-        if(typeResult.willThrow) {
-          return typeResult;
-        }
-      }
-
-      return result(true, new ExpectedActualResult("",""), file, line);
     } else static if(is(U == Json)) {
       return equalJson(someValue, file, line);
     } else {
@@ -175,12 +179,22 @@ struct ShouldJson(T) {
 
   private {
     auto equalJson(const Json someValue, const string file, const size_t line) {
-      auto typeResult = validateJsonType(someValue, file, line);
-      if(typeResult.willThrow) {
-        return typeResult;
+      if(expectedValue) {
+        auto typeResult = validateJsonType(someValue, file, line);
+        if(typeResult.willThrow) {
+          return typeResult;
+        }
       }
 
       beginCheck;
+
+      if(testData.type == Json.Type.string) {
+        return equal(someValue.to!string, file, line);
+      }
+
+      if(testData.type == Json.Type.int_) {
+        return equal(someValue.to!long, file, line);
+      }
 
       auto isSame = testData == someValue;
       auto expected = expectedValue ? someValue.to!string : ("not " ~ someValue.to!string);
@@ -221,8 +235,19 @@ unittest {
     Json("other string").should.not.equal("test");
   }).should.not.throwAnyException;
 
+  ({
+    Json("test string").should.equal(Json("test string"));
+    Json("other string").should.not.equal(Json("test"));
+  }).should.not.throwAnyException;
+
   auto msg = ({
     Json("test string").should.equal("test");
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(\"test string\") should equal `test`. `test string` is not equal to `test`.");
+
+  msg = ({
+    Json("test string").should.equal(Json("test"));
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("Json(\"test string\") should equal `test`. `test string` is not equal to `test`.");
@@ -246,7 +271,7 @@ unittest {
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. They have different types `Json.Type.string` != `byte`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. Unexpected 's' when converting from type string to type long. They have different types `Json.Type.string` != `byte`.");
   msg.split("\n")[2].strip.should.equal("Expected:a byte or Json.Type.int_");
   msg.split("\n")[3].strip.should.equal("Actual:a Json.Type.string");
 
@@ -255,23 +280,22 @@ unittest {
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. They have different types `Json.Type.string` != `short`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. Unexpected 's' when converting from type string to type long. They have different types `Json.Type.string` != `short`.");
 
   msg = ({
     int val = 4;
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. They have different types `Json.Type.string` != `int`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. Unexpected 's' when converting from type string to type long. They have different types `Json.Type.string` != `int`.");
 
   msg = ({
     long val = 4;
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. They have different types `Json.Type.string` != `long`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. Unexpected 's' when converting from type string to type long. They have different types `Json.Type.string` != `long`.");
 }
-
 
 /// It throws when you compare a Json string with unsigned integer values
 unittest {
@@ -280,28 +304,28 @@ unittest {
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. They have different types `Json.Type.string` != `ubyte`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. Unexpected 's' when converting from type string to type long. They have different types `Json.Type.string` != `ubyte`.");
 
   msg = ({
     ushort val = 4;
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. They have different types `Json.Type.string` != `ushort`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. Unexpected 's' when converting from type string to type long. They have different types `Json.Type.string` != `ushort`.");
 
   msg = ({
     uint val = 4;
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. They have different types `Json.Type.string` != `uint`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. Unexpected 's' when converting from type string to type long. They have different types `Json.Type.string` != `uint`.");
 
   msg = ({
     ulong val = 4;
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. They have different types `Json.Type.string` != `ulong`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `4`. Unexpected 's' when converting from type string to type long. They have different types `Json.Type.string` != `ulong`.");
 }
 
 /// It throws when you compare a Json string with floating point values
@@ -311,7 +335,7 @@ unittest {
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `3.14`. They have different types `Json.Type.string` != `float`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `3.14`. During conversion no digits seen. They have different types `Json.Type.string` != `float`.");
   msg.split("\n")[2].strip.should.equal("Expected:a float or Json.Type.float_");
   msg.split("\n")[3].strip.should.equal("Actual:a Json.Type.string");
 
@@ -320,14 +344,7 @@ unittest {
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `3.14`. They have different types `Json.Type.string` != `double`.");
-
-  msg = ({
-    real val = 3.14;
-    Json("some string").should.equal(val);
-  }).should.throwException!TestException.msg;
-
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `3.14`. They have different types `Json.Type.string` != `real`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `3.14`. During conversion no digits seen. They have different types `Json.Type.string` != `double`.");
 }
 
 /// It throws when you compare a Json string with bool values
@@ -339,4 +356,29 @@ unittest {
   msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `false`. They have different types `Json.Type.string` != `bool`.");
   msg.split("\n")[2].strip.should.equal("Expected:a bool or Json.Type.bool_");
   msg.split("\n")[3].strip.should.equal("Actual:a Json.Type.string");
+}
+
+/// It should be able to compare two integers
+unittest {
+  ({
+    Json(4).should.equal(4);
+    Json(4).should.not.equal(5);
+  }).should.not.throwAnyException;
+
+  ({
+    Json(4).should.equal(Json(4));
+    Json(4).should.not.equal(Json(5));
+  }).should.not.throwAnyException;
+
+  auto msg = ({
+    Json(4).should.equal(5);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(4) should equal `5`.");
+
+  msg = ({
+    Json(4).should.equal(Json(5));
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(4) should equal `5`.");
 }
