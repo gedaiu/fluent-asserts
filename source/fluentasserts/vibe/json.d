@@ -3,7 +3,7 @@ module fluentasserts.vibe.json;
 version(Have_vibe_d_data):
 
 import std.exception, std.conv, std.traits;
-import std.array, std.algorithm;
+import std.array, std.algorithm, std.typecons;
 
 import vibe.data.json;
 import fluentasserts.core.base;
@@ -34,7 +34,6 @@ string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE
   }
 }
 
-
 /// Empty Json object keys
 unittest {
   Json.emptyObject.keys.length.should.equal(0);
@@ -46,8 +45,7 @@ unittest {
   obj["key1"] = 1;
   obj["key2"] = 3;
 
-  obj.keys.length.should.equal(2);
-  obj.keys.should.contain(["key1", "key2"]);
+  obj.keys.should.containOnly(["key1", "key2"]);
 }
 
 /// Json array keys
@@ -59,6 +57,63 @@ unittest {
   }).should.throwAnyException.msg.should.startWith("Invalid Json type.");
 }
 
+
+string[] nestedKeys(Json obj) {
+  string[] result;
+
+  auto root = tuple("", obj);
+  Tuple!(string, Json)[] queue = [ root ];
+
+  while(queue.length > 0) {
+    auto element = queue[0];
+
+    if(element[0] != "") {
+      if(element[1].type != Json.Type.object) {
+        result ~= element[0];
+      }
+
+      if(element[1].type == Json.Type.object && element[1].length == 0) {
+        result ~= element[0];
+      }
+    }
+
+    if(element[1].type == Json.Type.object) {
+      foreach(string key, value; element[1].byKeyValue) {
+        string nextKey = key;
+
+        if(element[0] != "") {
+          nextKey = element[0] ~ "." ~ nextKey;
+        }
+
+        queue ~= tuple(nextKey, value);
+      }
+    }
+
+    queue = queue[1..$];
+  }
+
+  return result;
+}
+
+/// Empty Json object keys
+unittest {
+  Json.emptyObject.nestedKeys.length.should.equal(0);
+}
+
+/// Get all keys froom nested object
+unittest {
+  auto obj = Json.emptyObject;
+  obj["key1"] = 1;
+  obj["key2"] = 2;
+  obj["key3"] = Json.emptyObject;
+  obj["key3"]["item1"] = "3";
+  obj["key3"]["item2"] = Json.emptyObject;
+  obj["key3"]["item2"]["item4"] = Json.emptyObject;
+  obj["key3"]["item2"]["item5"] = Json.emptyObject;
+  obj["key3"]["item2"]["item5"]["item6"] = Json.emptyObject;
+
+  obj.nestedKeys.should.containOnly(["key1", "key2", "key3.item1", "key3.item2.item4", "key3.item2.item5.item6"]);
+}
 
 auto unpackJsonArray(T : U[], U)(Json data) if(!isArray!U && isBasicType!U) {
   return data.byValue.map!(a => a.to!U).array.dup;
@@ -325,10 +380,10 @@ struct ShouldJson(T) {
 
       if(expectedValue) {
         auto infoResult = new ListInfoResult();
-        auto comparison = ListComparison!string(someValue.keys, testData.keys);
+        auto comparison = ListComparison!string(someValue.nestedKeys, testData.nestedKeys);
 
-        infoResult.add("Extra keys", comparison.extra.join(","));
-        infoResult.add("Missing keys", comparison.missing.join(","));
+        infoResult.add("Extra key", "Extra keys", comparison.extra);
+        infoResult.add("Missing key", "Missing keys", comparison.missing);
 
         results ~= infoResult;
       }
@@ -701,6 +756,11 @@ unittest {
   Json expectedObject = Json.emptyObject;
   Json testObject = Json.emptyObject;
   testObject["key"] = "some value";
+  testObject["nested"] = Json.emptyObject;
+  testObject["nested"]["item1"] = "hello";
+  testObject["nested"]["item2"] = Json.emptyObject;
+  testObject["nested"]["item2"]["value"] = "world";
+
   expectedObject["other"] = "other value";
 
   auto msg = ({
@@ -708,8 +768,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("testObject should equal `{\"other\":\"other value\"}`.");
-  msg.split("\n")[2].strip.should.equal("Expected:{\"other\":\"other value\"}");
-  msg.split("\n")[3].strip.should.equal(`Actual:{"key":"some value"}`);
-  msg.split("\n")[5].strip.should.equal(`Extra keys:key`);
-  msg.split("\n")[6].strip.should.equal(`Missing keys:other`);
+  msg.split("\n")[2].strip.should.equal(`Expected:{"other":"other value"}`);
+  msg.split("\n")[3].strip.should.equal(`Actual:{"nested":{"item1":"hello","item2":{"value":"world"}},"key":"some value"}`);
+  msg.split("\n")[5].strip.should.equal(`Extra keys:key,nested.item1,nested.item2.value`);
+  msg.split("\n")[6].strip.should.equal(`Missing key:other`);
 }

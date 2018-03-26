@@ -1481,15 +1481,25 @@ void splitMultilinetokens(const(Token)[] tokens, ref const(Token)[] result) noth
 class ListInfoResult : IResult {
   private {
     struct Item { 
-      string key; 
-      string value;
+      string singular;
+      string plural; 
+      string[] valueList;
+
+      string key() {
+        return valueList.length > 1 ? plural : singular;
+      }
 
       MessageResult toMessage(size_t indentation = 0) {
         auto printableKey = rightJustify(key ~ ":", indentation, ' ');
 
-        auto result = new MessageResult("", 1);
-        result.addValue(printableKey);
-        result.addText(value);
+        auto result = new MessageResult(printableKey, 1);
+
+        string glue;
+        foreach(value; valueList) {
+          result.addText(glue);
+          result.addValue(value);
+          glue = ",";
+        }
 
         return result;
       }
@@ -1499,24 +1509,30 @@ class ListInfoResult : IResult {
   }
 
   void add(string key, string value) {
-    items ~= Item(key, value);
+    items ~= Item(key, "", [value]);
+  }
+
+  void add(string singular, string plural, string[] valueList) {
+    items ~= Item(singular, plural, valueList);
   }
 
   private size_t indentation()  {
-    return items.map!"a.key".map!"a.length".maxElement + 2;
+    return items.filter!"a.valueList.length > 0".map!"a.key".map!"a.length".maxElement + 2;
   }
 
   override string toString() {
     auto indent = indentation;
 
-    return items.map!(a => a.toMessage(indent)).map!"a.toString".join("\n") ~ "\n";
+    return items.filter!"a.valueList.length > 0".map!(a => a.toMessage(indent)).map!"a.toString".join("\n") ~ "\n";
   }
 
   void print(ResultPrinter printer) {
     auto indent = indentation;
 
     foreach(item; items) {
-      item.toMessage(indent).print(printer);
+      if(item.valueList.length > 0) {
+        item.toMessage(indent).print(printer);
+      }
     }
 
     printer.primary("\n");
@@ -1537,7 +1553,6 @@ unittest {
 `);
 }
 
-
 /// print the added data to ListInfoResult
 unittest {
   auto printer = new MockPrinter();
@@ -1547,12 +1562,27 @@ unittest {
   result.add("ab", "2");
   result.add("abc", "3");
 
-
   result.print(printer);
 
-  printer.buffer.should.equal(`[primary:][info:   a:][primary:1][primary:
-][primary:][info:  ab:][primary:2][primary:
-][primary:][info: abc:][primary:3][primary:
+  printer.buffer.should.equal(`[primary:   a:][primary:][info:1][primary:
+][primary:  ab:][primary:][info:2][primary:
+][primary: abc:][primary:][info:3][primary:
 ][primary:
 ]`);
+}
+
+
+/// convert to string the added data lists to ListInfoResult
+unittest {
+  auto result = new ListInfoResult();
+
+  result.add("a", "as", ["1", "2","3"]);
+  result.add("ab", "abs", ["2", "3"]);
+  result.add("abc", "abcs", ["3"]);
+  result.add("abcd", "abcds", []);
+
+  result.toString.should.equal(`  as:1,2,3
+ abs:2,3
+ abc:3
+`);
 }
