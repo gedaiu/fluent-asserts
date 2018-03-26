@@ -209,6 +209,10 @@ mixin template ShouldCommons()
     }
 
     Result result(bool value, Message[] msg, IResult[] res, const string file, const size_t line) {
+      if(res.length == 0 && msg.length == 0) {
+        return Result(false);
+      }
+
       auto finalMessage = new MessageResult(" should");
 
       messages ~= Message(false, ".");

@@ -101,16 +101,22 @@ struct ShouldJson(T) {
     string expected = "a Json.Type." ~ testData.type.to!string;
     string actual = "a Json.Type." ~ someValue.type.to!string;
 
-    Message[] msg = [
-      Message(false, "They have incompatible types "),
-      Message(false, "`Json.Type."),
-      Message(true, testData.type.to!string),
-      Message(false, "` != `Json.Type."),
-      Message(true, someValue.type.to!string),
-      Message(false, "`.")
-    ];
+    Message[] msg;
+    
+    if(!haveSameType) {
+      msg = [
+        Message(false, "They have incompatible types "),
+        Message(false, "`Json.Type."),
+        Message(true, testData.type.to!string),
+        Message(false, "` != `Json.Type."),
+        Message(true, someValue.type.to!string),
+        Message(false, "`.")
+      ];
 
-    return result(haveSameType, msg, [ new ExpectedActualResult(actual, expected) ], file, line);
+      return result(haveSameType, msg, [ new ExpectedActualResult(actual, expected) ], file, line);
+    }
+
+    return result(haveSameType, msg, [ ], file, line);
   }
 
   auto validateJsonType(U)(const string file, const size_t line) {
@@ -277,13 +283,13 @@ struct ShouldJson(T) {
     auto equalJson(const Json someValue, const string file, const size_t line) {
       if(expectedValue) {
         auto typeResult = validateJsonType(someValue, file, line);
+
         if(typeResult.willThrow) {
           return typeResult;
         }
       }
 
       beginCheck;
-
       if(testData.type == Json.Type.string) {
         return equal(someValue.to!string, file, line);
       }
@@ -313,7 +319,21 @@ struct ShouldJson(T) {
       auto isSame = testData == someValue;
       auto expected = expectedValue ? someValue.to!string : ("not " ~ someValue.to!string);
 
-      return result(isSame, new ExpectedActualResult(expected, testData.to!string), file, line);
+      IResult[] results;
+
+      results ~= new ExpectedActualResult(expected, testData.to!string);
+
+      if(expectedValue) {
+        auto infoResult = new ListInfoResult();
+        auto comparison = ListComparison!string(someValue.keys, testData.keys);
+
+        infoResult.add("Extra keys", comparison.extra.join(","));
+        infoResult.add("Missing keys", comparison.missing.join(","));
+
+        results ~= infoResult;
+      }
+
+      return result(isSame, [], results, file, line);
     }
   }
 }
@@ -674,4 +694,22 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("Json(elements) should equal `[[1,2], 1, [1,2]]`.");
+}
+
+/// It should find the key differences inside a Json object
+unittest {
+  Json expectedObject = Json.emptyObject;
+  Json testObject = Json.emptyObject;
+  testObject["key"] = "some value";
+  expectedObject["other"] = "other value";
+
+  auto msg = ({
+    testObject.should.equal(expectedObject);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("testObject should equal `{\"other\":\"other value\"}`.");
+  msg.split("\n")[2].strip.should.equal("Expected:{\"other\":\"other value\"}");
+  msg.split("\n")[3].strip.should.equal(`Actual:{"key":"some value"}`);
+  msg.split("\n")[5].strip.should.equal(`Extra keys:key`);
+  msg.split("\n")[6].strip.should.equal(`Missing keys:other`);
 }

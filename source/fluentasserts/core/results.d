@@ -179,16 +179,18 @@ class MessageResult : IResult
     }
 
     Message[] messages;
+    size_t endLineCount;
   }
 
-  this(string message) nothrow
+  this(string message, size_t endLineCount = 2) nothrow
   {
+    this.endLineCount = endLineCount;
     add(false, message);
   }
 
   override string toString()
   {
-    return messages.map!(a => a.text).join("").to!string;
+    return messages.map!(a => a.text).join.to!string;
   }
 
   void add(bool isValue, string message) nothrow {
@@ -225,7 +227,7 @@ class MessageResult : IResult
       }
     }
 
-    printer.primary("\n\n");
+    printer.primary('\n'.repeat(endLineCount).array.to!string);
   }
 }
 
@@ -549,7 +551,7 @@ class ExpectedActualResult : IResult
     KeyResult!"Actual" actual;
   }
 
-  this(string expected, string actual)
+  this(string expected, string actual, size_t indent = 10)
   {
     this.expected = new KeyResult!"Expected"(expected);
     this.actual = new KeyResult!"Actual"(actual);
@@ -605,6 +607,36 @@ unittest
 }
 
 class ExtraMissingResult : IResult
+{
+  protected
+  {
+    KeyResult!"Extra" extra;
+    KeyResult!"Missing" missing;
+  }
+
+  this(string extra, string missing)
+  {
+    this.extra = new KeyResult!"Extra"(extra);
+    this.missing = new KeyResult!"Missing"(missing);
+  }
+
+  override string toString()
+  {
+    auto line1 = extra.toString;
+    auto line2 = missing.toString;
+
+    return line1 != "" ? line1 ~ "\n" ~ line2 : line2;
+  }
+
+  void print(ResultPrinter printer)
+  {
+    extra.print(printer);
+    missing.print(printer);
+    printer.primary("\n");
+  }
+}
+
+class OtherInfoResult : IResult
 {
   protected
   {
@@ -1443,4 +1475,84 @@ void splitMultilinetokens(const(Token)[] tokens, ref const(Token)[] result) noth
       }
     }
   } catch(Throwable) {}
+}
+
+
+class ListInfoResult : IResult {
+  private {
+    struct Item { 
+      string key; 
+      string value;
+
+      MessageResult toMessage(size_t indentation = 0) {
+        auto printableKey = rightJustify(key ~ ":", indentation, ' ');
+
+        auto result = new MessageResult("", 1);
+        result.addValue(printableKey);
+        result.addText(value);
+
+        return result;
+      }
+    }
+
+    Item[] items;
+  }
+
+  void add(string key, string value) {
+    items ~= Item(key, value);
+  }
+
+  private size_t indentation()  {
+    return items.map!"a.key".map!"a.length".maxElement + 2;
+  }
+
+  override string toString() {
+    auto indent = indentation;
+
+    return items.map!(a => a.toMessage(indent)).map!"a.toString".join("\n") ~ "\n";
+  }
+
+  void print(ResultPrinter printer) {
+    auto indent = indentation;
+
+    foreach(item; items) {
+      item.toMessage(indent).print(printer);
+    }
+
+    printer.primary("\n");
+  }
+}
+
+/// convert to string the added data to ListInfoResult
+unittest {
+  auto result = new ListInfoResult();
+
+  result.add("a", "1");
+  result.add("ab", "2");
+  result.add("abc", "3");
+
+  result.toString.should.equal(`   a:1
+  ab:2
+ abc:3
+`);
+}
+
+
+/// print the added data to ListInfoResult
+unittest {
+  auto printer = new MockPrinter();
+  auto result = new ListInfoResult();
+
+  result.add("a", "1");
+  result.add("ab", "2");
+  result.add("abc", "3");
+
+
+  result.print(printer);
+
+  printer.buffer.should.equal(`[primary:][info:   a:][primary:1][primary:
+][primary:][info:  ab:][primary:2][primary:
+][primary:][info: abc:][primary:3][primary:
+][primary:
+]`);
 }
