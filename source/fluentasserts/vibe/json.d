@@ -11,6 +11,7 @@ import fluentasserts.core.results;
 
 @safe:
 
+/// Get all the keys from your Json object
 string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE__) {
   string[] list;
 
@@ -57,57 +58,9 @@ unittest {
   }).should.throwAnyException.msg.should.startWith("Invalid Json type.");
 }
 
-
+/// Get all the keys from your Json object. The levels will be sepparated by `.` or `[]`
 string[] nestedKeys(Json obj) {
-  string[] result;
-
-  auto root = tuple("", obj);
-  Tuple!(string, Json)[] queue = [ root ];
-
-  while(queue.length > 0) {
-    auto element = queue[0];
-
-    if(element[0] != "") {
-      if(element[1].type != Json.Type.object && element[1].type != Json.Type.array) {
-        result ~= element[0];
-      }
-
-      if(element[1].type == Json.Type.object && element[1].length == 0) {
-        result ~= element[0];
-      }
-
-      if(element[1].type == Json.Type.array && element[1].length == 0) {
-        result ~= element[0];
-      }
-    }
-
-    if(element[1].type == Json.Type.object) {
-      foreach(string key, value; element[1].byKeyValue) {
-        string nextKey = key;
-
-        if(element[0] != "") {
-          nextKey = element[0] ~ "." ~ nextKey;
-        }
-
-        queue ~= tuple(nextKey, value);
-      }
-    }
-
-    if(element[1].type == Json.Type.array) {
-      size_t index;
-
-      foreach(value; element[1].byValue) {
-        string nextKey = element[0] ~ "[" ~ index.to!string ~ "]";
-
-        queue ~= tuple(nextKey, value);
-        index++;
-      }
-    }
-
-    queue = queue[1..$];
-  }
-
-  return result;
+  return obj.flatten.byKeyValue.map!"a.key".array;
 }
 
 /// Empty Json object keys
@@ -146,6 +99,81 @@ unittest {
   obj["key3"] ~= [ Json.emptyArray ];
 
   obj.nestedKeys.should.containOnly(["key2", "key3[0]", "key3[1]", "key3[2].item5.item6", "key3[3]"]);
+}
+
+/// Takes a nested Json object and moves the values to a Json assoc array where the key 
+/// is the path from the original object to that value
+Json[string] flatten(Json object) {
+  Json[string] elements;
+
+  auto root = tuple("", object);
+  Tuple!(string, Json)[] queue = [ root ];
+
+  while(queue.length > 0) {
+    auto element = queue[0];
+
+    if(element[0] != "") {
+      if(element[1].type != Json.Type.object && element[1].type != Json.Type.array) {
+        elements[element[0]] = element[1];
+      }
+
+      if(element[1].type == Json.Type.object && element[1].length == 0) {
+        elements[element[0]] = element[1];
+      }
+
+      if(element[1].type == Json.Type.array && element[1].length == 0) {
+        elements[element[0]] = element[1];
+      }
+    }
+
+    if(element[1].type == Json.Type.object) {
+      foreach(string key, value; element[1].byKeyValue) {
+        string nextKey = key;
+
+        if(element[0] != "") {
+          nextKey = element[0] ~ "." ~ nextKey;
+        }
+
+        queue ~= tuple(nextKey, value);
+      }
+    }
+
+    if(element[1].type == Json.Type.array) {
+      size_t index;
+
+      foreach(value; element[1].byValue) {
+        string nextKey = element[0] ~ "[" ~ index.to!string ~ "]";
+
+        queue ~= tuple(nextKey, value);
+        index++;
+      }
+    }
+
+    queue = queue[1..$];
+  }
+
+  return elements;
+}
+
+/// Get a flatten object
+unittest {
+  auto obj = Json.emptyObject;
+  obj["key1"] = 1;
+  obj["key2"] = 2;
+  obj["key3"] = Json.emptyObject;
+  obj["key3"]["item1"] = "3";
+  obj["key3"]["item2"] = Json.emptyObject;
+  obj["key3"]["item2"]["item4"] = Json.emptyObject;
+  obj["key3"]["item2"]["item5"] = Json.emptyObject;
+  obj["key3"]["item2"]["item5"]["item6"] = Json.emptyObject;
+  
+  auto result = obj.flatten;
+  result.byKeyValue.map!(a => a.key).should.containOnly(["key1", "key2", "key3.item1", "key3.item2.item4", "key3.item2.item5.item6"]);
+  result["key1"].should.equal(1);
+  result["key2"].should.equal(2);
+  result["key3.item1"].should.equal("3");
+  result["key3.item2.item4"].should.equal(Json.emptyObject);
+  result["key3.item2.item5.item6"].should.equal(Json.emptyObject);
 }
 
 auto unpackJsonArray(T : U[], U)(Json data) if(!isArray!U && isBasicType!U) {
@@ -803,6 +831,6 @@ unittest {
   msg.split("\n")[0].should.equal("testObject should equal `{\"other\":\"other value\"}`.");
   msg.split("\n")[2].strip.should.equal(`Expected:{"other":"other value"}`);
   msg.split("\n")[3].strip.should.equal(`Actual:{"nested":{"item1":"hello","item2":{"value":"world"}},"key":"some value"}`);
-  msg.split("\n")[5].strip.should.equal(`Extra keys:key,nested.item1,nested.item2.value`);
+  msg.split("\n")[5].strip.should.equal(`Extra keys:nested.item2.value,nested.item1,key`);
   msg.split("\n")[6].strip.should.equal(`Missing key:other`);
 }
