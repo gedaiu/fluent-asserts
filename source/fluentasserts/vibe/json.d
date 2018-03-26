@@ -68,11 +68,15 @@ string[] nestedKeys(Json obj) {
     auto element = queue[0];
 
     if(element[0] != "") {
-      if(element[1].type != Json.Type.object) {
+      if(element[1].type != Json.Type.object && element[1].type != Json.Type.array) {
         result ~= element[0];
       }
 
       if(element[1].type == Json.Type.object && element[1].length == 0) {
+        result ~= element[0];
+      }
+
+      if(element[1].type == Json.Type.array && element[1].length == 0) {
         result ~= element[0];
       }
     }
@@ -89,6 +93,17 @@ string[] nestedKeys(Json obj) {
       }
     }
 
+    if(element[1].type == Json.Type.array) {
+      size_t index;
+
+      foreach(value; element[1].byValue) {
+        string nextKey = element[0] ~ "[" ~ index.to!string ~ "]";
+
+        queue ~= tuple(nextKey, value);
+        index++;
+      }
+    }
+
     queue = queue[1..$];
   }
 
@@ -100,7 +115,7 @@ unittest {
   Json.emptyObject.nestedKeys.length.should.equal(0);
 }
 
-/// Get all keys froom nested object
+/// Get all keys from nested object
 unittest {
   auto obj = Json.emptyObject;
   obj["key1"] = 1;
@@ -113,6 +128,24 @@ unittest {
   obj["key3"]["item2"]["item5"]["item6"] = Json.emptyObject;
 
   obj.nestedKeys.should.containOnly(["key1", "key2", "key3.item1", "key3.item2.item4", "key3.item2.item5.item6"]);
+}
+
+
+/// Get all keys from nested objects inside an array
+unittest {
+  auto obj = Json.emptyObject;
+  Json elm = Json.emptyObject;
+  elm["item5"] = Json.emptyObject;
+  elm["item5"]["item6"] = Json.emptyObject;
+
+  obj["key2"] = Json.emptyArray;
+  obj["key3"] = Json.emptyArray;
+  obj["key3"] ~= Json("3");
+  obj["key3"] ~= Json.emptyObject;
+  obj["key3"] ~= elm;
+  obj["key3"] ~= [ Json.emptyArray ];
+
+  obj.nestedKeys.should.containOnly(["key2", "key3[0]", "key3[1]", "key3[2].item5.item6", "key3[3]"]);
 }
 
 auto unpackJsonArray(T : U[], U)(Json data) if(!isArray!U && isBasicType!U) {
