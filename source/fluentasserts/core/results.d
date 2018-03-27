@@ -281,7 +281,7 @@ unittest
   auto printer = new MockPrinter;
   result.print(printer);
 
-  printer.buffer.should.equal(`[primary:¤ ←↲]` ~ "[primary:\n\n]");
+  printer.buffer.should.equal(`[primary:¤ ←↲]`);
 }
 
 @("Message result should print values as info")
@@ -294,7 +294,7 @@ unittest
   auto printer = new MockPrinter;
   result.print(printer);
 
-  printer.buffer.should.equal(`[primary:text][info:value][primary:text]` ~ "[primary:\n\n]");
+  printer.buffer.should.equal(`[primary:text][info:value][primary:text]`);
 }
 
 class DiffResult : IResult {
@@ -495,7 +495,7 @@ unittest {
   auto printer = new MockPrinter();
 
   result.print(printer);
-  printer.buffer.should.equal(`[info:      key:][info:᛫][primary:row1  row2][info:᛫][primary:` ~ "\n" ~ `]`);
+  printer.buffer.should.equal(`[info:      key:][info:᛫][primary:row1  row2][info:᛫]`);
 }
 
 /// KeyResult should dispaly spaces with special chars on space lines
@@ -504,7 +504,7 @@ unittest {
   auto printer = new MockPrinter();
 
   result.print(printer);
-  printer.buffer.should.equal(`[info:      key:][info:᛫᛫᛫][primary:` ~ "\n" ~ `]`);
+  printer.buffer.should.equal(`[info:      key:][info:᛫᛫᛫]`);
 }
 
 /// KeyResult should display no char for empty lines
@@ -523,7 +523,7 @@ unittest {
 
   result.print(printer);
 
-  printer.buffer.should.equal(`[info:      key:][primary:row1][info:↲][primary:` ~ "\n" ~ `][info:         :][info:᛫¤][primary:row2][primary:` ~ "\n" ~ `]`);
+  printer.buffer.should.equal(`[info:      key:][primary:row1][info:↲][primary:` ~ "\n" ~ `][info:         :][info:᛫¤][primary:row2]`);
 }
 
 /// KeyResult should display custom glyphs with different contexts
@@ -541,7 +541,7 @@ unittest {
 
   result.print(printer);
 
-  printer.buffer.should.equal(`[info:      key:][primary:row1][info:\n][primary:` ~ "\n" ~ `][info:         :][info: \t][primary:row2][primary:` ~ "\n" ~ `]`);
+  printer.buffer.should.equal(`[info:      key:][primary:row1][info:\n][primary:` ~ "\n" ~ `][info:         :][info: \t][primary:row2]`);
 }
 
 class ExpectedActualResult : IResult
@@ -620,7 +620,8 @@ unittest
 unittest
 {
   auto result = new ExpectedActualResult("data", "data");
-  result.toString.should.equal(` Expected:data
+  result.toString.should.equal(`
+ Expected:data
    Actual:data`);
 }
 
@@ -628,8 +629,8 @@ unittest
 unittest
 {
   auto result = new ExpectedActualResult("data\ndata", "data\ndata");
-  result.toString.should.equal(
-` Expected:data\n
+  result.toString.should.equal(`
+ Expected:data\n
          :data
    Actual:data\n
          :data`);
@@ -655,12 +656,17 @@ class ExtraMissingResult : IResult
     auto line1 = extra.toString;
     auto line2 = missing.toString;
     string glue;
+    string prefix;
+
+    if(line1 != "" || line2 != "") {
+      prefix = "\n";
+    }
 
     if(line1 != "" && line2 != "") {
       glue = "\n";
     }
 
-    return line1 ~ glue ~ line2;
+    return prefix ~ line1 ~ glue ~ line2;
   }
 
   void print(ResultPrinter printer)
@@ -1192,10 +1198,10 @@ class SourceResult : IResult
   override string toString() nothrow
   {
     auto separator = leftJustify("", 20, '-');
-    string result = separator ~ "\n" ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator;
+    string result = "\n" ~ separator ~ "\n" ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator;
 
     if(tokens.length == 0) {
-      return result;
+      return result ~ "\n";
     }
 
     size_t line = tokens[0].line - 1;
@@ -1297,7 +1303,7 @@ unittest
   auto result = new SourceResult("test/values.d", 26);
   auto msg = result.toString;
 
-  msg.should.equal("--------------------\ntest/values.d:26\n--------------------\n" ~
+  msg.should.equal("\n--------------------\ntest/values.d:26\n--------------------\n" ~
                    "    23: unittest {\n" ~
                    "    24:   /++/\n" ~
                    "    25: \n" ~
@@ -1313,7 +1319,7 @@ unittest
   auto result = new SourceResult("test/values.d", 45);
   auto msg = result.toString;
 
-  msg.should.equal("--------------------\ntest/values.d:45\n--------------------\n" ~
+  msg.should.equal("\n--------------------\ntest/values.d:45\n--------------------\n" ~
                    "    40: unittest {\n" ~
                    "    41:   /*\n" ~
                    "    42:   Multi line comment\n" ~
@@ -1363,9 +1369,9 @@ unittest
   auto result = new SourceResult("test/missing.txt", 10);
   auto msg = result.toString;
 
-  msg.should.equal(`--------------------
+  msg.should.equal("\n" ~ `--------------------
 test/missing.txt:10
---------------------`);
+--------------------` ~ "\n");
 }
 
 @("Source reporter should find the tested value on scope start")
@@ -1460,11 +1466,12 @@ unittest
 
   result.print(printer);
 
+
   auto lines = printer.buffer.split("[primary:\n]");
 
-  lines[0].should.equal(`[info:test/values.d:36]`);
-  lines[1].should.equal(`[primary:    31:][info:unittest][primary: ][info:{]`);
-  lines[6].should.equal(`[dangerReverse:>   36:][primary:    ][info:.][primary:contain][info:(][success:4][info:)][info:;]`);
+  lines[1].should.equal(`[info:test/values.d:36]`);
+  lines[2].should.equal(`[primary:    31:][info:unittest][primary: ][info:{]`);
+  lines[7].should.equal(`[dangerReverse:>   36:][primary:    ][info:.][primary:contain][info:(][success:4][info:)][info:;]`);
 }
 
 /// split multiline tokens in multiple single line tokens with the same type
@@ -1583,10 +1590,10 @@ unittest {
   result.add("ab", "2");
   result.add("abc", "3");
 
-  result.toString.should.equal(`   a:1
+  result.toString.should.equal(`
+   a:1
   ab:2
- abc:3
-`);
+ abc:3`);
 }
 
 /// print the added data to ListInfoResult
@@ -1600,11 +1607,10 @@ unittest {
 
   result.print(printer);
 
-  printer.buffer.should.equal(`[primary:   a:][primary:][info:1][primary:
+  printer.buffer.should.equal(`[primary:
+][primary:   a:][primary:][info:1][primary:
 ][primary:  ab:][primary:][info:2][primary:
-][primary: abc:][primary:][info:3][primary:
-][primary:
-]`);
+][primary: abc:][primary:][info:3]`);
 }
 
 
@@ -1617,8 +1623,8 @@ unittest {
   result.add("abc", "abcs", ["3"]);
   result.add("abcd", "abcds", []);
 
-  result.toString.should.equal(`  as:1,2,3
+  result.toString.should.equal(`
+  as:1,2,3
  abs:2,3
- abc:3
-`);
+ abc:3`);
 }
