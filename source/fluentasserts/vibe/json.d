@@ -9,10 +9,9 @@ import vibe.data.json;
 import fluentasserts.core.base;
 import fluentasserts.core.results;
 
-@safe:
 
 /// Get all the keys from your Json object
-string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE__) {
+string[] keys(Json obj, const string file = __FILE__, const size_t line = __LINE__) @trusted {
   string[] list;
 
   if(obj.type != Json.Type.object) {
@@ -59,7 +58,7 @@ unittest {
 }
 
 /// Get all the keys from your Json object. The levels will be sepparated by `.` or `[]`
-string[] nestedKeys(Json obj) {
+string[] nestedKeys(Json obj) @trusted {
   return obj.flatten.byKeyValue.map!"a.key".array;
 }
 
@@ -103,7 +102,7 @@ unittest {
 
 /// Takes a nested Json object and moves the values to a Json assoc array where the key 
 /// is the path from the original object to that value
-Json[string] flatten(Json object) {
+Json[string] flatten(Json object) @trusted {
   Json[string] elements;
 
   auto root = tuple("", object);
@@ -154,6 +153,8 @@ Json[string] flatten(Json object) {
 
   return elements;
 }
+
+@safe:
 
 /// Get a flatten object
 unittest {
