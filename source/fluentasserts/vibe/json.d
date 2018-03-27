@@ -434,11 +434,11 @@ struct ShouldJson(T) {
       }
 
       auto isSame = testData == someValue;
-      auto expected = expectedValue ? someValue.to!string : ("not " ~ someValue.to!string);
+      auto expected = expectedValue ? someValue.toPrettyString : "something different than the Actual data";
 
       IResult[] results;
 
-      results ~= new ExpectedActualResult(expected, testData.to!string);
+      results ~= new ExpectedActualResult(expected, testData.toPrettyString);
 
       if(expectedValue) {
         auto flattenTestData = testData.flatten;
@@ -838,11 +838,23 @@ unittest {
     testObject.should.equal(expectedObject);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("testObject should equal `{\"other\":\"other value\"}`.");
-  msg.split("\n")[2].strip.should.equal(`Expected:{"other":"other value"}`);
-  msg.split("\n")[3].strip.should.equal(`Actual:{"nested":{"item1":"hello","item2":{"value":"world"}},"key":"some value"}`);
-  msg.split("\n")[5].strip.should.equal(`Extra keys:nested.item2.value,nested.item1,key`);
-  msg.split("\n")[6].strip.should.equal(`Missing key:other`);
+  msg.should.startWith("testObject should equal `{\"other\":\"other value\"}`.
+
+ Expected:{\\n
+         :\t\"other\": \"other value\"\\n
+         :}
+   Actual:{\\n
+         :\t\"nested\": {\\n
+         :\t\t\"item1\": \"hello\",\\n
+         :\t\t\"item2\": {\\n
+         :\t\t\t\"value\": \"world\"\\n
+         :\t\t}\\n
+         :\t},\\n
+         :\t\"key\": \"some value\"\\n
+         :}
+
+  Extra keys:nested.item2.value,nested.item1,key
+ Missing key:other");
 }
 
 /// It should find the value differences inside a Json object
@@ -859,14 +871,22 @@ unittest {
     testObject.should.equal(expectedObject);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("testObject should equal `{\"key1\":\"other value\",\"key2\":2}`.");
-  msg.split("\n")[2].strip.should.equal(`Expected:{"key1":"other value","key2":2}`);
-  msg.split("\n")[3].strip.should.equal(`Actual:{"key1":"some value","key2":1}`);
+msg.should.startWith("testObject should equal `{\"key1\":\"other value\",\"key2\":2}`.
 
-  msg.split("\n")[5].strip.should.equal("key1");
-  msg.split("\n")[6].strip.should.equal(`Expected:other value`);
-  msg.split("\n")[7].strip.should.equal(`Actual:some value`);
-  msg.split("\n")[9].strip.should.equal("key2");
-  msg.split("\n")[10].strip.should.equal(`Expected:2`);
-  msg.split("\n")[11].strip.should.equal(`Actual:1`);
+ Expected:{\\n
+         :\t\"key1\": \"other value\",\\n
+         :\t\"key2\": 2\\n
+         :}
+   Actual:{\\n
+         :\t\"key1\": \"some value\",\\n
+         :\t\"key2\": 1\\n
+         :}
+
+key1
+ Expected:other value
+   Actual:some value
+
+key2
+ Expected:2
+   Actual:1");
 }
