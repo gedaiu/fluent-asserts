@@ -437,8 +437,14 @@ struct ShouldJson(T) {
       auto expected = expectedValue ? someValue.toPrettyString : "something different than the Actual data";
 
       IResult[] results;
+      auto message = new MessageResult("");
+      message.addText("\n");
+      message.addValue("Expected:");
+      message.addText("\n" ~ expected ~ "\n\n");
+      message.addValue("Actual:");
+      message.addText("\n" ~ testData.toPrettyString);
 
-      results ~= new ExpectedActualResult(expected, testData.toPrettyString);
+      results ~= message;
 
       if(expectedValue) {
         auto flattenTestData = testData.flatten;
@@ -867,6 +873,7 @@ unittest {
   expectedObject["key1"] = "other value";
   expectedObject["key2"] = 2;
 
+    testObject.should.equal(expectedObject);
   auto msg = ({
     testObject.should.equal(expectedObject);
   }).should.throwException!TestException.msg;
