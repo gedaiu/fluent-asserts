@@ -247,14 +247,17 @@ class TestException : ReferenceException {
   }
 
   this(IResult[] results, string fileName, size_t line, Throwable next = null) {
-    auto msg = results.map!(a => a.toString).join("\n\n") ~ '\n';
+    auto msg = results.map!"a.toString".filter!"a != ``".join("\n") ~ '\n';
     this.results = results;
 
     super(msg, fileName, line, next);
   }
 
   void print(ResultPrinter printer) {
-    results.each!(a => a.print(printer));
+    foreach(result; results) {
+      result.print(printer);
+      printer.primary("\n");
+    }
   }
 }
 

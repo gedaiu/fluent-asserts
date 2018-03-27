@@ -440,6 +440,15 @@ struct ShouldJson(T) {
       results ~= new ExpectedActualResult(expected, testData.to!string);
 
       if(expectedValue) {
+        auto flattenTestData = testData.flatten;
+        auto flattenSomeValue = someValue.flatten;
+
+        foreach(string key, value; flattenTestData) {
+          if(key in flattenSomeValue && flattenSomeValue[key] != value) {
+            results ~= new ExpectedActualResult(key, flattenSomeValue[key].to!string, value.to!string);
+          }
+        }
+
         auto infoResult = new ListInfoResult();
         auto comparison = ListComparison!string(someValue.nestedKeys, testData.nestedKeys);
 
@@ -833,4 +842,30 @@ unittest {
   msg.split("\n")[3].strip.should.equal(`Actual:{"nested":{"item1":"hello","item2":{"value":"world"}},"key":"some value"}`);
   msg.split("\n")[5].strip.should.equal(`Extra keys:nested.item2.value,nested.item1,key`);
   msg.split("\n")[6].strip.should.equal(`Missing key:other`);
+}
+
+/// It should find the value differences inside a Json object
+unittest {
+  Json expectedObject = Json.emptyObject;
+  Json testObject = Json.emptyObject;
+  testObject["key1"] = "some value";
+  testObject["key2"] = 1;
+
+  expectedObject["key1"] = "other value";
+  expectedObject["key2"] = 2;
+
+  auto msg = ({
+    testObject.should.equal(expectedObject);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("testObject should equal `{\"key1\":\"other value\",\"key2\":2}`.");
+  msg.split("\n")[2].strip.should.equal(`Expected:{"key1":"other value","key2":2}`);
+  msg.split("\n")[3].strip.should.equal(`Actual:{"key1":"some value","key2":1}`);
+
+  msg.split("\n")[5].strip.should.equal("key1");
+  msg.split("\n")[6].strip.should.equal(`Expected:other value`);
+  msg.split("\n")[7].strip.should.equal(`Actual:some value`);
+  msg.split("\n")[9].strip.should.equal("key2");
+  msg.split("\n")[10].strip.should.equal(`Expected:2`);
+  msg.split("\n")[11].strip.should.equal(`Actual:1`);
 }

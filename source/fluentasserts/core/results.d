@@ -137,6 +137,8 @@ WhiteIntervals getWhiteIntervals(string text) {
   return WhiteIntervals(text.indexOf(stripText[0]), text.lastIndexOf(stripText[stripText.length - 1]));
 }
 
+/// This is the most simple implementation of a ResultPrinter.
+/// All the plain data is printed to stdout
 class DefaultResultPrinter : ResultPrinter {
   void primary(string text) {
     write(text);
@@ -169,6 +171,7 @@ interface IResult
   void print(ResultPrinter);
 }
 
+/// A result that prints a simple message to the user
 class MessageResult : IResult
 {
   private
@@ -179,18 +182,16 @@ class MessageResult : IResult
     }
 
     Message[] messages;
-    size_t endLineCount;
   }
 
-  this(string message, size_t endLineCount = 2) nothrow
+  this(string message) nothrow
   {
-    this.endLineCount = endLineCount;
     add(false, message);
   }
 
   override string toString()
   {
-    return messages.map!(a => a.text).join.to!string;
+    return messages.map!"a.text".join.to!string;
   }
 
   void add(bool isValue, string message) nothrow {
@@ -226,8 +227,6 @@ class MessageResult : IResult
         printer.primary(message.text);
       }
     }
-
-    printer.primary('\n'.repeat(endLineCount).array.to!string);
   }
 }
 
@@ -325,7 +324,7 @@ class DiffResult : IResult {
   }
 
   override string toString() @trusted {
-    return "Diff:\n" ~ diff_main(expected, actual).map!(a => getResult(a)).join("");
+    return "Diff:\n" ~ diff_main(expected, actual).map!(a => getResult(a)).join;
   }
 
   void print(ResultPrinter printer) @trusted {
@@ -344,10 +343,9 @@ class DiffResult : IResult {
       if(diff.operation == Operation.DELETE) {
         printer.dangerReverse(diff.text);
       }
-
     }
 
-    printer.primary("\n\n");
+    printer.primary("\n");
   }
 }
 
@@ -384,6 +382,10 @@ class KeyResult(string key) : IResult {
     this.indent = indent;
   }
 
+  bool hasValue() {
+    return value != "";
+  }
+
   override string toString()
   {
     if(value == "") {
@@ -417,7 +419,6 @@ class KeyResult(string key) : IResult {
       index++;
     }
 
-    printer.primary("\n");
   }
 
   private
@@ -547,11 +548,20 @@ class ExpectedActualResult : IResult
 {
   protected
   {
+    string title;
     KeyResult!"Expected" expected;
     KeyResult!"Actual" actual;
   }
 
-  this(string expected, string actual, size_t indent = 10)
+
+  this(string title, string expected, string actual)
+  {
+    this.title = title;
+    this(expected, actual);
+  }
+
+
+  this(string expected, string actual)
   {
     this.expected = new KeyResult!"Expected"(expected);
     this.actual = new KeyResult!"Actual"(actual);
@@ -561,15 +571,34 @@ class ExpectedActualResult : IResult
   {
     auto line1 = expected.toString;
     auto line2 = actual.toString;
+    string glue;
+    string prefix;
 
-    return line1 != "" ? line1 ~ "\n" ~ line2 : line2;
+    if(line1 != "" && line2 != "") {
+      glue = "\n";
+    }
+
+    if(line1 != "" || line2 != "") {
+      prefix = title == "" ? "\n" : ("\n" ~ title ~ "\n");
+    }
+  
+    return prefix ~ line1 ~ glue ~ line2;
   }
 
   void print(ResultPrinter printer)
   {
+    auto line1 = expected.toString;
+    auto line2 = actual.toString;
+
+    if(actual.hasValue || expected.hasValue) {
+      printer.info(title == "" ? "\n" : ("\n" ~ title ~ "\n"));
+    }
+
     expected.print(printer);
+    if(actual.hasValue && expected.hasValue) {
+      printer.primary("\n");
+    }
     actual.print(printer);
-    printer.primary("\n");
   }
 }
 
@@ -606,6 +635,7 @@ unittest
          :data`);
 }
 
+/// A result that displays differences between ranges
 class ExtraMissingResult : IResult
 {
   protected
@@ -624,47 +654,29 @@ class ExtraMissingResult : IResult
   {
     auto line1 = extra.toString;
     auto line2 = missing.toString;
+    string glue;
 
-    return line1 != "" ? line1 ~ "\n" ~ line2 : line2;
+    if(line1 != "" && line2 != "") {
+      glue = "\n";
+    }
+
+    return line1 ~ glue ~ line2;
   }
 
   void print(ResultPrinter printer)
   {
+    if(extra.hasValue || missing.hasValue) {
+      printer.primary("\n");
+    }
+
     extra.print(printer);
+    if(extra.hasValue && missing.hasValue) {
+      printer.primary("\n");
+    }
     missing.print(printer);
-    printer.primary("\n");
   }
 }
 
-class OtherInfoResult : IResult
-{
-  protected
-  {
-    KeyResult!"Extra" extra;
-    KeyResult!"Missing" missing;
-  }
-
-  this(string extra, string missing)
-  {
-    this.extra = new KeyResult!"Extra"(extra);
-    this.missing = new KeyResult!"Missing"(missing);
-  }
-
-  override string toString()
-  {
-    auto line1 = extra.toString;
-    auto line2 = missing.toString;
-
-    return line1 != "" ? line1 ~ "\n" ~ line2 : line2;
-  }
-
-  void print(ResultPrinter printer)
-  {
-    extra.print(printer);
-    missing.print(printer);
-    printer.primary("\n");
-  }
-}
 
 string toString(const(Token)[] tokens) {
   string result;
@@ -1231,6 +1243,7 @@ class SourceResult : IResult
       return;
     }
 
+    printer.primary("\n");
     printer.info(file ~ ":" ~ line.to!string);
 
     size_t line = tokens[0].line - 1;
@@ -1274,7 +1287,7 @@ class SourceResult : IResult
       }
     }
 
-    printer.primary("\n\n");
+    printer.primary("\n");
   }
 }
 
@@ -1477,6 +1490,16 @@ void splitMultilinetokens(const(Token)[] tokens, ref const(Token)[] result) noth
   } catch(Throwable) {}
 }
 
+/// A new line sepparator
+class SeparatorResult : IResult {
+  override string toString() {
+    return "\n";
+  }
+
+  void print(ResultPrinter printer) {
+    printer.primary("\n");
+  }
+}
 
 class ListInfoResult : IResult {
   private {
@@ -1492,7 +1515,7 @@ class ListInfoResult : IResult {
       MessageResult toMessage(size_t indentation = 0) {
         auto printableKey = rightJustify(key ~ ":", indentation, ' ');
 
-        auto result = new MessageResult(printableKey, 1);
+        auto result = new MessageResult(printableKey);
 
         string glue;
         foreach(value; valueList) {
@@ -1516,26 +1539,39 @@ class ListInfoResult : IResult {
     items ~= Item(singular, plural, valueList);
   }
 
-  private size_t indentation()  {
-    return items.filter!"a.valueList.length > 0".map!"a.key".map!"a.length".maxElement + 2;
+  private size_t indentation() {
+    auto elements = items.filter!"a.valueList.length > 0";
+
+    if(elements.empty) {
+      return 0;
+    }
+
+    return elements.map!"a.key".map!"a.length".maxElement + 2;
   }
 
   override string toString() {
     auto indent = indentation;
+    auto elements = items.filter!"a.valueList.length > 0";
 
-    return items.filter!"a.valueList.length > 0".map!(a => a.toMessage(indent)).map!"a.toString".join("\n") ~ "\n";
+    if(elements.empty) {
+      return "";
+    }
+
+    return "\n" ~ elements.map!(a => a.toMessage(indent)).map!"a.toString".join("\n");
   }
 
   void print(ResultPrinter printer) {
     auto indent = indentation;
-
-    foreach(item; items) {
-      if(item.valueList.length > 0) {
-        item.toMessage(indent).print(printer);
-      }
+    auto elements = items.filter!"a.valueList.length > 0";
+    
+    if(elements.empty) {
+      return;
     }
 
-    printer.primary("\n");
+    foreach(item; elements) {
+      printer.primary("\n");
+      item.toMessage(indent).print(printer);
+    }
   }
 }
 
