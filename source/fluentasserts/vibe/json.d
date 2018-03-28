@@ -846,18 +846,21 @@ unittest {
 
   msg.should.startWith("testObject should equal `{\"other\":\"other value\"}`.
 
- Expected:{\\n
-         :\t\"other\": \"other value\"\\n
-         :}
-   Actual:{\\n
-         :\t\"nested\": {\\n
-         :\t\t\"item1\": \"hello\",\\n
-         :\t\t\"item2\": {\\n
-         :\t\t\t\"value\": \"world\"\\n
-         :\t\t}\\n
-         :\t},\\n
-         :\t\"key\": \"some value\"\\n
-         :}
+Expected:
+{
+\t\"other\": \"other value\"
+}
+
+Actual:
+{
+\t\"nested\": {
+\t\t\"item1\": \"hello\",
+\t\t\"item2\": {
+\t\t\t\"value\": \"world\"
+\t\t}
+\t},
+\t\"key\": \"some value\"
+}
 
   Extra keys:nested.item2.value,nested.item1,key
  Missing key:other");
@@ -873,21 +876,23 @@ unittest {
   expectedObject["key1"] = "other value";
   expectedObject["key2"] = 2;
 
-    testObject.should.equal(expectedObject);
   auto msg = ({
     testObject.should.equal(expectedObject);
   }).should.throwException!TestException.msg;
 
 msg.should.startWith("testObject should equal `{\"key1\":\"other value\",\"key2\":2}`.
 
- Expected:{\\n
-         :\t\"key1\": \"other value\",\\n
-         :\t\"key2\": 2\\n
-         :}
-   Actual:{\\n
-         :\t\"key1\": \"some value\",\\n
-         :\t\"key2\": 1\\n
-         :}
+Expected:
+{
+\t\"key1\": \"other value\",
+\t\"key2\": 2
+}
+
+Actual:
+{
+\t\"key1\": \"some value\",
+\t\"key2\": 1
+}
 
 key1
  Expected:other value
