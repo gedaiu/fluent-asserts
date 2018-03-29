@@ -397,7 +397,7 @@ struct ShouldJson(T) {
   }
 
   auto greaterThan(U)(const U someValue, const string file = __FILE__, const size_t line = __LINE__) if(isNumeric!U) {
-    auto enforceResult = enforceNumericJson(file, line);
+    auto enforceResult = enforceNumericJson("greaterThan", file, line);
 
     if(enforceResult.willThrow) {
       return enforceResult;
@@ -410,8 +410,22 @@ struct ShouldJson(T) {
     }
   }
 
+  auto lessThan(U)(const U someValue, const string file = __FILE__, const size_t line = __LINE__) if(isNumeric!U) {
+    auto enforceResult = enforceNumericJson("lessThan", file, line);
+
+    if(enforceResult.willThrow) {
+      return enforceResult;
+    }
+
+    if(expectedValue) {
+      return testData.to!U.should.be.lessThan(someValue, file, line);
+    } else {
+      return testData.to!U.should.not.be.lessThan(someValue, file, line);
+    }
+  }
+
   private {
-    auto enforceNumericJson(const string file, const size_t line) {
+    auto enforceNumericJson(string functionName, const string file, const size_t line) {
       if(!expectedValue) {
         return Result.success;
       }
@@ -421,7 +435,7 @@ struct ShouldJson(T) {
         testData.type == Json.Type.float_
       ).should.equal(true, file, line);
 
-      typeResult.message = new MessageResult(" must contain a number to use greaterThan. A `");
+      typeResult.message = new MessageResult(" must contain a number to use " ~ functionName ~ ". A `");
       typeResult.message.addValue("Json.Type." ~ testData.type.to!string);
       typeResult.message.addText("` was found instead.");
 
@@ -957,6 +971,32 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("Json(false) must contain a number to use greaterThan. A `Json.Type.bool_` was found instead.");
+  msg.split("\n")[2].should.equal(" Expected:Json.Type.int_ or Json.Type.float_");
+  msg.split("\n")[3].should.equal("   Actual:Json.Type.bool_");
+}
+
+
+/// lessThan support for Json Objects
+unittest {
+  Json(4).should.be.lessThan(5);
+  Json(5).should.not.be.lessThan(4);
+
+  Json(4f).should.be.lessThan(5f);
+  Json(5f).should.not.be.lessThan(4f);
+
+  auto msg = ({
+    Json("").should.lessThan(3);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(\"\") must contain a number to use lessThan. A `Json.Type.string` was found instead.");
+  msg.split("\n")[2].should.equal(" Expected:Json.Type.int_ or Json.Type.float_");
+  msg.split("\n")[3].should.equal("   Actual:Json.Type.string");
+
+  msg = ({
+    Json(false).should.lessThan(3f);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(false) must contain a number to use lessThan. A `Json.Type.bool_` was found instead.");
   msg.split("\n")[2].should.equal(" Expected:Json.Type.int_ or Json.Type.float_");
   msg.split("\n")[3].should.equal("   Actual:Json.Type.bool_");
 }
