@@ -438,6 +438,20 @@ struct ShouldJson(T) {
     }
   }
 
+  auto approximately(U)(const U someValue, const U delta, const string file = __FILE__, const size_t line = __LINE__) if(isNumeric!U) {
+    auto enforceResult = enforceNumericJson("approximately", file, line);
+
+    if(enforceResult.willThrow) {
+      return enforceResult;
+    }
+
+    if(expectedValue) {
+      return testData.to!U.should.be.approximately(someValue, delta, file, line);
+    } else {
+      return testData.to!U.should.not.be.approximately(someValue, delta, file, line);
+    }
+  }
+
   private {
     auto enforceNumericJson(string functionName, const string file, const size_t line) {
       if(!expectedValue) {
@@ -1029,4 +1043,17 @@ unittest {
   msg.split("\n")[0].should.equal("Json(true) must contain a number to use between. A `Json.Type.bool_` was found instead.");
   msg.split("\n")[2].should.equal(" Expected:Json.Type.int_ or Json.Type.float_");
   msg.split("\n")[3].should.equal("   Actual:Json.Type.bool_");
+}
+
+unittest {
+  Json(10f/3f).should.be.approximately(3, 0.34);
+  Json(10f/3f).should.not.be.approximately(3, 0.24);
+
+  auto msg = ({
+    Json("").should.be.approximately(3, 0.34);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(\"\") must contain a number to use approximately. A `Json.Type.string` was found instead.");
+  msg.split("\n")[2].should.equal(" Expected:Json.Type.int_ or Json.Type.float_");
+  msg.split("\n")[3].should.equal("   Actual:Json.Type.string");
 }
