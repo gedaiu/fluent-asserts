@@ -32,8 +32,9 @@ struct Result {
 
   private string reason;
 
-  void because(string reason) {
+  auto because(string reason) {
     this.reason = "Because " ~ reason ~ ", ";
+    return this;
   }
 
   void perform() {
@@ -60,6 +61,10 @@ struct Result {
 
   ~this() {
     this.perform;
+  }
+
+  static Result success() {
+    return Result(false);
   }
 }
 
@@ -456,8 +461,10 @@ struct ThrowableProxy(T : Throwable) {
     throw new TestException([ cast(IResult) message ], _file, _line);
   }
 
-  void because(string reason) {
+  auto because(string reason) {
     this.reason = reason;
+
+    return this;
   }
 }
 

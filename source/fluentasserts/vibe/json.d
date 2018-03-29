@@ -396,7 +396,40 @@ struct ShouldJson(T) {
     }
   }
 
+  auto greaterThan(U)(const U someValue, const string file = __FILE__, const size_t line = __LINE__) if(isNumeric!U) {
+    auto enforceResult = enforceNumericJson(file, line);
+
+    if(enforceResult.willThrow) {
+      return enforceResult;
+    }
+
+    if(expectedValue) {
+      return testData.to!U.should.be.greaterThan(someValue, file, line);
+    } else {
+      return testData.to!U.should.not.be.greaterThan(someValue, file, line);
+    }
+  }
+
   private {
+    auto enforceNumericJson(const string file, const size_t line) {
+      if(!expectedValue) {
+        return Result.success;
+      }
+
+      auto typeResult = (
+        testData.type == Json.Type.int_ ||
+        testData.type == Json.Type.float_
+      ).should.equal(true, file, line);
+
+      typeResult.message = new MessageResult(" must contain a number to use greaterThan. A `");
+      typeResult.message.addValue("Json.Type." ~ testData.type.to!string);
+      typeResult.message.addText("` was found instead.");
+
+      typeResult.results = [ new ExpectedActualResult("Json.Type.int_ or Json.Type.float_", "Json.Type." ~ testData.type.to!string) ];
+
+      return typeResult;
+    }
+
     auto equalJson(const Json someValue, const string file, const size_t line) {
       if(expectedValue) {
         auto typeResult = validateJsonType(someValue, file, line);
@@ -901,4 +934,29 @@ key1
 key2
  Expected:2
    Actual:1");
+}
+
+/// greaterThan support for Json Objects
+unittest {
+  Json(5).should.be.greaterThan(4);
+  Json(4).should.not.be.greaterThan(5);
+
+  Json(5f).should.be.greaterThan(4f);
+  Json(4f).should.not.be.greaterThan(5f);
+
+  auto msg = ({
+    Json("").should.greaterThan(3);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(\"\") must contain a number to use greaterThan. A `Json.Type.string` was found instead.");
+  msg.split("\n")[2].should.equal(" Expected:Json.Type.int_ or Json.Type.float_");
+  msg.split("\n")[3].should.equal("   Actual:Json.Type.string");
+
+  msg = ({
+    Json(false).should.greaterThan(3f);
+  }).should.throwException!TestException.msg;
+
+  msg.split("\n")[0].should.equal("Json(false) must contain a number to use greaterThan. A `Json.Type.bool_` was found instead.");
+  msg.split("\n")[2].should.equal(" Expected:Json.Type.int_ or Json.Type.float_");
+  msg.split("\n")[3].should.equal("   Actual:Json.Type.bool_");
 }
