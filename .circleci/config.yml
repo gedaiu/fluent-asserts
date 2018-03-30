@@ -263,3 +263,7 @@ workflows:
       - dmd-latest:
           requires:
             - build trial
+
+dependencies:
+  cache_directories:
+    - "~/.dub"
