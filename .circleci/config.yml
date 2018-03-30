@@ -5,23 +5,30 @@ jobs:
       - image: dlanguage/dmd:2.079.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev git
       - run: git clone https://github.com/gedaiu/trial.git
       - run: cd trial && dub build :runner --verbose
       - run: mv trial/trial /usr/local/bin/trial
       - run: trial
+      - save_cache: 
+          key: v1-{{ checksum "dub.selections.json" }}
+          paths:
+            - /root/.dub
       - persist_to_workspace:
           root: /
           paths:
             - usr/local/bin/trial
-            - root/.dub
 
   ldc-1.2:
     docker:
       - image: dlanguage/ldc:1.2.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -36,6 +43,8 @@ jobs:
       - image: dlanguage/ldc:1.3.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -50,6 +59,8 @@ jobs:
       - image: dlanguage/ldc:1.4.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -61,6 +72,8 @@ jobs:
       - image: dlanguage/ldc:1.5.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -72,6 +85,8 @@ jobs:
       - image: dlanguage/ldc:1.6.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -83,6 +98,8 @@ jobs:
       - image: dlanguage/ldc:1.7.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -94,6 +111,8 @@ jobs:
       - image: dlanguage/ldc:1.8.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -105,6 +124,8 @@ jobs:
       - image: dlanguage/ldc:latest
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -116,6 +137,8 @@ jobs:
       - image: dlanguage/dmd:2.072.2
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -127,6 +150,8 @@ jobs:
       - image: dlanguage/dmd:2.073.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -138,6 +163,8 @@ jobs:
       - image: dlanguage/dmd:2.074.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -149,6 +176,8 @@ jobs:
       - image: dlanguage/dmd:2.075.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -160,6 +189,8 @@ jobs:
       - image: dlanguage/dmd:2.076.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -171,6 +202,8 @@ jobs:
       - image: dlanguage/dmd:2.073.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -182,6 +215,8 @@ jobs:
       - image: dlanguage/dmd:2.073.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -193,6 +228,8 @@ jobs:
       - image: dlanguage/dmd:2.079.0
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -204,6 +241,8 @@ jobs:
       - image: dlanguage/dmd:latest
     steps:
       - checkout
+      - restore_cache:
+          key: v1-{{ checksum "dub.selections.json" }}
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -263,7 +302,3 @@ workflows:
       - dmd-latest:
           requires:
             - build trial
-
-dependencies:
-  cache_directories:
-    - "~/.dub"
