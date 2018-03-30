@@ -6,7 +6,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev git
       - run: git clone https://github.com/gedaiu/trial.git
@@ -14,7 +14,7 @@ jobs:
       - run: mv trial/trial /usr/local/bin/trial
       - run: trial
       - save_cache: 
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
           paths:
             - /root/.dub
       - persist_to_workspace:
@@ -28,7 +28,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -46,7 +46,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -64,7 +64,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -79,7 +79,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -94,7 +94,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -109,7 +109,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -124,7 +124,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -139,7 +139,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -154,7 +154,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -169,7 +169,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -184,7 +184,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -199,7 +199,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -214,7 +214,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -229,7 +229,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -244,7 +244,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -259,7 +259,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
@@ -274,7 +274,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: v1-{{ checksum "dub.selections.json" }}
+          key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
