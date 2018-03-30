@@ -7,11 +7,13 @@ jobs:
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev git
       - run: git clone https://github.com/gedaiu/trial.git
-      - run: cd trial && dub build :runner --vverbose
+      - run: cd trial && dub build :runner --verbose
+      - run: mv trial/trial /usr/local/bin/trial
       - persist_to_workspace:
-          root: .
+          root: /
           paths:
-            - trial
+            - usr/local/bin/trial
+            - root/.dub
 
   ldc-1.2:
     docker:
@@ -19,10 +21,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: .
+          at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial/trial
+      - run: trial
       - run: dub --root=test/unit-threaded
       - run: dub --root=test/disabledSourceResult
       - run: dub --root=test/disabledMessageResult
@@ -34,10 +36,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: .
+          at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial/trial
+      - run: trial
       - run: dub --root=test/unit-threaded
       - run: dub --root=test/disabledSourceResult
       - run: dub --root=test/disabledMessageResult
@@ -49,10 +51,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: .
+          at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial/trial
+      - run: trial
       - run: dub --root=test/unit-threaded
       - run: dub --root=test/disabledSourceResult
       - run: dub --root=test/disabledMessageResult
@@ -64,10 +66,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: .
+          at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial/trial
+      - run: trial
       - run: dub --root=test/unit-threaded
       - run: dub --root=test/disabledSourceResult
       - run: dub --root=test/disabledMessageResult
@@ -79,10 +81,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: .
+          at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial/trial
+      - run: trial
       - run: dub --root=test/unit-threaded
       - run: dub --root=test/disabledSourceResult
       - run: dub --root=test/disabledMessageResult
@@ -94,10 +96,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: .
+          at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial/trial
+      - run: trial
       - run: dub --root=test/unit-threaded
       - run: dub --root=test/disabledSourceResult
       - run: dub --root=test/disabledMessageResult
@@ -109,10 +111,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: .
+          at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial/trial
+      - run: trial
       - run: dub --root=test/unit-threaded
       - run: dub --root=test/disabledSourceResult
       - run: dub --root=test/disabledMessageResult
@@ -124,10 +126,10 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: .
+          at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial/trial
+      - run: trial
       - run: dub --root=test/unit-threaded
       - run: dub --root=test/disabledSourceResult
       - run: dub --root=test/disabledMessageResult
