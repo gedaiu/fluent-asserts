@@ -15,7 +15,7 @@ dub clean --all-packages
 # build Trial
 git clone https://github.com/gedaiu/trial.git
 cd trial
-dub build :runner
+dub build :runner -v
 cd ..
 
 # run unit tests

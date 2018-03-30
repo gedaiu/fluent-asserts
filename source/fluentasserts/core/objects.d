@@ -230,17 +230,17 @@ unittest {
 /// null object comparison
 unittest
 {
-    Object nullObject;
+  Object nullObject;
 
-    auto msg = ({
-      nullObject.should.equal(new Object);
-    }).should.throwException!TestException.msg;
+  auto msg = ({
+    nullObject.should.equal(new Object);
+  }).should.throwException!TestException.msg;
 
-    msg.should.startWith("nullObject should equal `Object`.");
+  msg.should.startWith("nullObject should equal `Object`.");
 
-    msg = ({
-      (new Object).should.equal(null);
-    }).should.throwException!TestException.msg;
+  msg = ({
+    (new Object).should.equal(null);
+  }).should.throwException!TestException.msg;
 
-    msg.should.startWith("(new Object) should equal `typeof(null)`.");
+  msg.should.startWith("(new Object) should equal `typeof(null)`.");
 }

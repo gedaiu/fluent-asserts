@@ -11,18 +11,19 @@ import std.array;
 import std.string;
 import std.math;
 
-@safe:
 
-U[] toValueList(U, V)(V expectedValueList) {
+U[] toValueList(U, V)(V expectedValueList) @trusted {
 
   static if(is(V == void[])) {
     return [];
   } else static if(is(U == immutable) || is(U == const)) {
     return expectedValueList.array.idup;
   } else {
-    return expectedValueList.array.dup;
+    return cast(U[]) expectedValueList.array.dup;
   }
 }
+
+@trusted:
 
 struct ListComparison(T) {
   private {
@@ -173,6 +174,7 @@ unittest {
   assert(common[1] == 2);
 }
 
+@safe:
 struct ShouldList(T) if(isInputRange!(T)) {
   private T testData;
 
@@ -259,7 +261,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
     }
   }
 
-  auto containOnly(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
+  auto containOnly(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) @trusted {
     U[] valueList = toValueList!U(expectedValueList);
 
     addMessage(" contain only ");
@@ -390,7 +392,6 @@ struct ShouldList(T) if(isInputRange!(T)) {
     }
   }
 }
-
 
 /// When there is a lazy array that throws an it should throw that exception
 unittest {

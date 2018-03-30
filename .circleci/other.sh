@@ -2,8 +2,6 @@
 
 set -e -x -o pipefail
 
-trial
-
 dub --root=test/unit-threaded
 
 dub --root=test/disabledSourceResult
