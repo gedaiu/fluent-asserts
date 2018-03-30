@@ -31,9 +31,6 @@ workflows:
   tests:
     jobs:
       - build
-      - test examples:
-          requires:
-            - build
-      - vibe test:
+      - ldc-1.2:
           requires:
             - build
