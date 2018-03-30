@@ -154,7 +154,7 @@ Json[string] flatten(Json object) @trusted {
   return elements;
 }
 
-@safe:
+@trusted:
 
 /// Get a flatten object
 unittest {
