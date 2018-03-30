@@ -23,7 +23,7 @@ U[] toValueList(U, V)(V expectedValueList) @trusted {
   }
 }
 
-@safe:
+@trusted:
 
 struct ListComparison(T) {
   private {
@@ -174,6 +174,7 @@ unittest {
   assert(common[1] == 2);
 }
 
+@safe:
 struct ShouldList(T) if(isInputRange!(T)) {
   private T testData;
 
@@ -260,7 +261,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
     }
   }
 
-  auto containOnly(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) {
+  auto containOnly(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) @trusted {
     U[] valueList = toValueList!U(expectedValueList);
 
     addMessage(" contain only ");
