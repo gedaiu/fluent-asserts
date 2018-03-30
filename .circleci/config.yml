@@ -30,7 +30,7 @@ workflows:
   version: 2
   tests:
     jobs:
-      - build
+      - build trial
       - ldc-1.2:
           requires:
-            - build
+            - build trial
