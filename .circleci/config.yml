@@ -13,10 +13,7 @@ jobs:
       - run: cd trial && dub build :runner --verbose
       - run: mv trial/trial /usr/local/bin/trial
       - run: trial
-      - run: ls -lsah .
-      - run: ls -lsah /root/project/
-      - run: ls -lsah /root/project/.trial
-      - run: ls -lsah /root/project/.trial/xunit
+      - run: ./.circleci/other.sh
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
@@ -116,7 +113,6 @@ jobs:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/other.sh
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
