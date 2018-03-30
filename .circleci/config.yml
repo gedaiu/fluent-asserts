@@ -13,6 +13,8 @@ jobs:
       - run: cd trial && dub build :runner --verbose
       - run: mv trial/trial /usr/local/bin/trial
       - run: trial
+      - store_test_results:
+          path: /root/project/.trial/xunit
       - save_cache: 
           key: dub-packages
           paths:
