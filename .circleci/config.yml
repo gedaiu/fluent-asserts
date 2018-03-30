@@ -9,6 +9,7 @@ jobs:
       - run: git clone https://github.com/gedaiu/trial.git
       - run: cd trial && dub build :runner --verbose
       - run: mv trial/trial /usr/local/bin/trial
+      - run: trial
       - persist_to_workspace:
           root: /
           paths:
@@ -24,7 +25,10 @@ jobs:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
+      - run: dub --root=test/disabledSourceResult
+      - run: dub --root=test/disabledMessageResult
+      - run: dub --root=test/disabledDiffResult
 
   ldc-1.3:
     docker:
@@ -36,7 +40,6 @@ jobs:
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
       - run: trial
-      - run: dub --root=test/unit-threaded
       - run: dub --root=test/disabledSourceResult
       - run: dub --root=test/disabledMessageResult
       - run: dub --root=test/disabledDiffResult
@@ -50,11 +53,7 @@ jobs:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial
-      - run: dub --root=test/unit-threaded
-      - run: dub --root=test/disabledSourceResult
-      - run: dub --root=test/disabledMessageResult
-      - run: dub --root=test/disabledDiffResult
+      - run: ./.circleci/test.sh
 
   ldc-1.5:
     docker:
@@ -65,11 +64,7 @@ jobs:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial
-      - run: dub --root=test/unit-threaded
-      - run: dub --root=test/disabledSourceResult
-      - run: dub --root=test/disabledMessageResult
-      - run: dub --root=test/disabledDiffResult
+      - run: ./.circleci/test.sh
 
   ldc-1.6:
     docker:
@@ -80,11 +75,7 @@ jobs:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial
-      - run: dub --root=test/unit-threaded
-      - run: dub --root=test/disabledSourceResult
-      - run: dub --root=test/disabledMessageResult
-      - run: dub --root=test/disabledDiffResult
+      - run: ./.circleci/test.sh
 
   ldc-1.7:
     docker:
@@ -95,11 +86,7 @@ jobs:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial
-      - run: dub --root=test/unit-threaded
-      - run: dub --root=test/disabledSourceResult
-      - run: dub --root=test/disabledMessageResult
-      - run: dub --root=test/disabledDiffResult
+      - run: ./.circleci/test.sh
 
   ldc-1.8:
     docker:
@@ -110,11 +97,7 @@ jobs:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial
-      - run: dub --root=test/unit-threaded
-      - run: dub --root=test/disabledSourceResult
-      - run: dub --root=test/disabledMessageResult
-      - run: dub --root=test/disabledDiffResult
+      - run: ./.circleci/test.sh
 
   ldc-latest:
     docker:
@@ -125,15 +108,99 @@ jobs:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: trial
-      - run: dub --root=test/unit-threaded
-      - run: dub --root=test/disabledSourceResult
-      - run: dub --root=test/disabledMessageResult
-      - run: dub --root=test/disabledDiffResult
+      - run: ./.circleci/test.sh
 
   dmd-2.072:
     docker:
       - image: dlanguage/dmd:2.072.2
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
+      - run: apt-get update
+      - run: apt-get install -y libevent-dev libssl-dev
+      - run: ./.circleci/test.sh
+
+  dmd-2.073:
+    docker:
+      - image: dlanguage/dmd:2.073.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
+      - run: apt-get update
+      - run: apt-get install -y libevent-dev libssl-dev
+      - run: ./.circleci/test.sh
+
+  dmd-2.074:
+    docker:
+      - image: dlanguage/dmd:2.074.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
+      - run: apt-get update
+      - run: apt-get install -y libevent-dev libssl-dev
+      - run: ./.circleci/test.sh
+
+  dmd-2.075:
+    docker:
+      - image: dlanguage/dmd:2.075.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
+      - run: apt-get update
+      - run: apt-get install -y libevent-dev libssl-dev
+      - run: ./.circleci/test.sh
+
+  dmd-2.076:
+    docker:
+      - image: dlanguage/dmd:2.076.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
+      - run: apt-get update
+      - run: apt-get install -y libevent-dev libssl-dev
+      - run: ./.circleci/test.sh
+
+  dmd-2.077:
+    docker:
+      - image: dlanguage/dmd:2.073.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
+      - run: apt-get update
+      - run: apt-get install -y libevent-dev libssl-dev
+      - run: ./.circleci/test.sh
+
+  dmd-2.078:
+    docker:
+      - image: dlanguage/dmd:2.073.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
+      - run: apt-get update
+      - run: apt-get install -y libevent-dev libssl-dev
+      - run: ./.circleci/test.sh
+
+  dmd-2.079:
+    docker:
+      - image: dlanguage/dmd:2.079.0
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /
+      - run: apt-get update
+      - run: apt-get install -y libevent-dev libssl-dev
+      - run: ./.circleci/test.sh
+
+  dmd-latest:
+    docker:
+      - image: dlanguage/dmd:latest
     steps:
       - checkout
       - attach_workspace:
@@ -172,5 +239,26 @@ workflows:
           requires:
             - build trial
       - dmd-2.072:
+          requires:
+            - build trial
+      - dmd-2.073:
+          requires:
+            - build trial
+      - dmd-2.074:
+          requires:
+            - build trial
+      - dmd-2.075:
+          requires:
+            - build trial
+      - dmd-2.076:
+          requires:
+            - build trial
+      - dmd-2.077:
+          requires:
+            - build trial
+      - dmd-2.078:
+          requires:
+            - build trial
+      - dmd-latest:
           requires:
             - build trial
