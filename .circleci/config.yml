@@ -34,6 +34,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
@@ -46,16 +47,16 @@ jobs:
       - run: dub --root=test/disabledMessageResult
       - run: dub --root=test/disabledDiffResult
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   ldc-1.3:
     docker:
       - image: dlanguage/ldc:1.3.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
@@ -68,7 +69,7 @@ jobs:
       - run: dub --root=test/disabledMessageResult
       - run: dub --root=test/disabledDiffResult
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
   ldc-1.4:
@@ -77,115 +78,116 @@ jobs:
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   ldc-1.5:
     docker:
       - image: dlanguage/ldc:1.5.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   ldc-1.6:
     docker:
       - image: dlanguage/ldc:1.6.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: ./.circleci/other.sh
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   ldc-1.7:
     docker:
       - image: dlanguage/ldc:1.7.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   ldc-1.8:
     docker:
       - image: dlanguage/ldc:1.8.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   ldc-latest:
     docker:
       - image: dlanguage/ldc:latest
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
 
-  dmd-2.072:
+            dmd-2.072:
     docker:
       - image: dlanguage/dmd:2.072.2
     steps:
@@ -196,11 +198,11 @@ jobs:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
 
@@ -210,149 +212,150 @@ jobs:
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   dmd-2.074:
     docker:
       - image: dlanguage/dmd:2.074.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   dmd-2.075:
     docker:
       - image: dlanguage/dmd:2.075.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   dmd-2.076:
     docker:
       - image: dlanguage/dmd:2.076.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   dmd-2.077:
     docker:
       - image: dlanguage/dmd:2.073.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   dmd-2.078:
     docker:
       - image: dlanguage/dmd:2.073.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   dmd-2.079:
     docker:
       - image: dlanguage/dmd:2.079.0
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
-
   dmd-latest:
     docker:
       - image: dlanguage/dmd:latest
     steps:
       - checkout
       - restore_cache:
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           key: dub-packages
       - attach_workspace:
           at: /
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev
-      - run: ./.circleci/test.sh
+      - run: trial
       - store_test_results:
           path: /root/project/.trial/xunit
       - save_cache: 
-          key: dub-packages
+          key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
 
