@@ -5,7 +5,7 @@ jobs:
       - image: dlanguage/dmd:2.079.0
     steps:
       - run: apt-get update
-      - run: apt-get install -y libevent-dev libssl-dev
+      - run: apt-get install -y libevent-dev libssl-dev git
       - run: git clone https://github.com/gedaiu/trial.git
       - run: cd trial && dub build :runner
       - persist_to_workspace:
