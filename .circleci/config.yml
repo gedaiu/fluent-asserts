@@ -141,3 +141,24 @@ workflows:
       - ldc-1.2:
           requires:
             - build trial
+      - ldc-1.3:
+          requires:
+            - build trial
+      - ldc-1.4:
+          requires:
+            - build trial
+      - ldc-1.5:
+          requires:
+            - build trial
+      - ldc-1.6:
+          requires:
+            - build trial
+      - ldc-1.7:
+          requires:
+            - build trial
+      - ldc-1.8:
+          requires:
+            - build trial
+      - ldc-latest:
+          requires:
+            - build trial
