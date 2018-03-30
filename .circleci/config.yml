@@ -171,3 +171,6 @@ workflows:
       - ldc-latest:
           requires:
             - build trial
+      - dmd-2.072:
+          requires:
+            - build trial
