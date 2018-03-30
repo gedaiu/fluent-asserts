@@ -5,7 +5,6 @@ __dummy.html
 *.obj
 *.lst
 *.a
-dub.selections.json
 generated.d
 /fluent-asserts-core-test-library
 /fluent-asserts-test-library
@@ -19,3 +18,7 @@ trial_root.d
 trial_vibe.d
 trial-vibe
 vibe-example
+test/unit-threaded/dub.selections.json
+test/vibe-0.7/dub.selections.json
+test/vibe-0.8/dub.selections.json
+test/vibe-0.8/trial.json
