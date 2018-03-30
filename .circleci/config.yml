@@ -4,6 +4,7 @@ jobs:
     docker:
       - image: dlanguage/dmd:2.079.0
     steps:
+      - checkout
       - run: apt-get update
       - run: apt-get install -y libevent-dev libssl-dev git
       - run: git clone https://github.com/gedaiu/trial.git
