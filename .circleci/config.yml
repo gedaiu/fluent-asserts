@@ -187,7 +187,7 @@ jobs:
           paths:
             - /root/.dub
 
-            dmd-2.072:
+  dmd-2.072:
     docker:
       - image: dlanguage/dmd:2.072.2
     steps:
@@ -339,6 +339,7 @@ jobs:
           key: dub-packages-{{ .Environment.CIRCLE_JOB }}
           paths:
             - /root/.dub
+
   dmd-latest:
     docker:
       - image: dlanguage/dmd:latest
