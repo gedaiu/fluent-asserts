@@ -55,7 +55,7 @@
         "vibe-d:data": "*",
         "vibe-d:http": "*",
         "openssl": "*",
-        "trial:lifecycle-core": "0.7.0-alpha.3"
+        "trial:lifecycle-core": ">=0.7.0-alpha.5"
       }
     }
   ]
