@@ -1,0 +1,16 @@
+{
+	"reporters": [
+		"spec",
+		"result",
+		"xunit"
+	],
+	"executor": "default",
+	"plugins": [],
+	"artifactsLocation": ".trial",
+	"warningTestDuration": 20,
+	"maxThreads": 0,
+	"dangerTestDuration": 100,
+	"testDiscovery": [
+		"trial.discovery.unit.UnitTestDiscovery"
+	]
+}

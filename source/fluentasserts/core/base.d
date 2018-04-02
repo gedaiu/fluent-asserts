@@ -32,8 +32,9 @@ struct Result {
 
   private string reason;
 
-  void because(string reason) {
+  auto because(string reason) {
     this.reason = "Because " ~ reason ~ ", ";
+    return this;
   }
 
   void perform() {
@@ -60,6 +61,10 @@ struct Result {
 
   ~this() {
     this.perform;
+  }
+
+  static Result success() {
+    return Result(false);
   }
 }
 
@@ -209,6 +214,10 @@ mixin template ShouldCommons()
     }
 
     Result result(bool value, Message[] msg, IResult[] res, const string file, const size_t line) {
+      if(res.length == 0 && msg.length == 0) {
+        return Result(false);
+      }
+
       auto finalMessage = new MessageResult(" should");
 
       messages ~= Message(false, ".");
@@ -243,14 +252,17 @@ class TestException : ReferenceException {
   }
 
   this(IResult[] results, string fileName, size_t line, Throwable next = null) {
-    auto msg = results.map!(a => a.toString).join("\n\n") ~ '\n';
+    auto msg = results.map!"a.toString".filter!"a != ``".join("\n") ~ '\n';
     this.results = results;
 
     super(msg, fileName, line, next);
   }
 
   void print(ResultPrinter printer) {
-    results.each!(a => a.print(printer));
+    foreach(result; results) {
+      result.print(printer);
+      printer.primary("\n");
+    }
   }
 }
 
@@ -295,7 +307,7 @@ unittest {
 
   auto exception = new TestException([ new TestResult, new TestResult, new TestResult], "", 0);
 
-  exception.msg.should.equal("message\n\nmessage\n\nmessage\n");
+  exception.msg.should.equal("message\nmessage\nmessage\n");
 }
 
 @("TestException should call all the result print methods on print")
@@ -449,8 +461,10 @@ struct ThrowableProxy(T : Throwable) {
     throw new TestException([ cast(IResult) message ], _file, _line);
   }
 
-  void because(string reason) {
+  auto because(string reason) {
     this.reason = reason;
+
+    return this;
   }
 }
 
@@ -514,10 +528,11 @@ unittest {
 auto should(T)(lazy T testData) {
   version(Have_vibe_d_data) {
     import vibe.data.json;
+    import fluentasserts.vibe.json;
 
-    static if(is(T == Json)) {
+    static if(is(Unqual!T == Json)) {
       enum returned = true;
-      return ShouldBaseType!T(testData.evaluate);
+      return ShouldJson!T(testData.evaluate);
     } else {
       enum returned = false;
     }
