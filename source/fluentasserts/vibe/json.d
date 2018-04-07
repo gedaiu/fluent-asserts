@@ -527,7 +527,9 @@ struct ShouldJson(T) {
 
         foreach(string key, value; flattenTestData) {
           if(key in flattenSomeValue && flattenSomeValue[key] != value) {
-            results ~= new ExpectedActualResult(key, flattenSomeValue[key].to!string, value.to!string);
+            results ~= new ExpectedActualResult(key, 
+              flattenSomeValue[key].to!string ~ " (Json.Type." ~ flattenSomeValue[key].type.to!string ~ ")", 
+              value.to!string ~ " (Json.Type." ~ value.type.to!string ~ ")");
           }
         }
 
@@ -970,12 +972,12 @@ Actual:
 }
 
 key1
- Expected:other value
-   Actual:some value
+ Expected:other value (Json.Type.string)
+   Actual:some value (Json.Type.string)
 
 key2
- Expected:2
-   Actual:1");
+ Expected:2 (Json.Type.int_)
+   Actual:1 (Json.Type.int_)");
 }
 
 /// greaterThan support for Json Objects
