@@ -4,6 +4,7 @@ version(Have_vibe_d_data):
 
 import std.exception, std.conv, std.traits;
 import std.array, std.algorithm, std.typecons;
+import std.uni;
 
 import vibe.data.json;
 import fluentasserts.core.base;
