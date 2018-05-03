@@ -2,7 +2,7 @@ import std.stdio;
 import std.traits;
 
 import fluent.asserts;
-import unit_threaded.should;
+import unit_threaded.should : UnitTestException;
 
 int main()
 {
