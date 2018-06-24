@@ -138,7 +138,8 @@ final class RequestRouter
   RequestRouter expectHeaderExist(string name, const string file = __FILE__, const size_t line = __LINE__)
   {
     void localExpectHeaderExist(Response res) {
-      enforce(name in res.headers, "Response header `" ~ name ~ "` is missing.", file, line);
+      auto result = res.headers.keys.should.contain(name, file, line);
+      result.message = new MessageResult("Response header `" ~ name ~ "` is missing.");
     }
 
     expected ~= &localExpectHeaderExist;
@@ -151,9 +152,9 @@ final class RequestRouter
     expectHeaderExist(name, file, line);
 
     void localExpectedHeader(Response res) {
-      enforce(res.headers[name] == value,
-        "Response header `" ~ name ~ "` has an unexpected value. Expected `"
-        ~ value ~ "` != `" ~ res.headers[name].to!string ~ "`", file, line);
+      auto result = res.headers[name].should.equal(value, file, line);
+      result.message = new MessageResult("Response header `" ~ name ~ "` has an unexpected value. Expected `"
+        ~ value ~ "` != `" ~ res.headers[name].to!string ~ "`");
     }
 
     expected ~= &localExpectedHeader;
@@ -162,13 +163,13 @@ final class RequestRouter
   }
 
   RequestRouter expectHeaderContains(string name, string value, const string file = __FILE__, const size_t line = __LINE__)
-  {
+    {
     expectHeaderExist(name, file, line);
 
     void expectHeaderContains(Response res) {
-      enforce(res.headers[name].indexOf(value) != -1,
-        "Response header `" ~ name ~ "` has an unexpected value. Expected `"
-        ~ value ~ "` not found in `" ~ res.headers[name].to!string ~ "`", file, line);
+      auto result = res.headers[name].should.contain(value, file, line);
+      result.message = new MessageResult("Response header `" ~ name ~ "` has an unexpected value. Expected `"
+        ~ value ~ "` not found in `" ~ res.headers[name].to!string ~ "`");
     }
 
     expected ~= &expectHeaderContains;
@@ -195,7 +196,6 @@ final class RequestRouter
     }
 
     expected ~= &localExpectStatusCode;
-
 
     return this;
   }
@@ -593,14 +593,14 @@ unittest {
       .post("/")
       .expectHeader("some-header", "some-value")
         .end();
-  }).should.throwAnyException.msg.should.equal("Response header `some-header` is missing.");
+  }).should.throwAnyException.msg.should.startWith("Response header `some-header` is missing.");
 
   ({
     request(router)
       .get("/")
       .expectHeader("some-header", "other-value")
         .end();
-  }).should.throwAnyException.msg.should.contain("Response header `some-header` has an unexpected value");
+  }).should.throwAnyException.msg.should.startWith("Response header `some-header` has an unexpected value");
 
   // Check if a header exists
   request(router)
@@ -614,7 +614,7 @@ unittest {
       .post("/")
       .expectHeaderExist("some-header")
         .end();
-  }).should.throwAnyException.msg.should.equal("Response header `some-header` is missing.");
+  }).should.throwAnyException.msg.should.startWith("Response header `some-header` is missing.");
 
   // Check if a header contains a string
   request(router)
