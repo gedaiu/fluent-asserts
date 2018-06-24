@@ -23,3 +23,6 @@ test/unit-threaded/dub.selections.json
 test/vibe-0.7/dub.selections.json
 test/vibe-0.8/dub.selections.json
 test/vibe-0.8/trial.json
+dub.selections.json
+test/unit-threaded/trial.json
+test/unit-threaded/unit-threaded-example
