@@ -8,7 +8,7 @@
   "license": "MIT",
   "homepage": "http://fluentasserts.szabobogdan.com/",
   "dependencies": {
-    "libdparse": "~>0.8.0",
+    "libdparse": "~>0.8.7",
     "ddmp": "~>0.0.1-0.dev.3",
     "unit-threaded": {
       "version": "*",
@@ -23,20 +23,6 @@
       "optional": true
     }
   },
-  "subPackages": [
-    {
-      "name": "core",
-      "targetType": "library",
-      "dependencies": {
-        "libdparse": "~>0.8.0",
-        "ddmp": "~>0.0.1-0.dev.3"
-      },
-      "excludedSourceFiles": [
-        "source/fluentasserts/vibe/json.d",
-        "source/fluentasserts/vibe/request.d"
-      ]
-    }
-  ],
   "configurations": [
     {
       "name": "library",
@@ -50,12 +36,12 @@
         "source"
       ],
       "dependencies": {
-        "libdparse": "~>0.8.0",
+        "libdparse": "~>0.8.7",
         "ddmp": "~>0.0.1-0.dev.3",
         "vibe-d:data": "*",
         "vibe-d:http": "*",
         "openssl": "*",
-        "trial:lifecycle-core": ">=0.7.0-alpha.5"
+        "trial:lifecycle-core": ">=0.7.0-alpha.9"
       }
     }
   ]
