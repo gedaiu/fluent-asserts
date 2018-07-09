@@ -127,6 +127,7 @@ final class RequestRouter
   RequestRouter customMethod(HTTPMethod method)(URL url)
   {
     preparedRequest = createTestHTTPServerRequest(url, method);
+    preparedRequest.host = url.host;
 
     foreach(name, value; headers) {
       preparedRequest.headers[name] = value;
