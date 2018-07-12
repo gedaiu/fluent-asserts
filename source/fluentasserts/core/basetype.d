@@ -20,9 +20,9 @@ struct ShouldBaseType(T) {
   mixin ShouldCommons;
   mixin ShouldThrowableCommons;
 
-  alias above = this.greaterThan;
-  alias below = this.lessThan;
-  alias within = this.between;
+  alias above = typeof(this).greaterThan;
+  alias below = typeof(this).lessThan;
+  alias within = typeof(this).between;
 
   auto equal(const T someValue, const string file = __FILE__, const size_t line = __LINE__) {
     validateException;
