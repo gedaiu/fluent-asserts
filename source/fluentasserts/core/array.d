@@ -17,15 +17,25 @@ U[] toValueList(U, V)(V expectedValueList) @trusted {
   static if(is(V == void[])) {
     return [];
   } else static if(is(U == immutable) || is(U == const)) {
-    return expectedValueList.array.idup;
+    static if(is(U == class)) {
+      return expectedValueList.array;
+    } else {
+      return expectedValueList.array.idup;
+    }
   } else {
-    return cast(U[]) expectedValueList.array.dup;
+    static if(is(U == class)) {
+      return cast(U[]) expectedValueList.array;
+    } else {
+      return cast(U[]) expectedValueList.array.dup;
+    }
   }
 }
 
 @trusted:
 
-struct ListComparison(T) {
+struct ListComparison(Type) {
+  alias T = Unqual!Type;
+
   private {
     T[] referenceList;
     T[] list;
@@ -34,7 +44,7 @@ struct ListComparison(T) {
 
   this(U, V)(U reference, V list, double maxRelDiff = 0) {
     this.referenceList = toValueList!T(reference);
-    this.list = list;
+    this.list = toValueList!T(list);
     this.maxRelDiff = maxRelDiff;
   }
 
@@ -178,12 +188,12 @@ unittest {
 struct ShouldList(T) if(isInputRange!(T)) {
   private T testData;
 
-  alias U = ElementType!T;
+  alias U = Unqual!(ElementType!T);
   mixin ShouldCommons;
   mixin DisabledShouldThrowableCommons;
 
   auto equal(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) @trusted {
-    U[] valueList = toValueList!U(expectedValueList);
+    auto valueList = toValueList!(Unqual!U)(expectedValueList);
 
     addMessage(" equal");
     addMessage(" `");
@@ -197,7 +207,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
   auto approximately(V)(V expectedValueList, double maxRelDiff = 1e-05, const string file = __FILE__, const size_t line = __LINE__) @trusted {
     import fluentasserts.core.basetype;
 
-    U[] valueList = toValueList!U(expectedValueList);
+    auto valueList = toValueList!(Unqual!U)(expectedValueList);
 
     addMessage(" approximately");
     addMessage(" `");
@@ -212,7 +222,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
     auto common = comparison.common;
 
     auto arrayTestData = testData.array;
-    auto strArrayTestData = arrayTestData.to!string;
+    auto strArrayTestData = "[" ~ testData.map!(a => (cast()a).to!string).join(", ") ~ "]";
 
     static if(std.traits.isNumeric!(U)) {
       string strValueList;
@@ -262,7 +272,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
   }
 
   auto containOnly(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) @trusted {
-    U[] valueList = toValueList!U(expectedValueList);
+    auto valueList = toValueList!(Unqual!U)(expectedValueList);
 
     addMessage(" contain only ");
     addValue(valueList.to!string);
@@ -306,8 +316,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
   }
 
   auto contain(V)(V expectedValueList, const string file = __FILE__, const size_t line = __LINE__) @trusted {
-
-    U[] valueList = toValueList!U(expectedValueList);
+    auto valueList = toValueList!(Unqual!U)(expectedValueList);
 
     addMessage(" contain ");
     addValue(valueList.to!string);
@@ -369,24 +378,28 @@ struct ShouldList(T) if(isInputRange!(T)) {
     addValue(value.to!string);
     addMessage("`");
 
+    auto strValue = value.to!string;
+    auto strTestData = "[" ~ testData.map!(a => (cast()a).to!string).join(", ") ~ "]";
+    
     beginCheck;
 
     auto isPresent = testData.canFind(value);
     auto msg = [
-      Message(true, value.to!string),
+      Message(true, strValue),
       Message(false, isPresent ? " is present in " : " is missing from "),
-      Message(true, testData.to!string),
+      Message(true, strTestData),
       Message(false, ".")
     ];
 
     if(expectedValue) {
+
       return result(isPresent, msg, [
-        cast(IResult) new ExpectedActualResult("to contain `" ~ value.to!string ~ "`", testData.to!string),
+        cast(IResult) new ExpectedActualResult("to contain `" ~ strValue ~ "`", strTestData),
         cast(IResult) new ExtraMissingResult("", value.to!string)
       ], file, line);
     } else {
       return result(isPresent, msg, [
-        cast(IResult) new ExpectedActualResult("to not contain `" ~ value.to!string ~ "`", testData.to!string),
+        cast(IResult) new ExpectedActualResult("to not contain `" ~ strValue ~ "`", strTestData),
         cast(IResult) new ExtraMissingResult(value.to!string, "")
       ], file, line);
     }
@@ -875,4 +888,13 @@ unittest {
   immutable string[] someList;
 
   someList.should.equal([]);
+}
+
+/// Compare const objects
+unittest
+{
+  class A {}
+  A a = new A();
+  const(A)[] arr = [a];
+  arr.should.equal([a]);
 }
