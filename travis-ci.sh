@@ -15,23 +15,23 @@ dub clean --all-packages
 # build Trial
 git clone https://github.com/gedaiu/trial.git
 cd trial
-dub build :runner -v
+dub build :runner
 cd ..
 
 # run unit tests
 ./trial/trial --compiler=$DC
 
 # run a build for unit-threaded
-dub -v --root=test/unit-threaded --compiler=$DC --arch=x86_64
+dub --root=test/unit-threaded --compiler=$DC --arch=x86_64
 
 # run a build for DisableSourceResult
-dub -v --root=test/disabledSourceResult --compiler=$DC --arch=x86_64
+dub --root=test/disabledSourceResult --compiler=$DC --arch=x86_64
 
 # run a build for DisableMessageResult
-dub -v --root=test/disabledMessageResult --compiler=$DC --arch=x86_64
+dub --root=test/disabledMessageResult --compiler=$DC --arch=x86_64
 
 # run a build for DisableDiffResult
-dub -v --root=test/disabledDiffResult --compiler=$DC --arch=x86_64
+dub --root=test/disabledDiffResult --compiler=$DC --arch=x86_64
 
 dc_version=$("$DC" --version | perl -pe '($_)=/([0-9]+([.][0-9]+)+)/')
 

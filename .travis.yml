@@ -32,7 +32,7 @@ d:
   - dmd-2.078.0
   - dmd-2.079.0
   - dmd-2.080.0
-  - dmd-2.081.0
+  - dmd-2.081.1
   - dmd-beta
 
 matrix:
