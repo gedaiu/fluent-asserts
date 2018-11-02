@@ -35,7 +35,7 @@ struct ResultGlyphs {
     /// Glyph that indicates the error line
     string sourceIndicator;
 
-    /// Glyph that sepparates the line number 
+    /// Glyph that sepparates the line number
     string sourceLineSeparator;
 
     /// Glyph for the diff begin indicator
@@ -51,7 +51,7 @@ struct ResultGlyphs {
     string diffDelete;
   }
 
-  /// Set the default values. The values are 
+  /// Set the default values. The values are
   static resetDefaults() {
     version(windows) {
       ResultGlyphs.tab = `\t`;
@@ -81,7 +81,7 @@ static this() {
   ResultGlyphs.resetDefaults;
 }
 
-/// 
+///
 interface ResultPrinter {
   void primary(string);
   void info(string);
@@ -581,7 +581,7 @@ class ExpectedActualResult : IResult
     if(line1 != "" || line2 != "") {
       prefix = title == "" ? "\n" : ("\n" ~ title ~ "\n");
     }
-  
+
     return prefix ~ line1 ~ glue ~ line2;
   }
 
@@ -1510,9 +1510,9 @@ class SeparatorResult : IResult {
 
 class ListInfoResult : IResult {
   private {
-    struct Item { 
+    struct Item {
       string singular;
-      string plural; 
+      string plural;
       string[] valueList;
 
       string key() {
@@ -1570,7 +1570,7 @@ class ListInfoResult : IResult {
   void print(ResultPrinter printer) {
     auto indent = indentation;
     auto elements = items.filter!"a.valueList.length > 0";
-    
+
     if(elements.empty) {
       return;
     }

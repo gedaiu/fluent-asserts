@@ -101,7 +101,7 @@ unittest {
   obj.nestedKeys.should.containOnly(["key2", "key3[0]", "key3[1]", "key3[2].item5.item6", "key3[3]"]);
 }
 
-/// Takes a nested Json object and moves the values to a Json assoc array where the key 
+/// Takes a nested Json object and moves the values to a Json assoc array where the key
 /// is the path from the original object to that value
 Json[string] flatten(Json object) @trusted {
   Json[string] elements;
@@ -168,7 +168,7 @@ unittest {
   obj["key3"]["item2"]["item4"] = Json.emptyObject;
   obj["key3"]["item2"]["item5"] = Json.emptyObject;
   obj["key3"]["item2"]["item5"]["item6"] = Json.emptyObject;
-  
+
   auto result = obj.flatten;
   result.byKeyValue.map!(a => a.key).should.containOnly(["key1", "key2", "key3.item1", "key3.item2.item4", "key3.item2.item5.item6"]);
   result["key1"].should.equal(1);
@@ -220,7 +220,7 @@ struct ShouldJson(T) {
     string actual = "a Json.Type." ~ someValue.type.to!string;
 
     Message[] msg;
-    
+
     if(!haveSameType) {
       msg = [
         Message(false, "They have incompatible types "),
@@ -294,6 +294,7 @@ struct ShouldJson(T) {
     return result(haveSameType, msg, [ new ExpectedActualResult(expected, actual) ], file, line);
   }
 
+  /// Check if it equals with a value
   auto equal(U)(const U someValue, const string file = __FILE__, const size_t line = __LINE__) if(!isArray!U || isSomeString!U) {
     addMessage(" equal `");
     addValue(someValue.to!string);
@@ -310,7 +311,13 @@ struct ShouldJson(T) {
           addValue(e.msg);
         } else {
           addMessage("During conversion ");
-          addValue(e.msg);
+          auto msg = e.msg;
+
+          if(msg.endsWith(".")) {
+            msg = msg[0..$-1];
+          }
+
+          addValue(msg);
         }
       }
       validateException;
@@ -333,6 +340,7 @@ struct ShouldJson(T) {
     }
   }
 
+  /// Check if it equals to an array
   auto equal(U)(const U[] someArray, const string file = __FILE__, const size_t line = __LINE__) {
     addMessage(" equal `");
     addValue(someArray.to!string);
@@ -380,7 +388,7 @@ struct ShouldJson(T) {
         return nativeVal.should.not.equal(someArray, file, line);
       }
     } else static if(is(U == Json)) {
-      
+
       if(expectedValue) {
         auto typeResult = validateJsonType!(U[])(file, line);
 
@@ -528,8 +536,8 @@ struct ShouldJson(T) {
 
         foreach(string key, value; flattenTestData) {
           if(key in flattenSomeValue && flattenSomeValue[key] != value) {
-            results ~= new ExpectedActualResult(key, 
-              flattenSomeValue[key].to!string ~ " (Json.Type." ~ flattenSomeValue[key].type.to!string ~ ")", 
+            results ~= new ExpectedActualResult(key,
+              flattenSomeValue[key].to!string ~ " (Json.Type." ~ flattenSomeValue[key].type.to!string ~ ")",
               value.to!string ~ " (Json.Type." ~ value.type.to!string ~ ")");
           }
         }
@@ -679,7 +687,8 @@ unittest {
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `3.14`. During conversion no digits seen. They have incompatible types `Json.Type.string` != `float`.");
+  msg.split("\n")[0].strip.should.equal(
+    "Json(\"some string\") should equal `3.14`. During conversion no digits seen for input \"some string\". They have incompatible types `Json.Type.string` != `float`.");
   msg.split("\n")[2].strip.should.equal("Expected:a float or Json.Type.float_");
   msg.split("\n")[3].strip.should.equal("Actual:a Json.Type.string");
 
@@ -688,7 +697,7 @@ unittest {
     Json("some string").should.equal(val);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `3.14`. During conversion no digits seen. They have incompatible types `Json.Type.string` != `double`.");
+  msg.split("\n")[0].strip.should.equal("Json(\"some string\") should equal `3.14`. During conversion no digits seen for input \"some string\". They have incompatible types `Json.Type.string` != `double`.");
 }
 
 /// It throws when you compare a Json string with bool values
@@ -922,25 +931,8 @@ unittest {
     testObject.should.equal(expectedObject);
   }).should.throwException!TestException.msg;
 
-  msg.should.startWith("testObject should equal `{\"other\":\"other value\"}`.
-
-Expected:
-{
-\t\"other\": \"other value\"
-}
-
-Actual:
-{
-\t\"nested\": {
-\t\t\"item1\": \"hello\",
-\t\t\"item2\": {
-\t\t\t\"value\": \"world\"
-\t\t}
-\t},
-\t\"key\": \"some value\"
-}
-
-  Extra keys:nested.item2.value,nested.item1,key
+  msg.should.startWith("testObject should equal `{\"other\":\"other value\"}`.\n");
+  msg.should.contain("Extra keys:key,nested.item1,nested.item2.value
  Missing key:other");
 }
 
