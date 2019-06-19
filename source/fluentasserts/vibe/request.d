@@ -12,6 +12,7 @@ import vibe.stream.memory;
 import std.conv, std.string, std.array;
 import std.algorithm, std.conv;
 import std.stdio;
+import std.format;
 import std.exception;
 
 import fluentasserts.core.base;
@@ -268,7 +269,32 @@ class Response {
       this.headers[header[0]] = header[1];
     }
 
-    bodyRaw = data[bodyIndex + 4 .. bodyIndex + 4 + len];
+    auto start = bodyIndex + 4;
+    auto end = bodyIndex + 4 + len;
+
+    if("Transfer-Encoding" in this.headers && this.headers["Transfer-Encoding"] == "chunked") {
+
+      while(start < end) {
+        auto pos = data[start..end].assumeUTF.indexOf("\r\n");
+        if(pos == -1) {
+          break;
+        }
+
+        auto ln = data[start..start+pos].assumeUTF;
+        auto chunkSize = parse!ulong(ln, 16u);
+
+        if(chunkSize == 0) {
+          break;
+        }
+
+        start += pos + 2;
+        bodyRaw ~= data[start..start+chunkSize];
+        start += chunkSize + 2;
+      }
+      return;
+    }
+
+    bodyRaw = data[start .. end];
   }
 
   /// get the body as a string
