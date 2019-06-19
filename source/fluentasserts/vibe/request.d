@@ -269,19 +269,19 @@ class Response {
       this.headers[header[0]] = header[1];
     }
 
-    auto start = bodyIndex + 4;
-    auto end = bodyIndex + 4 + len;
+    size_t start = bodyIndex + 4;
+    size_t end = bodyIndex + 4 + len;
 
     if("Transfer-Encoding" in this.headers && this.headers["Transfer-Encoding"] == "chunked") {
 
       while(start < end) {
-        auto pos = data[start..end].assumeUTF.indexOf("\r\n");
+        size_t pos = data[start..end].assumeUTF.indexOf("\r\n").to!size_t;
         if(pos == -1) {
           break;
         }
 
         auto ln = data[start..start+pos].assumeUTF;
-        auto chunkSize = parse!ulong(ln, 16u);
+        auto chunkSize = parse!size_t(ln, 16u);
 
         if(chunkSize == 0) {
           break;
