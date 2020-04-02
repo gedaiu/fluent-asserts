@@ -8,7 +8,7 @@
   "license": "MIT",
   "homepage": "http://fluentasserts.szabobogdan.com/",
   "dependencies": {
-    "libdparse": "~>0.8.7",
+    "libdparse": "~>0.14.0",
     "ddmp": "~>0.0.1-0.dev.3",
     "unit-threaded": {
       "version": "*",
@@ -26,11 +26,7 @@
       "name": "trial",
       "sourcePaths": [
         "source"
-      ],
-      "dependencies": {
-        "libdparse": "~>0.8.7",
-        "ddmp": "~>0.0.1-0.dev.3"
-      }
+      ]
     }
   ]
 }
