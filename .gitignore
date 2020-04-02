@@ -26,3 +26,6 @@ test/vibe-0.8/trial.json
 dub.selections.json
 test/unit-threaded/trial.json
 test/unit-threaded/unit-threaded-example
+test/disabledDiffResult/disabled-diff-result-example
+test/disabledMessageResult/disabled-message-result-example
+test/disabledSourceResult/disabled-source-result-example

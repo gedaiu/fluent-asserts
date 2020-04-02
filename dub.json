@@ -4,21 +4,13 @@
     "Szabo Bogdan"
   ],
   "description": "Fluent assertions done right",
-  "copyright": "Copyright © 2018, Szabo Bogdan",
+  "copyright": "Copyright © 2020, Szabo Bogdan",
   "license": "MIT",
   "homepage": "http://fluentasserts.szabobogdan.com/",
   "dependencies": {
     "libdparse": "~>0.8.7",
     "ddmp": "~>0.0.1-0.dev.3",
     "unit-threaded": {
-      "version": "*",
-      "optional": true
-    },
-    "vibe-d:data": {
-      "version": "*",
-      "optional": true
-    },
-    "vibe-d:http": {
       "version": "*",
       "optional": true
     }
@@ -37,10 +29,7 @@
       ],
       "dependencies": {
         "libdparse": "~>0.8.7",
-        "ddmp": "~>0.0.1-0.dev.3",
-        "vibe-d:data": "*",
-        "vibe-d:http": "*",
-        "openssl": "*"
+        "ddmp": "~>0.0.1-0.dev.3"
       }
     }
   ]

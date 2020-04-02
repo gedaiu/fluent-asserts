@@ -37,18 +37,5 @@ dc_version=$("$DC" --version | perl -pe '($_)=/([0-9]+([.][0-9]+)+)/')
 
 # run a build for vibe-d 0.8
 if [[ ${DC=dmd} = dmd ]]; then
-  if [[ "$dc_version" =~ ^("2.073.2"|"2.077.0"|"2.078.0"|"2.079.0")$ ]]; then
-    dub -v --root=test/vibe-0.8 --compiler=$DC --arch=x86_64
-  else
-    echo "We don't compile vibe-d 0.8 with dmd" $dc_version
-  fi
-fi
-
-# run a build for vibe-d 0.7
-if [[ ${DC=dmd} = dmd ]]; then
-  if [[ ${dc_version} = *"2.073"* ]]; then
-    dub -v --root=test/vibe-0.7 --compiler=$DC --arch=x86_64
-  else
-    echo "We don't compile vibe-d 0.7 with dmd" $dc_version
-  fi
+  dub -v --root=test/vibe-0.8 --compiler=$DC --arch=x86_64
 fi
