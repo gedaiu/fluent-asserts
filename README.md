@@ -24,7 +24,7 @@ Unfortunately the [assert expression](https://dlang.org/spec/expression.html#Ass
             {
                 "name": "unittest",
                 "dependencies": {
-                    "fluent-asserts": "~>0.12.3",
+                    "fluent-asserts": "~>0.13.0",
                     ...
                 }
             },
