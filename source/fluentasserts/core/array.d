@@ -380,7 +380,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
 
     auto strValue = value.to!string;
     auto strTestData = "[" ~ testData.map!(a => (cast()a).to!string).join(", ") ~ "]";
-    
+
     beginCheck;
 
     auto isPresent = testData.canFind(value);
@@ -690,7 +690,7 @@ unittest {
 
   ({
     [TestStruct(2)].should.equal([TestStruct(1)]);
-  }).should.throwException!TestException.withMessage.startWith("[TestStruct(2)] should equal `[TestStruct(1, null)]`");
+  }).should.throwException!TestException.withMessage.startWith("[TestStruct(2)] should equal `[TestStruct(1)");
 }
 
 /// const array equal
