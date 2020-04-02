@@ -17,11 +17,11 @@ d:
   # catching most DMD version related build failures early
   - ldc-1.13.0
   - ldc-1.14.0
-  - ldc-1.20.1
+  - ldc-1.19.0
   - ldc-beta
   - dmd-2.085.0
   - dmd-2.086.0
-  - dmd-2.091.0
+  - dmd-2.090.0
   - dmd-beta
 
 matrix:
