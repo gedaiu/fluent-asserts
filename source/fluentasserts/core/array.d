@@ -690,7 +690,7 @@ unittest {
 
   ({
     [TestStruct(2)].should.equal([TestStruct(1)]);
-  }).should.throwException!TestException.withMessage.startWith("[TestStruct(2)] should equal `[TestStruct(1)");
+  }).should.throwException!TestException.withMessage.startWith("[TestStruct(2)] should equal `[TestStruct(1");
 }
 
 /// const array equal
