@@ -7,7 +7,7 @@ Theese are some utilities that helps you to write easier asserts for the [Json](
 ## Setup
 
 1. Include the vibe assert package package: `fluent-asserts-vibe`
-2. Import the module: `import fluent.asserts.vibe.json` or `import fluent.asserts.vibe`
+2. Import the module: `import fluentasserts.vibe.json` or `import fluent.asserts`
 
 ## Summary
 

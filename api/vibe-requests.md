@@ -7,7 +7,7 @@ Mocking HTTP requests are usefull for api tests. This module allows you to mock 
 ## Setup
 
 1. Include the vibe assert package package: `fluent-asserts-vibe`
-2. Import the module: `import fluent.asserts.vibe.request` or `import fluent.asserts.vibe`
+2. Import the module: `import fluentasserts.vibe.request` or `import fluent.asserts`
 
 ## Summary
 

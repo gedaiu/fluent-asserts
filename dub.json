@@ -13,6 +13,10 @@
     "unit-threaded": {
       "version": "*",
       "optional": true
+    },
+    "fluent-asserts-vibe": {
+      "version": "*",
+      "optional": true
     }
   },
   "configurations": [
