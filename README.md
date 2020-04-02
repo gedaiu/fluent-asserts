@@ -32,7 +32,7 @@ Unfortunately the [assert expression](https://dlang.org/spec/expression.html#Ass
         ]
         ...
     ```
-    
+
     in your source files:
     ```D
     version(unittest) import fluent.asserts;

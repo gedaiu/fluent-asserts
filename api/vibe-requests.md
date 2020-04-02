@@ -6,8 +6,8 @@ Mocking HTTP requests are usefull for api tests. This module allows you to mock 
 
 ## Setup
 
-1. Include the vibe sub-package: `fluent-asserts:vibe`
-2. Import the module: `import fluentasserts.vibe.request`
+1. Include the vibe assert package package: `fluent-asserts-vibe`
+2. Import the module: `import fluent.asserts.vibe.request` or `import fluent.asserts.vibe`
 
 ## Summary
 
@@ -30,7 +30,7 @@ Returns an array containg the keys of an Json object.
 Given a simple router
 ```D
 	auto router = new URLRouter();
-	
+
 	void sayHello(HTTPServerRequest req, HTTPServerResponse res)
 	{
 		res.writeBody("hello");
@@ -48,7 +48,7 @@ You can mock requests like this:
 			});
 ```
 
-The above example creates a `GET` requests and sends it to the router. The handler response is sent as a 
+The above example creates a `GET` requests and sends it to the router. The handler response is sent as a
 callback to the `end` callback, where you can add your custom asserts.
 
 ### Other requests
@@ -62,7 +62,7 @@ You can also mock `POST`, `PATCH`, `PUT`, `DELETE` requests by using the folowin
 	RequestRouter delete_(string path);
 ```
 
-Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http.common/HTTPMethod] you can use the generic request methods: 
+Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http.common/HTTPMethod] you can use the generic request methods:
 ```D
 	customMethod(HTTPMethod method)(string path);
 	customMethod(HTTPMethod method)(URL url);
@@ -72,14 +72,14 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ```D
 	auto router = new URLRouter();
-	
+
 	void checkHeaders(HTTPServerRequest req, HTTPServerResponse)
 	{
 		req.headers["Accept"].should.equal("application/json");
 	}
 
 	router.any("*", &checkHeaders);
-	
+
 	request(router)
 		.get("/")
 		.header("Accept", "application/json")
@@ -92,7 +92,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 	import std.string;
 
 	auto router = new URLRouter();
-	
+
 	void checkStringData(HTTPServerRequest req, HTTPServerResponse)
 	{
 		req.bodyReader.peek.assumeUTF.should.equal("raw string");
@@ -113,7 +113,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ```D
 	auto router = new URLRouter();
-	
+
 	void checkFormData(HTTPServerRequest req, HTTPServerResponse)
 	{
 		req.headers["content-type"].should.equal("application/x-www-form-urlencoded");
@@ -135,7 +135,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ```D
 	auto router = new URLRouter();
-	
+
 	void checkJsonData(HTTPServerRequest req, HTTPServerResponse)
 	{
 		req.json["key"].to!string.should.equal("value");
@@ -156,7 +156,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ```D
 	auto router = new URLRouter();
-	
+
 	void respondJsonData(HTTPServerRequest, HTTPServerResponse res)
 	{
 		res.writeJsonBody(`{ "key": "value"}`.parseJsonString);
@@ -177,7 +177,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ```D
 	auto router = new URLRouter();
-	
+
 	void respondStatus(HTTPServerRequest, HTTPServerResponse res)
 	{
 		res.statusCode = 200;
@@ -194,7 +194,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 			.end();
 
 
-	should.throwAnyException({	
+	should.throwAnyException({
 		request(router)
 			.post("/")
 			.expectStatusCode(200)
@@ -207,7 +207,7 @@ Or if you want to pass a different (HTTP method)[https://vibed.org/api/vibe.http
 
 ```D
 	auto router = new URLRouter();
-	
+
 	void respondHeader(HTTPServerRequest, HTTPServerResponse res)
 	{
 		res.headers["some-header"] = "some-value";
@@ -224,14 +224,14 @@ Check for the exact header value:
 		.expectHeader("some-header", "some-value")
 			.end();
 
-	should.throwAnyException({	
+	should.throwAnyException({
 		request(router)
 			.get("/")
 			.expectHeader("some-header", "other-value")
 				.end();
 	}).msg.should.contain("Response header `some-header` has an unexpected value");
 
-	should.throwAnyException({	
+	should.throwAnyException({
 		request(router)
 			.post("/")
 			.expectHeader("some-header", "some-value")
@@ -248,7 +248,7 @@ Check if a header exists
 			.end();
 
 
-	should.throwAnyException({	
+	should.throwAnyException({
 		request(router)
 			.post("/")
 			.expectHeaderExist("some-header")
@@ -264,7 +264,7 @@ Check if a header contains a string
 			.end();
 
 
-	should.throwAnyException({	
+	should.throwAnyException({
 		request(router)
 			.get("/")
 			.expectHeaderContains("some-header", "other")
