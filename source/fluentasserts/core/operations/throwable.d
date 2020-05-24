@@ -95,6 +95,7 @@ unittest {
     assert(e.message.indexOf("should throw any exception. A `Throwable` saying `Assertion failure` was thrown.") != -1);
     assert(e.message.indexOf("\n Expected:Any exception to be thrown\n") != -1);
     assert(e.message.indexOf("\n   Actual:A `Throwable` with message `Assertion failure` was thrown\n") != -1);
+    assert(e.file == "source/fluentasserts/core/operations/throwable.d");
   }
 
   assert(thrown, "The exception was not thrown");
