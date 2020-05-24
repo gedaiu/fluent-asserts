@@ -77,10 +77,6 @@ struct ResultGlyphs {
   }
 }
 
-static this() {
-  ResultGlyphs.resetDefaults;
-}
-
 ///
 interface ResultPrinter {
   void primary(string);
@@ -189,8 +185,9 @@ class MessageResult : IResult
     add(false, message);
   }
 
-  override string toString()
-  {
+  this() nothrow { }
+
+  override string toString() {
     return messages.map!"a.text".join.to!string;
   }
 
@@ -202,19 +199,19 @@ class MessageResult : IResult
       .replace("\t", ResultGlyphs.tab));
   }
 
-  void addValue(string text) {
+  void addValue(string text) @safe nothrow {
     add(true, text);
   }
 
-  void addText(string text) {
+  void addText(string text) @safe nothrow {
     this.messages ~= Message(false, text);
   }
 
-  void prependText(string text) {
+  void prependText(string text) @safe nothrow  {
     this.messages = Message(false, text) ~ this.messages;
   }
 
-  void prependValue(string text) {
+  void prependValue(string text) @safe nothrow {
     this.messages = Message(true, text) ~ this.messages;
   }
 
@@ -230,8 +227,7 @@ class MessageResult : IResult
   }
 }
 
-version (unittest)
-{
+version (unittest) {
   import fluentasserts.core.base;
 }
 

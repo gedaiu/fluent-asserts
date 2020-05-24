@@ -6,6 +6,8 @@ public import fluentasserts.core.objects;
 public import fluentasserts.core.basetype;
 public import fluentasserts.core.callable;
 public import fluentasserts.core.results;
+public import fluentasserts.core.lifecycle;
+public import fluentasserts.core.evaluation;
 
 import std.traits;
 import std.stdio;
@@ -135,6 +137,7 @@ mixin template ShouldCommons()
   import fluentasserts.core.results;
 
   private ValueEvaluation valueEvaluation;
+  private bool isNegation;
 
   private void validateException() {
     if(valueEvaluation.throwable !is null) {
@@ -154,6 +157,8 @@ mixin template ShouldCommons()
   auto not() {
     addMessage(" not");
     expectedValue = !expectedValue;
+    isNegation = !isNegation;
+
     return this;
   }
 
@@ -365,7 +370,7 @@ struct ThrowableProxy(T : Throwable) {
     checkException;
     check = false;
 
-    return thrown.msg.dup.to!string;
+    return thrown.msg.dup.to!string.strip;
   }
 
   auto original() {
@@ -468,11 +473,8 @@ struct ThrowableProxy(T : Throwable) {
   }
 }
 
-struct ValueEvaluation {
-  Throwable throwable;
-  Duration duration;
-}
 
+///
 auto evaluate(T)(lazy T testData) @trusted {
   auto begin = Clock.currTime;
   alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
@@ -489,7 +491,7 @@ auto evaluate(T)(lazy T testData) @trusted {
 
     auto duration = Clock.currTime - begin;
 
-    return Result(value, ValueEvaluation(null, duration));
+    return Result(value, ValueEvaluation(null, duration, value.to!string, (Unqual!T).stringof));
   } catch(Throwable t) {
     T result;
 
@@ -497,7 +499,7 @@ auto evaluate(T)(lazy T testData) @trusted {
       result = testData;
     }
 
-    return Result(result, ValueEvaluation(t, Clock.currTime - begin));
+    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, (Unqual!T).stringof));
   }
 }
 
@@ -527,12 +529,16 @@ unittest {
 
 auto should(T)(lazy T testData) {
   version(Have_vibe_d_data) {
-    import vibe.data.json;
-    import fluentasserts.vibe.json;
+    version(Have_fluent_asserts_vibe) {
+      import vibe.data.json;
+      import fluentasserts.vibe.json;
 
-    static if(is(Unqual!T == Json)) {
-      enum returned = true;
-      return ShouldJson!T(testData.evaluate);
+      static if(is(Unqual!T == Json)) {
+        enum returned = true;
+        return ShouldJson!T(testData.evaluate);
+      } else {
+        enum returned = false;
+      }
     } else {
       enum returned = false;
     }
@@ -751,7 +757,8 @@ void setupFluentHandler() {
 }
 
 /// It should call the fluent handler
-@trusted unittest {
+@trusted
+unittest {
   import core.exception;
 
   setupFluentHandler;

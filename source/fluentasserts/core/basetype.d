@@ -328,7 +328,7 @@ unittest {
   msg.split("\n")[3].strip.should.equal("Actual:5");
 }
 
-@("numbers approximately")
+/// numbers approximately
 unittest {
   ({
     (10f/3f).should.be.approximately(3, 0.34);

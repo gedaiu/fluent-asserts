@@ -9,7 +9,7 @@ import std.traits;
 import fluentasserts.core.results;
 
 @safe:
-
+///
 struct ShouldCallable(T) {
   private {
     T callable;
@@ -18,6 +18,7 @@ struct ShouldCallable(T) {
   mixin ShouldCommons;
   mixin ShouldThrowableCommons;
 
+  ///
   this(lazy T callable) {
     auto result = callable.evaluate;
 
@@ -25,6 +26,7 @@ struct ShouldCallable(T) {
     this.callable = result.value;
   }
 
+  ///
   auto haveExecutionTime(string file = __FILE__, size_t line = __LINE__) {
     validateException;
 
@@ -33,6 +35,7 @@ struct ShouldCallable(T) {
     return tmpShould;
   }
 
+  ///
   auto beNull(string file = __FILE__, size_t line = __LINE__) {
     validateException;
 
@@ -61,8 +64,7 @@ struct ShouldCallable(T) {
 }
 
 /// Should be able to catch any exception
-unittest
-{
+unittest {
   ({
     throw new Exception("test");
   }).should.throwAnyException.msg.should.equal("test");
@@ -83,8 +85,7 @@ unittest {
 }
 
 /// Should be able to catch a certain exception type
-unittest
-{
+unittest {
   class CustomException : Exception {
     this(string msg, string fileName = "", size_t line = 0, Throwable next = null) {
       super(msg, fileName, line, next);
@@ -110,8 +111,7 @@ unittest
 }
 
 /// Should be able to retrieve a typed version of a custom exception
-unittest
-{
+unittest {
   class CustomException : Exception {
     int data;
     this(int data, string msg, string fileName = "", size_t line = 0, Throwable next = null) {
@@ -132,8 +132,7 @@ unittest
 }
 
 /// Should print a nice message for exception message asserts
-@trusted unittest
-{
+@trusted unittest {
   class CustomException : Exception {
     this(string msg, string fileName = "", size_t line = 0, Throwable next = null) {
       super(msg, fileName, line, next);
@@ -155,8 +154,7 @@ unittest
 }
 
 /// Should fail if an exception is not thrown
-unittest
-{
+unittest {
   auto thrown = false;
   try {
     ({  }).should.throwAnyException;
@@ -169,8 +167,7 @@ unittest
 }
 
 /// Should fail if an exception is not expected
-unittest
-{
+unittest {
   auto thrown = false;
   try {
     ({
@@ -184,17 +181,15 @@ unittest
   thrown.should.equal(true);
 }
 
-@("Should be able to benchmark some code")
-unittest
-{
+/// Should be able to benchmark some code
+unittest {
   ({
 
   }).should.haveExecutionTime.lessThan(1.seconds);
 }
 
-@("Should fail on benchmark timeout")
-unittest
-{
+/// Should fail on benchmark timeout
+unittest {
   import core.thread;
 
   TestException exception = null;
