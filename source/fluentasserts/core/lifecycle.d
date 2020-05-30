@@ -17,6 +17,7 @@ static this() {
   Registry.instance = new Registry();
   Registry.instance.register("string", "string", "equal", &equal);
   Registry.instance.register("callable", "", "throwAnyException", &throwAnyException);
+  Registry.instance.register("callable", "", "throwException", &throwException);
 }
 
 /// The assert lifecycle

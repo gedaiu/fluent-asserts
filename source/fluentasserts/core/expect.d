@@ -2,6 +2,7 @@ module fluentasserts.core.expect;
 
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.evaluation;
+import std.traits;
 
 ///
 struct Expect {
@@ -43,6 +44,17 @@ struct Expect {
   ///
   Expect opDispatch(string methodName, Params...)(Params params) {
     Lifecycle.instance.usingOperation(methodName);
+
+    return this;
+  }
+
+  ///
+  Expect throwException(Type)() {
+    Lifecycle.instance.usingOperation("throwException");
+
+    ValueEvaluation expected;
+    expected.strValue = fullyQualifiedName!Type;
+    Lifecycle.instance.compareWith(expected);
 
     return this;
   }

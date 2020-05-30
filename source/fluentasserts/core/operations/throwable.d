@@ -10,6 +10,14 @@ import std.conv;
 import std.algorithm;
 import std.array;
 
+version(unittest) {
+  class CustomException : Exception {
+    this(string msg, string fileName = "", size_t line = 0, Throwable next = null) {
+      super(msg, fileName, line, next);
+    }
+  }
+}
+
 ///
 IResult[] throwAnyException(ref Evaluation evaluation) @trusted nothrow {
   IResult[] results;
@@ -44,8 +52,6 @@ IResult[] throwAnyException(ref Evaluation evaluation) @trusted nothrow {
 
     try results ~= new ExpectedActualResult("Any exception to be thrown", "A `Throwable` with message `" ~ message ~ "` was thrown"); catch(Exception) {}
   }
-
-  evaluation.currentValue.throwable = null;
 
   return results;
 }
@@ -105,4 +111,92 @@ unittest {
 unittest {
   void test() { throw new Exception("test"); }
   expect({ test(); }).to.throwAnyException;
+}
+
+///
+IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
+  IResult[] results;
+  auto thrown = evaluation.currentValue.throwable;
+
+  if(thrown && evaluation.isNegated && thrown.classinfo.name == evaluation.expectedValue.strValue) {
+    string message;
+    try message = thrown.message.to!string; catch(Exception) {}
+
+    Lifecycle.instance.addText("`");
+    Lifecycle.instance.addValue(thrown.classinfo.name);
+    Lifecycle.instance.addText("` saying `");
+    Lifecycle.instance.addValue(message);
+    Lifecycle.instance.addText("` was thrown.");
+
+    try results ~= new ExpectedActualResult("no `" ~ evaluation.expectedValue.strValue ~ "` to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
+  }
+
+  if(thrown && !evaluation.isNegated && thrown.classinfo.name != evaluation.expectedValue.strValue) {
+    string message;
+    try message = thrown.message.to!string; catch(Exception) {}
+
+    Lifecycle.instance.addText("`");
+    Lifecycle.instance.addValue(thrown.classinfo.name);
+    Lifecycle.instance.addText("` saying `");
+    Lifecycle.instance.addValue(message);
+    Lifecycle.instance.addText("` was thrown.");
+
+    try results ~= new ExpectedActualResult(evaluation.expectedValue.strValue, "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
+  }
+
+  return results;
+}
+
+/// Should be able to catch a certain exception type
+unittest {
+  expect({
+    throw new CustomException("test");
+  }).to.throwException!CustomException;
+}
+
+/// It should fail when an unexpected exception is thrown
+unittest {
+  bool thrown;
+
+  try {
+    expect({
+      throw new Exception("test");
+    }).to.throwException!CustomException;
+  } catch(TestException e) {
+    thrown = true;
+
+    assert(e.message.indexOf("should throwException `fluentasserts.core.operations.throwable.CustomException`.`object.Exception` saying `test` was thrown.") != -1);
+    assert(e.message.indexOf("\n Expected:fluentasserts.core.operations.throwable.CustomException\n") != -1);
+    assert(e.message.indexOf("\n   Actual:`object.Exception` saying `test`\n") != -1);
+    assert(e.file == "source/fluentasserts/core/operations/throwable.d");
+  }
+
+  assert(thrown, "The exception was not thrown");
+}
+
+/// It should not fail when an exception is thrown and it is not expected
+unittest {
+  expect({
+    throw new Exception("test");
+  }).to.not.throwException!CustomException;
+}
+
+/// It should fail when an different exception than the one checked is thrown
+unittest {
+  bool thrown;
+
+  try {
+    expect({
+      throw new CustomException("test");
+    }).to.not.throwException!CustomException;
+  } catch(TestException e) {
+    thrown = true;
+
+    assert(e.message.indexOf("should not throwException `fluentasserts.core.operations.throwable.CustomException`.`fluentasserts.core.operations.throwable.CustomException` saying `test` was thrown.") != -1);
+    assert(e.message.indexOf("\n Expected:no `fluentasserts.core.operations.throwable.CustomException` to be thrown\n") != -1);
+    assert(e.message.indexOf("\n   Actual:`fluentasserts.core.operations.throwable.CustomException` saying `test`\n") != -1);
+    assert(e.file == "source/fluentasserts/core/operations/throwable.d");
+  }
+
+  assert(thrown, "The exception was not thrown");
 }
