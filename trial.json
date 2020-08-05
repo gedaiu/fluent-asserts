@@ -11,6 +11,7 @@
 	"maxThreads": 0,
 	"dangerTestDuration": 100,
 	"testDiscovery": [
-		"trial.discovery.unit.UnitTestDiscovery"
+		"trial.discovery.unit.UnitTestDiscovery",
+		"trial.discovery.spec.SpecTestDiscovery"
 	]
 }

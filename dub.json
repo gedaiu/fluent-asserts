@@ -25,7 +25,8 @@
     {
       "name": "trial",
       "sourcePaths": [
-        "source"
+        "source",
+        "test/operations"
       ]
     }
   ]

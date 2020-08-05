@@ -191,6 +191,15 @@ class MessageResult : IResult
     return messages.map!"a.text".join.to!string;
   }
 
+  void startWith(string message) @safe nothrow {
+    Message[] newMessages;
+
+    newMessages ~= Message(false, message);
+    newMessages ~= this.messages;
+
+    this.messages = newMessages;
+  }
+
   void add(bool isValue, string message) nothrow {
     this.messages ~= Message(isValue, message
       .replace("\r", ResultGlyphs.carriageReturn)
@@ -253,7 +262,7 @@ unittest
   }
 
   ResultGlyphs.tab = `\t`;
-  ResultGlyphs.carriageReturn  = `\r`;
+  ResultGlyphs.carriageReturn = `\r`;
   ResultGlyphs.newline = `\n`;
 
   auto result = new MessageResult("\t \r\n");

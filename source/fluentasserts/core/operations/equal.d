@@ -5,6 +5,10 @@ import fluentasserts.core.evaluation;
 
 import fluentasserts.core.lifecycle;
 
+version(unittest) {
+  import fluentasserts.core.expect;
+}
+
 ///
 IResult[] equal(ref Evaluation evaluation) @safe nothrow {
   auto result = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
@@ -19,18 +23,17 @@ IResult[] equal(ref Evaluation evaluation) @safe nothrow {
 
   IResult[] results = [];
 
-  Lifecycle.instance.addText(" `");
+  Lifecycle.instance.addText(" ");
   Lifecycle.instance.addValue(evaluation.currentValue.strValue);
 
   if(evaluation.isNegated) {
-    Lifecycle.instance.addText("` is equal to `");
+    Lifecycle.instance.addText(" is equal to ");
   } else {
-    Lifecycle.instance.addText("` is not equal to `");
+    Lifecycle.instance.addText(" is not equal to ");
   }
 
   Lifecycle.instance.addValue(evaluation.expectedValue.strValue);
-  Lifecycle.instance.addText("`.");
-
+  Lifecycle.instance.addText(".");
 
   try results ~= new DiffResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
   try results ~= new ExpectedActualResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}

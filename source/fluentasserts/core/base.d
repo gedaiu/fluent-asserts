@@ -473,60 +473,6 @@ struct ThrowableProxy(T : Throwable) {
   }
 }
 
-
-///
-auto evaluate(T)(lazy T testData) @trusted {
-  auto begin = Clock.currTime;
-  alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
-
-  try {
-    auto value = testData;
-
-    static if(isCallable!T) {
-      if(value !is null) {
-        begin = Clock.currTime;
-        value();
-      }
-    }
-
-    auto duration = Clock.currTime - begin;
-
-    return Result(value, ValueEvaluation(null, duration, value.to!string, (Unqual!T).stringof));
-  } catch(Throwable t) {
-    T result;
-
-    static if(isCallable!T) {
-      result = testData;
-    }
-
-    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, (Unqual!T).stringof));
-  }
-}
-
-/// evaluate should capture an exception
-unittest {
-  int value() {
-    throw new Exception("message");
-  }
-
-  auto result = evaluate(value);
-
-  result.evaluation.throwable.should.not.beNull;
-  result.evaluation.throwable.msg.should.equal("message");
-}
-
-/// evaluate should capture an exception thrown by a callable
-unittest {
-  void value() {
-    throw new Exception("message");
-  }
-
-  auto result = evaluate(&value);
-
-  result.evaluation.throwable.should.not.beNull;
-  result.evaluation.throwable.msg.should.equal("message");
-}
-
 auto should(T)(lazy T testData) {
   version(Have_vibe_d_data) {
     version(Have_fluent_asserts_vibe) {

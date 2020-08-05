@@ -42,8 +42,18 @@ struct Expect {
   alias throwAnyException = opDispatch!"throwAnyException";
 
   ///
+  auto equal(T)(T value) {
+    return opDispatch!"equal"(value);
+  }
+
+  ///
   Expect opDispatch(string methodName, Params...)(Params params) {
     Lifecycle.instance.usingOperation(methodName);
+
+    static if(Params.length == 1) {
+      auto expectedValue = params.evaluate;
+      Lifecycle.instance.compareWith(expectedValue.evaluation);
+    }
 
     return this;
   }
@@ -76,4 +86,8 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
   }
 
   return Expect(value, file, line);
+}
+
+Expect expect(T)(T testedValue, const string file = __FILE__, const size_t line = __LINE__) @trusted {
+  return Expect(testedValue.evaluate.evaluation, file, line);
 }

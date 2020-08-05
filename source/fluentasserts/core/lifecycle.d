@@ -65,9 +65,9 @@ class Lifecycle {
   Lifecycle compareWith(ValueEvaluation value) @safe nothrow {
     evaluation.expectedValue = value;
 
-    addText(" `");
+    addText(" ");
     addValue(evaluation.expectedValue.strValue);
-    addText("`.");
+    addText(".");
 
     return this;
   }
@@ -98,7 +98,18 @@ class Lifecycle {
     evaluation.line = line;
     sourceResult = new SourceResult(fileName, line);
 
-    try addText(sourceResult.getValue); catch(Exception) {}
+    try {
+      auto value = sourceResult.getValue;
+
+      if(value == "") {
+        message.startWith(evaluation.currentValue.strValue);
+      } else {
+        message.startWith(value);
+      }
+    } catch(Exception) {
+      message.startWith(evaluation.currentValue.strValue);
+    }
+
     addText(" should");
 
     return this;

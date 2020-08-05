@@ -165,7 +165,7 @@ unittest {
   } catch(TestException e) {
     thrown = true;
 
-    assert(e.message.indexOf("should throwException `fluentasserts.core.operations.throwable.CustomException`.`object.Exception` saying `test` was thrown.") != -1);
+    assert(e.message.indexOf("should throwException fluentasserts.core.operations.throwable.CustomException.`object.Exception` saying `test` was thrown.") != -1);
     assert(e.message.indexOf("\n Expected:fluentasserts.core.operations.throwable.CustomException\n") != -1);
     assert(e.message.indexOf("\n   Actual:`object.Exception` saying `test`\n") != -1);
     assert(e.file == "source/fluentasserts/core/operations/throwable.d");
@@ -192,7 +192,7 @@ unittest {
   } catch(TestException e) {
     thrown = true;
 
-    assert(e.message.indexOf("should not throwException `fluentasserts.core.operations.throwable.CustomException`.`fluentasserts.core.operations.throwable.CustomException` saying `test` was thrown.") != -1);
+    assert(e.message.indexOf("should not throwException fluentasserts.core.operations.throwable.CustomException.`fluentasserts.core.operations.throwable.CustomException` saying `test` was thrown.") != -1);
     assert(e.message.indexOf("\n Expected:no `fluentasserts.core.operations.throwable.CustomException` to be thrown\n") != -1);
     assert(e.message.indexOf("\n   Actual:`fluentasserts.core.operations.throwable.CustomException` saying `test`\n") != -1);
     assert(e.file == "source/fluentasserts/core/operations/throwable.d");
