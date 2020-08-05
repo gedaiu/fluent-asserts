@@ -88,6 +88,7 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
   return Expect(value, file, line);
 }
 
+///
 Expect expect(T)(T testedValue, const string file = __FILE__, const size_t line = __LINE__) @trusted {
   return Expect(testedValue.evaluate.evaluation, file, line);
 }

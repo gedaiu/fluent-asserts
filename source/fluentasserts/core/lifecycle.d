@@ -2,6 +2,7 @@ module fluentasserts.core.lifecycle;
 
 import fluentasserts.core.evaluation;
 import fluentasserts.core.operations.registry;
+import fluentasserts.core.operations.arrayEqual;
 import fluentasserts.core.operations.equal;
 import fluentasserts.core.operations.throwable;
 import fluentasserts.core.results;
@@ -22,16 +23,16 @@ static this() {
 
   static foreach(Type; NumericTypes) {
     Registry.instance.register(Type.stringof, Type.stringof, "equal", &equal);
+    Registry.instance.register(Type.stringof ~ "[]", Type.stringof ~ "[]", "equal", &arrayEqual);
   }
 
 
   static foreach(Type1; StringTypes) {
     static foreach(Type2; StringTypes) {
       Registry.instance.register(Type1.stringof, Type2.stringof, "equal", &equal);
+      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "equal", &arrayEqual);
     }
   }
-
-
 
   Registry.instance.register("callable", "", "throwAnyException", &throwAnyException);
   Registry.instance.register("callable", "", "throwException", &throwException);
