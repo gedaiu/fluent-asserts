@@ -60,7 +60,7 @@ alias s = Spec!({
         msg[5].strip.should.equal("Actual:" ~ aList.to!string);
       });
 
-      it("should throw an error when the arrays have the same values in a different order", {
+      it("should throw an error when the arrays should not be equal", {
         auto msg = ({
           expect(aList).not.to.equal(aList);
         }).should.throwException!TestException.msg.split("\n");
@@ -140,7 +140,7 @@ alias s = Spec!({
         msg[5].strip.should.equal("Actual:" ~ aList.to!string);
       });
 
-      it("should throw an error when the arrays have the same values in a different order", {
+      it("should throw an error when the arrays should not be equal", {
         auto msg = ({
           expect(aList).not.to.equal(aList);
         }).should.throwException!TestException.msg.split("\n");
@@ -157,7 +157,6 @@ alias s = Spec!({
           msg[2].strip.should.equal("Expected:not [1, 2, 3]");
           msg[3].strip.should.equal("Actual:[1, 2, 3]");
         }
-
       });
     });
   }
