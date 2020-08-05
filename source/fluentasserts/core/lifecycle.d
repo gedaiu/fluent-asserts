@@ -7,8 +7,11 @@ import fluentasserts.core.operations.throwable;
 import fluentasserts.core.results;
 import fluentasserts.core.base;
 
+import std.meta;
 import std.conv;
 
+alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real, ifloat, idouble, ireal, cfloat, cdouble, creal, char);
+alias StringTypes = AliasSeq!(string, wstring, dstring);
 
 static this() {
   Lifecycle.instance = new Lifecycle();
@@ -16,6 +19,20 @@ static this() {
 
   Registry.instance = new Registry();
   Registry.instance.register("string", "string", "equal", &equal);
+
+  static foreach(Type; NumericTypes) {
+    Registry.instance.register(Type.stringof, Type.stringof, "equal", &equal);
+  }
+
+
+  static foreach(Type1; StringTypes) {
+    static foreach(Type2; StringTypes) {
+      Registry.instance.register(Type1.stringof, Type2.stringof, "equal", &equal);
+    }
+  }
+
+
+
   Registry.instance.register("callable", "", "throwAnyException", &throwAnyException);
   Registry.instance.register("callable", "", "throwException", &throwException);
 }
