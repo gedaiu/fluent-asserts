@@ -11,7 +11,7 @@ import std.meta;
 
 alias s = Spec!({
 
-  alias StringTypes = AliasSeq!(string/*, wstring, dstring*/);
+  alias StringTypes = AliasSeq!(string, wstring, dstring);
   alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real, ifloat, idouble, ireal, cfloat, cdouble, creal);
 
   static foreach(Type; StringTypes) {
@@ -160,29 +160,4 @@ alias s = Spec!({
       });
     });
   }
-
-  describe("using booleans", {
-    it("should compare two true values", {
-      expect(true).to.equal(true);
-    });
-
-    it("should compare two false values", {
-      expect(false).to.equal(false);
-    });
-
-    it("should be able to compare that two bools that are not equal", {
-      expect(true).to.not.equal(false);
-      expect(true).to.not.equal(false);
-    });
-
-    it("should throw a detailed error message when the two bools are not equal", {
-      auto msg = ({
-        expect(true).to.equal(false);
-      }).should.throwException!TestException.msg.split("\n");
-
-      msg[0].strip.should.equal("true should equal false.");
-      msg[2].strip.should.equal("Expected:false");
-      msg[3].strip.should.equal("Actual:true");
-    });
-  });
 });
