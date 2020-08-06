@@ -51,6 +51,10 @@ struct Expect {
     return opDispatch!"contain"(value);
   }
 
+  auto startWith(T)(T value) {
+    return opDispatch!"startWith"(value);
+  }
+
   ///
   Expect opDispatch(string methodName, Params...)(Params params) {
     Lifecycle.instance.usingOperation(methodName);
