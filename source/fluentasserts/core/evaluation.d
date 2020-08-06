@@ -4,6 +4,8 @@ import std.datetime;
 import std.typecons;
 import std.traits;
 import std.conv;
+import std.range;
+import std.array;
 import fluentasserts.core.results;
 
 ///
@@ -46,7 +48,12 @@ struct Evaluation {
 }
 
 ///
-auto evaluate(T)(lazy T testData) @trusted {
+auto evaluate(T)(lazy T testData) @trusted if(isInputRange!T && !isArray!T && !isAssociativeArray!T) {
+  return evaluate(testData.array);
+}
+
+///
+auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || isAssociativeArray!T) {
   auto begin = Clock.currTime;
   alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
 

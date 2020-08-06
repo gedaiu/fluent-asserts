@@ -8,9 +8,10 @@ import trial.discovery.spec;
 import std.string;
 import std.conv;
 import std.meta;
+import std.algorithm;
+import std.range;
 
 alias s = Spec!({
-
   alias StringTypes = AliasSeq!(string, wstring, dstring);
 
   static foreach(Type; StringTypes) {
@@ -99,6 +100,45 @@ alias s = Spec!({
 
         msg.split("\n")[0].should.equal(`"test string" should not contain 't'. t is present in "test string".`);
         msg.split("\n")[2].strip.should.equal("Expected:to not contain 't'");
+        msg.split("\n")[3].strip.should.equal("Actual:test string");
+      });
+    });
+
+    describe("using a range of " ~ Type.stringof ~ " values", {
+      Type testValue;
+
+      Type[] listOfOtherValues;
+      Type[] listOfValues;
+
+      before({
+        testValue = "test string".to!Type;
+      });
+
+      it("should find two substrings", {
+        expect(testValue).to.contain(["string", "test"].inputRangeObject);
+      });
+
+      it("should not find matches from a list of strings", {
+        expect(testValue).to.not.contain(["other", "message"].inputRangeObject);
+      });
+
+      it("should show a detailed error message when the strings are not found", {
+        auto msg = ({
+          expect(testValue).to.contain(["other", "message"].inputRangeObject);
+        }).should.throwException!TestException.msg;
+
+        msg.split("\n")[0].should.equal(`"test string" should contain ["other", "message"]. ["other", "message"] are missing from "test string".`);
+        msg.split("\n")[2].strip.should.equal("Expected:to contain all [\"other\", \"message\"]");
+        msg.split("\n")[3].strip.should.equal("Actual:test string");
+      });
+
+      it("should throw an error when the string contains substrings that it should not", {
+        auto msg = ({
+          expect(testValue).to.not.contain(["test", "string"].inputRangeObject);
+        }).should.throwException!TestException.msg;
+
+        msg.split("\n")[0].should.equal(`"test string" should not contain ["test", "string"]. ["test", "string"] are present in "test string".`);
+        msg.split("\n")[2].strip.should.equal("Expected:to not contain any [\"test\", \"string\"]");
         msg.split("\n")[3].strip.should.equal("Actual:test string");
       });
     });
