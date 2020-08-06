@@ -23,19 +23,23 @@ IResult[] equal(ref Evaluation evaluation) @safe nothrow {
 
   IResult[] results = [];
 
-  Lifecycle.instance.addText(" ");
-  Lifecycle.instance.addValue(evaluation.currentValue.strValue);
 
-  if(evaluation.isNegated) {
-    Lifecycle.instance.addText(" is equal to ");
-  } else {
-    Lifecycle.instance.addText(" is not equal to ");
+  if(evaluation.currentValue.typeName != "bool") {
+    Lifecycle.instance.addText(" ");
+    Lifecycle.instance.addValue(evaluation.currentValue.strValue);
+
+    if(evaluation.isNegated) {
+      Lifecycle.instance.addText(" is equal to ");
+    } else {
+      Lifecycle.instance.addText(" is not equal to ");
+    }
+
+    Lifecycle.instance.addValue(evaluation.expectedValue.strValue);
+    Lifecycle.instance.addText(".");
+
+    try results ~= new DiffResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
   }
 
-  Lifecycle.instance.addValue(evaluation.expectedValue.strValue);
-  Lifecycle.instance.addText(".");
-
-  try results ~= new DiffResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
   try results ~= new ExpectedActualResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
 
   return results;

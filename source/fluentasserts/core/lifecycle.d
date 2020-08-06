@@ -21,6 +21,7 @@ static this() {
 
   Registry.instance = new Registry();
   Registry.instance.register("string", "string", "equal", &equal);
+  Registry.instance.register("bool", "bool", "equal", &equal);
 
   static foreach(Type; NumericTypes) {
     Registry.instance.register(Type.stringof, Type.stringof, "equal", &equal);
