@@ -51,8 +51,14 @@ struct Expect {
     return opDispatch!"contain"(value);
   }
 
+  ///
   auto startWith(T)(T value) {
     return opDispatch!"startWith"(value);
+  }
+
+  ///
+  auto endWith(T)(T value) {
+    return opDispatch!"endWith"(value);
   }
 
   ///

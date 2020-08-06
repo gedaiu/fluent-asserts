@@ -22,24 +22,24 @@ alias s = Spec!({
       });
 
       it("should check that a string starts with a certain substring", {
-        expect("test string").to.startWith("test");
+        expect(testValue).to.startWith("test");
       });
 
       it("should check that a string starts with a certain char", {
-        expect("test string").to.startWith('t');
+        expect(testValue).to.startWith('t');
       });
 
       it("should check that a string does not start with a certain substring", {
-        expect("test string").to.not.startWith("other");
+        expect(testValue).to.not.startWith("other");
       });
 
       it("should check that a string does not start with a certain char", {
-        expect("test string").to.not.startWith('o');
+        expect(testValue).to.not.startWith('o');
       });
 
       it("should throw a detailed error when the string does not start with the substring what was expected", {
         auto msg = ({
-          expect("test string").to.startWith("other");
+          expect(testValue).to.startWith("other");
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.contain(`"test string" should startWith "other". "test string" does not start with "other".`);
@@ -49,7 +49,7 @@ alias s = Spec!({
 
       it("should throw a detailed error when the string does not start with the char what was expected", {
         auto msg = ({
-          expect("test string").to.startWith('o');
+          expect(testValue).to.startWith('o');
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.contain(`"test string" should startWith 'o'. "test string" does not start with 'o'.`);
@@ -59,7 +59,7 @@ alias s = Spec!({
 
       it("should throw a detailed error when the string does start with the unexpected substring", {
         auto msg = ({
-          expect("test string").to.not.startWith("test");
+          expect(testValue).to.not.startWith("test");
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.contain(`"test string" should not startWith "test". "test string" starts with "test".`);
@@ -69,7 +69,7 @@ alias s = Spec!({
 
       it("should throw a detailed error when the string does start with the unexpected char", {
         auto msg = ({
-          expect("test string").to.not.startWith('t');
+          expect(testValue).to.not.startWith('t');
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.contain(`"test string" should not startWith 't'. "test string" starts with 't'.`);
