@@ -43,6 +43,7 @@ class Registry {
     return operations[key];
   }
 
+  ///
   IResult[] handle(ref Evaluation evaluation) @safe nothrow {
     auto operation = this.get(
       evaluation.currentValue.typeName,

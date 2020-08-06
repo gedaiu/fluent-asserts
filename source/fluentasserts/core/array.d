@@ -792,7 +792,7 @@ unittest {
   Range().should.contain(0);
 
   auto msg = ({
-     Range().should.equal([0,1]);
+    Range().should.equal([0,1]);
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].strip.should.startWith("Range() should equal `[0, 1]`");

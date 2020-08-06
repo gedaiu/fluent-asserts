@@ -64,6 +64,8 @@ auto evaluate(T)(lazy T testData) @trusted {
 
     static if(isSomeString!(typeof(value))) {
       return Result(value, ValueEvaluation(null, duration, `"` ~ value.to!string ~ `"`, (Unqual!T).stringof));
+    } else static if(isSomeChar!(typeof(value))) {
+      return Result(value, ValueEvaluation(null, duration, `'` ~ value.to!string ~ `'`, (Unqual!T).stringof));
     } else {
       return Result(value, ValueEvaluation(null, duration, value.to!string, (Unqual!T).stringof));
     }

@@ -47,6 +47,11 @@ struct Expect {
   }
 
   ///
+  auto contain(T)(T value) {
+    return opDispatch!"contain"(value);
+  }
+
+  ///
   Expect opDispatch(string methodName, Params...)(Params params) {
     Lifecycle.instance.usingOperation(methodName);
 
