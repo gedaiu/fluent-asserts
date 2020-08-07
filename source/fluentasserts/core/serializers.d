@@ -9,8 +9,16 @@ version(unittest) import fluent.asserts;
 
 ///
 string[] parseList(string value) @safe nothrow {
-  if(value.length <= 2) {
+  if(value.length == 0) {
     return [];
+  }
+
+  if(value.length == 1) {
+    return [ value ];
+  }
+
+  if(value[0] != '[' || value[value.length - 1] != ']') {
+    return [ value ];
   }
 
   string[] result;
@@ -71,6 +79,21 @@ unittest {
   auto pieces = "".parseList;
 
   pieces.should.equal([]);
+}
+
+/// it should not parse a string that does not contain []
+unittest {
+  auto pieces = "test".parseList;
+
+  pieces.should.equal([ "test" ]);
+}
+
+
+/// it should not parse a char that does not contain []
+unittest {
+  auto pieces = "t".parseList;
+
+  pieces.should.equal([ "t" ]);
 }
 
 /// it should parse an empty array

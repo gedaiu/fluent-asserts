@@ -30,13 +30,23 @@ static this() {
     Registry.instance.register(Type.stringof ~ "[]", Type.stringof ~ "[]", "equal", &arrayEqual);
   }
 
+  static foreach(Type1; NumericTypes) {
+    static foreach(Type2; NumericTypes) {
+      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "contain", &arrayContain);
+      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof, "contain", &arrayContain);
+    }
+  }
+
 
   static foreach(Type1; StringTypes) {
     static foreach(Type2; StringTypes) {
       Registry.instance.register(Type1.stringof, Type2.stringof, "equal", &equal);
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "equal", &arrayEqual);
+
       Registry.instance.register(Type1.stringof, Type2.stringof ~ "[]", "contain", &contain);
       Registry.instance.register(Type1.stringof, Type2.stringof, "contain", &contain);
+      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "contain", &arrayContain);
+
       Registry.instance.register(Type1.stringof, Type2.stringof, "startWith", &startWith);
       Registry.instance.register(Type1.stringof, Type2.stringof, "endWith", &endWith);
     }
