@@ -4,6 +4,7 @@ import fluentasserts.core.evaluation;
 import fluentasserts.core.operations.registry;
 import fluentasserts.core.operations.arrayEqual;
 import fluentasserts.core.operations.contain;
+import fluentasserts.core.operations.approximately;
 import fluentasserts.core.operations.startWith;
 import fluentasserts.core.operations.endWith;
 import fluentasserts.core.operations.equal;
@@ -36,6 +37,7 @@ static this() {
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof, "contain", &arrayContain);
 
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "containOnly", &arrayContainOnly);
+      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "approximately", &approximately);
     }
   }
 

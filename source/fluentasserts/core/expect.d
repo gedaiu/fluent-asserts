@@ -2,7 +2,9 @@ module fluentasserts.core.expect;
 
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.evaluation;
+
 import std.traits;
+import std.conv;
 
 ///
 struct Expect {
@@ -65,13 +67,27 @@ struct Expect {
     return opDispatch!"containOnly"(value);
   }
 
+  auto approximately(T, U)(T value, U range) {
+    return opDispatch!"approximately"(value, range);
+  }
+
   ///
   Expect opDispatch(string methodName, Params...)(Params params) {
     Lifecycle.instance.usingOperation(methodName);
 
     static if(Params.length == 1) {
-      auto expectedValue = params.evaluate;
-      Lifecycle.instance.compareWith(expectedValue.evaluation);
+      auto expectedValue = params[0].evaluate.evaluation;
+      Lifecycle.instance.compareWith(expectedValue);
+    }
+
+    static if(Params.length > 1) {
+      auto expectedValue = params[0].evaluate.evaluation;
+
+      static foreach (i, Param; Params) {
+        expectedValue.meta[i.to!string] = params[i].to!string;
+      }
+
+      Lifecycle.instance.compareWith(expectedValue);
     }
 
     return this;

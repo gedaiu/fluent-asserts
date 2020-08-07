@@ -214,7 +214,7 @@ string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expect
   return message;
 }
 
-string niceJoin(string[] values, string typeName) @safe nothrow {
+string niceJoin(string[] values, string typeName = "") @safe nothrow {
   string result = "";
 
   try {

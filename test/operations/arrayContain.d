@@ -12,12 +12,6 @@ import std.algorithm;
 import std.range;
 
 alias s = Spec!({
-  alias StringTypes = AliasSeq!(string, wstring, dstring);
-
-  static foreach(Type; StringTypes) {
-
-  }
-
   alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real, ifloat, idouble, ireal, cfloat, cdouble, creal);
   static foreach(Type; NumericTypes) {
     describe("using a range of " ~ Type.stringof, {
