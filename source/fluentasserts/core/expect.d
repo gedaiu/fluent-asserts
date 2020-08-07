@@ -61,6 +61,10 @@ struct Expect {
     return opDispatch!"endWith"(value);
   }
 
+  auto containOnly(T)(T value) {
+    return opDispatch!"containOnly"(value);
+  }
+
   ///
   Expect opDispatch(string methodName, Params...)(Params params) {
     Lifecycle.instance.usingOperation(methodName);

@@ -4,6 +4,7 @@ import std.algorithm;
 import std.array;
 import std.conv;
 
+import fluentasserts.core.array;
 import fluentasserts.core.results;
 import fluentasserts.core.evaluation;
 import fluentasserts.core.serializers;
@@ -97,6 +98,52 @@ IResult[] arrayContain(ref Evaluation evaluation) @safe nothrow {
 }
 
 ///
+IResult[] arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
+  IResult[] results = [];
+
+  auto expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString;
+  auto testData = evaluation.currentValue.strValue.parseList.cleanString;
+
+  auto comparison = ListComparison!string(testData, expectedPieces);
+
+  auto missing = comparison.missing;
+  auto extra = comparison.extra;
+  auto common = comparison.common;
+
+  string strExtra = "";
+  string strMissing = "";
+
+  if(extra.length > 0) {
+    strExtra = extra.niceJoin(evaluation.currentValue.typeName);
+  }
+
+  if(missing.length > 0) {
+    strMissing = missing.niceJoin(evaluation.currentValue.typeName);
+  }
+
+  if(!evaluation.isNegated) {
+    auto isSuccess = missing.length == 0 && extra.length == 0 && common.length == testData.length;
+
+    if(!isSuccess) {
+      try results ~= new ExpectedActualResult("", testData.niceJoin(evaluation.currentValue.typeName));
+      catch(Exception) {}
+
+      try results ~= new ExtraMissingResult(strExtra, strMissing);
+      catch(Exception) {}
+    }
+  } else {
+    auto isSuccess = (missing.length != 0 || extra.length != 0) || common.length != testData.length;
+
+    if(!isSuccess) {
+      try results ~= new ExpectedActualResult("to not contain " ~ expectedPieces.niceJoin(evaluation.currentValue.typeName), testData.niceJoin(evaluation.currentValue.typeName));
+      catch(Exception) {}
+    }
+  }
+
+  return results;
+}
+
+///
 void addLifecycleMessage(ValueEvaluation currentValue, string[] missingValues) @safe nothrow {
   Lifecycle.instance.addText(" ");
 
@@ -108,13 +155,7 @@ void addLifecycleMessage(ValueEvaluation currentValue, string[] missingValues) @
     Lifecycle.instance.addText(" is missing from ");
   } else {
     try {
-      string values = missingValues.to!string;
-
-      if(!currentValue.typeName.canFind("string")) {
-        values = values.replace(`"`, "");
-      }
-
-      Lifecycle.instance.addValue(values);
+      Lifecycle.instance.addValue(missingValues.niceJoin(currentValue.typeName));
     } catch(Exception e) {
       Lifecycle.instance.addText(" some values ");
     }
@@ -137,15 +178,8 @@ void addNegatedLifecycleMessage(ValueEvaluation currentValue, string[] presentVa
 
     Lifecycle.instance.addText(" is present in ");
   } else {
-    try {
-      string values = presentValues.to!string;
-
-      if(!currentValue.typeName.canFind("string")) {
-        values = values.replace(`"`, "");
-      }
-
-      Lifecycle.instance.addValue(values);
-    } catch(Exception e) {
+    try Lifecycle.instance.addValue(presentValues.niceJoin(currentValue.typeName));
+    catch(Exception e) {
       Lifecycle.instance.addText(" some values ");
     }
 
@@ -178,4 +212,18 @@ string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expect
   message ~= expectedValue.strValue;
 
   return message;
+}
+
+string niceJoin(string[] values, string typeName) @safe nothrow {
+  string result = "";
+
+  try {
+    result = values.to!string;
+
+    if(!typeName.canFind("string")) {
+      result = result.replace(`"`, "");
+    }
+  } catch(Exception) {}
+
+  return result;
 }
