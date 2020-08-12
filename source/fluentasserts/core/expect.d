@@ -33,6 +33,12 @@ struct Expect {
   }
 
   ///
+  Expect be () {
+    Lifecycle.instance.addText(" be");
+    return this;
+  }
+
+  ///
   Expect not() {
     isNegated = !isNegated;
     Lifecycle.instance.usingNegation(isNegated);
@@ -51,6 +57,16 @@ struct Expect {
   ///
   auto contain(T)(T value) {
     return opDispatch!"contain"(value);
+  }
+
+  ///
+  auto greaterThan(T)(T value) {
+    return opDispatch!"greaterThan"(value);
+  }
+
+  ///
+  auto above(T)(T value) {
+    return opDispatch!"above"(value);
   }
 
   ///

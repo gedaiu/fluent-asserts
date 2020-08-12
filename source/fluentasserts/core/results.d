@@ -549,31 +549,27 @@ unittest {
   printer.buffer.should.equal(`[info:      key:][primary:row1][info:\n][primary:` ~ "\n" ~ `][info:         :][info: \t][primary:row2]`);
 }
 
-class ExpectedActualResult : IResult
-{
-  protected
-  {
+///
+class ExpectedActualResult : IResult {
+  protected {
     string title;
     KeyResult!"Expected" expected;
     KeyResult!"Actual" actual;
   }
 
 
-  this(string title, string expected, string actual)
-  {
+  this(string title, string expected, string actual) nothrow @safe {
     this.title = title;
     this(expected, actual);
   }
 
 
-  this(string expected, string actual)
-  {
+  this(string expected, string actual) nothrow @safe {
     this.expected = new KeyResult!"Expected"(expected);
     this.actual = new KeyResult!"Actual"(actual);
   }
 
-  override string toString()
-  {
+  override string toString() {
     auto line1 = expected.toString;
     auto line2 = actual.toString;
     string glue;

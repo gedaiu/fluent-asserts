@@ -8,6 +8,7 @@ import fluentasserts.core.operations.approximately;
 import fluentasserts.core.operations.startWith;
 import fluentasserts.core.operations.endWith;
 import fluentasserts.core.operations.equal;
+import fluentasserts.core.operations.greaterThan;
 import fluentasserts.core.operations.throwable;
 import fluentasserts.core.results;
 import fluentasserts.core.base;
@@ -15,6 +16,7 @@ import fluentasserts.core.base;
 import std.meta;
 import std.conv;
 
+alias BasicNumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
 alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real, ifloat, idouble, ireal, cfloat, cdouble, creal, char, wchar, dchar);
 alias StringTypes = AliasSeq!(string, wstring, dstring);
 
@@ -29,6 +31,11 @@ static this() {
   static foreach(Type; NumericTypes) {
     Registry.instance.register(Type.stringof, Type.stringof, "equal", &equal);
     Registry.instance.register(Type.stringof ~ "[]", Type.stringof ~ "[]", "equal", &arrayEqual);
+  }
+
+  static foreach(Type; BasicNumericTypes) {
+    Registry.instance.register(Type.stringof, Type.stringof, "greaterThan", &greaterThan!Type);
+    Registry.instance.register(Type.stringof, Type.stringof, "above", &greaterThan!Type);
   }
 
   static foreach(Type1; NumericTypes) {
