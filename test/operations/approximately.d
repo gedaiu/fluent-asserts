@@ -18,7 +18,46 @@ alias s = Spec!({
   alias FPTypes = AliasSeq!(float, double, real);
 
   static foreach(Type; FPTypes) {
+
     describe("using " ~ Type.stringof, {
+      Type testValue;
+
+      before({
+        testValue = cast(Type) 0.351;
+      });
+
+      it("should check approximately compare two numbers", {
+        expect(testValue).to.be.approximately(0.35, 0.01);
+      });
+
+      it("should check approximately with a delta of 0.00001", {
+        expect(testValue).to.not.be.approximately(0.35, 0.00001);
+      });
+
+      it("should check approximately with a delta of 0.001", {
+        expect(testValue).to.not.be.approximately(0.35, 0.001);
+      });
+
+      it("should show a detailed error message when two numbers should be approximatly equal but they are not", {
+        auto msg = ({
+          expect(testValue).to.be.approximately(0.35, 0.0001);
+        }).should.throwException!TestException.msg;
+
+        msg.should.contain("Expected:0.35±0.0001");
+        msg.should.contain("Actual:0.351");
+        msg.should.not.contain("Missing:");
+      });
+
+      it("should show a detailed error message when two numbers are approximatly equal but they should not", {
+        auto msg = ({
+          expect(testValue).to.not.be.approximately(testValue, 0.0001);
+        }).should.throwException!TestException.msg;
+
+        msg.should.contain("Expected:not " ~ testValue.to!string ~ "±0.0001");
+      });
+    });
+
+    describe("using " ~ Type.stringof ~ " lists", {
       Type[] testValues;
 
       before({

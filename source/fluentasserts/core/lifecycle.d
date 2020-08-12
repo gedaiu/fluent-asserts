@@ -53,6 +53,8 @@ static this() {
 
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "containOnly", &arrayContainOnly);
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "approximately", &approximately);
+
+      Registry.instance.register(Type1.stringof, Type2.stringof, "approximately", &approximately);
     }
   }
 

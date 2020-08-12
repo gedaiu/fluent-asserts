@@ -23,6 +23,10 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
   double maxRelDiff;
   real[] testData;
   real[] expectedPieces;
+  bool usingArrays;
+
+  try usingArrays = evaluation.currentValue.typeName.canFind('[');
+  catch(Exception) usingArrays = true;
 
   try {
     testData = evaluation.currentValue.strValue.parseList.cleanString.map!(a => a.to!real).array;
@@ -50,21 +54,29 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
     try strMissing = missing.length == 0 ? "" : missing.to!string;
     catch(Exception) {}
   } else try {
-    strMissing = "[" ~ missing.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ") ~ "]";
-    strExpected = "[" ~ expectedPieces.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ") ~ "]";
+    strMissing = missing.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ");
+    strExpected = expectedPieces.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ");
+
+    if(usingArrays) {
+      strMissing = "[" ~ strMissing ~ "]";
+      strExpected = "[" ~ strExpected ~ "]";
+    }
+
   } catch(Exception) {}
 
   if(!evaluation.isNegated) {
     if(!allEqual) {
-      try results ~= new ExpectedActualResult(strExpected, evaluation.expectedValue.strValue);
+      try results ~= new ExpectedActualResult(strExpected, evaluation.currentValue.strValue);
       catch(Exception) {}
 
-      try results ~= new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, strMissing);
-      catch(Exception) {}
+      if(usingArrays) {
+        try results ~= new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, strMissing);
+        catch(Exception) {}
+      }
     }
   } else {
     if(allEqual) {
-      try results ~= new ExpectedActualResult("not " ~ strExpected, evaluation.expectedValue.strValue);
+      try results ~= new ExpectedActualResult("not " ~ strExpected, evaluation.currentValue.strValue);
       catch(Exception) {}
     }
   }
