@@ -14,6 +14,8 @@ version(unittest) {
 
 ///
 IResult[] endWith(ref Evaluation evaluation) @safe nothrow {
+  Lifecycle.instance.addText(".");
+
   IResult[] results = [];
   auto current = evaluation.currentValue.strValue.cleanString;
   auto expected = evaluation.expectedValue.strValue.cleanString;

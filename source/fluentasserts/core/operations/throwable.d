@@ -115,6 +115,8 @@ unittest {
 
 ///
 IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
+  Lifecycle.instance.addText(".");
+
   IResult[] results;
   auto thrown = evaluation.currentValue.throwable;
 

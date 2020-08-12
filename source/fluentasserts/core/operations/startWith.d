@@ -14,6 +14,8 @@ version(unittest) {
 
 ///
 IResult[] startWith(ref Evaluation evaluation) @safe nothrow {
+  Lifecycle.instance.addText(".");
+
   IResult[] results = [];
 
   auto index = evaluation.currentValue.strValue.cleanString.indexOf(evaluation.expectedValue.strValue.cleanString);

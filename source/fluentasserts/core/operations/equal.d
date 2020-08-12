@@ -11,6 +11,8 @@ version(unittest) {
 
 ///
 IResult[] equal(ref Evaluation evaluation) @safe nothrow {
+  Lifecycle.instance.addText(".");
+
   auto result = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
 
   if(evaluation.isNegated) {

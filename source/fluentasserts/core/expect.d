@@ -96,6 +96,14 @@ struct Expect {
     return opDispatch!"approximately"(value, range);
   }
 
+  auto between(T, U)(T value, U range) {
+    return opDispatch!"between"(value, range);
+  }
+
+  auto within(T, U)(T value, U range) {
+    return opDispatch!"within"(value, range);
+  }
+
   ///
   Expect opDispatch(string methodName, Params...)(Params params) {
     Lifecycle.instance.usingOperation(methodName);

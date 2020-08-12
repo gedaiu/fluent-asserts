@@ -13,6 +13,8 @@ version(unittest) {
 
 ///
 IResult[] lessThan(T)(ref Evaluation evaluation) @safe nothrow {
+  Lifecycle.instance.addText(".");
+
   T expectedValue;
   T currentValue;
 

@@ -114,7 +114,6 @@ struct ShouldBaseType(T) {
 
     Message[] msg;
 
-
     auto interval = "a value " ~ (expectedValue ? "inside" : "outside") ~ " (" ~ min.to!string ~ ", " ~ max.to!string ~ ") interval";
 
     if(expectedValue) {

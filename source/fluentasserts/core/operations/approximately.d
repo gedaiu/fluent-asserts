@@ -18,6 +18,8 @@ version(unittest) {
 
 ///
 IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
+  Lifecycle.instance.addText(".");
+
   double maxRelDiff;
   real[] testData;
   real[] expectedPieces;

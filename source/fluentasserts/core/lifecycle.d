@@ -1,18 +1,19 @@
 module fluentasserts.core.lifecycle;
 
+import fluentasserts.core.base;
 import fluentasserts.core.evaluation;
-import fluentasserts.core.operations.registry;
-import fluentasserts.core.operations.arrayEqual;
-import fluentasserts.core.operations.contain;
 import fluentasserts.core.operations.approximately;
-import fluentasserts.core.operations.startWith;
+import fluentasserts.core.operations.arrayEqual;
+import fluentasserts.core.operations.between;
+import fluentasserts.core.operations.contain;
 import fluentasserts.core.operations.endWith;
 import fluentasserts.core.operations.equal;
 import fluentasserts.core.operations.greaterThan;
 import fluentasserts.core.operations.lessThan;
+import fluentasserts.core.operations.registry;
+import fluentasserts.core.operations.startWith;
 import fluentasserts.core.operations.throwable;
 import fluentasserts.core.results;
-import fluentasserts.core.base;
 
 import std.meta;
 import std.conv;
@@ -40,6 +41,9 @@ static this() {
 
     Registry.instance.register(Type.stringof, Type.stringof, "lessThan", &lessThan!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "below", &lessThan!Type);
+
+    Registry.instance.register(Type.stringof, Type.stringof, "between", &between!Type);
+    Registry.instance.register(Type.stringof, Type.stringof, "within", &between!Type);
   }
 
   static foreach(Type1; NumericTypes) {
@@ -125,7 +129,6 @@ class Lifecycle {
 
     addText(" ");
     addValue(evaluation.expectedValue.strValue);
-    addText(".");
 
     return this;
   }

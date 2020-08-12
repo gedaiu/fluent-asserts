@@ -17,6 +17,8 @@ version(unittest) {
 
 ///
 IResult[] contain(ref Evaluation evaluation) @safe nothrow {
+  Lifecycle.instance.addText(".");
+
   IResult[] results = [];
 
   auto expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString;
@@ -71,6 +73,8 @@ IResult[] contain(ref Evaluation evaluation) @safe nothrow {
 
 ///
 IResult[] arrayContain(ref Evaluation evaluation) @safe nothrow {
+  Lifecycle.instance.addText(".");
+
   IResult[] results = [];
 
   auto expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString;
@@ -99,6 +103,8 @@ IResult[] arrayContain(ref Evaluation evaluation) @safe nothrow {
 
 ///
 IResult[] arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
+  Lifecycle.instance.addText(".");
+
   IResult[] results = [];
 
   auto expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString;
