@@ -68,6 +68,15 @@ struct Expect {
   auto above(T)(T value) {
     return opDispatch!"above"(value);
   }
+  ///
+  auto lessThan(T)(T value) {
+    return opDispatch!"lessThan"(value);
+  }
+
+  ///
+  auto below(T)(T value) {
+    return opDispatch!"below"(value);
+  }
 
   ///
   auto startWith(T)(T value) {

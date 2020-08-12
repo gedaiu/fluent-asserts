@@ -42,6 +42,16 @@ alias s = Spec!({
         msg.split("\n")[3].strip.should.equal("Actual:" ~ smallValue.to!string);
       });
 
+      it("should throw a detailed error when the comparison fails", {
+        auto msg = ({
+          expect(smallValue).to.be.greaterThan(largeValue);
+        }).should.throwException!TestException.msg;
+
+        msg.split("\n")[0].should.equal(smallValue.to!string ~ " should be greaterThan " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less than or equal to " ~ largeValue.to!string ~ ".");
+        msg.split("\n")[2].strip.should.equal("Expected:greater than " ~ largeValue.to!string);
+        msg.split("\n")[3].strip.should.equal("Actual:" ~ smallValue.to!string);
+      });
+
       it("should throw a detailed error when the negated coparison fails", {
         auto msg = ({
           expect(largeValue).not.to.be.greaterThan(smallValue);
