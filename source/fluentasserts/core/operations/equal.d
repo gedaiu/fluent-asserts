@@ -25,7 +25,6 @@ IResult[] equal(ref Evaluation evaluation) @safe nothrow {
 
   IResult[] results = [];
 
-
   if(evaluation.currentValue.typeName != "bool") {
     Lifecycle.instance.addText(" ");
     Lifecycle.instance.addValue(evaluation.currentValue.strValue);
@@ -42,7 +41,7 @@ IResult[] equal(ref Evaluation evaluation) @safe nothrow {
     try results ~= new DiffResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
   }
 
-  try results ~= new ExpectedActualResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
+  try results ~= new ExpectedActualResult((evaluation.isNegated ? "not " : "") ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
 
   return results;
 }

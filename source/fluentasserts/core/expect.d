@@ -7,10 +7,13 @@ import std.traits;
 import std.conv;
 
 ///
-struct Expect {
+@safe struct Expect {
 
   ///
   bool isNegated;
+
+  ///
+  string operationName;
 
   this(ValueEvaluation value, const string file, const size_t line) {
     Lifecycle.instance.beginEvaluation(value)
@@ -19,11 +22,16 @@ struct Expect {
   }
 
   this(ref return scope Expect another) {
-    this.isNegated = isNegated;
+    this.isNegated = another.isNegated;
+    this.operationName = another.operationName;
     Lifecycle.instance.incAssertIndex;
   }
 
   ~this() {
+    if(!Lifecycle.instance.hasOperation) {
+      Lifecycle.instance.usingOperation(operationName);
+    }
+
     Lifecycle.instance.endEvaluation;
   }
 
@@ -47,7 +55,21 @@ struct Expect {
   }
 
   ///
-  alias throwAnyException = opDispatch!"throwAnyException";
+  auto throwAnyException() {
+    return opDispatch!"throwAnyException";
+  }
+
+  ///
+  Expect throwException(Type)() {
+    Lifecycle.instance.usingOperation("throwException");
+
+    return opDispatch!"throwException"(fullyQualifiedName!Type);
+  }
+
+  auto because(string reason) {
+    Lifecycle.instance.prependText("Because " ~ reason ~ ", ");
+    return this;
+  }
 
   ///
   auto equal(T)(T value) {
@@ -104,9 +126,24 @@ struct Expect {
     return opDispatch!"within"(value, range);
   }
 
+  void addOperationName(string value) {
+    if(this.operationName) {
+      this.operationName ~= ".";
+    }
+
+    this.operationName ~= value;
+  }
+
   ///
-  Expect opDispatch(string methodName, Params...)(Params params) {
-    Lifecycle.instance.usingOperation(methodName);
+  Expect opDispatch(string methodName)() {
+    addOperationName(methodName);
+
+    return this;
+  }
+
+  ///
+  Expect opDispatch(string methodName, Params...)(Params params) if(Params.length > 0) {
+    addOperationName(methodName);
 
     static if(Params.length == 1) {
       auto expectedValue = params[0].evaluate.evaluation;
@@ -117,22 +154,11 @@ struct Expect {
       auto expectedValue = params[0].evaluate.evaluation;
 
       static foreach (i, Param; Params) {
-        expectedValue.meta[i.to!string] = params[i].to!string;
+        () @trusted { expectedValue.meta[i.to!string] = params[i].to!string; } ();
       }
 
       Lifecycle.instance.compareWith(expectedValue);
     }
-
-    return this;
-  }
-
-  ///
-  Expect throwException(Type)() {
-    Lifecycle.instance.usingOperation("throwException");
-
-    ValueEvaluation expected;
-    expected.strValue = fullyQualifiedName!Type;
-    Lifecycle.instance.compareWith(expected);
 
     return this;
   }
@@ -157,6 +183,6 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
 }
 
 ///
-Expect expect(T)(T testedValue, const string file = __FILE__, const size_t line = __LINE__) @trusted {
+Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t line = __LINE__) @trusted {
   return Expect(testedValue.evaluate.evaluation, file, line);
 }

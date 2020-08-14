@@ -4,6 +4,7 @@ import fluentasserts.core.results;
 import fluentasserts.core.evaluation;
 
 import std.functional;
+import std.string;
 
 /// Delegate type that can handle asserts
 alias Operation = IResult[] delegate(ref Evaluation) @safe nothrow;
@@ -38,7 +39,13 @@ class Registry {
 
     string key = valueType ~ "." ~ expectedValueType ~ "." ~ name;
 
-    assert(key in operations, "There is no `" ~ key ~ "` registered to the assert operations.");
+    if(key !in operations) {
+      auto genericKey = generalizeKey(valueType, expectedValueType, name);
+
+      assert(key in operations || genericKey in operations, "There is no `" ~ key ~ "` or `" ~ genericKey ~ "` registered to the assert operations.");
+
+      key = genericKey;
+    }
 
     return operations[key];
   }
@@ -52,4 +59,17 @@ class Registry {
 
     return operation(evaluation);
   }
+}
+
+string generalizeKey(string valueType, string expectedValueType, string name) @safe nothrow {
+  return generalizeType(valueType) ~ "." ~ generalizeType(expectedValueType) ~ "." ~ name;
+}
+
+string generalizeType(string typeName) @safe nothrow {
+  auto pos = typeName.indexOf("[");
+  if(pos == -1) {
+    return "*";
+  }
+
+  return "*" ~ typeName[pos..$];
 }

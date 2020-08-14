@@ -14,6 +14,7 @@ import fluentasserts.core.operations.registry;
 import fluentasserts.core.operations.startWith;
 import fluentasserts.core.operations.throwable;
 import fluentasserts.core.results;
+import fluentasserts.core.serializers;
 
 import std.meta;
 import std.conv;
@@ -23,7 +24,9 @@ alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulon
 alias StringTypes = AliasSeq!(string, wstring, dstring);
 
 static this() {
-  Lifecycle.instance = new Lifecycle();
+  SerializerRegistry.instance = new SerializerRegistry;
+  Lifecycle.instance = new Lifecycle;
+
   ResultGlyphs.resetDefaults;
 
   Registry.instance = new Registry();
@@ -33,6 +36,7 @@ static this() {
   static foreach(Type; NumericTypes) {
     Registry.instance.register(Type.stringof, Type.stringof, "equal", &equal);
     Registry.instance.register(Type.stringof ~ "[]", Type.stringof ~ "[]", "equal", &arrayEqual);
+    Registry.instance.register(Type.stringof ~ "[]", "void[]", "equal", &arrayEqual);
   }
 
   static foreach(Type; BasicNumericTypes) {
@@ -47,19 +51,28 @@ static this() {
   }
 
   static foreach(Type1; NumericTypes) {
+    Registry.instance.register(Type1.stringof ~ "[]", "void[]", "approximately", &approximately);
+
     static foreach(Type2; NumericTypes) {
+      Registry.instance.register(Type1.stringof, Type2.stringof, "equal", &equal);
+      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "equal", &arrayEqual);
+      Registry.instance.register(Type1.stringof ~ "[]", "void[]", "equal", &arrayEqual);
+
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "contain", &arrayContain);
+      Registry.instance.register(Type1.stringof ~ "[]", "void[]", "contain", &arrayContain);
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof, "contain", &arrayContain);
 
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "containOnly", &arrayContainOnly);
+      Registry.instance.register(Type1.stringof ~ "[]", "void[]", "containOnly", &arrayContainOnly);
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "approximately", &approximately);
 
       Registry.instance.register(Type1.stringof, Type2.stringof, "approximately", &approximately);
     }
   }
 
-
   static foreach(Type1; StringTypes) {
+    Registry.instance.register(Type1.stringof ~ "[]", "void[]", "equal", &arrayEqual);
+
     static foreach(Type2; StringTypes) {
       Registry.instance.register(Type1.stringof, Type2.stringof, "equal", &equal);
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "equal", &arrayEqual);
@@ -74,6 +87,9 @@ static this() {
     }
   }
 
+  Registry.instance.register("*[]", "*[]", "equal", &arrayEqual);
+  Registry.instance.register("*", "*", "equal", &equal);
+
   static foreach(Type; StringTypes) {
     Registry.instance.register(Type.stringof, "char", "contain", &contain);
     Registry.instance.register(Type.stringof, "char", "startWith", &startWith);
@@ -82,10 +98,16 @@ static this() {
 
   Registry.instance.register("callable", "", "throwAnyException", &throwAnyException);
   Registry.instance.register("callable", "", "throwException", &throwException);
+
+  Registry.instance.register("*", "*", "throwAnyException", &throwAnyException);
+  Registry.instance.register("*", "*", "throwException", &throwException);
+  Registry.instance.register("*", "*", "throwAnyException.withMessage.equal", &throwAnyExceptionWithMessage);
+
+
 }
 
 /// The assert lifecycle
-class Lifecycle {
+@safe class Lifecycle {
 
   /// Global instance for the assert lifecicle
   static Lifecycle instance;
@@ -110,12 +132,19 @@ class Lifecycle {
     assertIndex++;
   }
 
+  /// Checks if an assert operation was set
+  bool hasOperation() {
+    return evaluation.operationName != "";
+  }
+
   /// Method called when a new value is evaluated
   Lifecycle beginEvaluation(ValueEvaluation value) @safe nothrow {
     assert(assertIndex >= 0, "assert index is `" ~ assertIndex.to!string ~ "`. It must be >= 0.");
 
     totalAsserts++;
     assertIndex++;
+
+    evaluation = Evaluation();
 
     if(assertIndex == 1) {
       evaluation.currentValue = value;
@@ -128,19 +157,13 @@ class Lifecycle {
   /// Method called when the oracle value is known
   Lifecycle compareWith(ValueEvaluation value) @safe nothrow {
     evaluation.expectedValue = value;
-
-    addText(" ");
-    addValue(evaluation.expectedValue.strValue);
-
     return this;
   }
 
   /// Method called when the comparison operation is known
   Lifecycle usingOperation(string operationName) @safe nothrow {
+    assert(evaluation.operationName == "", "Operation name is already set to `" ~ evaluation.operationName ~ "`");
     evaluation.operationName = operationName;
-    addText(" ");
-    addText(operationName);
-
     return this;
   }
 
@@ -179,6 +202,13 @@ class Lifecycle {
   }
 
   ///
+  Lifecycle prependText(string text) @safe nothrow {
+    message.prependText(text);
+
+    return this;
+  }
+
+  ///
   Lifecycle addText(string text) @safe nothrow {
     if(text == "throwAnyException") {
       text = "throw any exception";
@@ -195,55 +225,73 @@ class Lifecycle {
   }
 
   ///
-  EvaluationResult endEvaluation() @trusted nothrow {
+  EvaluationResult endEvaluation() @trusted {
+    EvaluationResult result;
+
     assertIndex--;
     assert(assertIndex >= 0, "assert index is `" ~ assertIndex.to!string ~ "`. It must be >= 0.");
 
-    if(assertIndex > 0) return EvaluationResult();
-    auto assertResults = Registry.instance.handle(evaluation);
+    if(assertIndex > 0) return result;
 
-    if(evaluation.currentValue.typeName != "callable" && evaluation.currentValue.throwable !is null) {
-      string m;
+    addText(" ");
+    addText(evaluation.operationName);
 
-      try m = evaluation.currentValue.throwable.message.to!string; catch(Exception) {}
-
-      auto message = new MessageResult(m);
-      auto fileName = evaluation.currentValue.throwable.file;
-      auto line = evaluation.currentValue.throwable.line;
-
-      return EvaluationResult([message], fileName, line);
+    if(evaluation.expectedValue.strValue) {
+      addText(" ");
+      addValue(evaluation.expectedValue.strValue);
     }
 
-    if(assertResults.length == 0) {
-      return EvaluationResult([], "", 0);
+    result.message = message;
+    result.results = Registry.instance.handle(evaluation);
+
+    if(result.results.length > 0) {
+      result.results ~= sourceResult;
     }
 
-    IResult[] results = [ message ];
-    results ~= assertResults;
+    result.fileName = evaluation.fileName;
+    result.line = evaluation.line;
 
-    return EvaluationResult(results, evaluation.fileName, evaluation.line);
+    if(evaluation.currentValue.throwable !is null) {
+      result.throwable = evaluation.currentValue.throwable;
+    }
+
+    if(evaluation.expectedValue.throwable !is null) {
+      result.throwable = evaluation.currentValue.throwable;
+    }
+
+    return result;
   }
 }
 
 ///
-struct EvaluationResult {
+@safe struct EvaluationResult {
+  MessageResult message;
   IResult[] results;
   string fileName;
   size_t line;
+  Throwable throwable;
 
-  auto because(string reason) {
-    return this;
-  }
+  void perform() {
+    if(throwable !is null) {
+      throw throwable;
+    }
 
-  void perform() @safe {
     if(results.length == 0) {
       return;
     }
 
-    throw new TestException(results, fileName, line);
+    IResult[] all;
+
+    if(message !is null) {
+      all ~= message;
+    }
+
+    all ~= results;
+
+    throw new TestException(all, fileName, line);
   }
 
-  ~this() @safe {
+  ~this() {
     this.perform;
   }
 }

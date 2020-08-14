@@ -11,6 +11,7 @@ import fluentasserts.core.lifecycle;
 import std.algorithm;
 import std.array;
 import std.conv;
+import std.math;
 
 version(unittest) {
   import fluentasserts.core.expect;
@@ -18,6 +19,7 @@ version(unittest) {
 
 ///
 IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
+  Lifecycle.instance.addValue("±" ~ evaluation.expectedValue.meta["1"]);
   Lifecycle.instance.addText(".");
 
   double maxRelDiff;
@@ -44,7 +46,13 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
 
   IResult[] results = [];
 
-  bool allEqual = testData.length == common.length;
+  bool allEqual = testData.length == expectedPieces.length;
+
+  if(allEqual) {
+    foreach(i; 0..testData.length) {
+      allEqual = allEqual && approxEqual(testData[i], expectedPieces[i], maxRelDiff);
+    }
+  }
 
   string strExpected;
   string strMissing;

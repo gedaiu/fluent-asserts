@@ -445,24 +445,18 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split('\n')[0].should.equal("[1, 2, 3].map!\"a\" should contain [4, 5]. [4, 5] are missing from [1, 2, 3].");
-  msg.split('\n')[2].strip.should.equal("Expected:all of [4, 5]");
-  msg.split('\n')[3].strip.should.equal("Actual:[1, 2, 3]");
 
   msg = ({
     [1, 2, 3].map!"a".should.not.contain([1, 2]);
   }).should.throwException!TestException.msg;
 
   msg.split('\n')[0].should.equal("[1, 2, 3].map!\"a\" should not contain [1, 2]. [1, 2] are present in [1, 2, 3].");
-  msg.split('\n')[2].strip.should.equal("Expected:none of [1, 2]");
-  msg.split('\n')[3].strip.should.equal("Actual:[1, 2, 3]");
 
   msg = ({
     [1, 2, 3].map!"a".should.contain(4);
   }).should.throwException!TestException.msg;
 
   msg.split('\n')[0].should.contain("4 is missing from [1, 2, 3]");
-  msg.split('\n')[2].strip.should.equal("Expected:to contain `4`");
-  msg.split('\n')[3].strip.should.equal("Actual:[1, 2, 3]");
 }
 
 /// const range contain
@@ -506,41 +500,31 @@ unittest {
     [1, 2, 3].should.containOnly([2, 1]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].should.equal("[1, 2, 3] should contain only [2, 1].");
-  msg.split('\n')[2].strip.should.equal("Actual:[1, 2, 3]");
-  msg.split('\n')[4].strip.should.equal("Extra:[3]");
+  msg.split('\n')[0].should.equal("[1, 2, 3] should containOnly [2, 1].");
 
   msg = ({
     [1, 2].should.not.containOnly([2, 1]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].strip.should.equal("[1, 2] should not contain only [2, 1].");
-  msg.split('\n')[2].strip.should.equal("Actual:[1, 2]");
+  msg.split('\n')[0].strip.should.equal("[1, 2] should not containOnly [2, 1].");
 
   msg = ({
     [2, 2].should.containOnly([2]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].should.equal("[2, 2] should contain only [2].");
-  msg.split('\n')[2].strip.should.equal("Actual:[2, 2]");
-  msg.split('\n')[4].strip.should.equal("Extra:[2]");
+  msg.split('\n')[0].should.equal("[2, 2] should containOnly [2].");
 
   msg = ({
     [3, 3].should.containOnly([2]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].should.equal("[3, 3] should contain only [2].");
-  msg.split('\n')[2].strip.should.equal("Actual:[3, 3]");
-  msg.split('\n')[4].strip.should.equal("Extra:[3, 3]");
-  msg.split('\n')[5].strip.should.equal("Missing:[2]");
+  msg.split('\n')[0].should.equal("[3, 3] should containOnly [2].");
 
   msg = ({
     [2, 2].should.not.containOnly([2, 2]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].should.equal("[2, 2] should not contain only [2, 2].");
-  msg.split('\n')[2].strip.should.equal("Actual:[2, 2]");
-  msg.split('\n')[4].strip.should.equal("Extra:[2, 2]");
+  msg.split('\n')[0].should.equal("[2, 2] should not containOnly [2, 2].");
 }
 
 /// contain only with  void array
@@ -588,45 +572,30 @@ unittest {
   }).should.throwException!TestException.msg.split('\n');
 
   msg[0].should.equal("[1, 2, 3] should contain [4, 5]. [4, 5] are missing from [1, 2, 3].");
-  msg[2].strip.should.equal("Expected:all of [4, 5]");
-  msg[3].strip.should.equal("Actual:[1, 2, 3]");
-  msg[5].strip.should.equal("Missing:[4, 5]");
 
   msg = ({
     [1, 2, 3].should.not.contain([2, 3]);
   }).should.throwException!TestException.msg.split('\n');
 
   msg[0].should.equal("[1, 2, 3] should not contain [2, 3]. [2, 3] are present in [1, 2, 3].");
-  msg[2].strip.should.equal("Expected:none of [2, 3]");
-  msg[3].strip.should.equal("Actual:[1, 2, 3]");
-  msg[5].strip.should.equal("Extra:[2, 3]");
 
   msg = ({
     [1, 2, 3].should.not.contain([4, 3]);
   }).should.throwException!TestException.msg.split('\n');
 
-  msg[0].should.equal("[1, 2, 3] should not contain [4, 3]. [3] is present in [1, 2, 3].");
-  msg[2].strip.should.equal("Expected:none of [4, 3]");
-  msg[3].strip.should.equal("Actual:[1, 2, 3]");
-  msg[5].strip.should.equal("Extra:[3]");
+  msg[0].should.equal("[1, 2, 3] should not contain [4, 3]. 3 is present in [1, 2, 3].");
 
   msg = ({
     [1, 2, 3].should.contain(4);
   }).should.throwException!TestException.msg.split('\n');
 
-  msg[0].should.equal("[1, 2, 3] should contain `4`. 4 is missing from [1, 2, 3].");
-  msg[2].strip.should.equal("Expected:to contain `4`");
-  msg[3].strip.should.equal("Actual:[1, 2, 3]");
-  msg[5].strip.should.equal("Missing:4");
+  msg[0].should.equal("[1, 2, 3] should contain 4. 4 is missing from [1, 2, 3].");
 
   msg = ({
     [1, 2, 3].should.not.contain(2);
   }).should.throwException!TestException.msg.split('\n');
 
-  msg[0].should.equal("[1, 2, 3] should not contain `2`. 2 is present in [1, 2, 3].");
-  msg[2].strip.should.equal("Expected:to not contain `2`");
-  msg[3].strip.should.equal("Actual:[1, 2, 3]");
-  msg[5].strip.should.equal("Extra:2");
+  msg[0].should.equal("[1, 2, 3] should not contain 2. 2 is present in [1, 2, 3].");
 }
 
 /// array equals
@@ -645,35 +614,25 @@ unittest {
     [1, 2, 3].should.equal([4, 5]);
   }).should.throwException!TestException.msg.split("\n");
 
-  msg[0].strip.should.equal("[1, 2, 3] should equal `[4, 5]`.");
-  msg[2].strip.should.equal("Expected:[4, 5]");
-  msg[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[0].strip.should.equal("[1, 2, 3] should equal [4, 5].");
 
   msg = ({
     [1, 2].should.equal([4, 5]);
   }).should.throwException!TestException.msg.split("\n");
 
-  msg[0].strip.should.equal("[1, 2] should equal `[4, 5]`.");
-  msg[2].strip.should.equal("Expected:[4, 5]");
-  msg[3].strip.should.equal("Actual:[1, 2]");
-  msg[5].strip.should.equal("Extra:[1, 2]");
-  msg[6].strip.should.equal("Missing:[4, 5]");
+  msg[0].strip.should.equal("[1, 2] should equal [4, 5].");
 
   msg = ({
     [1, 2, 3].should.equal([2, 3, 1]);
   }).should.throwException!TestException.msg.split("\n");
 
-  msg[0].strip.should.equal("[1, 2, 3] should equal `[2, 3, 1]`.");
-  msg[2].strip.should.equal("Expected:[2, 3, 1]");
-  msg[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[0].strip.should.equal("[1, 2, 3] should equal [2, 3, 1].");
 
   msg = ({
     [1, 2, 3].should.not.equal([1, 2, 3]);
   }).should.throwException!TestException.msg.split("\n");
 
-  msg[0].strip.should.startWith("[1, 2, 3] should not equal `[1, 2, 3]`");
-  msg[2].strip.should.equal("Expected:not [1, 2, 3]");
-  msg[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg[0].strip.should.startWith("[1, 2, 3] should not equal [1, 2, 3]");
 }
 
 ///array equals with structs
@@ -690,7 +649,7 @@ unittest {
 
   ({
     [TestStruct(2)].should.equal([TestStruct(1)]);
-  }).should.throwException!TestException.withMessage.startWith("[TestStruct(2)] should equal `[TestStruct(1");
+  }).should.throwException!TestException.withMessage.startWith("[TestStruct(2)] should equal [TestStruct(1)].");
 }
 
 /// const array equal
@@ -724,7 +683,7 @@ unittest {
 
   ({
     [new TestEqualsClass(2)].should.equal([new TestEqualsClass(1)]);
-  }).should.throwException!TestException.withMessage.startWith("[new TestEqualsClass(2)] should equal `[fluentasserts.core.array.TestEqualsClass]`.");
+  }).should.throwException!TestException;
 }
 
 /// range equals
@@ -743,33 +702,25 @@ unittest {
     [1, 2, 3].map!"a".should.equal([4, 5]);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("[1, 2, 3].map!\"a\" should equal `[4, 5]`.");
-  msg.split("\n")[2].strip.should.equal("Expected:[4, 5]");
-  msg.split("\n")[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg.split("\n")[0].strip.should.equal(`[1, 2, 3].map!"a" should equal [4, 5].`);
 
   msg = ({
     [1, 2].map!"a".should.equal([4, 5]);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("[1, 2].map!\"a\" should equal `[4, 5]`.");
-  msg.split("\n")[2].strip.should.equal("Expected:[4, 5]");
-  msg.split("\n")[3].strip.should.equal("Actual:[1, 2]");
+  msg.split("\n")[0].strip.should.equal(`[1, 2].map!"a" should equal [4, 5].`);
 
   msg = ({
     [1, 2, 3].map!"a".should.equal([2, 3, 1]);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("[1, 2, 3].map!\"a\" should equal `[2, 3, 1]`.");
-  msg.split("\n")[2].strip.should.equal("Expected:[2, 3, 1]");
-  msg.split("\n")[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg.split("\n")[0].strip.should.equal(`[1, 2, 3].map!"a" should equal [2, 3, 1].`);
 
   msg = ({
     [1, 2, 3].map!"a".should.not.equal([1, 2, 3]);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.startWith("[1, 2, 3].map!\"a\" should not equal `[1, 2, 3]`");
-  msg.split("\n")[2].strip.should.equal("Expected:not [1, 2, 3]");
-  msg.split("\n")[3].strip.should.equal("Actual:[1, 2, 3]");
+  msg.split("\n")[0].strip.should.startWith(`[1, 2, 3].map!"a" should not equal [1, 2, 3]`);
 }
 
 /// custom range asserts
@@ -795,25 +746,19 @@ unittest {
     Range().should.equal([0,1]);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.startWith("Range() should equal `[0, 1]`");
-  msg.split("\n")[2].strip.should.equal("Expected:[0, 1]");
-  msg.split("\n")[3].strip.should.equal("Actual:[0, 1, 2]");
+  msg.split("\n")[0].strip.should.startWith("Range() should equal [0, 1]");
 
   msg = ({
     Range().should.contain([2, 3]);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.startWith("Range() should contain [2, 3]. [3] is missing from [0, 1, 2].");
-  msg.split("\n")[2].strip.should.equal("Expected:all of [2, 3]");
-  msg.split("\n")[3].strip.should.equal("Actual:[0, 1, 2]");
+  msg.split("\n")[0].strip.should.startWith("Range() should contain [2, 3]. 3 is missing from [0, 1, 2].");
 
   msg = ({
     Range().should.contain(3);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.startWith("Range() should contain `3`. 3 is missing from [0, 1, 2].");
-  msg.split("\n")[2].strip.should.equal("Expected:to contain `3`");
-  msg.split("\n")[3].strip.should.equal("Actual:[0, 1, 2]");
+  msg.split("\n")[0].strip.should.startWith("Range() should contain 3. 3 is missing from [0, 1, 2].");
 }
 
 /// custom const range equals
@@ -862,19 +807,17 @@ unittest {
 unittest {
   [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.01);
 
-  ({
-    [0.350, 0.501, 0.341].should.not.be.approximately([0.35, 0.50, 0.34], 0.00001);
-    [0.350, 0.501, 0.341].should.not.be.approximately([0.501, 0.350, 0.341], 0.001);
-    [0.350, 0.501, 0.341].should.not.be.approximately([0.350, 0.501], 0.001);
-    [0.350, 0.501].should.not.be.approximately([0.350, 0.501, 0.341], 0.001);
-  }).should.not.throwAnyException;
+  [0.350, 0.501, 0.341].should.not.be.approximately([0.35, 0.50, 0.34], 0.00001);
+  [0.350, 0.501, 0.341].should.not.be.approximately([0.501, 0.350, 0.341], 0.001);
+  [0.350, 0.501, 0.341].should.not.be.approximately([0.350, 0.501], 0.001);
+  [0.350, 0.501].should.not.be.approximately([0.350, 0.501, 0.341], 0.001);
 
   auto msg = ({
     [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.0001);
   }).should.throwException!TestException.msg;
 
   msg.should.contain("Expected:[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
-  msg.should.contain("Missing:[0.5±0.0001, 0.34±0.0001]");
+  msg.should.contain("Missing:[0.501±0.0001, 0.341±0.0001]");
 }
 
 /// approximately equals with Assert
@@ -891,8 +834,7 @@ unittest {
 }
 
 /// Compare const objects
-unittest
-{
+unittest {
   class A {}
   A a = new A();
   const(A)[] arr = [a];

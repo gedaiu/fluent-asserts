@@ -4,6 +4,7 @@ public import fluentasserts.core.base;
 import fluentasserts.core.results;
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.expect;
+import fluentasserts.core.serializers;
 
 import std.string;
 import std.conv;
@@ -52,6 +53,8 @@ IResult[] throwAnyException(ref Evaluation evaluation) @trusted nothrow {
 
     try results ~= new ExpectedActualResult("Any exception to be thrown", "A `Throwable` with message `" ~ message ~ "` was thrown"); catch(Exception) {}
   }
+
+  evaluation.currentValue.throwable = null;
 
   return results;
 }
@@ -113,14 +116,54 @@ unittest {
   expect({ test(); }).to.throwAnyException;
 }
 
+IResult[] throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
+  IResult[] results;
+
+  auto thrown = evaluation.currentValue.throwable;
+
+  if(evaluation.currentValue.throwable && evaluation.isNegated) {
+    string message;
+    try message = thrown.message.to!string; catch(Exception) {}
+
+    Lifecycle.instance.addText("`");
+    Lifecycle.instance.addValue(thrown.classinfo.name);
+    Lifecycle.instance.addText("` saying `");
+    Lifecycle.instance.addValue(message);
+    Lifecycle.instance.addText("` was thrown.");
+
+    try results ~= new ExpectedActualResult("No exception to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
+  }
+
+  if(!thrown && !evaluation.isNegated) {
+    Lifecycle.instance.addText("Nothing was thrown.");
+
+    try results ~= new ExpectedActualResult("Any exception to be thrown", "Nothing was thrown"); catch(Exception) {}
+  }
+
+  if(thrown && !evaluation.isNegated && "Throwable" in evaluation.currentValue.meta) {
+    string message;
+    try message = thrown.message.to!string; catch(Exception) {}
+
+    Lifecycle.instance.addText("A `Throwable` saying `" ~ message ~ "` was thrown.");
+
+    try results ~= new ExpectedActualResult("Any exception to be thrown", "A `Throwable` with message `" ~ message ~ "` was thrown"); catch(Exception) {}
+  }
+
+  evaluation.currentValue.throwable = null;
+
+  return results;
+}
+
 ///
 IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
   Lifecycle.instance.addText(".");
 
+  string exceptionType = evaluation.expectedValue.strValue.cleanString;
+
   IResult[] results;
   auto thrown = evaluation.currentValue.throwable;
 
-  if(thrown && evaluation.isNegated && thrown.classinfo.name == evaluation.expectedValue.strValue) {
+  if(thrown && evaluation.isNegated && thrown.classinfo.name == exceptionType) {
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
@@ -130,10 +173,10 @@ IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
     Lifecycle.instance.addValue(message);
     Lifecycle.instance.addText("` was thrown.");
 
-    try results ~= new ExpectedActualResult("no `" ~ evaluation.expectedValue.strValue ~ "` to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
+    try results ~= new ExpectedActualResult("no `" ~ exceptionType ~ "` to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
   }
 
-  if(thrown && !evaluation.isNegated && thrown.classinfo.name != evaluation.expectedValue.strValue) {
+  if(thrown && !evaluation.isNegated && thrown.classinfo.name != exceptionType) {
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
@@ -143,8 +186,10 @@ IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
     Lifecycle.instance.addValue(message);
     Lifecycle.instance.addText("` was thrown.");
 
-    try results ~= new ExpectedActualResult(evaluation.expectedValue.strValue, "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
+    try results ~= new ExpectedActualResult(exceptionType, "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
   }
+
+  evaluation.currentValue.throwable = null;
 
   return results;
 }
@@ -167,7 +212,7 @@ unittest {
   } catch(TestException e) {
     thrown = true;
 
-    assert(e.message.indexOf("should throwException fluentasserts.core.operations.throwable.CustomException.`object.Exception` saying `test` was thrown.") != -1);
+    assert(e.message.indexOf("should throwException \"fluentasserts.core.operations.throwable.CustomException\".`object.Exception` saying `test` was thrown.") != -1);
     assert(e.message.indexOf("\n Expected:fluentasserts.core.operations.throwable.CustomException\n") != -1);
     assert(e.message.indexOf("\n   Actual:`object.Exception` saying `test`\n") != -1);
     assert(e.file == "source/fluentasserts/core/operations/throwable.d");
@@ -194,7 +239,7 @@ unittest {
   } catch(TestException e) {
     thrown = true;
 
-    assert(e.message.indexOf("should not throwException fluentasserts.core.operations.throwable.CustomException.`fluentasserts.core.operations.throwable.CustomException` saying `test` was thrown.") != -1);
+    assert(e.message.indexOf("should not throwException \"fluentasserts.core.operations.throwable.CustomException\".`fluentasserts.core.operations.throwable.CustomException` saying `test` was thrown.") != -1);
     assert(e.message.indexOf("\n Expected:no `fluentasserts.core.operations.throwable.CustomException` to be thrown\n") != -1);
     assert(e.message.indexOf("\n   Actual:`fluentasserts.core.operations.throwable.CustomException` saying `test`\n") != -1);
     assert(e.file == "source/fluentasserts/core/operations/throwable.d");

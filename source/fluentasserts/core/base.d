@@ -7,6 +7,7 @@ public import fluentasserts.core.basetype;
 public import fluentasserts.core.callable;
 public import fluentasserts.core.results;
 public import fluentasserts.core.lifecycle;
+public import fluentasserts.core.expect;
 public import fluentasserts.core.evaluation;
 
 import std.traits;
@@ -473,7 +474,9 @@ struct ThrowableProxy(T : Throwable) {
   }
 }
 
-auto should(T)(lazy T testData) {
+auto should(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__) @trusted {
+  import std.stdio;
+
   version(Have_vibe_d_data) {
     version(Have_fluent_asserts_vibe) {
       import vibe.data.json;
@@ -493,19 +496,21 @@ auto should(T)(lazy T testData) {
   }
 
   static if(is(T == void)) {
+
     auto callable = ({ testData; });
     return ShouldCallable!(typeof(callable))(callable);
   } else static if(!returned) {
+
     static if(is(T == class) || is(T == interface)) {
       return ShouldObject!T(testData.evaluate);
     } else static if(is(T == string)) {
-      return ShouldString(testData.evaluate);
+      return expect(testData, file, line);
     } else static if(isInputRange!T) {
-      return ShouldList!T(testData);
+      return expect(testData, file, line);
     } else static if(isCallable!T) {
       return ShouldCallable!T(testData);
     } else {
-      return ShouldBaseType!T(testData.evaluate);
+      return expect(testData, file, line);
     }
   }
 }
@@ -516,7 +521,7 @@ unittest {
     true.should.equal(false).because("of test reasons");
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("Because of test reasons, true should equal `false`.");
+  msg.split("\n")[0].should.equal("Because of test reasons, true should equal false.");
 }
 
 struct Assert {
@@ -541,7 +546,7 @@ struct Assert {
       sh.be;
     }
 
-    mixin("auto result = sh." ~ assertName ~ "(expected, file, line);");
+    mixin("auto result = sh." ~ assertName ~ "(expected);");
 
     if(reason != "") {
       result.because(reason);
@@ -550,7 +555,7 @@ struct Assert {
 
   static void between(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.be.between(begin, end, file, line);
+    auto s = actual.should.be.between(begin, end);
 
     if(reason != "") {
       s.because(reason);
@@ -559,7 +564,7 @@ struct Assert {
 
   static void notBetween(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.not.be.between(begin, end, file, line);
+    auto s = actual.should.not.be.between(begin, end);
 
     if(reason != "") {
       s.because(reason);
@@ -568,7 +573,7 @@ struct Assert {
 
   static void within(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.be.within(begin, end, file, line);
+    auto s = actual.should.be.within(begin, end);
 
     if(reason != "") {
       s.because(reason);
@@ -577,7 +582,7 @@ struct Assert {
 
   static void notWithin(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.not.be.within(begin, end, file, line);
+    auto s = actual.should.not.be.within(begin, end);
 
     if(reason != "") {
       s.because(reason);
@@ -586,7 +591,7 @@ struct Assert {
 
   static void approximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.be.approximately(expected, delta, file, line);
+    auto s = actual.should.be.approximately(expected, delta);
 
     if(reason != "") {
       s.because(reason);
@@ -595,7 +600,7 @@ struct Assert {
 
   static void notApproximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.not.be.approximately(expected, delta, file, line);
+    auto s = actual.should.not.be.approximately(expected, delta);
 
     if(reason != "") {
       s.because(reason);
@@ -604,7 +609,7 @@ struct Assert {
 
   static void beNull(T)(T actual, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.beNull(file, line);
+    auto s = actual.should.beNull;
 
     if(reason != "") {
       s.because(reason);

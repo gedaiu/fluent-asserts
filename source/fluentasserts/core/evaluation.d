@@ -6,6 +6,8 @@ import std.traits;
 import std.conv;
 import std.range;
 import std.array;
+
+import fluentasserts.core.serializers;
 import fluentasserts.core.results;
 
 ///
@@ -59,6 +61,7 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
 
   try {
     auto value = testData;
+    alias TT = typeof(value);
 
     static if(isCallable!T) {
       if(value !is null) {
@@ -68,14 +71,7 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
     }
 
     auto duration = Clock.currTime - begin;
-
-    static if(isSomeString!(typeof(value))) {
-      return Result(value, ValueEvaluation(null, duration, `"` ~ value.to!string ~ `"`, (Unqual!T).stringof));
-    } else static if(isSomeChar!(typeof(value))) {
-      return Result(value, ValueEvaluation(null, duration, `'` ~ value.to!string ~ `'`, (Unqual!T).stringof));
-    } else {
-      return Result(value, ValueEvaluation(null, duration, value.to!string, (Unqual!T).stringof));
-    }
+    return Result(value, ValueEvaluation(null, duration, SerializerRegistry.instance.serialize(value), unqualString!TT));
   } catch(Throwable t) {
     T result;
 
@@ -83,7 +79,7 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
       result = testData;
     }
 
-    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, (Unqual!T).stringof));
+    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, unqualString!T));
   }
 }
 

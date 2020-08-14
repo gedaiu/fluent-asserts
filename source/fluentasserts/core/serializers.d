@@ -3,9 +3,183 @@ module fluentasserts.core.serializers;
 import std.array;
 import std.string;
 import std.algorithm;
+import std.traits;
+import std.conv;
 
 version(unittest) import fluent.asserts;
 
+/// Singleton used to serialize to string the tested values
+class SerializerRegistry {
+  ///
+  static SerializerRegistry instance;
+
+  private {
+    void*[] serializers;
+  }
+
+  ///
+  void register(T)(string delegate(T) serializer) {
+    serializers[T.stringof] = &serializer;
+  }
+
+  ///
+  string serialize(T)(T[] value) if(!isSomeString!(T[])) {
+    static if(is(Unqual!T == void)) {
+      return "[]";
+    } else {
+      return "[" ~ value.map!(a => serialize(a)).joiner(", ").array.to!string ~ "]";
+    }
+  }
+
+  ///
+  string serialize(T: V[K], V, K)(T value) {
+    auto keys = value.byKey.array.sort;
+
+    return "[" ~ keys.map!(a => serialize(a) ~ ":" ~ serialize(value[a])).joiner(", ").array.to!string ~ "]";
+  }
+
+  ///
+  string serialize(T)(T value) if(isAggregateType!T) {
+    string result;
+
+    static if(is(T == class)) {
+      if(value is null) {
+        result = "null";
+      } else {
+        result = T.stringof ~ "(" ~ (cast() value).toHash.to!string ~ ")";
+      }
+    } else {
+      result = value.to!string;
+    }
+
+    if(result.indexOf("const(") == 0) {
+      result = result[6..$];
+
+      auto pos = result.indexOf(")");
+      result = result[0..pos] ~ result[pos + 1..$];
+    }
+
+    if(result.indexOf("immutable(") == 0) {
+      result = result[10..$];
+      auto pos = result.indexOf(")");
+      result = result[0..pos] ~ result[pos + 1..$];
+    }
+
+    return result;
+  }
+
+  ///
+  string serialize(T)(T value) if(isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T)) {
+    static if(isSomeString!T) {
+      return `"` ~ value.to!string ~ `"`;
+    } else static if(isSomeChar!T) {
+      return `'` ~ value.to!string ~ `'`;
+    } else {
+      return value.to!string;
+    }
+  }
+}
+
+/// It should serialize a char
+unittest {
+  char ch = 'a';
+  const char cch = 'a';
+  immutable char ich = 'a';
+
+  SerializerRegistry.instance.serialize(ch).should.equal("'a'");
+  SerializerRegistry.instance.serialize(cch).should.equal("'a'");
+  SerializerRegistry.instance.serialize(ich).should.equal("'a'");
+}
+
+/// It should serialize a string
+unittest {
+  string str = "aaa";
+  const string cstr = "aaa";
+  immutable string istr = "aaa";
+
+  SerializerRegistry.instance.serialize(str).should.equal(`"aaa"`);
+  SerializerRegistry.instance.serialize(cstr).should.equal(`"aaa"`);
+  SerializerRegistry.instance.serialize(istr).should.equal(`"aaa"`);
+}
+
+/// It should serialize an int
+unittest {
+  int value = 23;
+  const int cvalue = 23;
+  immutable int ivalue = 23;
+
+  SerializerRegistry.instance.serialize(value).should.equal(`23`);
+  SerializerRegistry.instance.serialize(cvalue).should.equal(`23`);
+  SerializerRegistry.instance.serialize(ivalue).should.equal(`23`);
+}
+
+/// It should serialize an int list
+unittest {
+  int[] value = [2,3];
+  const int[] cvalue = [2,3];
+  immutable int[] ivalue = [2,3];
+
+  SerializerRegistry.instance.serialize(value).should.equal(`[2, 3]`);
+  SerializerRegistry.instance.serialize(cvalue).should.equal(`[2, 3]`);
+  SerializerRegistry.instance.serialize(ivalue).should.equal(`[2, 3]`);
+}
+
+/// It should serialize a void list
+unittest {
+  void[] value = [];
+  const void[] cvalue = [];
+  immutable void[] ivalue = [];
+
+  SerializerRegistry.instance.serialize(value).should.equal(`[]`);
+  SerializerRegistry.instance.serialize(cvalue).should.equal(`[]`);
+  SerializerRegistry.instance.serialize(ivalue).should.equal(`[]`);
+}
+
+/// It should serialize a nested int list
+unittest {
+  int[][] value = [[0,1],[2,3]];
+  const int[][] cvalue = [[0,1],[2,3]];
+  immutable int[][] ivalue = [[0,1],[2,3]];
+
+  SerializerRegistry.instance.serialize(value).should.equal(`[[0, 1], [2, 3]]`);
+  SerializerRegistry.instance.serialize(cvalue).should.equal(`[[0, 1], [2, 3]]`);
+  SerializerRegistry.instance.serialize(ivalue).should.equal(`[[0, 1], [2, 3]]`);
+}
+
+/// It should serialize an assoc array
+unittest {
+  int[string] value = ["a": 2,"b": 3, "c": 4];
+  const int[string] cvalue = ["a": 2,"b": 3, "c": 4];
+  immutable int[string] ivalue = ["a": 2,"b": 3, "c": 4];
+
+  SerializerRegistry.instance.serialize(value).should.equal(`["a":2, "b":3, "c":4]`);
+  SerializerRegistry.instance.serialize(cvalue).should.equal(`["a":2, "b":3, "c":4]`);
+  SerializerRegistry.instance.serialize(ivalue).should.equal(`["a":2, "b":3, "c":4]`);
+}
+
+version(unittest) { struct TestStruct { int a; string b; }; }
+/// It should serialzie a struct
+unittest {
+  TestStruct value = TestStruct(1, "2");
+  const TestStruct cvalue = TestStruct(1, "2");
+  immutable TestStruct ivalue = TestStruct(1, "2");
+
+  SerializerRegistry.instance.serialize(value).should.equal(`TestStruct(1, "2")`);
+  SerializerRegistry.instance.serialize(cvalue).should.equal(`TestStruct(1, "2")`);
+  SerializerRegistry.instance.serialize(ivalue).should.equal(`TestStruct(1, "2")`);
+}
+
+string unqualString(T: U[], U)() if(isArray!T && !isSomeString!T) {
+  return unqualString!U ~ "[]";
+}
+
+string unqualString(T: V[K], V, K)() if(isAssociativeArray!T) {
+  return unqualString!V ~ "[" ~ unqualString!K ~ "]";
+}
+
+string unqualString(T)() if(isSomeString!T || (!isArray!T && !isAssociativeArray!T)) {
+  return Unqual!T.stringof;
+}
 
 ///
 string[] parseList(string value) @safe nothrow {
@@ -130,7 +304,6 @@ unittest {
 
   pieces.should.equal([`"a,b"`,`"c,d"`]);
 }
-
 
 /// it should parse two string values that contain a `'`
 unittest {
