@@ -129,24 +129,6 @@ fluent assert handler which will add extra information to the default assert mes
     }
 ```
 
-# Too much verbosity in the assert messages?
-
-If you want to get less informations when an assert fails, you can use several versions:
-
-
-- `DisableDiffResult` - will not show a diff for the string equal assert
-- `DisableSourceResult` - will not show the source code where the test failed
-- `DisableMessageResult` - will not show the defaul message for the assert
-
-In dub.json:
-```json
-    "versions": [
-        "DisableDiffResult",
-        "DisableSourceResult",
-        "DisableMessageResult"
-    ],
-```
-
 # License
 
 MIT. See LICENSE for details.
