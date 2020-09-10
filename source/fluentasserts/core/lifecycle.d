@@ -244,8 +244,10 @@ static this() {
     result.message = message;
     result.results = Registry.instance.handle(evaluation);
 
-    if(result.results.length > 0) {
-      result.results ~= sourceResult;
+    version(DisableSourceResult) {} else {
+      if(result.results.length > 0) {
+        result.results ~= sourceResult;
+      }
     }
 
     result.fileName = evaluation.fileName;
