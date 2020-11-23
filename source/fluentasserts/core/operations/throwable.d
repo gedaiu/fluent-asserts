@@ -23,24 +23,24 @@ version(unittest) {
 IResult[] throwAnyException(ref Evaluation evaluation) @trusted nothrow {
   IResult[] results;
 
-  Lifecycle.instance.addText(". ");
+  evaluation.message.addText(". ");
   auto thrown = evaluation.currentValue.throwable;
 
   if(evaluation.currentValue.throwable && evaluation.isNegated) {
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
-    Lifecycle.instance.addText("`");
-    Lifecycle.instance.addValue(thrown.classinfo.name);
-    Lifecycle.instance.addText("` saying `");
-    Lifecycle.instance.addValue(message);
-    Lifecycle.instance.addText("` was thrown.");
+    evaluation.message.addText("`");
+    evaluation.message.addValue(thrown.classinfo.name);
+    evaluation.message.addText("` saying `");
+    evaluation.message.addValue(message);
+    evaluation.message.addText("` was thrown.");
 
     try results ~= new ExpectedActualResult("No exception to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
   }
 
   if(!thrown && !evaluation.isNegated) {
-    Lifecycle.instance.addText("No exception was thrown.");
+    evaluation.message.addText("No exception was thrown.");
 
     try results ~= new ExpectedActualResult("Any exception to be thrown", "Nothing was thrown"); catch(Exception) {}
   }
@@ -49,7 +49,7 @@ IResult[] throwAnyException(ref Evaluation evaluation) @trusted nothrow {
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
-    Lifecycle.instance.addText("A `Throwable` saying `" ~ message ~ "` was thrown.");
+    evaluation.message.addText("A `Throwable` saying `" ~ message ~ "` was thrown.");
 
     try results ~= new ExpectedActualResult("Any exception to be thrown", "A `Throwable` with message `" ~ message ~ "` was thrown"); catch(Exception) {}
   }
@@ -125,17 +125,17 @@ IResult[] throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothr
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
-    Lifecycle.instance.addText("`");
-    Lifecycle.instance.addValue(thrown.classinfo.name);
-    Lifecycle.instance.addText("` saying `");
-    Lifecycle.instance.addValue(message);
-    Lifecycle.instance.addText("` was thrown.");
+    evaluation.message.addText("`");
+    evaluation.message.addValue(thrown.classinfo.name);
+    evaluation.message.addText("` saying `");
+    evaluation.message.addValue(message);
+    evaluation.message.addText("` was thrown.");
 
     try results ~= new ExpectedActualResult("No exception to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
   }
 
   if(!thrown && !evaluation.isNegated) {
-    Lifecycle.instance.addText("Nothing was thrown.");
+    evaluation.message.addText("Nothing was thrown.");
 
     try results ~= new ExpectedActualResult("Any exception to be thrown", "Nothing was thrown"); catch(Exception) {}
   }
@@ -144,7 +144,7 @@ IResult[] throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothr
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
-    Lifecycle.instance.addText("A `Throwable` saying `" ~ message ~ "` was thrown.");
+    evaluation.message.addText("A `Throwable` saying `" ~ message ~ "` was thrown.");
 
     try results ~= new ExpectedActualResult("Any exception to be thrown", "A `Throwable` with message `" ~ message ~ "` was thrown"); catch(Exception) {}
   }
@@ -156,7 +156,7 @@ IResult[] throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothr
 
 ///
 IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
-  Lifecycle.instance.addText(".");
+  evaluation.message.addText(".");
 
   string exceptionType = evaluation.expectedValue.strValue.cleanString;
 
@@ -167,11 +167,11 @@ IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
-    Lifecycle.instance.addText("`");
-    Lifecycle.instance.addValue(thrown.classinfo.name);
-    Lifecycle.instance.addText("` saying `");
-    Lifecycle.instance.addValue(message);
-    Lifecycle.instance.addText("` was thrown.");
+    evaluation.message.addText("`");
+    evaluation.message.addValue(thrown.classinfo.name);
+    evaluation.message.addText("` saying `");
+    evaluation.message.addValue(message);
+    evaluation.message.addText("` was thrown.");
 
     try results ~= new ExpectedActualResult("no `" ~ exceptionType ~ "` to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
   }
@@ -180,11 +180,11 @@ IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
-    Lifecycle.instance.addText("`");
-    Lifecycle.instance.addValue(thrown.classinfo.name);
-    Lifecycle.instance.addText("` saying `");
-    Lifecycle.instance.addValue(message);
-    Lifecycle.instance.addText("` was thrown.");
+    evaluation.message.addText("`");
+    evaluation.message.addValue(thrown.classinfo.name);
+    evaluation.message.addText("` saying `");
+    evaluation.message.addValue(message);
+    evaluation.message.addText("` was thrown.");
 
     try results ~= new ExpectedActualResult(exceptionType, "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
   }

@@ -14,7 +14,7 @@ version(unittest) {
 
 ///
 IResult[] startWith(ref Evaluation evaluation) @safe nothrow {
-  Lifecycle.instance.addText(".");
+  evaluation.message.addText(".");
 
   IResult[] results = [];
 
@@ -23,22 +23,22 @@ IResult[] startWith(ref Evaluation evaluation) @safe nothrow {
 
   if(evaluation.isNegated) {
     if(doesStartWith) {
-      Lifecycle.instance.addText(" ");
-      Lifecycle.instance.addValue(evaluation.currentValue.strValue);
-      Lifecycle.instance.addText(" starts with ");
-      Lifecycle.instance.addValue(evaluation.expectedValue.strValue);
-      Lifecycle.instance.addText(".");
+      evaluation.message.addText(" ");
+      evaluation.message.addValue(evaluation.currentValue.strValue);
+      evaluation.message.addText(" starts with ");
+      evaluation.message.addValue(evaluation.expectedValue.strValue);
+      evaluation.message.addText(".");
 
       try results ~= new ExpectedActualResult("to not start with " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
       catch(Exception e) {}
     }
   } else {
     if(!doesStartWith) {
-      Lifecycle.instance.addText(" ");
-      Lifecycle.instance.addValue(evaluation.currentValue.strValue);
-      Lifecycle.instance.addText(" does not start with ");
-      Lifecycle.instance.addValue(evaluation.expectedValue.strValue);
-      Lifecycle.instance.addText(".");
+      evaluation.message.addText(" ");
+      evaluation.message.addValue(evaluation.currentValue.strValue);
+      evaluation.message.addText(" does not start with ");
+      evaluation.message.addValue(evaluation.expectedValue.strValue);
+      evaluation.message.addText(".");
 
       try results ~= new ExpectedActualResult("to start with " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
       catch(Exception e) {}

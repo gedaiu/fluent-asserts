@@ -17,7 +17,7 @@ version(unittest) {
 
 ///
 IResult[] contain(ref Evaluation evaluation) @safe nothrow {
-  Lifecycle.instance.addText(".");
+  evaluation.message.addText(".");
 
   IResult[] results = [];
 
@@ -28,7 +28,7 @@ IResult[] contain(ref Evaluation evaluation) @safe nothrow {
     auto missingValues = expectedPieces.filter!(a => !testData.canFind(a)).array;
 
     if(missingValues.length > 0) {
-      addLifecycleMessage(evaluation.currentValue, missingValues);
+      addLifecycleMessage(evaluation, missingValues);
       try results ~= new ExpectedActualResult(createResultMessage(evaluation.expectedValue, expectedPieces), testData);
       catch(Exception) {}
     }
@@ -44,24 +44,24 @@ IResult[] contain(ref Evaluation evaluation) @safe nothrow {
 
       message ~= evaluation.expectedValue.strValue;
 
-      Lifecycle.instance.addText(" ");
+      evaluation.message.addText(" ");
 
       if(presentValues.length == 1) {
-        try Lifecycle.instance.addValue(presentValues[0]); catch(Exception e) {
-          Lifecycle.instance.addText(" some value ");
+        try evaluation.message.addValue(presentValues[0]); catch(Exception e) {
+          evaluation.message.addText(" some value ");
         }
 
-        Lifecycle.instance.addText(" is present in ");
+        evaluation.message.addText(" is present in ");
       } else {
-        try Lifecycle.instance.addValue(presentValues.to!string); catch(Exception e) {
-          Lifecycle.instance.addText(" some values ");
+        try evaluation.message.addValue(presentValues.to!string); catch(Exception e) {
+          evaluation.message.addText(" some values ");
         }
 
-        Lifecycle.instance.addText(" are present in ");
+        evaluation.message.addText(" are present in ");
       }
 
-      Lifecycle.instance.addValue(evaluation.currentValue.strValue);
-      Lifecycle.instance.addText(".");
+      evaluation.message.addValue(evaluation.currentValue.strValue);
+      evaluation.message.addText(".");
 
       try results ~= new ExpectedActualResult(message, testData);
       catch(Exception) {}
@@ -73,7 +73,7 @@ IResult[] contain(ref Evaluation evaluation) @safe nothrow {
 
 ///
 IResult[] arrayContain(ref Evaluation evaluation) @safe nothrow {
-  Lifecycle.instance.addText(".");
+  evaluation.message.addText(".");
 
   IResult[] results = [];
 
@@ -84,7 +84,7 @@ IResult[] arrayContain(ref Evaluation evaluation) @safe nothrow {
     auto missingValues = expectedPieces.filter!(a => !testData.canFind(a)).array;
 
     if(missingValues.length > 0) {
-      addLifecycleMessage(evaluation.currentValue, missingValues);
+      addLifecycleMessage(evaluation, missingValues);
       try results ~= new ExpectedActualResult(createResultMessage(evaluation.expectedValue, expectedPieces), evaluation.currentValue.strValue);
       catch(Exception) {}
     }
@@ -92,7 +92,7 @@ IResult[] arrayContain(ref Evaluation evaluation) @safe nothrow {
     auto presentValues = expectedPieces.filter!(a => testData.canFind(a)).array;
 
     if(presentValues.length > 0) {
-      addNegatedLifecycleMessage(evaluation.currentValue, presentValues);
+      addNegatedLifecycleMessage(evaluation, presentValues);
       try results ~= new ExpectedActualResult(createNegatedResultMessage(evaluation.expectedValue, expectedPieces), evaluation.currentValue.strValue);
       catch(Exception) {}
     }
@@ -103,7 +103,7 @@ IResult[] arrayContain(ref Evaluation evaluation) @safe nothrow {
 
 ///
 IResult[] arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
-  Lifecycle.instance.addText(".");
+  evaluation.message.addText(".");
 
   IResult[] results = [];
 
@@ -150,50 +150,50 @@ IResult[] arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
 }
 
 ///
-void addLifecycleMessage(ValueEvaluation currentValue, string[] missingValues) @safe nothrow {
-  Lifecycle.instance.addText(" ");
+void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @safe nothrow {
+  evaluation.message.addText(" ");
 
   if(missingValues.length == 1) {
-    try Lifecycle.instance.addValue(missingValues[0]); catch(Exception e) {
-      Lifecycle.instance.addText(" some value ");
+    try evaluation.message.addValue(missingValues[0]); catch(Exception e) {
+      evaluation.message.addText(" some value ");
     }
 
-    Lifecycle.instance.addText(" is missing from ");
+    evaluation.message.addText(" is missing from ");
   } else {
     try {
-      Lifecycle.instance.addValue(missingValues.niceJoin(currentValue.typeName));
+      evaluation.message.addValue(missingValues.niceJoin(evaluation.currentValue.typeName));
     } catch(Exception e) {
-      Lifecycle.instance.addText(" some values ");
+      evaluation.message.addText(" some values ");
     }
 
-    Lifecycle.instance.addText(" are missing from ");
+    evaluation.message.addText(" are missing from ");
   }
 
-  Lifecycle.instance.addValue(currentValue.strValue);
-  Lifecycle.instance.addText(".");
+  evaluation.message.addValue(evaluation.currentValue.strValue);
+  evaluation.message.addText(".");
 }
 
 ///
-void addNegatedLifecycleMessage(ValueEvaluation currentValue, string[] presentValues) @safe nothrow {
-  Lifecycle.instance.addText(" ");
+void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValues) @safe nothrow {
+  evaluation.message.addText(" ");
 
   if(presentValues.length == 1) {
-    try Lifecycle.instance.addValue(presentValues[0]); catch(Exception e) {
-      Lifecycle.instance.addText(" some value ");
+    try evaluation.message.addValue(presentValues[0]); catch(Exception e) {
+      evaluation.message.addText(" some value ");
     }
 
-    Lifecycle.instance.addText(" is present in ");
+    evaluation.message.addText(" is present in ");
   } else {
-    try Lifecycle.instance.addValue(presentValues.niceJoin(currentValue.typeName));
+    try evaluation.message.addValue(presentValues.niceJoin(evaluation.currentValue.typeName));
     catch(Exception e) {
-      Lifecycle.instance.addText(" some values ");
+      evaluation.message.addText(" some values ");
     }
 
-    Lifecycle.instance.addText(" are present in ");
+    evaluation.message.addText(" are present in ");
   }
 
-  Lifecycle.instance.addValue(currentValue.strValue);
-  Lifecycle.instance.addText(".");
+  evaluation.message.addValue(evaluation.currentValue.strValue);
+  evaluation.message.addText(".");
 }
 
 string createResultMessage(ValueEvaluation expectedValue, string[] expectedPieces) @safe nothrow {

@@ -2,6 +2,7 @@ module fluentasserts.core.expect;
 
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.evaluation;
+import fluentasserts.core.results;
 
 import std.traits;
 import std.conv;
@@ -15,24 +16,46 @@ import std.conv;
   ///
   string operationName;
 
-  this(ValueEvaluation value, const string file, const size_t line) {
-    Lifecycle.instance.beginEvaluation(value)
-      .atSourceLocation(file, line)
-      .usingNegation(isNegated);
+  private {
+    Evaluation evaluation;
+  }
+
+  this(ValueEvaluation value, const string fileName, const size_t line) {
+    this.evaluation = new Evaluation();
+
+    evaluation.id = Lifecycle.instance.beginEvaluation(value);
+    evaluation.currentValue = value;
+    evaluation.message = new MessageResult();
+    evaluation.source = new SourceResult(fileName, line);
+
+    try {
+      auto sourceValue = evaluation.source.getValue;
+
+      if(sourceValue == "") {
+        evaluation.message.startWith(evaluation.currentValue.strValue);
+      } else {
+        evaluation.message.startWith(sourceValue);
+      }
+    } catch(Exception) {
+      evaluation.message.startWith(evaluation.currentValue.strValue);
+    }
+
+    evaluation.message.addText(" should");
   }
 
   this(ref return scope Expect another) {
     this.isNegated = another.isNegated;
     this.operationName = another.operationName;
+    this.evaluation = another.evaluation;
     Lifecycle.instance.incAssertIndex;
   }
 
   ~this() {
-    if(!Lifecycle.instance.hasOperation) {
-      Lifecycle.instance.usingOperation(operationName);
+    if(evaluation.operationName == "") {
+      evaluation.operationName = operationName;
     }
 
-    Lifecycle.instance.endEvaluation;
+    Lifecycle.instance.endEvaluation(evaluation);
   }
 
   ///
@@ -42,14 +65,14 @@ import std.conv;
 
   ///
   Expect be () {
-    Lifecycle.instance.addText(" be");
+    evaluation.message.addText(" be");
     return this;
   }
 
   ///
   Expect not() {
-    isNegated = !isNegated;
-    Lifecycle.instance.usingNegation(isNegated);
+    evaluation.isNegated = !evaluation.isNegated;
+    evaluation.message.addText(" not");
 
     return this;
   }
@@ -61,13 +84,12 @@ import std.conv;
 
   ///
   Expect throwException(Type)() {
-    Lifecycle.instance.usingOperation("throwException");
-
+    evaluation.operationName = "throwException";
     return opDispatch!"throwException"(fullyQualifiedName!Type);
   }
 
   auto because(string reason) {
-    Lifecycle.instance.prependText("Because " ~ reason ~ ", ");
+    evaluation.message.prependText("Because " ~ reason ~ ", ");
     return this;
   }
 
@@ -147,7 +169,7 @@ import std.conv;
 
     static if(Params.length == 1) {
       auto expectedValue = params[0].evaluate.evaluation;
-      Lifecycle.instance.compareWith(expectedValue);
+      evaluation.expectedValue = expectedValue;
     }
 
     static if(Params.length > 1) {
@@ -157,7 +179,7 @@ import std.conv;
         () @trusted { expectedValue.meta[i.to!string] = params[i].to!string; } ();
       }
 
-      Lifecycle.instance.compareWith(expectedValue);
+      evaluation.expectedValue = expectedValue;
     }
 
     return this;

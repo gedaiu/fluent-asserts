@@ -13,9 +13,9 @@ version(unittest) {
 
 ///
 IResult[] between(T)(ref Evaluation evaluation) @safe nothrow {
-  Lifecycle.instance.addText(" and ");
-  Lifecycle.instance.addValue(evaluation.expectedValue.meta["1"]);
-  Lifecycle.instance.addText(". ");
+  evaluation.message.addText(" and ");
+  evaluation.message.addValue(evaluation.expectedValue.meta["1"]);
+  evaluation.message.addText(". ");
 
   T currentValue;
   T limit1;
@@ -48,21 +48,21 @@ IResult[] between(T)(ref Evaluation evaluation) @safe nothrow {
 
   if(!evaluation.isNegated) {
     if(!isBetween) {
-      Lifecycle.instance.addValue(evaluation.currentValue.strValue);
+      evaluation.message.addValue(evaluation.currentValue.strValue);
 
       if(isGreater) {
-        Lifecycle.instance.addText(" is greater than or equal to ");
-        try Lifecycle.instance.addValue(max.to!string);
+        evaluation.message.addText(" is greater than or equal to ");
+        try evaluation.message.addValue(max.to!string);
         catch(Exception) {}
       }
 
       if(isLess) {
-        Lifecycle.instance.addText(" is less than or equal to ");
-        try Lifecycle.instance.addValue(min.to!string);
+        evaluation.message.addText(" is less than or equal to ");
+        try evaluation.message.addValue(min.to!string);
         catch(Exception) {}
       }
 
-      Lifecycle.instance.addText(".");
+      evaluation.message.addText(".");
 
       results ~= new ExpectedActualResult(interval, evaluation.currentValue.strValue);
     }

@@ -14,7 +14,7 @@ version(unittest) {
 
 ///
 IResult[] endWith(ref Evaluation evaluation) @safe nothrow {
-  Lifecycle.instance.addText(".");
+  evaluation.message.addText(".");
 
   IResult[] results = [];
   auto current = evaluation.currentValue.strValue.cleanString;
@@ -25,22 +25,22 @@ IResult[] endWith(ref Evaluation evaluation) @safe nothrow {
 
   if(evaluation.isNegated) {
     if(doesEndWith) {
-      Lifecycle.instance.addText(" ");
-      Lifecycle.instance.addValue(evaluation.currentValue.strValue);
-      Lifecycle.instance.addText(" ends with ");
-      Lifecycle.instance.addValue(evaluation.expectedValue.strValue);
-      Lifecycle.instance.addText(".");
+      evaluation.message.addText(" ");
+      evaluation.message.addValue(evaluation.currentValue.strValue);
+      evaluation.message.addText(" ends with ");
+      evaluation.message.addValue(evaluation.expectedValue.strValue);
+      evaluation.message.addText(".");
 
       try results ~= new ExpectedActualResult("to not end with " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
       catch(Exception e) {}
     }
   } else {
     if(!doesEndWith) {
-      Lifecycle.instance.addText(" ");
-      Lifecycle.instance.addValue(evaluation.currentValue.strValue);
-      Lifecycle.instance.addText(" does not end with ");
-      Lifecycle.instance.addValue(evaluation.expectedValue.strValue);
-      Lifecycle.instance.addText(".");
+      evaluation.message.addText(" ");
+      evaluation.message.addValue(evaluation.currentValue.strValue);
+      evaluation.message.addText(" does not end with ");
+      evaluation.message.addValue(evaluation.expectedValue.strValue);
+      evaluation.message.addText(".");
 
       try results ~= new ExpectedActualResult("to end with " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
       catch(Exception e) {}

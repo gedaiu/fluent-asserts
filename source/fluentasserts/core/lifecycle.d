@@ -108,19 +108,10 @@ static this() {
 
 /// The assert lifecycle
 @safe class Lifecycle {
-
   /// Global instance for the assert lifecicle
   static Lifecycle instance;
 
   private {
-    Evaluation evaluation;
-
-    /// The nice message printed to the user
-    MessageResult message;
-
-    /// The source code where the assert is located
-    SourceResult sourceResult;
-
     ///
     int assertIndex;
 
@@ -132,100 +123,18 @@ static this() {
     assertIndex++;
   }
 
-  /// Checks if an assert operation was set
-  bool hasOperation() {
-    return evaluation.operationName != "";
-  }
-
   /// Method called when a new value is evaluated
-  Lifecycle beginEvaluation(ValueEvaluation value) @safe nothrow {
+  int beginEvaluation(ValueEvaluation value) @safe nothrow {
     assert(assertIndex >= 0, "assert index is `" ~ assertIndex.to!string ~ "`. It must be >= 0.");
 
     totalAsserts++;
     assertIndex++;
 
-    evaluation = Evaluation();
-
-    if(assertIndex == 1) {
-      evaluation.currentValue = value;
-      message = new MessageResult();
-    }
-
-    return this;
-  }
-
-  /// Method called when the oracle value is known
-  Lifecycle compareWith(ValueEvaluation value) @safe nothrow {
-    evaluation.expectedValue = value;
-    return this;
-  }
-
-  /// Method called when the comparison operation is known
-  Lifecycle usingOperation(string operationName) @safe nothrow {
-    assert(evaluation.operationName == "", "Operation name is already set to `" ~ evaluation.operationName ~ "`");
-    evaluation.operationName = operationName;
-    return this;
-  }
-
-  /// Method called when the operation result needs to be negated to be true
-  Lifecycle usingNegation(bool value) {
-    evaluation.isNegated = value;
-
-    if(value) {
-      addText(" not");
-    }
-
-    return this;
-  }
-
-  /// Method called when the assert location is known
-  Lifecycle atSourceLocation(const string fileName, const size_t line) @safe nothrow {
-    evaluation.fileName = fileName;
-    evaluation.line = line;
-    sourceResult = new SourceResult(fileName, line);
-
-    try {
-      auto value = sourceResult.getValue;
-
-      if(value == "") {
-        message.startWith(evaluation.currentValue.strValue);
-      } else {
-        message.startWith(value);
-      }
-    } catch(Exception) {
-      message.startWith(evaluation.currentValue.strValue);
-    }
-
-    addText(" should");
-
-    return this;
+    return totalAsserts;
   }
 
   ///
-  Lifecycle prependText(string text) @safe nothrow {
-    message.prependText(text);
-
-    return this;
-  }
-
-  ///
-  Lifecycle addText(string text) @safe nothrow {
-    if(text == "throwAnyException") {
-      text = "throw any exception";
-    }
-
-    message.addText(text);
-    return this;
-  }
-
-  ///
-  Lifecycle addValue(string value) @safe nothrow {
-    message.addValue(value);
-    return this;
-  }
-
-  ///
-  EvaluationResult endEvaluation() @trusted {
+  EvaluationResult endEvaluation(ref Evaluation evaluation) @trusted {
     EvaluationResult result;
 
     assertIndex--;
@@ -233,25 +142,25 @@ static this() {
 
     if(assertIndex > 0) return result;
 
-    addText(" ");
-    addText(evaluation.operationName);
+    evaluation.message.addText(" ");
+    evaluation.message.addText(evaluation.operationName);
 
     if(evaluation.expectedValue.strValue) {
-      addText(" ");
-      addValue(evaluation.expectedValue.strValue);
+      evaluation.message.addText(" ");
+      evaluation.message.addValue(evaluation.expectedValue.strValue);
     }
 
-    result.message = message;
+    result.message = evaluation.message;
     result.results = Registry.instance.handle(evaluation);
 
     version(DisableSourceResult) {} else {
       if(result.results.length > 0) {
-        result.results ~= sourceResult;
+        result.results ~= evaluation.source;
       }
     }
 
-    result.fileName = evaluation.fileName;
-    result.line = evaluation.line;
+    result.fileName = evaluation.source.file;
+    result.line = evaluation.source.line;
 
     if(evaluation.currentValue.throwable !is null) {
       result.throwable = evaluation.currentValue.throwable;

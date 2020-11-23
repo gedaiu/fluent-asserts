@@ -13,7 +13,7 @@ version(unittest) {
 
 ///
 IResult[] lessThan(T)(ref Evaluation evaluation) @safe nothrow {
-  Lifecycle.instance.addText(".");
+  evaluation.message.addText(".");
 
   T expectedValue;
   T currentValue;
@@ -35,22 +35,22 @@ IResult[] lessThan(T)(ref Evaluation evaluation) @safe nothrow {
     return [];
   }
 
-  Lifecycle.instance.addText(" ");
-  Lifecycle.instance.addValue(evaluation.currentValue.strValue);
+  evaluation.message.addText(" ");
+  evaluation.message.addValue(evaluation.currentValue.strValue);
 
   IResult[] results = [];
 
   if(evaluation.isNegated) {
-    Lifecycle.instance.addText(" is less than ");
+    evaluation.message.addText(" is less than ");
     results ~= new ExpectedActualResult("greater than or equal to " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
   } else {
-    Lifecycle.instance.addText(" is greater than or equal to ");
+    evaluation.message.addText(" is greater than or equal to ");
     results ~= new ExpectedActualResult("less than " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
   }
 
 
-  Lifecycle.instance.addValue(evaluation.expectedValue.strValue);
-  Lifecycle.instance.addText(".");
+  evaluation.message.addValue(evaluation.expectedValue.strValue);
+  evaluation.message.addText(".");
 
 
   return results;

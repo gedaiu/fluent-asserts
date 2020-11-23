@@ -19,8 +19,8 @@ version(unittest) {
 
 ///
 IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
-  Lifecycle.instance.addValue("±" ~ evaluation.expectedValue.meta["1"]);
-  Lifecycle.instance.addText(".");
+  evaluation.message.addValue("±" ~ evaluation.expectedValue.meta["1"]);
+  evaluation.message.addText(".");
 
   double maxRelDiff;
   real[] testData;

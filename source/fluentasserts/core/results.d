@@ -213,6 +213,10 @@ class MessageResult : IResult
   }
 
   void addText(string text) @safe nothrow {
+    if(text == "throwAnyException") {
+      text = "throw any exception";
+    }
+
     this.messages ~= Message(false, text);
   }
 
@@ -1130,11 +1134,13 @@ class SourceResult : IResult
     const(Token)[][string] fileTokens;
   }
 
-  private const
-  {
+  immutable {
     string file;
     size_t line;
+  }
 
+  private const
+  {
     Token[] tokens;
   }
 
