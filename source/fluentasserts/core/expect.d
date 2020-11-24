@@ -47,6 +47,14 @@ import std.conv;
     refCount--;
 
     if(refCount < 0) {
+      evaluation.message.addText(" ");
+      evaluation.message.addText(evaluation.operationName);
+
+      if(evaluation.expectedValue.strValue) {
+        evaluation.message.addText(" ");
+        evaluation.message.addValue(evaluation.expectedValue.strValue);
+      }
+
       Lifecycle.instance.endEvaluation(evaluation);
     }
   }

@@ -124,70 +124,29 @@ static this() {
   }
 
   ///
-  EvaluationResult endEvaluation(ref Evaluation evaluation) @trusted {
-    EvaluationResult result;
-
-    evaluation.message.addText(" ");
-    evaluation.message.addText(evaluation.operationName);
-
-    if(evaluation.expectedValue.strValue) {
-      evaluation.message.addText(" ");
-      evaluation.message.addValue(evaluation.expectedValue.strValue);
-    }
-
-    result.message = evaluation.message;
-    result.results = Registry.instance.handle(evaluation);
-
-    version(DisableSourceResult) {} else {
-      if(result.results.length > 0) {
-        result.results ~= evaluation.source;
-      }
-    }
-
-    result.fileName = evaluation.source.file;
-    result.line = evaluation.source.line;
+  void endEvaluation(ref Evaluation evaluation) @trusted {
+    auto results = Registry.instance.handle(evaluation);
 
     if(evaluation.currentValue.throwable !is null) {
-      result.throwable = evaluation.currentValue.throwable;
+      throw evaluation.currentValue.throwable;
     }
 
     if(evaluation.expectedValue.throwable !is null) {
-      result.throwable = evaluation.currentValue.throwable;
-    }
-
-    return result;
-  }
-}
-
-///
-@safe struct EvaluationResult {
-  MessageResult message;
-  IResult[] results;
-  string fileName;
-  size_t line;
-  Throwable throwable;
-
-  void perform() {
-    if(throwable !is null) {
-      throw throwable;
+      throw evaluation.currentValue.throwable;
     }
 
     if(results.length == 0) {
       return;
     }
 
-    IResult[] all;
-
-    if(message !is null) {
-      all ~= message;
+    version(DisableSourceResult) {} else {
+      results ~= evaluation.source;
     }
 
-    all ~= results;
+    if(evaluation.message !is null) {
+      results = evaluation.message ~ results;
+    }
 
-    throw new TestException(all, fileName, line);
-  }
-
-  ~this() {
-    this.perform;
+    throw new TestException(results, evaluation.source.file, evaluation.source.line);
   }
 }
