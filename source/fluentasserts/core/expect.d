@@ -10,14 +10,9 @@ import std.conv;
 ///
 @safe struct Expect {
 
-  ///
-  bool isNegated;
-
-  ///
-  string operationName;
-
   private {
     Evaluation evaluation;
+    int refCount;
   }
 
   this(ValueEvaluation value, const string fileName, const size_t line) {
@@ -44,18 +39,16 @@ import std.conv;
   }
 
   this(ref return scope Expect another) {
-    this.isNegated = another.isNegated;
-    this.operationName = another.operationName;
     this.evaluation = another.evaluation;
-    Lifecycle.instance.incAssertIndex;
+    this.refCount = another.refCount + 1;
   }
 
   ~this() {
-    if(evaluation.operationName == "") {
-      evaluation.operationName = operationName;
-    }
+    refCount--;
 
-    Lifecycle.instance.endEvaluation(evaluation);
+    if(refCount < 0) {
+      Lifecycle.instance.endEvaluation(evaluation);
+    }
   }
 
   ///
@@ -84,7 +77,6 @@ import std.conv;
 
   ///
   Expect throwException(Type)() {
-    evaluation.operationName = "throwException";
     return opDispatch!"throwException"(fullyQualifiedName!Type);
   }
 
@@ -149,11 +141,11 @@ import std.conv;
   }
 
   void addOperationName(string value) {
-    if(this.operationName) {
-      this.operationName ~= ".";
+    if(this.evaluation.operationName) {
+      this.evaluation.operationName ~= ".";
     }
 
-    this.operationName ~= value;
+    this.evaluation.operationName ~= value;
   }
 
   ///

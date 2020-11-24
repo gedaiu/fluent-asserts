@@ -113,22 +113,12 @@ static this() {
 
   private {
     ///
-    int assertIndex;
-
-    ///
     int totalAsserts;
-  }
-
-  void incAssertIndex() {
-    assertIndex++;
   }
 
   /// Method called when a new value is evaluated
   int beginEvaluation(ValueEvaluation value) @safe nothrow {
-    assert(assertIndex >= 0, "assert index is `" ~ assertIndex.to!string ~ "`. It must be >= 0.");
-
     totalAsserts++;
-    assertIndex++;
 
     return totalAsserts;
   }
@@ -136,11 +126,6 @@ static this() {
   ///
   EvaluationResult endEvaluation(ref Evaluation evaluation) @trusted {
     EvaluationResult result;
-
-    assertIndex--;
-    assert(assertIndex >= 0, "assert index is `" ~ assertIndex.to!string ~ "`. It must be >= 0.");
-
-    if(assertIndex > 0) return result;
 
     evaluation.message.addText(" ");
     evaluation.message.addText(evaluation.operationName);
