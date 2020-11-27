@@ -17,7 +17,7 @@ import std.conv;
     int refCount;
   }
 
-  this(ValueEvaluation value, const string fileName, const size_t line) @trusted {
+  this(ValueEvaluation value, const string fileName, const size_t line, string prependText = null) @trusted {
     this.evaluation = new Evaluation();
 
     evaluation.id = Lifecycle.instance.beginEvaluation(value);
@@ -29,7 +29,7 @@ import std.conv;
       auto sourceValue = evaluation.source.getValue;
 
       if(sourceValue == "") {
-        evaluation.message.startWith(evaluation.currentValue.strValue);
+        evaluation.message.startWith(evaluation.currentValue.niceValue);
       } else {
         evaluation.message.startWith(sourceValue);
       }
@@ -38,6 +38,10 @@ import std.conv;
     }
 
     evaluation.message.addText(" should");
+
+    if(prependText) {
+      evaluation.message.addText(prependText);
+    }
   }
 
   this(ref return scope Expect another) {
@@ -52,7 +56,10 @@ import std.conv;
       evaluation.message.addText(" ");
       evaluation.message.addText(evaluation.operationName.toNiceOperation);
 
-      if(evaluation.expectedValue.strValue) {
+      if(evaluation.expectedValue.niceValue) {
+        evaluation.message.addText(" ");
+        evaluation.message.addValue(evaluation.expectedValue.niceValue);
+      } else if(evaluation.expectedValue.strValue) {
         evaluation.message.addText(" ");
         evaluation.message.addValue(evaluation.expectedValue.strValue);
       }
@@ -176,6 +183,18 @@ import std.conv;
     return opDispatch!"within"(value, range);
   }
 
+  void inhibit() {
+    this.refCount = int.max;
+  }
+
+  auto haveExecutionTime() {
+    this.inhibit;
+
+    auto result = expect(evaluation.currentValue.duration, evaluation.source.file, evaluation.source.line, " have execution time");
+
+    return result;
+  }
+
   void addOperationName(string value) {
 
     if(this.evaluation.operationName) {
@@ -217,7 +236,7 @@ import std.conv;
 }
 
 ///
-Expect expect(void delegate() callable, const string file = __FILE__, const size_t line = __LINE__) @trusted {
+Expect expect(void delegate() callable, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
   ValueEvaluation value;
   value.typeName = "callable";
 
@@ -235,12 +254,12 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
     value.meta["Throwable"] = "yes";
   }
 
-  return Expect(value, file, line);
+  return Expect(value, file, line, prependText);
 }
 
 ///
-Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t line = __LINE__) @trusted {
-  return Expect(testedValue.evaluate.evaluation, file, line);
+Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
+  return Expect(testedValue.evaluate.evaluation, file, line, prependText);
 }
 
 ///

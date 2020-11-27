@@ -5,6 +5,7 @@ import std.string;
 import std.algorithm;
 import std.traits;
 import std.conv;
+import std.datetime;
 
 version(unittest) import fluent.asserts;
 
@@ -48,6 +49,8 @@ class SerializerRegistry {
       } else {
         result = T.stringof ~ "(" ~ (cast() value).toHash.to!string ~ ")";
       }
+    } else static if(is(Unqual!T == Duration)) {
+      result = value.total!"nsecs".to!string;
     } else {
       result = value.to!string;
     }
@@ -76,6 +79,14 @@ class SerializerRegistry {
       return `'` ~ value.to!string ~ `'`;
     } else {
       return value.to!string;
+    }
+  }
+
+  string niceValue(T)(T value) {
+    static if(is(Unqual!T == Duration)) {
+      return value.to!string;
+    } else {
+      return serialize(value);
     }
   }
 }

@@ -22,6 +22,9 @@ struct ValueEvaluation {
   /// Serialized value as string
   string strValue;
 
+  /// Human readable value
+  string niceValue;
+
   /// The name of the type before it was converted to string
   string typeName;
 
@@ -84,7 +87,9 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
     }
 
     auto duration = Clock.currTime - begin;
-    return Result(value, ValueEvaluation(null, duration, SerializerRegistry.instance.serialize(value), unqualString!TT));
+    auto serializedValue = SerializerRegistry.instance.serialize(value);
+    auto niceValue = SerializerRegistry.instance.niceValue(value);
+    return Result(value, ValueEvaluation(null, duration, serializedValue, niceValue, unqualString!TT));
   } catch(Throwable t) {
     T result;
 
@@ -92,7 +97,7 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
       result = testData;
     }
 
-    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, unqualString!T));
+    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, result.to!string, unqualString!T));
   }
 }
 

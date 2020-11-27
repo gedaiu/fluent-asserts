@@ -31,6 +31,10 @@ static this() {
   ResultGlyphs.resetDefaults;
 
   Registry.instance = new Registry();
+
+  Registry.instance.register("Duration", "Duration", "lessThan", &lessThanDuration);
+  Registry.instance.register("Duration", "Duration", "below", &lessThanDuration);
+
   Registry.instance.register("string", "string", "equal", &equal);
   Registry.instance.register("bool", "bool", "equal", &equal);
 

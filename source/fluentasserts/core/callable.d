@@ -179,10 +179,10 @@ unittest {
   }
 
   exception.should.not.beNull.because("we wait 20 milliseconds");
-  exception.msg.should.startWith("({\n      Thread.sleep(2.msecs);\n    }) should have execution time less than `1 ms`.");
+  exception.msg.should.startWith("({\n      Thread.sleep(2.msecs);\n    }) should have execution time less than 1 ms.");
 }
 
-/// It should check if a delagate is null
+/// It should check if a delegate is null
 unittest {
   void delegate() action;
   action.should.beNull;
