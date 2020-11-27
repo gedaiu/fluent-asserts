@@ -363,7 +363,7 @@ unittest {
   try {
     noException.should.throwAnyException;
   } catch (TestException e) {
-    e.msg.should.startWith("noException should throw any exception. Nothing was thrown.");
+    e.msg.should.startWith("noException should throw any exception. No exception was thrown.");
     thrown = true;
   }
   thrown.should.equal(true);
@@ -374,15 +374,14 @@ unittest {
     voidValue().should.not.throwAnyException;
   } catch(TestException e) {
     thrown = true;
-    e.msg.split("\n")[0].should.equal("voidValue() should not throw any exception. An exception of type `object.Exception` saying `nothing here` was thrown.");
+    e.msg.split("\n")[0].should.equal("voidValue() should not throw any exception. `object.Exception` saying `nothing here` was thrown.");
   }
 
   thrown.should.equal(true);
 }
 
 /// it should compile const comparison
-unittest
-{
+unittest {
   const actual = 42;
   actual.should.equal(42);
 }

@@ -496,19 +496,12 @@ auto should(T)(lazy T testData, const string file = __FILE__, const size_t line 
   }
 
   static if(is(T == void)) {
-
     auto callable = ({ testData; });
-    return ShouldCallable!(typeof(callable))(callable);
+    return expect(callable, file, line);
   } else static if(!returned) {
 
     static if(is(T == class) || is(T == interface)) {
       return ShouldObject!T(testData.evaluate);
-    } else static if(is(T == string)) {
-      return expect(testData, file, line);
-    } else static if(isInputRange!T) {
-      return expect(testData, file, line);
-    } else static if(isCallable!T) {
-      return expect(testData, file, line);
     } else {
       return expect(testData, file, line);
     }
