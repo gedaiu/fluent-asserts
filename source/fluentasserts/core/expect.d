@@ -5,6 +5,8 @@ import fluentasserts.core.evaluation;
 import fluentasserts.core.results;
 
 import std.traits;
+import std.string;
+import std.uni;
 import std.conv;
 
 ///
@@ -15,7 +17,7 @@ import std.conv;
     int refCount;
   }
 
-  this(ValueEvaluation value, const string fileName, const size_t line) {
+  this(ValueEvaluation value, const string fileName, const size_t line) @trusted {
     this.evaluation = new Evaluation();
 
     evaluation.id = Lifecycle.instance.beginEvaluation(value);
@@ -48,7 +50,7 @@ import std.conv;
 
     if(refCount < 0) {
       evaluation.message.addText(" ");
-      evaluation.message.addText(evaluation.operationName);
+      evaluation.message.addText(evaluation.operationName.toNiceOperation);
 
       if(evaluation.expectedValue.strValue) {
         evaluation.message.addText(" ");
@@ -57,6 +59,29 @@ import std.conv;
 
       Lifecycle.instance.endEvaluation(evaluation);
     }
+  }
+
+  string msg(const size_t line = __LINE__, const string file = __FILE__) @trusted {
+    if(this.thrown is null) {
+      throw new Exception("There were no thrown exceptions", file, line);
+    }
+
+    return this.thrown.message.to!string;
+  }
+
+  Expect withMessage(const size_t line = __LINE__, const string file = __FILE__) {
+    addOperationName("withMessage");
+    return this;
+  }
+
+  Expect withMessage(string message, const size_t line = __LINE__, const string file = __FILE__) {
+    addOperationName("withMessage");
+    return this.equal(message);
+  }
+
+  Throwable thrown() {
+    Lifecycle.instance.endEvaluation(evaluation);
+    return evaluation.throwable;
   }
 
   ///
@@ -85,6 +110,9 @@ import std.conv;
 
   ///
   Expect throwException(Type)() {
+    this.evaluation.expectedValue.meta["exceptionType"] = fullyQualifiedName!Type;
+    this.evaluation.expectedValue.meta["throwableType"] = fullyQualifiedName!Type;
+
     return opDispatch!"throwException"(fullyQualifiedName!Type);
   }
 
@@ -149,6 +177,7 @@ import std.conv;
   }
 
   void addOperationName(string value) {
+
     if(this.evaluation.operationName) {
       this.evaluation.operationName ~= ".";
     }
@@ -167,19 +196,20 @@ import std.conv;
   Expect opDispatch(string methodName, Params...)(Params params) if(Params.length > 0) {
     addOperationName(methodName);
 
-    static if(Params.length == 1) {
-      auto expectedValue = params[0].evaluate.evaluation;
-      evaluation.expectedValue = expectedValue;
-    }
-
-    static if(Params.length > 1) {
+    static if(Params.length > 0) {
       auto expectedValue = params[0].evaluate.evaluation;
 
-      static foreach (i, Param; Params) {
-        () @trusted { expectedValue.meta[i.to!string] = params[i].to!string; } ();
+      foreach(key, value; evaluation.expectedValue.meta) {
+        expectedValue.meta[key] = value;
       }
 
       evaluation.expectedValue = expectedValue;
+    }
+
+    static if(Params.length >= 1) {
+      static foreach (i, Param; Params) {
+        () @trusted { evaluation.expectedValue.meta[i.to!string] = params[i].to!string; } ();
+      }
     }
 
     return this;
@@ -192,7 +222,11 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
   value.typeName = "callable";
 
   try {
-    callable();
+    if(callable !is null) {
+      callable();
+    } else {
+      value.typeName = "null";
+    }
   } catch(Exception e) {
     value.throwable = e;
     value.meta["Exception"] = "yes";
@@ -207,4 +241,38 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
 ///
 Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t line = __LINE__) @trusted {
   return Expect(testedValue.evaluate.evaluation, file, line);
+}
+
+///
+string toNiceOperation(string value) @safe nothrow {
+  string newValue;
+
+  foreach(index, ch; value) {
+    if(index == 0) {
+      newValue ~= ch.toLower;
+      continue;
+    }
+
+    if(ch == '.') {
+      newValue ~= ' ';
+      continue;
+    }
+
+    if(ch.isUpper && value[index - 1].isLower) {
+      newValue ~= ' ';
+      newValue ~= ch.toLower;
+      continue;
+    }
+
+    newValue ~= ch;
+  }
+
+  return newValue;
+}
+
+/// toNiceOperation converts to a nice and readable string
+unittest {
+  expect("".toNiceOperation).to.equal("");
+  expect("a.b".toNiceOperation).to.equal("a b");
+  expect("aB".toNiceOperation).to.equal("a b");
 }

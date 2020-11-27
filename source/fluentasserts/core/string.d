@@ -289,7 +289,7 @@ unittest {
     "test string".should.not.endWith("string");
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal(`"test string" should not endWith "string". "test string" ends with "string".`);
+  msg.split("\n")[0].should.equal(`"test string" should not end with "string". "test string" ends with "string".`);
   msg.split("\n")[2].strip.should.equal(`Expected:to not end with "string"`);
   msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
 

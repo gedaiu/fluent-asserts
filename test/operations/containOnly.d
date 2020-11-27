@@ -47,7 +47,7 @@ alias s = Spec!({
           expect(testValues).to.containOnly(testValues[0..2]);
         }).should.throwException!TestException.msg;
 
-        msg.split('\n')[0].should.equal(testValues.to!string ~ " should containOnly " ~ testValues[0..2].to!string ~ ".");
+        msg.split('\n')[0].should.equal(testValues.to!string ~ " should contain only " ~ testValues[0..2].to!string ~ ".");
         msg.split('\n')[2].strip.should.equal("Actual:" ~ testValues.to!string);
         msg.split('\n')[4].strip.should.equal("Missing:" ~ testValues[$-1..$].to!string);
       });
@@ -57,7 +57,7 @@ alias s = Spec!({
           expect(testValues).to.not.containOnly(testValuesWithOtherOrder);
         }).should.throwException!TestException.msg;
 
-        msg.split('\n')[0].should.equal(testValues.to!string ~ " should not containOnly " ~ testValuesWithOtherOrder.to!string ~ ".");
+        msg.split('\n')[0].should.equal(testValues.to!string ~ " should not contain only " ~ testValuesWithOtherOrder.to!string ~ ".");
         msg.split('\n')[2].strip.should.equal("Expected:to not contain " ~ testValuesWithOtherOrder.to!string);
         msg.split('\n')[3].strip.should.equal("Actual:" ~ testValues.to!string);
       });
@@ -106,7 +106,7 @@ alias s = Spec!({
           expect(testValues).to.containOnly(testValues[0..2]);
         }).should.throwException!TestException.msg;
 
-        msg.split('\n')[0].should.equal(testValues.to!string ~ " should containOnly " ~ testValues[0..2].to!string ~ ".");
+        msg.split('\n')[0].should.equal(testValues.to!string ~ " should contain only " ~ testValues[0..2].to!string ~ ".");
         msg.split('\n')[2].strip.should.equal("Actual:" ~ testValues.to!string);
         msg.split('\n')[4].strip.should.equal("Missing:" ~ testValues[$-1..$].to!string);
       });
@@ -116,7 +116,7 @@ alias s = Spec!({
           expect(testValues).to.not.containOnly(testValuesWithOtherOrder);
         }).should.throwException!TestException.msg;
 
-        msg.split('\n')[0].should.equal(testValues.to!string ~ " should not containOnly " ~ testValuesWithOtherOrder.to!string ~ ".");
+        msg.split('\n')[0].should.equal(testValues.to!string ~ " should not contain only " ~ testValuesWithOtherOrder.to!string ~ ".");
         msg.split('\n')[2].strip.should.equal("Expected:to not contain " ~ testValuesWithOtherOrder.to!string);
         msg.split('\n')[3].strip.should.equal("Actual:" ~ testValues.to!string);
       });

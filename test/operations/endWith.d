@@ -42,7 +42,7 @@ alias s = Spec!({
           expect(testValue).to.endWith("other");
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.contain(`"test string" should endWith "other". "test string" does not end with "other".`);
+        msg.split("\n")[0].should.contain(`"test string" should end with "other". "test string" does not end with "other".`);
         msg.split("\n")[2].strip.should.equal(`Expected:to end with "other"`);
         msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
       });
@@ -52,7 +52,7 @@ alias s = Spec!({
           expect(testValue).to.endWith('o');
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.contain(`"test string" should endWith 'o'. "test string" does not end with 'o'.`);
+        msg.split("\n")[0].should.contain(`"test string" should end with 'o'. "test string" does not end with 'o'.`);
         msg.split("\n")[2].strip.should.equal(`Expected:to end with 'o'`);
         msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
       });
@@ -62,7 +62,7 @@ alias s = Spec!({
           expect(testValue).to.not.endWith("string");
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.contain(`"test string" should not endWith "string". "test string" ends with "string".`);
+        msg.split("\n")[0].should.contain(`"test string" should not end with "string". "test string" ends with "string".`);
         msg.split("\n")[2].strip.should.equal(`Expected:to not end with "string"`);
         msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
       });
@@ -72,7 +72,7 @@ alias s = Spec!({
           expect(testValue).to.not.endWith('g');
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.contain(`"test string" should not endWith 'g'. "test string" ends with 'g'.`);
+        msg.split("\n")[0].should.contain(`"test string" should not end with 'g'. "test string" ends with 'g'.`);
         msg.split("\n")[2].strip.should.equal(`Expected:to not end with 'g'`);
         msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
       });

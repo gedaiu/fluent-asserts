@@ -94,19 +94,17 @@ unittest {
 
   ({
     throw new CustomException("test");
-  }).should.throwException!CustomException.withMessage.equal("test");
-
+  }).should.throwException!CustomException.withMessage("test");
 
   bool hasException;
   try {
     ({
       throw new Exception("test");
-    }).should.throwException!CustomException.withMessage.equal("test");
+    }).should.throwException!CustomException.withMessage("test");
   } catch(TestException t) {
     hasException = true;
-    t.msg.should.contain("    }) should throw a `CustomException`. An exception of type `object.Exception` saying `test` was thrown.");
+    t.msg.should.contain("    }) should throw exception with message equal \"test\". `object.Exception` saying `test` was thrown.");
   }
-
   hasException.should.equal(true).because("we want to catch a CustomException not an Exception");
 }
 
@@ -123,34 +121,12 @@ unittest {
 
   auto thrown = ({
     throw new CustomException(2, "test");
-  }).should.throwException!CustomException.original;
+  }).should.throwException!CustomException.thrown;
 
   thrown.should.not.beNull;
-  thrown.should.instanceOf!CustomException;
+  thrown.should.be.instanceOf!CustomException;
   thrown.msg.should.equal("test");
-  thrown.data.should.equal(2);
-}
-
-/// Should print a nice message for exception message asserts
-@trusted unittest {
-  class CustomException : Exception {
-    this(string msg, string fileName = "", size_t line = 0, Throwable next = null) {
-      super(msg, fileName, line, next);
-    }
-  }
-
-  Throwable t;
-
-  try {
-    ({
-      throw new CustomException("test");
-    }).should.throwException!CustomException.withMessage.equal("other");
-  } catch(Throwable e) {
-    t = e;
-  }
-
-  t.should.not.beNull;
-  t.msg.should.startWith("({\n      throw new CustomException(\"test\");\n    }) should throw a `CustomException` with message equal `other`. `test` is not equal to `other`.");
+  (cast(CustomException) thrown).data.should.equal(2);
 }
 
 /// Should fail if an exception is not thrown
@@ -160,7 +136,7 @@ unittest {
     ({  }).should.throwAnyException;
   } catch(TestException e) {
     thrown = true;
-    e.msg.split("\n")[0].should.equal("({  }) should throw any exception. Nothing was thrown.");
+    e.msg.split("\n")[0].should.equal("({  }) should throw any exception. No exception was thrown.");
   }
 
   thrown.should.equal(true);
@@ -175,7 +151,7 @@ unittest {
     }).should.not.throwAnyException;
   } catch(TestException e) {
     thrown = true;
-    e.msg.split("\n")[2].should.equal("    }) should not throw any exception. An exception of type `object.Exception` saying `test` was thrown.");
+    e.msg.split("\n")[2].should.equal("    }) should not throw any exception. `object.Exception` saying `test` was thrown.");
   }
 
   thrown.should.equal(true);

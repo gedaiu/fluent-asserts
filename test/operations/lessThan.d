@@ -37,7 +37,7 @@ alias s = Spec!({
           expect(smallValue).to.be.lessThan(smallValue);
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.equal(smallValue.to!string ~ " should be lessThan " ~ smallValue.to!string ~ ". " ~ smallValue.to!string ~ " is greater than or equal to " ~ smallValue.to!string ~ ".");
+        msg.split("\n")[0].should.equal(smallValue.to!string ~ " should be less than " ~ smallValue.to!string ~ ". " ~ smallValue.to!string ~ " is greater than or equal to " ~ smallValue.to!string ~ ".");
         msg.split("\n")[2].strip.should.equal("Expected:less than " ~ smallValue.to!string);
         msg.split("\n")[3].strip.should.equal("Actual:" ~ smallValue.to!string);
       });
@@ -47,7 +47,7 @@ alias s = Spec!({
           expect(smallValue).not.to.be.lessThan(largeValue);
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.equal(smallValue.to!string ~ " should not be lessThan " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less than " ~ largeValue.to!string ~ ".");
+        msg.split("\n")[0].should.equal(smallValue.to!string ~ " should not be less than " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less than " ~ largeValue.to!string ~ ".");
         msg.split("\n")[2].strip.should.equal("Expected:greater than or equal to " ~ largeValue.to!string);
         msg.split("\n")[3].strip.should.equal("Actual:" ~ smallValue.to!string);
       });

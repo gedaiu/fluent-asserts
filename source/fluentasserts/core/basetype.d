@@ -231,14 +231,14 @@ unittest {
     5.should.be.above(5);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("5 should be greaterThan 5. 5 is less than or equal to 5.");
+  msg.split("\n")[0].should.equal("5 should be greater than 5. 5 is less than or equal to 5.");
 
   msg = ({
     5.should.not.be.greaterThan(4);
     5.should.not.be.above(4);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("5 should not be greaterThan 4. 5 is greater than 4.");
+  msg.split("\n")[0].should.equal("5 should not be greater than 4. 5 is greater than 4.");
 }
 
 @("numbers less than")
@@ -256,7 +256,7 @@ unittest {
     5.should.be.below(4);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("5 should be lessThan 4. 5 is greater than or equal to 4.");
+  msg.split("\n")[0].should.equal("5 should be less than 4. 5 is greater than or equal to 4.");
   msg.split("\n")[2].strip.should.equal("Expected:less than 4");
   msg.split("\n")[3].strip.should.equal("Actual:5");
 
@@ -265,7 +265,7 @@ unittest {
     5.should.not.be.below(6);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("5 should not be lessThan 6. 5 is less than 6.");
+  msg.split("\n")[0].should.equal("5 should not be less than 6. 5 is less than 6.");
 }
 
 @("numbers between")
@@ -355,7 +355,7 @@ unittest {
 
   void noException() { }
 
-  value().should.throwAnyException.withMessage.equal("not implemented");
+  value().should.throwAnyException.withMessage.equal("not implemented value");
   voidValue().should.throwAnyException.withMessage.equal("nothing here");
 
   bool thrown;

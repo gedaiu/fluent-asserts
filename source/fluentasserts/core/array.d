@@ -500,31 +500,31 @@ unittest {
     [1, 2, 3].should.containOnly([2, 1]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].should.equal("[1, 2, 3] should containOnly [2, 1].");
+  msg.split('\n')[0].should.equal("[1, 2, 3] should contain only [2, 1].");
 
   msg = ({
     [1, 2].should.not.containOnly([2, 1]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].strip.should.equal("[1, 2] should not containOnly [2, 1].");
+  msg.split('\n')[0].strip.should.equal("[1, 2] should not contain only [2, 1].");
 
   msg = ({
     [2, 2].should.containOnly([2]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].should.equal("[2, 2] should containOnly [2].");
+  msg.split('\n')[0].should.equal("[2, 2] should contain only [2].");
 
   msg = ({
     [3, 3].should.containOnly([2]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].should.equal("[3, 3] should containOnly [2].");
+  msg.split('\n')[0].should.equal("[3, 3] should contain only [2].");
 
   msg = ({
     [2, 2].should.not.containOnly([2, 2]);
   }).should.throwException!TestException.msg;
 
-  msg.split('\n')[0].should.equal("[2, 2] should not containOnly [2, 2].");
+  msg.split('\n')[0].should.equal("[2, 2] should not contain only [2, 2].");
 }
 
 /// contain only with  void array
@@ -647,9 +647,11 @@ unittest {
     [TestStruct(1)].should.equal([TestStruct(1)]);
   }).should.not.throwAnyException;
 
-  ({
+  auto msg = ({
     [TestStruct(2)].should.equal([TestStruct(1)]);
-  }).should.throwException!TestException.withMessage.startWith("[TestStruct(2)] should equal [TestStruct(1)].");
+  }).should.throwException!TestException.msg;
+
+  msg.should.startWith("[TestStruct(2)] should equal [TestStruct(1)].");
 }
 
 /// const array equal

@@ -42,7 +42,7 @@ alias s = Spec!({
           expect(testValue).to.startWith("other");
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.contain(`"test string" should startWith "other". "test string" does not start with "other".`);
+        msg.split("\n")[0].should.contain(`"test string" should start with "other". "test string" does not start with "other".`);
         msg.split("\n")[2].strip.should.equal(`Expected:to start with "other"`);
         msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
       });
@@ -52,7 +52,7 @@ alias s = Spec!({
           expect(testValue).to.startWith('o');
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.contain(`"test string" should startWith 'o'. "test string" does not start with 'o'.`);
+        msg.split("\n")[0].should.contain(`"test string" should start with 'o'. "test string" does not start with 'o'.`);
         msg.split("\n")[2].strip.should.equal(`Expected:to start with 'o'`);
         msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
       });
@@ -62,7 +62,7 @@ alias s = Spec!({
           expect(testValue).to.not.startWith("test");
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.contain(`"test string" should not startWith "test". "test string" starts with "test".`);
+        msg.split("\n")[0].should.contain(`"test string" should not start with "test". "test string" starts with "test".`);
         msg.split("\n")[2].strip.should.equal(`Expected:to not start with "test"`);
         msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
       });
@@ -72,7 +72,7 @@ alias s = Spec!({
           expect(testValue).to.not.startWith('t');
         }).should.throwException!TestException.msg;
 
-        msg.split("\n")[0].should.contain(`"test string" should not startWith 't'. "test string" starts with 't'.`);
+        msg.split("\n")[0].should.contain(`"test string" should not start with 't'. "test string" starts with 't'.`);
         msg.split("\n")[2].strip.should.equal(`Expected:to not start with 't'`);
         msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
       });

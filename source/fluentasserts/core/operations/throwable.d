@@ -54,6 +54,7 @@ IResult[] throwAnyException(ref Evaluation evaluation) @trusted nothrow {
     try results ~= new ExpectedActualResult("Any exception to be thrown", "A `Throwable` with message `" ~ message ~ "` was thrown"); catch(Exception) {}
   }
 
+  evaluation.throwable = thrown;
   evaluation.currentValue.throwable = null;
 
   return results;
@@ -121,7 +122,8 @@ IResult[] throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothr
 
   auto thrown = evaluation.currentValue.throwable;
 
-  if(evaluation.currentValue.throwable && evaluation.isNegated) {
+
+  if(thrown !is null && evaluation.isNegated) {
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
@@ -134,7 +136,7 @@ IResult[] throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothr
     try results ~= new ExpectedActualResult("No exception to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
   }
 
-  if(!thrown && !evaluation.isNegated) {
+  if(thrown is null && !evaluation.isNegated) {
     evaluation.message.addText("Nothing was thrown.");
 
     try results ~= new ExpectedActualResult("Any exception to be thrown", "Nothing was thrown"); catch(Exception) {}
@@ -144,11 +146,12 @@ IResult[] throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothr
     string message;
     try message = thrown.message.to!string; catch(Exception) {}
 
-    evaluation.message.addText("A `Throwable` saying `" ~ message ~ "` was thrown.");
+    evaluation.message.addText(". A `Throwable` saying `" ~ message ~ "` was thrown.");
 
-    try results ~= new ExpectedActualResult("Any exception to be thrown", "A `Throwable` with message `" ~ message ~ "` was thrown"); catch(Exception) {}
+    try results ~= new ExpectedActualResult("Any throwable with the message `" ~ message ~ "` to be thrown", "A `" ~ thrown.classinfo.name ~ "` with message `" ~ message ~ "` was thrown"); catch(Exception) {}
   }
 
+  evaluation.throwable = thrown;
   evaluation.currentValue.throwable = null;
 
   return results;
@@ -158,7 +161,11 @@ IResult[] throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothr
 IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
   evaluation.message.addText(".");
 
-  string exceptionType = evaluation.expectedValue.strValue.cleanString;
+  string exceptionType;
+
+  if("exceptionType" in evaluation.expectedValue.meta) {
+    exceptionType = evaluation.expectedValue.meta["exceptionType"].cleanString;
+  }
 
   IResult[] results;
   auto thrown = evaluation.currentValue.throwable;
@@ -189,6 +196,7 @@ IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
     try results ~= new ExpectedActualResult(exceptionType, "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
   }
 
+  evaluation.throwable = thrown;
   evaluation.currentValue.throwable = null;
 
   return results;
@@ -212,7 +220,7 @@ unittest {
   } catch(TestException e) {
     thrown = true;
 
-    assert(e.message.indexOf("should throwException \"fluentasserts.core.operations.throwable.CustomException\".`object.Exception` saying `test` was thrown.") != -1);
+    assert(e.message.indexOf("should throw exception \"fluentasserts.core.operations.throwable.CustomException\".`object.Exception` saying `test` was thrown.") != -1);
     assert(e.message.indexOf("\n Expected:fluentasserts.core.operations.throwable.CustomException\n") != -1);
     assert(e.message.indexOf("\n   Actual:`object.Exception` saying `test`\n") != -1);
     assert(e.file == "source/fluentasserts/core/operations/throwable.d");
@@ -238,12 +246,157 @@ unittest {
     }).to.not.throwException!CustomException;
   } catch(TestException e) {
     thrown = true;
-
-    assert(e.message.indexOf("should not throwException \"fluentasserts.core.operations.throwable.CustomException\".`fluentasserts.core.operations.throwable.CustomException` saying `test` was thrown.") != -1);
+    assert(e.message.indexOf("should not throw exception \"fluentasserts.core.operations.throwable.CustomException\".`fluentasserts.core.operations.throwable.CustomException` saying `test` was thrown.") != -1);
     assert(e.message.indexOf("\n Expected:no `fluentasserts.core.operations.throwable.CustomException` to be thrown\n") != -1);
     assert(e.message.indexOf("\n   Actual:`fluentasserts.core.operations.throwable.CustomException` saying `test`\n") != -1);
     assert(e.file == "source/fluentasserts/core/operations/throwable.d");
   }
 
   assert(thrown, "The exception was not thrown");
+}
+
+///
+IResult[] throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
+  import std.stdio;
+
+
+  evaluation.message.addText(". ");
+
+  string exceptionType;
+  string message;
+  string expectedMessage = evaluation.expectedValue.strValue;
+
+  if(expectedMessage.startsWith(`"`)) {
+    expectedMessage = expectedMessage[1..$-1];
+  }
+
+  if("exceptionType" in evaluation.expectedValue.meta) {
+    exceptionType = evaluation.expectedValue.meta["exceptionType"].cleanString;
+  }
+
+  IResult[] results;
+  auto thrown = evaluation.currentValue.throwable;
+  evaluation.throwable = thrown;
+  evaluation.currentValue.throwable = null;
+
+  if(thrown) {
+    try message = thrown.message.to!string; catch(Exception) {}
+  }
+
+  if(!thrown && !evaluation.isNegated) {
+    evaluation.message.addText("No exception was thrown.");
+
+    try results ~= new ExpectedActualResult("`" ~ exceptionType ~ "` with message `" ~ expectedMessage ~ "` to be thrown", "nothing was thrown"); catch(Exception) {}
+  }
+
+  if(thrown && !evaluation.isNegated && thrown.classinfo.name != exceptionType) {
+    evaluation.message.addText("`");
+    evaluation.message.addValue(thrown.classinfo.name);
+    evaluation.message.addText("` saying `");
+    evaluation.message.addValue(message);
+    evaluation.message.addText("` was thrown.");
+
+    try results ~= new ExpectedActualResult("`" ~ exceptionType ~ "` to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
+  }
+
+  if(thrown && !evaluation.isNegated && thrown.classinfo.name == exceptionType && message != expectedMessage) {
+    evaluation.message.addText("`");
+    evaluation.message.addValue(thrown.classinfo.name);
+    evaluation.message.addText("` saying `");
+    evaluation.message.addValue(message);
+    evaluation.message.addText("` was thrown.");
+
+    try results ~= new ExpectedActualResult("`" ~ exceptionType ~ "` saying `" ~ message ~ "` to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
+  }
+
+  return results;
+}
+
+/// It fails when an exception is not catched
+unittest {
+  Exception exception;
+
+  try {
+    expect({}).to.throwException!Exception.withMessage.equal("test");
+  } catch(Exception e) {
+    exception = e;
+  }
+
+  assert(exception !is null);
+  expect(exception.message).to.contain(`should throw exception with message equal "test". No exception was thrown.`);
+}
+
+/// It does not fail when an exception is not expected and none is not catched
+unittest {
+  Exception exception;
+
+  try {
+    expect({}).not.to.throwException!Exception.withMessage.equal("test");
+  } catch(Exception e) {
+    exception = e;
+  }
+
+  assert(exception is null);
+}
+
+/// It fails when the caught exception has a different type
+unittest {
+  Exception exception;
+
+  try {
+    expect({
+      throw new CustomException("hello");
+    }).to.throwException!Exception.withMessage.equal("test");
+  } catch(Exception e) {
+    exception = e;
+  }
+
+  assert(exception !is null);
+  expect(exception.message).to.contain("should throw exception with message equal \"test\". `fluentasserts.core.operations.throwable.CustomException` saying `hello` was thrown.");
+}
+
+/// It does not fail when a certain exception type is not catched
+unittest {
+  Exception exception;
+
+  try {
+    expect({
+      throw new CustomException("hello");
+    }).not.to.throwException!Exception.withMessage.equal("test");
+  } catch(Exception e) {
+    exception = e;
+  }
+
+  assert(exception is null);
+}
+
+/// It fails when the caught exception has a different message
+unittest {
+  Exception exception;
+
+  try {
+    expect({
+      throw new CustomException("hello");
+    }).to.throwException!CustomException.withMessage.equal("test");
+  } catch(Exception e) {
+    exception = e;
+  }
+
+  assert(exception !is null);
+  expect(exception.message).to.contain("should throw exception with message equal \"test\". `fluentasserts.core.operations.throwable.CustomException` saying `hello` was thrown.");
+}
+
+/// It does not fails when the caught exception is expected to have a different message
+unittest {
+  Exception exception;
+
+  try {
+    expect({
+      throw new CustomException("hello");
+    }).not.to.throwException!CustomException.withMessage.equal("test");
+  } catch(Exception e) {
+    exception = e;
+  }
+
+  assert(exception is null);
 }

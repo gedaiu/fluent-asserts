@@ -13,6 +13,7 @@ import fluentasserts.core.operations.lessThan;
 import fluentasserts.core.operations.registry;
 import fluentasserts.core.operations.startWith;
 import fluentasserts.core.operations.throwable;
+import fluentasserts.core.operations.beNull;
 import fluentasserts.core.results;
 import fluentasserts.core.serializers;
 
@@ -21,7 +22,7 @@ import std.conv;
 
 alias BasicNumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
 alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real, ifloat, idouble, ireal, cfloat, cdouble, creal, char, wchar, dchar);
-alias StringTypes = AliasSeq!(string, wstring, dstring);
+alias StringTypes = AliasSeq!(string, wstring, dstring, const(char)[]);
 
 static this() {
   SerializerRegistry.instance = new SerializerRegistry;
@@ -100,10 +101,12 @@ static this() {
   Registry.instance.register("callable", "", "throwException", &throwException);
 
   Registry.instance.register("*", "*", "throwAnyException", &throwAnyException);
-  Registry.instance.register("*", "*", "throwException", &throwException);
   Registry.instance.register("*", "*", "throwAnyException.withMessage.equal", &throwAnyExceptionWithMessage);
-
-
+  Registry.instance.register("*", "*", "throwException", &throwException);
+  Registry.instance.register("*", "*", "throwException.withMessage.equal", &throwExceptionWithMessage);
+  Registry.instance.register("*", "*", "throwSomething", &throwAnyException);
+  Registry.instance.register("*", "*", "throwSomething.withMessage.equal", &throwAnyExceptionWithMessage);
+  Registry.instance.register("*", "*", "beNull", &beNull);
 }
 
 /// The assert lifecycle
@@ -125,6 +128,9 @@ static this() {
 
   ///
   void endEvaluation(ref Evaluation evaluation) @trusted {
+    if(evaluation.isEvaluated) return;
+
+    evaluation.isEvaluated = true;
     auto results = Registry.instance.handle(evaluation);
 
     if(evaluation.currentValue.throwable !is null) {

@@ -508,7 +508,7 @@ auto should(T)(lazy T testData, const string file = __FILE__, const size_t line 
     } else static if(isInputRange!T) {
       return expect(testData, file, line);
     } else static if(isCallable!T) {
-      return ShouldCallable!T(testData);
+      return expect(testData, file, line);
     } else {
       return expect(testData, file, line);
     }
