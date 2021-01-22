@@ -124,7 +124,6 @@ unittest {
   }).should.throwException!CustomException.thrown;
 
   thrown.should.not.beNull;
-  thrown.should.be.instanceOf!CustomException;
   thrown.msg.should.equal("test");
   (cast(CustomException) thrown).data.should.equal(2);
 }

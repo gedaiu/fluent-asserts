@@ -27,7 +27,7 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
   real[] expectedPieces;
   bool usingArrays;
 
-  try usingArrays = evaluation.currentValue.typeName.canFind('[');
+  try usingArrays = !evaluation.currentValue.typeNames.filter!(a => a.canFind('[')).empty;
   catch(Exception) usingArrays = true;
 
   try {

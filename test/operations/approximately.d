@@ -38,7 +38,7 @@ alias s = Spec!({
         expect(testValue).to.not.be.approximately(0.35, 0.001);
       });
 
-      it("should show a detailed error message when two numbers should be approximatly equal but they are not", {
+      it("should show a detailed error message when two numbers should be approximately equal but they are not", {
         auto msg = ({
           expect(testValue).to.be.approximately(0.35, 0.0001);
         }).should.throwException!TestException.msg;
@@ -48,7 +48,7 @@ alias s = Spec!({
         msg.should.not.contain("Missing:");
       });
 
-      it("should show a detailed error message when two numbers are approximatly equal but they should not", {
+      it("should show a detailed error message when two numbers are approximately equal but they should not", {
         auto msg = ({
           expect(testValue).to.not.be.approximately(testValue, 0.0001);
         }).should.throwException!TestException.msg;
@@ -80,7 +80,7 @@ alias s = Spec!({
         expect(testValues).to.not.be.approximately([0.35, 0.50], 0.001);
       });
 
-      it("should show a detailed error message when two lists should be approximatly equal but they are not", {
+      it("should show a detailed error message when two lists should be approximately equal but they are not", {
         auto msg = ({
           expect(testValues).to.be.approximately([0.35, 0.50, 0.34], 0.0001);
         }).should.throwException!TestException.msg;
@@ -89,7 +89,7 @@ alias s = Spec!({
         msg.should.contain("Missing:[0.501±0.0001, 0.341±0.0001]");
       });
 
-      it("should show a detailed error message when two lists are approximatly equal but they should not", {
+      it("should show a detailed error message when two lists are approximately equal but they should not", {
         auto msg = ({
           expect(testValues).to.not.be.approximately(testValues, 0.0001);
         }).should.throwException!TestException.msg;

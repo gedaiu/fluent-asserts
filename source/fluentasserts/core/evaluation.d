@@ -6,6 +6,7 @@ import std.traits;
 import std.conv;
 import std.range;
 import std.array;
+import std.algorithm : map;
 
 import fluentasserts.core.serializers;
 import fluentasserts.core.results;
@@ -26,10 +27,18 @@ struct ValueEvaluation {
   string niceValue;
 
   /// The name of the type before it was converted to string
-  string typeName;
+  string[] typeNames;
 
   /// Other info about the value
   string[string] meta;
+
+  string typeName() @safe nothrow {
+    if(typeNames.length == 0) {
+      return "unknown";
+    }
+
+    return typeNames[0];
+  }
 }
 
 ///
@@ -89,7 +98,7 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
     auto duration = Clock.currTime - begin;
     auto serializedValue = SerializerRegistry.instance.serialize(value);
     auto niceValue = SerializerRegistry.instance.niceValue(value);
-    return Result(value, ValueEvaluation(null, duration, serializedValue, niceValue, unqualString!TT));
+    return Result(value, ValueEvaluation(null, duration, serializedValue, niceValue, extractTypes!TT ));
   } catch(Throwable t) {
     T result;
 
@@ -97,7 +106,7 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
       result = testData;
     }
 
-    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, result.to!string, unqualString!T));
+    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, result.to!string, extractTypes!T ));
   }
 }
 
@@ -123,4 +132,63 @@ unittest {
 
   assert(result.evaluation.throwable !is null);
   assert(result.evaluation.throwable.msg == "message");
+}
+
+string[] extractTypes(T)() if((!isArray!T && !isAssociativeArray!T) || isSomeString!T) {
+  string[] types;
+
+  types ~= unqualString!T;
+
+  static if(is(T == class)) {
+    static foreach(Type; BaseClassesTuple!T) {
+      types ~= unqualString!Type;
+    }
+  }
+
+  static if(is(T == interface) || is(T == class)) {
+    static foreach(Type; InterfacesTuple!T) {
+      types ~= unqualString!Type;
+    }
+  }
+
+  return types;
+}
+
+string[] extractTypes(T: U[], U)() if(isArray!T && !isSomeString!T) {
+  return extractTypes!(U).map!(a => a ~ "[]").array;
+}
+
+string[] extractTypes(T: U[K], U, K)() {
+  string k = unqualString!(K);
+  return extractTypes!(U).map!(a => a ~ "[" ~ k ~ "]").array;
+}
+
+/// It can get the type of a string
+unittest {
+  auto result = extractTypes!string;
+  assert(result == ["string"]);
+}
+
+/// It can get the type of a string list
+unittest {
+  auto result = extractTypes!(string[]);
+  assert(result == ["string[]"]);
+}
+
+/// It can get the type of a string assoc array
+unittest {
+  auto result = extractTypes!(string[string]);
+  assert(result == ["string[string]"]);
+}
+
+/// It can get all types of a class
+unittest {
+  interface I {}
+  class T : I {}
+
+  auto result = extractTypes!(T[]);
+
+  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L185_C1.T[]");
+  assert(result[1] == "object.Object[]");
+  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L185_C1.I[]");
 }

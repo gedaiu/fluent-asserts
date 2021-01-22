@@ -501,7 +501,7 @@ auto should(T)(lazy T testData, const string file = __FILE__, const size_t line 
   } else static if(!returned) {
 
     static if(is(T == class) || is(T == interface)) {
-      return ShouldObject!T(testData.evaluate);
+      return expect(testData, file, line);
     } else {
       return expect(testData, file, line);
     }
@@ -520,7 +520,7 @@ unittest {
 struct Assert {
   static void opDispatch(string s, T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto sh = actual.should;
+    auto sh = expect(actual);
 
     static if(s[0..3] == "not") {
       sh.not;
@@ -548,7 +548,7 @@ struct Assert {
 
   static void between(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.be.between(begin, end);
+    auto s = expect(actual, file, line).to.be.between(begin, end);
 
     if(reason != "") {
       s.because(reason);
@@ -557,7 +557,7 @@ struct Assert {
 
   static void notBetween(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.not.be.between(begin, end);
+    auto s = expect(actual, file, line).not.to.be.between(begin, end);
 
     if(reason != "") {
       s.because(reason);
@@ -566,7 +566,7 @@ struct Assert {
 
   static void within(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.be.within(begin, end);
+    auto s = expect(actual, file, line).to.be.between(begin, end);
 
     if(reason != "") {
       s.because(reason);
@@ -575,7 +575,7 @@ struct Assert {
 
   static void notWithin(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.not.be.within(begin, end);
+    auto s = expect(actual, file, line).not.to.be.between(begin, end);
 
     if(reason != "") {
       s.because(reason);
@@ -584,7 +584,7 @@ struct Assert {
 
   static void approximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.be.approximately(expected, delta);
+    auto s = expect(actual, file, line).to.be.approximately(expected, delta);
 
     if(reason != "") {
       s.because(reason);
@@ -593,7 +593,7 @@ struct Assert {
 
   static void notApproximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.not.be.approximately(expected, delta);
+    auto s = expect(actual, file, line).not.to.be.approximately(expected, delta);
 
     if(reason != "") {
       s.because(reason);
@@ -602,7 +602,7 @@ struct Assert {
 
   static void beNull(T)(T actual, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.beNull;
+    auto s = expect(actual, file, line).to.beNull;
 
     if(reason != "") {
       s.because(reason);
@@ -611,7 +611,7 @@ struct Assert {
 
   static void notNull(T)(T actual, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
-    auto s = actual.should.not.beNull(file, line);
+    auto s = expect(actual, file, line).not.to.beNull;
 
     if(reason != "") {
       s.because(reason);

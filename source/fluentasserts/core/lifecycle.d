@@ -4,21 +4,23 @@ import fluentasserts.core.base;
 import fluentasserts.core.evaluation;
 import fluentasserts.core.operations.approximately;
 import fluentasserts.core.operations.arrayEqual;
+import fluentasserts.core.operations.beNull;
 import fluentasserts.core.operations.between;
 import fluentasserts.core.operations.contain;
 import fluentasserts.core.operations.endWith;
 import fluentasserts.core.operations.equal;
 import fluentasserts.core.operations.greaterThan;
+import fluentasserts.core.operations.instanceOf;
 import fluentasserts.core.operations.lessThan;
 import fluentasserts.core.operations.registry;
 import fluentasserts.core.operations.startWith;
 import fluentasserts.core.operations.throwable;
-import fluentasserts.core.operations.beNull;
 import fluentasserts.core.results;
 import fluentasserts.core.serializers;
 
 import std.meta;
 import std.conv;
+import std.datetime;
 
 alias BasicNumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
 alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real, ifloat, idouble, ireal, cfloat, cdouble, creal, char, wchar, dchar);
@@ -32,8 +34,8 @@ static this() {
 
   Registry.instance = new Registry();
 
-  Registry.instance.register("Duration", "Duration", "lessThan", &lessThanDuration);
-  Registry.instance.register("Duration", "Duration", "below", &lessThanDuration);
+  Registry.instance.register!(Duration, Duration)("lessThan", &lessThanDuration);
+  Registry.instance.register!(Duration, Duration)("below", &lessThanDuration);
 
   Registry.instance.register("string", "string", "equal", &equal);
   Registry.instance.register("bool", "bool", "equal", &equal);
@@ -100,6 +102,8 @@ static this() {
     Registry.instance.register(Type.stringof, "char", "startWith", &startWith);
     Registry.instance.register(Type.stringof, "char", "endWith", &endWith);
   }
+
+  Registry.instance.register("*", "*", "instanceOf", &instanceOf);
 
   Registry.instance.register("callable", "", "throwAnyException", &throwAnyException);
   Registry.instance.register("callable", "", "throwException", &throwException);

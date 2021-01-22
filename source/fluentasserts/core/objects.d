@@ -8,62 +8,6 @@ import std.stdio;
 import std.traits;
 import std.conv;
 
-@safe:
-
-struct ShouldObject(T) {
-  private {
-    T testData;
-  }
-
-  mixin ShouldCommons;
-  mixin ShouldThrowableCommons;
-
-  this(U)(U value) {
-    this.valueEvaluation = value.evaluation;
-    this.testData = value.value;
-  }
-
-  auto beNull(const string file = __FILE__, const size_t line = __LINE__) @trusted {
-    validateException;
-
-    addMessage(" be ");
-    addValue("null");
-    beginCheck;
-
-    if(expectedValue) {
-      return result(testData is null, cast(IResult) new ExpectedActualResult("null", "a `" ~ T.stringof ~ "` instance"), file, line);
-    } else {
-      return result(testData is null, cast(IResult) new ExpectedActualResult("a `" ~ T.stringof ~ "` instance", "null"), file, line);
-    }
-  }
-
-  auto instanceOf(U)(const string file = __FILE__, const size_t line = __LINE__) @trusted {
-    validateException;
-
-    addValue(" instance of `" ~ U.stringof ~ "`");
-    beginCheck;
-
-    U castedObject = cast(U) testData;
-
-    return result(castedObject !is null,
-    cast(IResult) new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ "a `" ~ U.stringof ~ "` instance",
-                                           "a `" ~ T.stringof ~ "` instance"),
-                                           file, line);
-  }
-
-  auto equal(U)(U instance, const string file = __FILE__, const size_t line = __LINE__) @trusted {
-    validateException;
-
-    addMessage(" equal ");
-    addValue("`" ~ U.stringof ~ "`");
-    beginCheck;
-
-    return result(testData == instance, [] ,
-      new ExpectedActualResult(( expectedValue ? "" : "not " ) ~ instance.to!string, testData.to!string), file, line);
-  }
-}
-
-
 /// When there is a lazy object that throws an it should throw that exception
 unittest {
   Object someLazyObject() {
@@ -97,8 +41,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("o should not be null.");
-  msg.split("\n")[2].strip.should.equal("Expected:a `Object` instance");
-  msg.split("\n")[3].strip.should.equal("Actual:null");
+  msg.split("\n")[2].strip.should.equal("Expected:not null");
+  msg.split("\n")[3].strip.should.equal("Actual:object.Object");
 
   msg = ({
     (new Object).should.beNull;
@@ -106,7 +50,7 @@ unittest {
 
   msg.split("\n")[0].should.equal("(new Object) should be null.");
   msg.split("\n")[2].strip.should.equal("Expected:null");
-  msg.split("\n")[3].strip.strip.should.equal("Actual:a `Object` instance");
+  msg.split("\n")[3].strip.strip.should.equal("Actual:object.Object");
 }
 
 /// object instanceOf
@@ -130,17 +74,17 @@ unittest {
     otherObject.should.be.instanceOf!SomeClass;
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("otherObject should be instance of `SomeClass`.");
-  msg.split("\n")[2].strip.should.equal("Expected:a `SomeClass` instance");
-  msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");
+  msg.split("\n")[0].should.startWith(`otherObject should be instance of "fluentasserts.core.objects.__unittest_L57_C1.SomeClass".`);
+  msg.split("\n")[2].strip.should.equal("Expected:typeof fluentasserts.core.objects.__unittest_L57_C1.SomeClass");
+  msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
 
   msg = ({
     otherObject.should.not.be.instanceOf!OtherClass;
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("otherObject should not be instance of `OtherClass`.");
-  msg.split("\n")[2].strip.should.equal("Expected:not a `OtherClass` instance");
-  msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");
+  msg.split("\n")[0].should.startWith(`otherObject should not be instance of "fluentasserts.core.objects.__unittest_L57_C1.OtherClass"`);
+  msg.split("\n")[2].strip.should.equal("Expected:not typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
+  msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
 }
 
 /// object instanceOf interface
@@ -154,7 +98,7 @@ unittest {
   auto otherObject = new OtherClass;
 
   someInterface.should.be.instanceOf!MyInterface;
-  someInterface.should.be.instanceOf!BaseClass;
+  someInterface.should.not.be.instanceOf!BaseClass;
 
   someObject.should.be.instanceOf!MyInterface;
 
@@ -162,17 +106,17 @@ unittest {
     otherObject.should.be.instanceOf!MyInterface;
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("otherObject should be instance of `MyInterface`.");
-  msg.split("\n")[2].strip.should.equal("Expected:a `MyInterface` instance");
-  msg.split("\n")[3].strip.should.equal("Actual:a `OtherClass` instance");
+  msg.split("\n")[0].should.startWith(`otherObject should be instance of "fluentasserts.core.objects.__unittest_L91_C1.MyInterface".`);
+  msg.split("\n")[2].strip.should.equal("Expected:typeof fluentasserts.core.objects.__unittest_L91_C1.MyInterface");
+  msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L91_C1.OtherClass");
 
   msg = ({
     someObject.should.not.be.instanceOf!MyInterface;
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("someObject should not be instance of `MyInterface`.");
-  msg.split("\n")[2].strip.should.equal("Expected:not a `MyInterface` instance");
-  msg.split("\n")[3].strip.should.equal("Actual:a `BaseClass` instance");
+  msg.split("\n")[0].should.contain(`someObject should not be instance of "fluentasserts.core.objects.__unittest_L91_C1.MyInterface".`);
+  msg.split("\n")[2].strip.should.equal("Expected:not typeof fluentasserts.core.objects.__unittest_L91_C1.MyInterface");
+  msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L91_C1.BaseClass");
 }
 
 /// should throw exceptions for delegates that return basic types
@@ -192,7 +136,7 @@ unittest {
   try {
     noException.should.throwAnyException;
   } catch (TestException e) {
-    e.msg.should.startWith("noException should throw any exception. Nothing was thrown.");
+    e.msg.should.startWith("noException should throw any exception. No exception was thrown.");
     thrown = true;
   }
 
@@ -218,13 +162,13 @@ unittest {
     instance.should.not.equal(instance);
   }).should.throwException!TestException.msg;
 
-  msg.should.startWith("instance should not equal `TestEqual`.");
+  msg.should.startWith("instance should not equal TestEqual");
 
   msg = ({
     instance.should.equal(new TestEqual(1));
   }).should.throwException!TestException.msg;
 
-  msg.should.startWith("instance should equal `TestEqual`.");
+  msg.should.startWith("instance should equal TestEqual");
 }
 
 /// null object comparison
@@ -236,11 +180,11 @@ unittest
     nullObject.should.equal(new Object);
   }).should.throwException!TestException.msg;
 
-  msg.should.startWith("nullObject should equal `Object`.");
+  msg.should.startWith("nullObject should equal Object(");
 
   msg = ({
     (new Object).should.equal(null);
   }).should.throwException!TestException.msg;
 
-  msg.should.startWith("(new Object) should equal `typeof(null)`.");
+  msg.should.startWith("(new Object) should equal null.");
 }

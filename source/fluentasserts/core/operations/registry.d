@@ -19,6 +19,17 @@ class Registry {
   }
 
   /// Register a new assert operation
+  Registry register(T, U)(string name, Operation operation) {
+    foreach(valueType; extractTypes!T) {
+      foreach(expectedValueType; extractTypes!U) {
+        register(valueType, expectedValueType, name, operation);
+      }
+    }
+
+    return this;
+  }
+
+  /// ditto
   Registry register(string valueType, string expectedValueType, string name, Operation operation) {
     string key = valueType ~ "." ~ expectedValueType ~ "." ~ name;
 
@@ -27,9 +38,14 @@ class Registry {
     return this;
   }
 
-  /// Register a new assert operation
+  /// ditto
   Registry register(string valueType, string expectedValueType, string name, IResult[] function(ref Evaluation) @safe nothrow operation) {
     return this.register(valueType, expectedValueType, name, operation.toDelegate);
+  }
+
+  /// ditto
+  Registry register(T, U)(string name, IResult[] function(ref Evaluation) @safe nothrow operation) {
+    return this.register!(T, U)(name, operation.toDelegate);
   }
 
   /// Get an operation function

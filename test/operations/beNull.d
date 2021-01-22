@@ -12,7 +12,6 @@ import std.meta;
 alias s = Spec!({
   describe("using delegates", {
     void delegate() value;
-
     describe("when the delegate is set", {
       beforeEach({
         void test() {}

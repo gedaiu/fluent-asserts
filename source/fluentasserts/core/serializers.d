@@ -169,7 +169,7 @@ unittest {
 }
 
 version(unittest) { struct TestStruct { int a; string b; }; }
-/// It should serialzie a struct
+/// It should serialize a struct
 unittest {
   TestStruct value = TestStruct(1, "2");
   const TestStruct cvalue = TestStruct(1, "2");
@@ -189,7 +189,36 @@ string unqualString(T: V[K], V, K)() if(isAssociativeArray!T) {
 }
 
 string unqualString(T)() if(isSomeString!T || (!isArray!T && !isAssociativeArray!T)) {
-  return Unqual!T.stringof;
+  static if(is(T == class) || is(T == struct) || is(T == interface)) {
+    return fullyQualifiedName!(Unqual!(T));
+  } else {
+    return Unqual!T.stringof;
+  }
+
+}
+
+
+string joinClassTypes(T)() {
+  string result;
+
+  static if(is(T == class)) {
+    static foreach(Type; BaseClassesTuple!T) {
+      result ~= Type.stringof;
+    }
+  }
+
+  static if(is(T == interface) || is(T == class)) {
+    static foreach(Type; InterfacesTuple!T) {
+      if(result.length > 0) result ~= ":";
+      result ~= Type.stringof;
+    }
+  }
+
+  static if(!is(T == interface) && !is(T == class)) {
+    result = Unqual!T.stringof;
+  }
+
+  return result;
 }
 
 ///

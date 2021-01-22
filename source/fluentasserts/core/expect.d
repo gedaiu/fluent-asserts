@@ -4,6 +4,8 @@ import fluentasserts.core.lifecycle;
 import fluentasserts.core.evaluation;
 import fluentasserts.core.results;
 
+import fluentasserts.core.serializers;
+
 import std.traits;
 import std.string;
 import std.uni;
@@ -171,6 +173,14 @@ import std.conv;
     return opDispatch!"containOnly"(value);
   }
 
+  auto beNull() {
+    return opDispatch!"beNull";
+  }
+
+  auto instanceOf(Type)() {
+    return opDispatch!"instanceOf"(fullyQualifiedName!Type);
+  }
+
   auto approximately(T, U)(T value, U range) {
     return opDispatch!"approximately"(value, range);
   }
@@ -238,13 +248,13 @@ import std.conv;
 ///
 Expect expect(void delegate() callable, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
   ValueEvaluation value;
-  value.typeName = "callable";
+  value.typeNames = [ "callable" ];
 
   try {
     if(callable !is null) {
       callable();
     } else {
-      value.typeName = "null";
+      value.typeNames = ["null"];
     }
   } catch(Exception e) {
     value.throwable = e;
