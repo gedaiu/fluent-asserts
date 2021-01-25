@@ -58,21 +58,21 @@ Unfortunately the [assert expression](https://dlang.org/spec/expression.html#Ass
 
 # API Docs
 
-The library provides the `should` template and the `Assert` struct.
+The library provides the `expect`, `should` templates and the `Assert` struct.
 
-## Should
 
-`should` can be used in combination with [Uniform Function Call Syntax (UFCS)](https://dlang.org/spec/function.html#pseudo-member)
+## Expect
 
-```D
-auto should(T)(lazy const T testData);
-```
-
-So the following statements are equivalent
+`expect` is the main assert function exposed by this library. It takes a parameter which is the value that is tested. You can
+use any assert operation provided by the base library or any other operations that was registered by a third party library.
 
 ```D
-testedValue.should.equal(42);
-should(testedValue).equal(42);
+Expect expect(T)(lazy T testedValue, ...);
+Expect expect(void delegate() callable, ...);
+
+...
+
+expect(testedValue).to.equal(42);
 ```
 
 In addition, the library provides the `not` and `because` modifiers that allow to improve your asserts.
@@ -80,27 +80,53 @@ In addition, the library provides the `not` and `because` modifiers that allow t
 `not` negates the assert condition:
 
 ```D
-testedValue.should.not.equal(42);
+expect(testedValue).to.not.equal(42);
 ```
 
 `because` allows you to add a custom message:
 
 ```D
+    expect(true).to.equal(false).because("of test reasons");
+    /// will output this message: Because of test reasons, true should equal `false`.
+```
+
+
+## Should
+
+`should` is designed to be used in combination with [Uniform Function Call Syntax (UFCS)](https://dlang.org/spec/function.html#pseudo-member), and
+is an alias for `expect`.
+
+```D
+    auto should(T)(lazy T testData, ...);
+```
+
+So the following statements are equivalent
+
+```D
+testedValue.should.equal(42);
+expect(testedValue).to.equal(42);
+```
+
+In addition, you can use `not` and `because` modifiers with `should`.
+
+`not` negates the assert condition:
+
+```D
+    testedValue.should.not.equal(42);
     true.should.equal(false).because("of test reasons");
-    ///will output this message: Because of test reasons, true should equal `false`.
 ```
 
 ## Assert
 
-`Assert` is a wrapper for the should struct that allows you to use the asserts with a different syntax.
+`Assert` is a wrapper for the expect function, that allows you to use the asserts with a different syntax.
 
 For example, the following lines are equivalent:
 ```D
-    testedValue.should.equal(42);
+    expect(testedValue).to.equal(42);
     Assert.equal(testedValue, 42);
 ```
 
-All the asserts that are available using the `should` syntax are available with `Assert`. If you want to negate the check,
+All the asserts that are available using the `expect` syntax are available with `Assert`. If you want to negate the check,
 just add `not` before the assert name:
 
 ```D
