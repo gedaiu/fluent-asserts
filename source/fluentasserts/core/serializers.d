@@ -6,21 +6,50 @@ import std.algorithm;
 import std.traits;
 import std.conv;
 import std.datetime;
+import std.functional;
 
 version(unittest) import fluent.asserts;
-
 /// Singleton used to serialize to string the tested values
 class SerializerRegistry {
-  ///
   static SerializerRegistry instance;
 
   private {
-    void*[] serializers;
+    string delegate(void*)[string] serializers;
+    string delegate(const void*)[string] constSerializers;
+    string delegate(immutable void*)[string] immutableSerializers;
   }
 
   ///
-  void register(T)(string delegate(T) serializer) {
-    serializers[T.stringof] = &serializer;
+  void register(T)(string delegate(T) serializer) if(isAggregateType!T) {
+    enum key = T.stringof;
+
+    static if(is(Unqual!T == T)) {
+      string wrap(void* val) {
+        auto value = (cast(T*) val);
+        return serializer(*value);
+      }
+
+      serializers[key] = &wrap;
+    } else static if(is(ConstOf!T == T)) {
+      string wrap(const void* val) {
+        auto value = (cast(T*) val);
+        return serializer(*value);
+      }
+
+      constSerializers[key] = &wrap;
+    } else static if(is(ImmutableOf!T == T)) {
+      string wrap(immutable void* val) {
+        auto value = (cast(T*) val);
+        return serializer(*value);
+      }
+
+      immutableSerializers[key] = &wrap;
+    }
+  }
+
+  void register(T)(string function(T) serializer) {
+    auto serializerDelegate = serializer.toDelegate;
+    this.register(serializerDelegate);
   }
 
   ///
@@ -41,6 +70,27 @@ class SerializerRegistry {
 
   ///
   string serialize(T)(T value) if(isAggregateType!T) {
+    auto key = T.stringof;
+    auto tmp = &value;
+
+    static if(is(Unqual!T == T)) {
+      if(key in serializers) {
+        return serializers[key](tmp);
+      }
+    }
+
+    static if(is(ConstOf!T == T)) {
+      if(key in constSerializers) {
+        return constSerializers[key](tmp);
+      }
+    }
+
+    static if(is(ImmutableOf!T == T)) {
+      if(key in immutableSerializers) {
+        return immutableSerializers[key](tmp);
+      }
+    }
+
     string result;
 
     static if(is(T == class)) {
@@ -89,6 +139,115 @@ class SerializerRegistry {
       return serialize(value);
     }
   }
+}
+
+/// It should be able to override the default struct serializer
+unittest {
+  struct A {}
+
+  string serializer(A) {
+    return "custom value";
+  }
+  auto registry = new SerializerRegistry();
+  registry.register(&serializer);
+
+  registry.serialize(A()).should.equal("custom value");
+  registry.serialize([A()]).should.equal("[custom value]");
+  registry.serialize(["key": A()]).should.equal(`["key":custom value]`);
+}
+
+/// It should be able to override the default const struct serializer
+unittest {
+  struct A {}
+
+  string serializer(const A) {
+    return "custom value";
+  }
+  auto registry = new SerializerRegistry();
+  registry.register(&serializer);
+
+  const A value;
+
+  registry.serialize(value).should.equal("custom value");
+  registry.serialize([value]).should.equal("[custom value]");
+  registry.serialize(["key": value]).should.equal(`["key":custom value]`);
+}
+
+/// It should be able to override the default immutable struct serializer
+unittest {
+  struct A {}
+
+  string serializer(immutable A) {
+    return "value";
+  }
+  auto registry = new SerializerRegistry();
+  registry.register(&serializer);
+
+  immutable A ivalue;
+  const A cvalue;
+  A value;
+
+  registry.serialize(value).should.equal("A()");
+  registry.serialize(cvalue).should.equal("A()");
+  registry.serialize(ivalue).should.equal("value");
+  registry.serialize(ivalue).should.equal("value");
+  registry.serialize([ivalue]).should.equal("[value]");
+  registry.serialize(["key": ivalue]).should.equal(`["key":value]`);
+}
+
+
+/// It should be able to override the default class serializer
+unittest {
+  class A {}
+
+  string serializer(A) {
+    return "custom value";
+  }
+  auto registry = new SerializerRegistry();
+  registry.register(&serializer);
+
+  registry.serialize(new A()).should.equal("custom value");
+  registry.serialize([new A()]).should.equal("[custom value]");
+  registry.serialize(["key": new A()]).should.equal(`["key":custom value]`);
+}
+
+/// It should be able to override the default const class serializer
+unittest {
+  class A {}
+
+  string serializer(const A) {
+    return "custom value";
+  }
+  auto registry = new SerializerRegistry();
+  registry.register(&serializer);
+
+  const A value = new A;
+
+  registry.serialize(value).should.equal("custom value");
+  registry.serialize([value]).should.equal("[custom value]");
+  registry.serialize(["key": value]).should.equal(`["key":custom value]`);
+}
+
+/// It should be able to override the default immutable class serializer
+unittest {
+  class A {}
+
+  string serializer(immutable A) {
+    return "value";
+  }
+  auto registry = new SerializerRegistry();
+  registry.register(&serializer);
+
+  immutable A ivalue;
+  const A cvalue;
+  A value;
+
+  registry.serialize(value).should.equal("null");
+  registry.serialize(cvalue).should.equal("null");
+  registry.serialize(ivalue).should.equal("value");
+  registry.serialize(ivalue).should.equal("value");
+  registry.serialize([ivalue]).should.equal("[value]");
+  registry.serialize(["key": ivalue]).should.equal(`["key":value]`);
 }
 
 /// It should serialize a char
@@ -391,7 +550,6 @@ unittest {
   auto pieces = `[ [[],[]] , [[[]],[]] ]`.parseList;
   pieces.should.equal([`[[],[]]`,`[[[]],[]]`]);
 }
-
 
 /// it should parse two lists with items
 unittest {

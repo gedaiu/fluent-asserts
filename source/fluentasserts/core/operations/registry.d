@@ -9,6 +9,9 @@ import std.string;
 /// Delegate type that can handle asserts
 alias Operation = IResult[] delegate(ref Evaluation) @safe nothrow;
 
+/// ditto
+alias OperationFunc = IResult[] delegate(ref Evaluation) @safe nothrow;
+
 ///
 class Registry {
   /// Global instance for the assert operations
@@ -30,6 +33,12 @@ class Registry {
   }
 
   /// ditto
+  Registry register(T, U)(string name, IResult[] function(ref Evaluation) @safe nothrow operation) {
+    const operationDelegate = operation.toDelegate;
+    return this.register!(T, U)(name, operationDelegate);
+  }
+
+  /// ditto
   Registry register(string valueType, string expectedValueType, string name, Operation operation) {
     string key = valueType ~ "." ~ expectedValueType ~ "." ~ name;
 
@@ -41,11 +50,6 @@ class Registry {
   /// ditto
   Registry register(string valueType, string expectedValueType, string name, IResult[] function(ref Evaluation) @safe nothrow operation) {
     return this.register(valueType, expectedValueType, name, operation.toDelegate);
-  }
-
-  /// ditto
-  Registry register(T, U)(string name, IResult[] function(ref Evaluation) @safe nothrow operation) {
-    return this.register!(T, U)(name, operation.toDelegate);
   }
 
   /// Get an operation function
