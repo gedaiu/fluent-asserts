@@ -272,7 +272,7 @@ class TestException : ReferenceException {
   }
 }
 
-/// Test Exception should sepparate the results by a new line
+/// Test Exception should separate the results by a new line
 unittest {
   import std.stdio;
   IResult[] results = [
@@ -475,36 +475,11 @@ struct ThrowableProxy(T : Throwable) {
 }
 
 auto should(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__) @trusted {
-  import std.stdio;
-
-  version(Have_vibe_d_data) {
-    version(Have_fluent_asserts_vibe) {
-      import vibe.data.json;
-      import fluentasserts.vibe.json;
-
-      static if(is(Unqual!T == Json)) {
-        enum returned = true;
-        return ShouldJson!T(testData.evaluate);
-      } else {
-        enum returned = false;
-      }
-    } else {
-      enum returned = false;
-    }
-  } else {
-    enum returned = false;
-  }
-
   static if(is(T == void)) {
     auto callable = ({ testData; });
     return expect(callable, file, line);
-  } else static if(!returned) {
-
-    static if(is(T == class) || is(T == interface)) {
-      return expect(testData, file, line);
-    } else {
-      return expect(testData, file, line);
-    }
+  } else {
+    return expect(testData, file, line);
   }
 }
 
