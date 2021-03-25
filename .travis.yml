@@ -15,13 +15,13 @@ d:
   # this way the overall test time gets cut down (GDC/LDC are a lot
   # slower tham DMD, so they should be started early), while still
   # catching most DMD version related build failures early
-  - ldc-1.20.0
-  - ldc-1.21.0
-  - ldc-1.22.0
+  - ldc-1.23.0
+  - ldc-1.24.0
+  - ldc-1.25.0
   - ldc-beta
-  - dmd-2.091.0
-  - dmd-2.092.0
-  - dmd-2.093.0
+  - dmd-2.094.0
+  - dmd-2.095.0
+  - dmd-2.096.0
   - dmd-beta
 
 matrix:
