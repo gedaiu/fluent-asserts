@@ -19,16 +19,66 @@ version(unittest) {
 
 ///
 IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
+  IResult[] results = [];
+
+  evaluation.message.addValue("±");
+  evaluation.message.addValue(evaluation.expectedValue.meta["1"]);
+  evaluation.message.addText(".");
+
+  real current;
+  real expected;
+  real delta;
+
+  try {
+    current = evaluation.currentValue.strValue.to!real;
+    expected = evaluation.expectedValue.strValue.to!real;
+    delta = evaluation.expectedValue.meta["1"].to!real;
+  } catch(Exception e) {
+    results ~= new MessageResult("Can't parse the provided arguments!");
+
+    return results;
+  }
+
+  string strExpected = evaluation.expectedValue.strValue ~ "±" ~ evaluation.expectedValue.meta["1"];
+  string strCurrent = evaluation.currentValue.strValue;
+
+  auto result = isClose(current, expected, 0, delta);
+
+  if(evaluation.isNegated) {
+    result = !result;
+  }
+
+  if(result) {
+    return [];
+  }
+
+  if(evaluation.currentValue.typeName != "bool") {
+    evaluation.message.addText(" ");
+    evaluation.message.addValue(strCurrent);
+
+    if(evaluation.isNegated) {
+      evaluation.message.addText(" is approximately ");
+    } else {
+      evaluation.message.addText(" is not approximately ");
+    }
+
+    evaluation.message.addValue(strExpected);
+    evaluation.message.addText(".");
+  }
+
+  try results ~= new ExpectedActualResult((evaluation.isNegated ? "not " : "") ~ strExpected, strCurrent); catch(Exception) {}
+
+  return results;
+}
+
+///
+IResult[] approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   evaluation.message.addValue("±" ~ evaluation.expectedValue.meta["1"]);
   evaluation.message.addText(".");
 
   double maxRelDiff;
   real[] testData;
   real[] expectedPieces;
-  bool usingArrays;
-
-  try usingArrays = !evaluation.currentValue.typeNames.filter!(a => a.canFind('[')).empty;
-  catch(Exception) usingArrays = true;
 
   try {
     testData = evaluation.currentValue.strValue.parseList.cleanString.map!(a => a.to!real).array;
@@ -50,7 +100,7 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
 
   if(allEqual) {
     foreach(i; 0..testData.length) {
-      allEqual = allEqual && approxEqual(testData[i], expectedPieces[i], maxRelDiff);
+      allEqual = allEqual && isClose(testData[i], expectedPieces[i], 0, maxRelDiff) && true;
     }
   }
 
@@ -62,14 +112,8 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
     try strMissing = missing.length == 0 ? "" : missing.to!string;
     catch(Exception) {}
   } else try {
-    strMissing = missing.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ");
-    strExpected = expectedPieces.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ");
-
-    if(usingArrays) {
-      strMissing = "[" ~ strMissing ~ "]";
-      strExpected = "[" ~ strExpected ~ "]";
-    }
-
+    strMissing = "[" ~ missing.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ") ~ "]";
+    strExpected = "[" ~ expectedPieces.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ") ~ "]";
   } catch(Exception) {}
 
   if(!evaluation.isNegated) {
@@ -77,10 +121,8 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
       try results ~= new ExpectedActualResult(strExpected, evaluation.currentValue.strValue);
       catch(Exception) {}
 
-      if(usingArrays) {
-        try results ~= new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, strMissing);
-        catch(Exception) {}
-      }
+      try results ~= new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, strMissing);
+      catch(Exception) {}
     }
   } else {
     if(allEqual) {

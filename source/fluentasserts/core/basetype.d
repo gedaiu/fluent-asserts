@@ -330,17 +330,17 @@ unittest {
     (10f/3f).should.be.approximately(3, 0.1);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("(10f/3f) should be approximately 3±0.1.");
-  msg.split("\n")[2].strip.should.equal("Expected:3±0.1");
-  msg.split("\n")[3].strip.should.equal("Actual:3.33333");
+  msg.split("\n")[0].strip.should.contain("(10f/3f) should be approximately 3±0.1.");
+  msg.split("\n")[2].strip.should.contain("Expected:3±0.1");
+  msg.split("\n")[3].strip.should.contain("Actual:3.33333");
 
   msg = ({
     (10f/3f).should.not.be.approximately(3, 0.34);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal("(10f/3f) should not be approximately 3±0.34.");
-  msg.split("\n")[2].strip.should.equal("Expected:not 3±0.34");
-  msg.split("\n")[3].strip.should.equal("Actual:3.33333");
+  msg.split("\n")[0].strip.should.contain("(10f/3f) should not be approximately 3±0.34.");
+  msg.split("\n")[2].strip.should.contain("Expected:not 3±0.34");
+  msg.split("\n")[3].strip.should.contain("Actual:3.33333");
 }
 
 /// should throw exceptions for delegates that return basic types
