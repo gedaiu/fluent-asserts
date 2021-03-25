@@ -86,6 +86,7 @@ static this() {
 
       Registry.instance.register(Type1.stringof, Type2.stringof ~ "[]", "contain", &contain);
       Registry.instance.register(Type1.stringof, Type2.stringof, "contain", &contain);
+      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof, "contain", &arrayContain);
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "contain", &arrayContain);
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "containOnly", &arrayContainOnly);
 
