@@ -13,6 +13,7 @@ import fluentasserts.core.operations.greaterThan;
 import fluentasserts.core.operations.greaterOrEqualTo;
 import fluentasserts.core.operations.instanceOf;
 import fluentasserts.core.operations.lessThan;
+import fluentasserts.core.operations.lessOrEqualTo;
 import fluentasserts.core.operations.registry;
 import fluentasserts.core.operations.startWith;
 import fluentasserts.core.operations.throwable;
@@ -52,6 +53,7 @@ static this() {
     Registry.instance.register(Type.stringof, Type.stringof, "greaterThan", &greaterThan!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "above", &greaterThan!Type);
 
+    Registry.instance.register(Type.stringof, Type.stringof, "lessOrEqualTo", &lessOrEqualTo!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "lessThan", &lessThan!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "below", &lessThan!Type);
 

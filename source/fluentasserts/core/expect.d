@@ -160,8 +160,8 @@ import std.conv;
   }
 
   ///
-  auto lessOrEqualThan(T)(T value) {
-    return opDispatch!"lessOrEqualThan"(value);
+  auto lessOrEqualTo(T)(T value) {
+    return opDispatch!"lessOrEqualTo"(value);
   }
 
   ///
