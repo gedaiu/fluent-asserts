@@ -11,8 +11,8 @@ jobs:
     name: Trial Tests
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-        dc: [ldc-latest, dmd-2.095.0,dmd-2.094.0, ldc-1.25.0, ldc-1.24.0, ldc-1.23.0]
+        os: [ubuntu-latest, macOS-latest]
+        dc: [ldc-latest, dmd-2.096.0, dmd-2.095.0, dmd-2.094.0, ldc-1.25.0, ldc-1.24.0, ldc-1.23.0]
 
     runs-on: ${{ matrix.os }}
     steps:
