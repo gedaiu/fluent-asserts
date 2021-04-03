@@ -10,6 +10,7 @@ import fluentasserts.core.operations.contain;
 import fluentasserts.core.operations.endWith;
 import fluentasserts.core.operations.equal;
 import fluentasserts.core.operations.greaterThan;
+import fluentasserts.core.operations.greaterOrEqualTo;
 import fluentasserts.core.operations.instanceOf;
 import fluentasserts.core.operations.lessThan;
 import fluentasserts.core.operations.registry;
@@ -47,6 +48,7 @@ static this() {
   }
 
   static foreach(Type; BasicNumericTypes) {
+    Registry.instance.register(Type.stringof, Type.stringof, "greaterOrEqualTo", &greaterOrEqualTo!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "greaterThan", &greaterThan!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "above", &greaterThan!Type);
 

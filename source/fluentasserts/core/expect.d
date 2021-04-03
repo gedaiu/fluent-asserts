@@ -146,12 +146,22 @@ import std.conv;
   }
 
   ///
+  auto greaterOrEqualTo(T)(T value) {
+    return opDispatch!"greaterOrEqualTo"(value);
+  }
+
+  ///
   auto above(T)(T value) {
     return opDispatch!"above"(value);
   }
   ///
   auto lessThan(T)(T value) {
     return opDispatch!"lessThan"(value);
+  }
+
+  ///
+  auto lessOrEqualThan(T)(T value) {
+    return opDispatch!"lessOrEqualThan"(value);
   }
 
   ///
