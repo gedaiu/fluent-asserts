@@ -76,6 +76,15 @@ static this() {
     Registry.instance.register(Type.stringof, Type.stringof, "within", &between!Type);
   }
 
+  /// special cases for .length and other comparisons with int types
+  static foreach(Type; BasicNumericTypes) {
+    Registry.instance.register(Type.stringof, "int", "lessOrEqualTo", &lessOrEqualTo!Type);
+    Registry.instance.register(Type.stringof, "int", "lessThan", &lessThan!Type);
+    Registry.instance.register(Type.stringof, "int", "greaterOrEqualTo", &greaterOrEqualTo!Type);
+    Registry.instance.register(Type.stringof, "int", "greaterThan", &greaterThan!Type);
+  }
+
+  ///
   static foreach(Type1; NumericTypes) {
     Registry.instance.register(Type1.stringof ~ "[]", "void[]", "approximately", &approximatelyList);
 
