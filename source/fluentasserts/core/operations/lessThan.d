@@ -28,33 +28,10 @@ IResult[] lessThan(T)(ref Evaluation evaluation) @safe nothrow {
 
   auto result = currentValue < expectedValue;
 
-  if(evaluation.isNegated) {
-    result = !result;
-  }
-
-  if(result) {
-    return [];
-  }
-
-  evaluation.message.addText(" ");
-  evaluation.message.addValue(evaluation.currentValue.niceValue);
-
-  IResult[] results = [];
-
-  if(evaluation.isNegated) {
-    evaluation.message.addText(" is less than ");
-    results ~= new ExpectedActualResult("greater than or equal to " ~ evaluation.expectedValue.niceValue, evaluation.currentValue.niceValue);
-  } else {
-    evaluation.message.addText(" is greater than or equal to ");
-    results ~= new ExpectedActualResult("less than " ~ evaluation.expectedValue.niceValue, evaluation.currentValue.niceValue);
-  }
-
-  evaluation.message.addValue(evaluation.expectedValue.niceValue);
-  evaluation.message.addText(".");
-
-  return results;
+  return lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
+///
 IResult[] lessThanDuration(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(".");
 
@@ -75,6 +52,31 @@ IResult[] lessThanDuration(ref Evaluation evaluation) @safe nothrow {
 
   auto result = currentValue < expectedValue;
 
+  return lessThanResults(result, niceExpectedValue, niceCurrentValue, evaluation);
+}
+
+///
+IResult[] lessThanSysTime(ref Evaluation evaluation) @safe nothrow {
+  evaluation.message.addText(".");
+
+  SysTime expectedValue;
+  SysTime currentValue;
+  string niceExpectedValue;
+  string niceCurrentValue;
+
+  try {
+    expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
+    currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
+  } catch(Exception e) {
+    return [ new MessageResult("Can't convert the values to SysTime") ];
+  }
+
+  auto result = currentValue < expectedValue;
+
+  return lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+}
+
+private IResult[] lessThanResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
   if(evaluation.isNegated) {
     result = !result;
   }

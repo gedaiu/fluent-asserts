@@ -39,8 +39,14 @@ static this() {
   Registry.instance.register!(Duration, Duration)("lessThan", &lessThanDuration);
   Registry.instance.register!(Duration, Duration)("below", &lessThanDuration);
 
+  Registry.instance.register!(SysTime, SysTime)("lessThan", &lessThanSysTime);
+  Registry.instance.register!(SysTime, SysTime)("below", &lessThanSysTime);
+
   Registry.instance.register!(Duration, Duration)("greaterThan", &greaterThanDuration);
   Registry.instance.register!(Duration, Duration)("above", &greaterThanDuration);
+
+  Registry.instance.register!(SysTime, SysTime)("greaterThan", &greaterThanSysTime);
+  Registry.instance.register!(SysTime, SysTime)("above", &greaterThanSysTime);
 
   Registry.instance.register("string", "string", "equal", &equal);
   Registry.instance.register("bool", "bool", "equal", &equal);

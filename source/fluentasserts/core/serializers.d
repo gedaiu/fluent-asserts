@@ -101,6 +101,8 @@ class SerializerRegistry {
       }
     } else static if(is(Unqual!T == Duration)) {
       result = value.total!"nsecs".to!string;
+    } else static if(is(Unqual!T == SysTime)) {
+      result = value.toISOExtString;
     } else {
       result = value.to!string;
     }
@@ -133,7 +135,9 @@ class SerializerRegistry {
   }
 
   string niceValue(T)(T value) {
-    static if(is(Unqual!T == Duration)) {
+    static if(is(Unqual!T == SysTime)) {
+      return value.toISOExtString;
+    } else static if(is(Unqual!T == Duration)) {
       return value.to!string;
     } else {
       return serialize(value);
@@ -259,6 +263,17 @@ unittest {
   SerializerRegistry.instance.serialize(ch).should.equal("'a'");
   SerializerRegistry.instance.serialize(cch).should.equal("'a'");
   SerializerRegistry.instance.serialize(ich).should.equal("'a'");
+}
+
+/// It should serialize a SysTime
+unittest {
+  SysTime val = SysTime.fromISOExtString("2010-07-04T07:06:12");
+  const SysTime cval = SysTime.fromISOExtString("2010-07-04T07:06:12");
+  immutable SysTime ival = SysTime.fromISOExtString("2010-07-04T07:06:12");
+
+  SerializerRegistry.instance.serialize(val).should.equal("2010-07-04T07:06:12");
+  SerializerRegistry.instance.serialize(cval).should.equal("2010-07-04T07:06:12");
+  SerializerRegistry.instance.serialize(ival).should.equal("2010-07-04T07:06:12");
 }
 
 /// It should serialize a string

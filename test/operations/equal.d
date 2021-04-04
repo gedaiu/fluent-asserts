@@ -8,6 +8,7 @@ import trial.discovery.spec;
 import std.string;
 import std.conv;
 import std.meta;
+import std.datetime;
 
 alias s = Spec!({
 
@@ -115,7 +116,7 @@ alias s = Spec!({
 
     it("should be able to compare that two bools that are not equal", {
       expect(true).to.not.equal(false);
-      expect(true).to.not.equal(false);
+      expect(false).to.not.equal(true);
     });
 
     it("should throw a detailed error message when the two bools are not equal", {
@@ -126,6 +127,25 @@ alias s = Spec!({
       msg[0].strip.should.equal("true should equal false.");
       msg[2].strip.should.equal("Expected:false");
       msg[3].strip.should.equal("Actual:true");
+    });
+  });
+
+  describe("using durations", {
+    it("should compare two true values", {
+      expect(2.seconds).to.equal(2.seconds);
+    });
+
+    it("should be able to compare that two bools that are not equal", {
+      expect(2.seconds).to.not.equal(3.seconds);
+      expect(3.seconds).to.not.equal(2.seconds);
+    });
+
+    it("should throw a detailed error message when the two bools are not equal", {
+      auto msg = ({
+        expect(3.seconds).to.equal(2.seconds);
+      }).should.throwException!TestException.msg.split("\n");
+
+      msg[0].strip.should.equal("3 secs should equal 2 secs. 3000000000 is not equal to 2000000000.");
     });
   });
 });
