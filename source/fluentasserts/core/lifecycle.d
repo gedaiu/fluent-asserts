@@ -39,6 +39,9 @@ static this() {
   Registry.instance.register!(Duration, Duration)("lessThan", &lessThanDuration);
   Registry.instance.register!(Duration, Duration)("below", &lessThanDuration);
 
+  Registry.instance.register!(Duration, Duration)("greaterThan", &greaterThanDuration);
+  Registry.instance.register!(Duration, Duration)("above", &greaterThanDuration);
+
   Registry.instance.register("string", "string", "equal", &equal);
   Registry.instance.register("bool", "bool", "equal", &equal);
 
