@@ -6,6 +6,7 @@ import fluentasserts.core.evaluation;
 import fluentasserts.core.lifecycle;
 
 import std.conv;
+import std.datetime;
 
 version(unittest) {
   import fluentasserts.core.expect;
@@ -29,6 +30,57 @@ IResult[] between(T)(ref Evaluation evaluation) @safe nothrow {
     return [ new MessageResult("Can't convert the values to " ~ T.stringof) ];
   }
 
+  return betweenResults(currentValue, limit1, limit2, evaluation);
+}
+
+
+///
+IResult[] betweenDuration(ref Evaluation evaluation) @safe nothrow {
+  evaluation.message.addText(" and ");
+
+  Duration currentValue;
+  Duration limit1;
+  Duration limit2;
+
+  try {
+    currentValue = dur!"nsecs"(evaluation.currentValue.strValue.to!size_t);
+    limit1 = dur!"nsecs"(evaluation.expectedValue.strValue.to!size_t);
+    limit2 = dur!"nsecs"(evaluation.expectedValue.meta["1"].to!size_t);
+
+    evaluation.message.addValue(limit2.to!string);
+  } catch(Exception e) {
+    return [ new MessageResult("Can't convert the values to Duration") ];
+  }
+
+  evaluation.message.addText(". ");
+
+  return betweenResults(currentValue, limit1, limit2, evaluation);
+}
+
+///
+IResult[] betweenSysTime(ref Evaluation evaluation) @safe nothrow {
+  evaluation.message.addText(" and ");
+
+  SysTime currentValue;
+  SysTime limit1;
+  SysTime limit2;
+
+  try {
+    currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
+    limit1 = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
+    limit2 = SysTime.fromISOExtString(evaluation.expectedValue.meta["1"]);
+
+    evaluation.message.addValue(limit2.toISOExtString);
+  } catch(Exception e) {
+    return [ new MessageResult("Can't convert the values to Duration") ];
+  }
+
+  evaluation.message.addText(". ");
+
+  return betweenResults(currentValue, limit1, limit2, evaluation);
+}
+
+private IResult[] betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluation evaluation) {
   T min = limit1 < limit2 ? limit1 : limit2;
   T max = limit1 > limit2 ? limit1 : limit2;
 
@@ -48,7 +100,7 @@ IResult[] between(T)(ref Evaluation evaluation) @safe nothrow {
 
   if(!evaluation.isNegated) {
     if(!isBetween) {
-      evaluation.message.addValue(evaluation.currentValue.strValue);
+      evaluation.message.addValue(evaluation.currentValue.niceValue);
 
       if(isGreater) {
         evaluation.message.addText(" is greater than or equal to ");
@@ -64,13 +116,11 @@ IResult[] between(T)(ref Evaluation evaluation) @safe nothrow {
 
       evaluation.message.addText(".");
 
-      results ~= new ExpectedActualResult(interval, evaluation.currentValue.strValue);
+      results ~= new ExpectedActualResult(interval, evaluation.currentValue.niceValue);
     }
   } else if(isBetween) {
-    results ~= new ExpectedActualResult(interval, evaluation.currentValue.strValue);
+    results ~= new ExpectedActualResult(interval, evaluation.currentValue.niceValue);
   }
-
-
 
   return results;
 }

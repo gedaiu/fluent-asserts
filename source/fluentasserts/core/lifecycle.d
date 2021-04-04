@@ -48,6 +48,12 @@ static this() {
   Registry.instance.register!(SysTime, SysTime)("greaterThan", &greaterThanSysTime);
   Registry.instance.register!(SysTime, SysTime)("above", &greaterThanSysTime);
 
+  Registry.instance.register!(Duration, Duration)("between", &betweenDuration);
+  Registry.instance.register!(Duration, Duration)("within", &betweenDuration);
+
+  Registry.instance.register!(SysTime, SysTime)("between", &betweenSysTime);
+  Registry.instance.register!(SysTime, SysTime)("within", &betweenSysTime);
+
   Registry.instance.register("string", "string", "equal", &equal);
   Registry.instance.register("bool", "bool", "equal", &equal);
 

@@ -247,7 +247,7 @@ import std.conv;
 
     static if(Params.length >= 1) {
       static foreach (i, Param; Params) {
-        () @trusted { evaluation.expectedValue.meta[i.to!string] = params[i].to!string; } ();
+        () @trusted { evaluation.expectedValue.meta[i.to!string] = SerializerRegistry.instance.serialize(params[i]); } ();
       }
     }
 
