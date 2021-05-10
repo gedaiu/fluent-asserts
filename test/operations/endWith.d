@@ -10,6 +10,11 @@ import std.conv;
 import std.meta;
 
 alias s = Spec!({
+  describe("special cases", {
+    it("should check that a multi line string ends with a certain substring", {
+      expect("str\ning").to.endWith("ing");
+    });
+  });
 
   alias StringTypes = AliasSeq!(string, wstring, dstring);
 

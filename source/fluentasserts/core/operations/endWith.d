@@ -20,7 +20,12 @@ IResult[] endWith(ref Evaluation evaluation) @safe nothrow {
   auto current = evaluation.currentValue.strValue.cleanString;
   auto expected = evaluation.expectedValue.strValue.cleanString;
 
-  auto index = current.indexOf(expected);
+  long index = -1;
+
+  try {
+    index = current.lastIndexOf(expected);
+  } catch(Exception) { }
+
   auto doesEndWith = index >= 0 && index == current.length - expected.length;
 
   if(evaluation.isNegated) {
