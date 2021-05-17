@@ -124,7 +124,7 @@ class SerializerRegistry {
   }
 
   ///
-  string serialize(T)(T value) if(isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T)) {
+  string serialize(T)(T value) if(!is(T == enum) && (isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T))) {
     static if(isSomeString!T) {
       return `"` ~ value.to!string ~ `"`;
     } else static if(isSomeChar!T) {
@@ -132,6 +132,16 @@ class SerializerRegistry {
     } else {
       return value.to!string;
     }
+  }
+
+  string serialize(T)(T value) if(is(T == enum)) {
+    static foreach(member; EnumMembers!T) {
+      if(member == value) {
+        return this.serialize(cast(OriginalType!T) member);
+      }
+    }
+
+    throw new Exception("The value can not be serialized.");
   }
 
   string niceValue(T)(T value) {
@@ -340,6 +350,21 @@ unittest {
   SerializerRegistry.instance.serialize(value).should.equal(`["a":2, "b":3, "c":4]`);
   SerializerRegistry.instance.serialize(cvalue).should.equal(`["a":2, "b":3, "c":4]`);
   SerializerRegistry.instance.serialize(ivalue).should.equal(`["a":2, "b":3, "c":4]`);
+}
+
+/// It should serialize a string enum
+unittest {
+  enum TestType : string {
+    a = "a",
+    b = "b"
+  }
+  TestType value = TestType.a;
+  const TestType cvalue = TestType.a;
+  immutable TestType ivalue = TestType.a;
+
+  SerializerRegistry.instance.serialize(value).should.equal(`"a"`);
+  SerializerRegistry.instance.serialize(cvalue).should.equal(`"a"`);
+  SerializerRegistry.instance.serialize(ivalue).should.equal(`"a"`);
 }
 
 version(unittest) { struct TestStruct { int a; string b; }; }
