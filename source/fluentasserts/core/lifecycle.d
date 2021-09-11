@@ -127,6 +127,7 @@ static this() {
   }
 
   Registry.instance.register("*[]", "*[]", "equal", &arrayEqual);
+  Registry.instance.register("*[][]", "*[][]", "equal", &arrayEqual);
   Registry.instance.register("*", "*", "equal", &equal);
 
   static foreach(Type; StringTypes) {

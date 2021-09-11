@@ -72,6 +72,62 @@ alias s = Spec!({
     });
   }
 
+  describe("using an array of arrays", {
+    int[][] aList;
+    int[][] anotherList;
+    int[][] aListInOtherOrder;
+
+    before({
+      aList = [ [1], [2,2], [3,3,3] ];
+      aListInOtherOrder = [ [3,3,3], [2,2], [1] ];
+      anotherList = [ [2], [3] ];
+    });
+
+    it("should compare two exact arrays", {
+      expect(aList).to.equal(aList);
+    });
+
+    it("should be able to compare that two arrays are not equal", {
+      expect(aList).to.not.equal(aListInOtherOrder);
+      expect(aList).to.not.equal(anotherList);
+      expect(anotherList).to.not.equal(aList);
+    });
+
+    it("should throw a detailed error message when the two arrays are not equal", {
+      auto msg = ({
+        expect(aList).to.equal(anotherList);
+      }).should.throwException!TestException.msg.split("\n");
+
+      msg[0].strip.should.equal(aList.to!string ~ " should equal " ~ anotherList.to!string ~ ".");
+      msg[1].strip.should.equal("Diff:");
+      msg[2].strip.should.equal(`[[[+1], [2, ]2], [[+3, 3, ]3]]`);
+      msg[4].strip.should.equal("Expected:" ~ anotherList.to!string);
+      msg[5].strip.should.equal("Actual:" ~ aList.to!string);
+    });
+
+    it("should throw an error when the arrays have the same values in a different order", {
+      auto msg = ({
+        expect(aList).to.equal(aListInOtherOrder);
+      }).should.throwException!TestException.msg.split("\n");
+
+      msg[0].strip.should.equal(aList.to!string ~ " should equal " ~ aListInOtherOrder.to!string ~ ".");
+      msg[1].strip.should.equal("Diff:");
+      msg[2].strip.should.equal(`[[[-3, 3, 3][+1]], [2, 2], [[-1][+3, 3, 3]]]`);
+      msg[4].strip.should.equal("Expected:" ~ aListInOtherOrder.to!string);
+      msg[5].strip.should.equal("Actual:" ~ aList.to!string);
+    });
+
+    it("should throw an error when the arrays should not be equal", {
+      auto msg = ({
+        expect(aList).not.to.equal(aList);
+      }).should.throwException!TestException.msg.split("\n");
+
+      msg[0].strip.should.startWith(aList.to!string ~ " should not equal " ~ aList.to!string ~ ".");
+      msg[2].strip.should.equal(`Expected:not [[1], [2, 2], [3, 3, 3]]`);
+      msg[3].strip.should.equal(`Actual:[[1], [2, 2], [3, 3, 3]]`);
+    });
+  });
+
   static foreach(Type; NumericTypes) {
     describe("using an array of " ~ Type.stringof, {
       Type[] aList;
