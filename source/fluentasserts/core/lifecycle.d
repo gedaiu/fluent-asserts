@@ -88,6 +88,7 @@ static this() {
   static foreach(Type1; NumericTypes) {
     Registry.instance.register(Type1.stringof ~ "[]", "void[]", "approximately", &approximatelyList);
     Registry.instance.register("*[]", "*", "contain", &arrayContain);
+    Registry.instance.register("*[][]", "*[][]", "containOnly", &arrayContainOnly);
 
     static foreach(Type2; NumericTypes) {
       Registry.instance.register(Type1.stringof, Type2.stringof, "equal", &equal);

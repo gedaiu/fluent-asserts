@@ -123,6 +123,54 @@ alias s = Spec!({
     });
   }
 
+  describe("using an array of arrays", {
+    int[][] testValues;
+    int[][] testValuesWithOtherOrder;
+    int[][] otherTestValues;
+
+    before({
+      testValues = [ [40], [41, 41], [42,42,42] ];
+      testValuesWithOtherOrder = [ [42,42,42], [41, 41], [40] ];
+      otherTestValues = [ [50], [51] ];
+    });
+
+    it("should find all items in the expected list", {
+      expect(testValues).to.containOnly(testValuesWithOtherOrder);
+    });
+
+    it("should not fail on checking if the list contains only a substring", {
+      expect(testValues).not.to.containOnly(testValues[0..2]);
+    });
+
+    it("should find all duplicated items", {
+      expect(testValues ~ testValues).to.containOnly(testValuesWithOtherOrder ~ testValuesWithOtherOrder);
+    });
+
+    it("should not fail on checking if the list contains only a substring of unique values", {
+      expect(testValues ~ testValues).not.to.containOnly(testValues);
+    });
+
+    it("should throw a detailed error when the array does not contain only the provided values", {
+      auto msg = ({
+        expect(testValues).to.containOnly(testValues[0..2]);
+      }).should.throwException!TestException.msg;
+
+      msg.split('\n')[0].should.equal(testValues.to!string ~ " should contain only " ~ testValues[0..2].to!string ~ ".");
+      msg.split('\n')[2].strip.should.equal("Actual:" ~ testValues.to!string);
+      msg.split('\n')[4].strip.should.equal("Missing:" ~ testValues[$-1..$].to!string);
+    });
+
+    it("should throw a detailed error when the list shoul not contain some values", {
+      auto msg = ({
+        expect(testValues).to.not.containOnly(testValuesWithOtherOrder);
+      }).should.throwException!TestException.msg;
+
+      msg.split('\n')[0].should.equal(testValues.to!string ~ " should not contain only " ~ testValuesWithOtherOrder.to!string ~ ".");
+      msg.split('\n')[2].strip.should.equal("Expected:to not contain " ~ testValuesWithOtherOrder.to!string);
+      msg.split('\n')[3].strip.should.equal("Actual:" ~ testValues.to!string);
+    });
+  });
+
   describe("using a range of Objects", {
     Object[] testValues;
     Object[] testValuesWithOtherOrder;
