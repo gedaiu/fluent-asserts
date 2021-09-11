@@ -56,11 +56,9 @@ static this() {
   Registry.instance.register!(SysTime, SysTime)("between", &betweenSysTime);
   Registry.instance.register!(SysTime, SysTime)("within", &betweenSysTime);
 
-  Registry.instance.register("string", "string", "equal", &equal);
-  Registry.instance.register("bool", "bool", "equal", &equal);
+  Registry.instance.register("*", "*", "equal", &equal);
 
   static foreach(Type; NumericTypes) {
-    Registry.instance.register(Type.stringof, Type.stringof, "equal", &equal);
     Registry.instance.register(Type.stringof ~ "[]", Type.stringof ~ "[]", "equal", &arrayEqual);
     Registry.instance.register(Type.stringof ~ "[]", "void[]", "equal", &arrayEqual);
   }
@@ -89,6 +87,7 @@ static this() {
   ///
   static foreach(Type1; NumericTypes) {
     Registry.instance.register(Type1.stringof ~ "[]", "void[]", "approximately", &approximatelyList);
+    Registry.instance.register("*[]", "*", "contain", &arrayContain);
 
     static foreach(Type2; NumericTypes) {
       Registry.instance.register(Type1.stringof, Type2.stringof, "equal", &equal);
@@ -105,6 +104,8 @@ static this() {
 
       Registry.instance.register(Type1.stringof, Type2.stringof, "approximately", &approximately);
     }
+
+    Registry.instance.register("object.Object[]", "object.Object[]", "containOnly", &arrayContainOnly);
   }
 
   static foreach(Type1; StringTypes) {

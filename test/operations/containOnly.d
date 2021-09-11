@@ -122,4 +122,52 @@ alias s = Spec!({
       });
     });
   }
+
+  describe("using a range of Objects", {
+    Object[] testValues;
+    Object[] testValuesWithOtherOrder;
+    Object[] otherTestValues;
+
+    before({
+      testValues = [new Object(), new Object()];
+      testValuesWithOtherOrder = [testValues[1], testValues[0]];
+      otherTestValues = [new Object(), new Object()];
+    });
+
+    it("should find all items in the expected list", {
+      expect(testValues).to.containOnly(testValuesWithOtherOrder);
+    });
+
+    it("should not fail on checking if the list contains only a subset", {
+      expect(testValues).not.to.containOnly([testValues[0]]);
+    });
+
+    it("should find all duplicated items", {
+      expect(testValues ~ testValues).to.containOnly(testValuesWithOtherOrder ~ testValuesWithOtherOrder);
+    });
+
+    it("should not fail on checking if the list contains only a substring of unique values", {
+      expect(testValues ~ testValues).not.to.containOnly(testValues);
+    });
+
+    it("should throw a detailed error when the array does not contain only the provided values", {
+      auto msg = ({
+        expect(testValues).to.containOnly([testValues[0]]);
+      }).should.throwException!TestException.msg;
+
+      msg.split('\n')[0].should.contain(")] should contain only [Object(");
+      msg.split('\n')[2].strip.should.startWith("Actual:[Object(");
+      msg.split('\n')[4].strip.should.startWith("Missing:[Object(");
+    });
+
+    it("should throw a detailed error when the list shoul not contain some values", {
+      auto msg = ({
+        expect(testValues).to.not.containOnly(testValuesWithOtherOrder);
+      }).should.throwException!TestException.msg;
+
+      msg.split('\n')[0].should.contain(")] should not contain only [Object(");
+      msg.split('\n')[2].strip.should.startWith("Expected:to not contain [Object(");
+      msg.split('\n')[3].strip.should.startWith("Actual:[Object(");
+    });
+  });
 });
