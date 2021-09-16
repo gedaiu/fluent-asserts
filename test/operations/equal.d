@@ -1,5 +1,6 @@
 module test.operations.equal;
 
+import fluentasserts.core.serializers;
 import fluentasserts.core.expect;
 import fluent.asserts;
 
@@ -148,4 +149,105 @@ alias s = Spec!({
       msg[0].strip.should.equal("3 secs should equal 2 secs. 3000000000 is not equal to 2000000000.");
     });
   });
+
+  describe("using objects without custom opEquals", {
+    Object testValue;
+    Object otherTestValue;
+    string niceTestValue;
+    string niceOtherTestValue;
+
+    before({
+      testValue = new Object();
+      otherTestValue = new Object();
+
+      niceTestValue = SerializerRegistry.instance.niceValue(testValue);
+      niceOtherTestValue = SerializerRegistry.instance.niceValue(otherTestValue);
+    });
+
+    it("should be able to compare two exact values", {
+      expect(testValue).to.equal(testValue);
+    });
+
+    it("should be able to check if two values are not equal", {
+      expect(testValue).to.not.equal(otherTestValue);
+    });
+
+    it("should throw an exception with a detailed message when the strings are not equal", {
+      auto msg = ({
+        expect(testValue).to.equal(otherTestValue);
+      }).should.throwException!TestException.msg;
+
+      msg.split("\n")[0].should.equal(niceTestValue.to!string ~ ` should equal ` ~ niceOtherTestValue.to!string ~ `. ` ~ niceTestValue.to!string ~ ` is not equal to ` ~ niceOtherTestValue.to!string ~ `.`);
+    });
+
+    it("should throw an exception with a detailed message when the strings should not be equal", {
+      auto msg = ({
+        expect(testValue).to.not.equal(testValue);
+      }).should.throwException!TestException.msg;
+
+      msg.split("\n")[0].should.equal(niceTestValue.to!string ~ ` should not equal ` ~ niceTestValue.to!string ~ `. ` ~ niceTestValue.to!string ~ ` is equal to ` ~ niceTestValue.to!string ~ `.`);
+    });
+  });
+
+  describe("using objects with custom opEquals", {
+    Thing testValue;
+    Thing sameTestValue;
+    Thing otherTestValue;
+
+    string niceTestValue;
+    string niceSameTestValue;
+    string niceOtherTestValue;
+
+    before({
+      testValue = new Thing(1);
+      sameTestValue = new Thing(1);
+      otherTestValue = new Thing(2);
+
+      niceTestValue = SerializerRegistry.instance.niceValue(testValue);
+      niceSameTestValue = SerializerRegistry.instance.niceValue(sameTestValue);
+      niceOtherTestValue = SerializerRegistry.instance.niceValue(otherTestValue);
+    });
+
+    it("should be able to compare two exact values", {
+      expect(testValue).to.equal(testValue);
+    });
+
+
+    it("should be able to compare two objects with the same fields", {
+      expect(testValue).to.equal(sameTestValue);
+      expect(testValue).to.equal(cast(Object) sameTestValue);
+    });
+
+    it("should be able to check if two values are not equal", {
+      expect(testValue).to.not.equal(otherTestValue);
+    });
+
+    it("should throw an exception with a detailed message when the strings are not equal", {
+      auto msg = ({
+        expect(testValue).to.equal(otherTestValue);
+      }).should.throwException!TestException.msg;
+
+      msg.split("\n")[0].should.equal(niceTestValue.to!string ~ ` should equal ` ~ niceOtherTestValue.to!string ~ `. ` ~ niceTestValue.to!string ~ ` is not equal to ` ~ niceOtherTestValue.to!string ~ `.`);
+    });
+
+    it("should throw an exception with a detailed message when the strings should not be equal", {
+      auto msg = ({
+        expect(testValue).to.not.equal(testValue);
+      }).should.throwException!TestException.msg;
+
+      msg.split("\n")[0].should.equal(niceTestValue.to!string ~ ` should not equal ` ~ niceTestValue.to!string ~ `. ` ~ niceTestValue.to!string ~ ` is equal to ` ~ niceTestValue.to!string ~ `.`);
+    });
+  });
 });
+
+version(unittest) :
+class Thing {
+	int x;
+	this(int x) { this.x = x; }
+	override bool opEquals(Object o) {
+		if(typeid(this) != typeid(o)) return false;
+		alias a = this;
+		auto b = cast(typeof(this)) o;
+		return a.x == b.x;
+	}
+}

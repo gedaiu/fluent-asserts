@@ -13,7 +13,11 @@ version(unittest) {
 IResult[] equal(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(".");
 
-  auto result = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
+  bool result = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
+
+  if(!result && evaluation.currentValue.proxyValue !is null && evaluation.expectedValue.proxyValue !is null) {
+    result = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
+  }
 
   if(evaluation.isNegated) {
     result = !result;

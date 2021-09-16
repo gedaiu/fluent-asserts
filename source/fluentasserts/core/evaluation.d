@@ -23,6 +23,9 @@ struct ValueEvaluation {
   /// Serialized value as string
   string strValue;
 
+  /// Proxy object holding the evaluated value to help doing better comparisions
+  EquableValue proxyValue;
+
   /// Human readable value
   string niceValue;
 
@@ -98,7 +101,7 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
     auto duration = Clock.currTime - begin;
     auto serializedValue = SerializerRegistry.instance.serialize(value);
     auto niceValue = SerializerRegistry.instance.niceValue(value);
-    return Result(value, ValueEvaluation(null, duration, serializedValue, niceValue, extractTypes!TT ));
+    return Result(value, ValueEvaluation(null, duration, serializedValue, equableValue(value, niceValue), niceValue, extractTypes!TT ));
   } catch(Throwable t) {
     T result;
 
@@ -106,7 +109,7 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
       result = testData;
     }
 
-    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, result.to!string, extractTypes!T ));
+    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, equableValue(result, result.to!string), result.to!string, extractTypes!T ));
   }
 }
 
@@ -188,7 +191,121 @@ unittest {
 
   auto result = extractTypes!(T[]);
 
-  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L185_C1.T[]");
-  assert(result[1] == "object.Object[]");
-  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L185_C1.I[]");
+  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L188_C1.T[]", `Expected: ` ~ result[0] );
+  assert(result[1] == "object.Object[]", `Expected: ` ~ result[1] );
+  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L188_C1.I[]", `Expected: ` ~ result[2] );
+}
+
+/// A proxy type that allows to compare the native values
+interface EquableValue {
+  @safe nothrow:
+    bool isEqualTo(EquableValue value);
+    EquableValue[] toArray();
+    string toString();
+    EquableValue generalize();
+}
+
+/// Wraps a value into equable value
+EquableValue equableValue(T)(T value, string serialized) {
+
+  static if(isArray!T) {
+    return null;
+  } else static if(isInputRange!T) {
+    return null;
+  } else static if(isAssociativeArray!T) {
+    return null;
+  } else {
+    return new ObjectEquable!T(value, serialized);
+  }
+}
+
+///
+class ObjectEquable(T) : EquableValue {
+  private {
+    T value;
+    string serialized;
+  }
+
+  this(T value, string serialized) {
+    this.value = value;
+    this.serialized = serialized;
+  }
+
+  @trusted nothrow:
+    bool isEqualTo(EquableValue otherEquable) {
+      try {
+        auto other = cast(ObjectEquable) otherEquable;
+
+        if(other !is null) {
+          return value == other.value;
+        }
+
+        auto generalized = otherEquable.generalize;
+
+        static if(is(T == class)) {
+          auto otherGeneralized = cast(ObjectEquable!Object) generalized;
+
+          if(otherGeneralized !is null) {
+            return value == otherGeneralized.value;
+          }
+        }
+
+        return false;
+      } catch(Exception) {
+        return false;
+      }
+    }
+
+    EquableValue generalize() {
+        static if(is(T == class)) {
+          auto obj = cast(Object) value;
+
+          if(obj !is null) {
+            return new ObjectEquable!Object(obj, serialized);
+          }
+        }
+
+        return new ObjectEquable!string(serialized, serialized);
+    }
+
+    EquableValue[] toArray() {
+      return [ this ];
+    }
+
+    override string toString() {
+      return serialized;
+    }
+}
+
+
+///
+class ArrayEquable(U: T[], T) : EquableValue {
+  private {
+    T[] values;
+    string serialized;
+  }
+
+  this(T[] value, string serialized) {
+    this.value = values;
+    this.serialized = serialized;
+  }
+
+  @safe nothrow:
+    bool isEqualTo(EquableValue otherEquable) {
+      auto other = cast(ArrayEquable!T) otherEquable;
+
+      if(other is null) {
+        return false;
+      }
+
+      return serialized == other.serialized;
+    }
+
+    EquableValue[] toArray() {
+      return values.map!(a => new ArrayEquable!U(a)).array;
+    }
+
+    override string toString() {
+      return serialized;
+    }
 }
