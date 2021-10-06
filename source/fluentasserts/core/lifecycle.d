@@ -128,6 +128,7 @@ static this() {
   }
 
   Registry.instance.register("*[]", "*[]", "equal", &arrayEqual);
+  Registry.instance.register("*[*]", "*[*]", "equal", &arrayEqual);
   Registry.instance.register("*[][]", "*[][]", "equal", &arrayEqual);
   Registry.instance.register("*", "*", "equal", &equal);
 

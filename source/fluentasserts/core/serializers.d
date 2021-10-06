@@ -97,7 +97,8 @@ class SerializerRegistry {
       if(value is null) {
         result = "null";
       } else {
-        result = T.stringof ~ "(" ~ (cast() value).toHash.to!string ~ ")";
+        auto v = (cast() value);
+        result = T.stringof ~ "(" ~ v.toHash.to!string ~ ")";
       }
     } else static if(is(Unqual!T == Duration)) {
       result = value.total!"nsecs".to!string;

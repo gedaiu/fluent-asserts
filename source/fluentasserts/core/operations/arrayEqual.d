@@ -12,8 +12,21 @@ version(unittest) {
 ///
 IResult[] arrayEqual(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(".");
+  bool result = true;
 
-  auto result = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
+  EquableValue[] expectedPieces = evaluation.expectedValue.proxyValue.toArray;
+  EquableValue[] testData = evaluation.currentValue.proxyValue.toArray;
+
+  if(testData.length == expectedPieces.length) {
+    foreach(index, testedValue; testData) {
+      if(testedValue !is null && !testedValue.isEqualTo(expectedPieces[index])) {
+        result = false;
+        break;
+      }
+    }
+  } else {
+    result = false;
+  }
 
   if(evaluation.isNegated) {
     result = !result;

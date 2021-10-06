@@ -238,6 +238,55 @@ alias s = Spec!({
       msg.split("\n")[0].should.equal(niceTestValue.to!string ~ ` should not equal ` ~ niceTestValue.to!string ~ `. ` ~ niceTestValue.to!string ~ ` is equal to ` ~ niceTestValue.to!string ~ `.`);
     });
   });
+
+  describe("using assoc arrays", {
+    string[string] testValue;
+    string[string] sameTestValue;
+    string[string] otherTestValue;
+
+    string niceTestValue;
+    string niceSameTestValue;
+    string niceOtherTestValue;
+
+    before({
+      testValue = ["b": "2", "a": "1", "c": "3"];
+      sameTestValue = ["a": "1", "b": "2", "c": "3"];
+      otherTestValue = ["a": "3", "b": "2", "c": "1"];
+
+      niceTestValue = SerializerRegistry.instance.niceValue(testValue);
+      niceSameTestValue = SerializerRegistry.instance.niceValue(sameTestValue);
+      niceOtherTestValue = SerializerRegistry.instance.niceValue(otherTestValue);
+    });
+
+    it("should be able to compare two exact values", {
+      expect(testValue).to.equal(testValue);
+    });
+
+
+    it("should be able to compare two objects with the same fields", {
+      expect(testValue).to.equal(sameTestValue);
+    });
+
+    it("should be able to check if two values are not equal", {
+      expect(testValue).to.not.equal(otherTestValue);
+    });
+
+    it("should throw an exception with a detailed message when the strings are not equal", {
+      auto msg = ({
+        expect(testValue).to.equal(otherTestValue);
+      }).should.throwException!TestException.msg;
+
+      msg.split("\n")[0].should.equal(niceTestValue.to!string ~ ` should equal ` ~ niceOtherTestValue.to!string ~ `.`);
+    });
+
+    it("should throw an exception with a detailed message when the strings should not be equal", {
+      auto msg = ({
+        expect(testValue).to.not.equal(testValue);
+      }).should.throwException!TestException.msg;
+
+      msg.split("\n")[0].should.equal(niceTestValue.to!string ~ ` should not equal ` ~ niceTestValue.to!string ~ `.`);
+    });
+  });
 });
 
 version(unittest) :

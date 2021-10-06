@@ -2,6 +2,7 @@ module test.operations.arrayEqual;
 
 import fluentasserts.core.expect;
 import fluent.asserts;
+import fluentasserts.core.serializers;
 
 import trial.discovery.spec;
 
@@ -216,4 +217,86 @@ alias s = Spec!({
       });
     });
   }
+
+  describe("using an array of objects with opEquals", {
+    Thing[] aList;
+    Thing[] anotherList;
+    Thing[] aListInOtherOrder;
+
+    string strAList;
+    string strAnotherList;
+    string strAListInOtherOrder;
+
+    before({
+        aList = [ new Thing(1), new Thing(2), new Thing(3) ];
+        aListInOtherOrder = [ new Thing(3), new Thing(2), new Thing(1) ];
+        anotherList = [ new Thing(2), new Thing(3) ];
+
+        strAList = SerializerRegistry.instance.niceValue(aList);
+        strAnotherList = SerializerRegistry.instance.niceValue(anotherList);
+        strAListInOtherOrder = SerializerRegistry.instance.niceValue(aListInOtherOrder);
+    });
+
+    it("should compare two exact arrays", {
+      expect(aList).to.equal(aList);
+    });
+
+    it("should be able to compare that two arrays are not equal", {
+      expect(aList).to.not.equal(aListInOtherOrder);
+      expect(aList).to.not.equal(anotherList);
+      expect(anotherList).to.not.equal(aList);
+    });
+
+    it("should throw a detailed error message when the two arrays are not equal", {
+      auto msg = ({
+        expect(aList).to.equal(anotherList);
+      }).should.throwException!TestException.msg.split("\n");
+
+      msg[0].strip.should.equal(strAList.to!string ~ " should equal " ~ strAnotherList.to!string ~ ".");
+      msg[1].strip.should.equal("Diff:");
+      msg[4].strip.should.equal("Expected:" ~ strAnotherList.to!string);
+      msg[5].strip.should.equal("Actual:" ~ strAList.to!string);
+    });
+
+    it("should throw an error when the arrays have the same values in a different order", {
+      auto msg = ({
+        expect(aList).to.equal(aListInOtherOrder);
+      }).should.throwException!TestException.msg.split("\n");
+
+      msg[0].strip.should.equal(strAList.to!string ~ " should equal " ~ strAListInOtherOrder ~ ".");
+      msg[1].strip.should.equal("Diff:");
+      msg[4].strip.should.equal("Expected:" ~ strAListInOtherOrder);
+      msg[5].strip.should.equal("Actual:" ~ strAList.to!string);
+    });
+
+    it("should throw an error when the arrays should not be equal", {
+      auto msg = ({
+        expect(aList).not.to.equal(aList);
+      }).should.throwException!TestException.msg.split("\n");
+
+      msg[0].strip.should.startWith(strAList.to!string ~ " should not equal " ~ strAList.to!string ~ ".");
+      msg[2].strip.should.equal("Expected:not " ~ strAList);
+      msg[3].strip.should.equal("Actual:" ~ strAList);
+    });
+  });
 });
+
+
+version(unittest) :
+class Thing {
+	int x;
+
+  this(int x) { this.x = x; }
+
+	override bool opEquals(Object o) {
+		if(typeid(this) != typeid(o)) return false;
+		alias a = this;
+		auto b = cast(typeof(this)) o;
+
+		return a.x == b.x;
+	}
+
+  override string toString() {
+    return x.to!string;
+  }
+}

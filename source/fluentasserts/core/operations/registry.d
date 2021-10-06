@@ -57,17 +57,19 @@ class Registry {
     assert(valueType != "", "The value type is not set!");
     assert(name != "", "The operation name is not set!");
 
-    string key = valueType ~ "." ~ expectedValueType ~ "." ~ name;
+    auto genericKeys = [valueType ~ "." ~ expectedValueType ~ "." ~ name] ~ generalizeKey(valueType, expectedValueType, name);
+    string matchedKey;
 
-    if(key !in operations) {
-      auto genericKey = generalizeKey(valueType, expectedValueType, name);
-
-      assert(key in operations || genericKey in operations, "There is no `" ~ key ~ "` or `" ~ genericKey ~ "` registered to the assert operations.");
-
-      key = genericKey;
+    foreach(key; genericKeys) {
+      if(key in operations) {
+        matchedKey = key;
+        break;
+      }
     }
 
-    return operations[key];
+    assert(matchedKey != "", "There are no matching assert operations. Register any of `" ~ genericKeys.join("`, `") ~ "` to perform this assert.");
+
+    return operations[matchedKey];
   }
 
   ///
@@ -81,15 +83,97 @@ class Registry {
   }
 }
 
-string generalizeKey(string valueType, string expectedValueType, string name) @safe nothrow {
-  return generalizeType(valueType) ~ "." ~ generalizeType(expectedValueType) ~ "." ~ name;
-}
+string[] generalizeKey(string valueType, string expectedValueType, string name) @safe nothrow {
+  string[] results;
 
-string generalizeType(string typeName) @safe nothrow {
-  auto pos = typeName.indexOf("[");
-  if(pos == -1) {
-    return "*";
+  foreach (string generalizedValueType; generalizeType(valueType)) {
+    foreach (string generalizedExpectedValueType; generalizeType(expectedValueType)) {
+      results ~=  generalizedValueType ~ "." ~ generalizedExpectedValueType ~ "." ~ name;
+    }
   }
 
-  return "*" ~ typeName[pos..$];
+  return  results;
+}
+
+string[] generalizeType(string typeName) @safe nothrow {
+  auto pos = typeName.indexOf("[");
+  if(pos == -1) {
+    return ["*"];
+  }
+
+  string[] results = [];
+
+  const pieces = typeName.split("[");
+
+  string arrayType;
+  bool isHashMap;
+  int index = 0;
+  int diff = 0;
+
+  foreach (ch; typeName[pos..$]) {
+    diff++;
+    if(ch == '[') {
+      index++;
+    }
+
+    if(ch == ']') {
+      index--;
+    }
+
+    if(index == 0 && diff == 2) {
+      arrayType ~= "[]";
+    }
+
+    if(index == 0 && diff != 2) {
+      arrayType ~= "[*]";
+      isHashMap = true;
+    }
+
+    if(index == 0) {
+      diff = 0;
+    }
+  }
+
+  if(isHashMap) {
+    results ~= "*" ~ typeName[pos..$];
+    results ~= pieces[0] ~ arrayType;
+  }
+
+  results ~= "*" ~ arrayType;
+
+  return results;
+}
+
+version(unittest) {
+  import fluentasserts.core.base;
+}
+
+/// It can generalize an int
+unittest {
+  generalizeType("int").should.equal(["*"]);
+}
+
+/// It can generalize a list
+unittest {
+  generalizeType("int[]").should.equal(["*[]"]);
+}
+
+/// It can generalize a list of lists
+unittest {
+  generalizeType("int[][]").should.equal(["*[][]"]);
+}
+
+/// It can generalize an assoc array
+unittest {
+  generalizeType("int[int]").should.equal(["*[int]", "int[*]", "*[*]"]);
+}
+
+/// It can generalize a combination of assoc arrays and lists
+unittest {
+  generalizeType("int[int][][string][]").should.equal(["*[int][][string][]", "int[*][][*][]", "*[*][][*][]"]);
+}
+
+/// It can generalize an assoc array with a key list
+unittest {
+  generalizeType("int[int[]]").should.equal(["*[int[]]", "int[*]", "*[*]"]);
 }

@@ -6,7 +6,7 @@ import std.traits;
 import std.conv;
 import std.range;
 import std.array;
-import std.algorithm : map;
+import std.algorithm : map, sort;
 
 import fluentasserts.core.serializers;
 import fluentasserts.core.results;
@@ -191,7 +191,7 @@ unittest {
 
   auto result = extractTypes!(T[]);
 
-  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L188_C1.T[]", `Expected: ` ~ result[0] );
+  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L188_C1.T[]", `Expected: ` ~ result[0]);
   assert(result[1] == "object.Object[]", `Expected: ` ~ result[1] );
   assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L188_C1.I[]", `Expected: ` ~ result[2] );
 }
@@ -203,17 +203,18 @@ interface EquableValue {
     EquableValue[] toArray();
     string toString();
     EquableValue generalize();
+    string getSerialized();
 }
 
 /// Wraps a value into equable value
 EquableValue equableValue(T)(T value, string serialized) {
 
-  static if(isArray!T) {
-    return null;
-  } else static if(isInputRange!T) {
-    return null;
+  static if(isArray!T && !isSomeString!T) {
+    return new ArrayEquable!T(value, serialized);
+  } else static if(isInputRange!T && !isSomeString!T) {
+    return new ArrayEquable!T(value.array, serialized);
   } else static if(isAssociativeArray!T) {
-    return null;
+    return new AssocArrayEquable!T(value, serialized);
   } else {
     return new ObjectEquable!T(value, serialized);
   }
@@ -250,10 +251,14 @@ class ObjectEquable(T) : EquableValue {
           }
         }
 
-        return false;
+        return serialized == otherEquable.getSerialized;
       } catch(Exception) {
         return false;
       }
+    }
+
+    string getSerialized() {
+      return serialized;
     }
 
     EquableValue generalize() {
@@ -273,7 +278,11 @@ class ObjectEquable(T) : EquableValue {
     }
 
     override string toString() {
-      return serialized;
+      return "Equable." ~ serialized;
+    }
+
+    override int opCmp (Object o) {
+      return -1;
     }
 }
 
@@ -285,14 +294,14 @@ class ArrayEquable(U: T[], T) : EquableValue {
     string serialized;
   }
 
-  this(T[] value, string serialized) {
-    this.value = values;
+  this(T[] values, string serialized) {
+    this.values = values;
     this.serialized = serialized;
   }
 
   @safe nothrow:
     bool isEqualTo(EquableValue otherEquable) {
-      auto other = cast(ArrayEquable!T) otherEquable;
+      auto other = cast(ArrayEquable!U) otherEquable;
 
       if(other is null) {
         return false;
@@ -301,11 +310,43 @@ class ArrayEquable(U: T[], T) : EquableValue {
       return serialized == other.serialized;
     }
 
-    EquableValue[] toArray() {
-      return values.map!(a => new ArrayEquable!U(a)).array;
+    string getSerialized() {
+      return serialized;
+    }
+
+    @trusted EquableValue[] toArray() {
+      static if(is(T == void)) {
+        return [];
+      } else {
+        try {
+          auto newList = values.map!(a => equableValue(a, SerializerRegistry.instance.niceValue(a))).array;
+
+          return cast(EquableValue[]) newList;
+        } catch(Exception) {
+          return [];
+        }
+      }
+    }
+
+    EquableValue generalize() {
+        return this;
     }
 
     override string toString() {
       return serialized;
     }
+}
+
+
+///
+class AssocArrayEquable(U: T[V], T, V) : ArrayEquable!(string[], string) {
+  this(T[V] values, string serialized) {
+    auto sortedKeys = values.keys.sort;
+
+    auto sortedValues = sortedKeys
+      .map!(a => SerializerRegistry.instance.niceValue(a) ~ `: ` ~ SerializerRegistry.instance.niceValue(values[a]))
+      .array;
+
+    super(sortedValues, serialized);
+  }
 }

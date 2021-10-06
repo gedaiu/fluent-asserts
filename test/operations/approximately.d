@@ -35,12 +35,12 @@ alias s = Spec!({
         [testValue].should.not.be.approximately([3], 0.24);
       });
 
-      it("should not compare a string with a ", {
+      it("should not compare a string with a number", {
         auto msg = ({
           "".should.be.approximately(3, 0.34);
         }).should.throwSomething.msg;
 
-        msg.split("\n")[0].should.equal("There is no `string.int.approximately` or `*.*.approximately` registered to the assert operations.");
+        msg.split("\n")[0].should.equal("There are no matching assert operations. Register any of `string.int.approximately`, `*.*.approximately` to perform this assert.");
       });
     });
 
