@@ -48,17 +48,29 @@ struct ListComparison(Type) {
     this.maxRelDiff = maxRelDiff;
   }
 
+  private long findIndex(T[] list, T element) {
+    static if(std.traits.isNumeric!(T)) {
+        return list.countUntil!(a => approxEqual(element, a, maxRelDiff));
+      } else static if(is(T == EquableValue)) {
+        foreach(index, a; list) {
+          if(a.isEqualTo(element)) {
+            return index;
+          }
+        }
+
+        return -1;
+      } else {
+        return list.countUntil(element);
+      }
+  }
+
   T[] missing() @trusted {
     T[] result;
 
     auto tmpList = list.dup;
 
     foreach(element; referenceList) {
-      static if(std.traits.isNumeric!(T)) {
-        auto index = tmpList.countUntil!(a => approxEqual(element, a, maxRelDiff));
-      } else {
-        auto index = tmpList.countUntil(element);
-      }
+      auto index = this.findIndex(tmpList, element);
 
       if(index == -1) {
         result ~= element;
@@ -76,11 +88,7 @@ struct ListComparison(Type) {
     auto tmpReferenceList = referenceList.dup;
 
     foreach(element; list) {
-      static if(isFloatingPoint!(T)) {
-        auto index = tmpReferenceList.countUntil!(a => approxEqual(element, a, maxRelDiff));
-      } else {
-        auto index = tmpReferenceList.countUntil(element);
-      }
+      auto index = this.findIndex(tmpReferenceList, element);
 
       if(index == -1) {
         result ~= element;
@@ -102,11 +110,7 @@ struct ListComparison(Type) {
         break;
       }
 
-      static if(isFloatingPoint!(T)) {
-        auto index = tmpList.countUntil!(a => approxEqual(element, a, maxRelDiff));
-      } else {
-        auto index = tmpList.countUntil(element);
-      }
+      auto index = this.findIndex(tmpList, element);
 
       if(index >= 0) {
         result ~= element;

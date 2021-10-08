@@ -208,7 +208,6 @@ interface EquableValue {
 
 /// Wraps a value into equable value
 EquableValue equableValue(T)(T value, string serialized) {
-
   static if(isArray!T && !isSomeString!T) {
     return new ArrayEquable!T(value, serialized);
   } else static if(isInputRange!T && !isSomeString!T) {
@@ -227,12 +226,12 @@ class ObjectEquable(T) : EquableValue {
     string serialized;
   }
 
-  this(T value, string serialized) {
-    this.value = value;
-    this.serialized = serialized;
-  }
-
   @trusted nothrow:
+    this(T value, string serialized) {
+      this.value = value;
+      this.serialized = serialized;
+    }
+
     bool isEqualTo(EquableValue otherEquable) {
       try {
         auto other = cast(ObjectEquable) otherEquable;
@@ -294,12 +293,12 @@ class ArrayEquable(U: T[], T) : EquableValue {
     string serialized;
   }
 
-  this(T[] values, string serialized) {
-    this.values = values;
-    this.serialized = serialized;
-  }
-
   @safe nothrow:
+    this(T[] values, string serialized) {
+      this.values = values;
+      this.serialized = serialized;
+    }
+
     bool isEqualTo(EquableValue otherEquable) {
       auto other = cast(ArrayEquable!U) otherEquable;
 

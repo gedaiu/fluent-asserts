@@ -1,6 +1,7 @@
 module test.operations.containOnly;
 
 import fluentasserts.core.expect;
+import fluentasserts.core.serializers;
 import fluent.asserts;
 
 import trial.discovery.spec;
@@ -171,7 +172,7 @@ alias s = Spec!({
     });
   });
 
-  describe("using a range of Objects", {
+  describe("using a range of Objects without opEquals", {
     Object[] testValues;
     Object[] testValuesWithOtherOrder;
     Object[] otherTestValues;
@@ -218,4 +219,72 @@ alias s = Spec!({
       msg.split('\n')[3].strip.should.startWith("Actual:[Object(");
     });
   });
+
+  describe("using a range of Objects with opEquals", {
+      Thing[] testValues;
+      Thing[] testValuesWithOtherOrder;
+      Thing[] otherTestValues;
+
+      string strTestValues;
+      string strTestValuesWithOtherOrder;
+      string strOtherTestValues;
+
+      before({
+        testValues = [ new Thing(40), new Thing(41), new Thing(42) ];
+        testValuesWithOtherOrder = [ new Thing(42), new Thing(41), new Thing(40) ];
+        otherTestValues = [ new Thing(50), new Thing(51) ];
+
+        strTestValues = SerializerRegistry.instance.niceValue(testValues);
+        strTestValuesWithOtherOrder = SerializerRegistry.instance.niceValue(testValuesWithOtherOrder);
+        strOtherTestValues = SerializerRegistry.instance.niceValue(otherTestValues);
+      });
+
+      it("should find all items in the expected list", {
+        expect(testValues).to.containOnly(testValuesWithOtherOrder);
+      });
+
+      it("should not fail on checking if the list contains only a substring", {
+        expect(testValues).not.to.containOnly(testValues[0..2]);
+      });
+
+      it("should find all duplicated items", {
+        expect(testValues ~ testValues).to.containOnly(testValuesWithOtherOrder ~ testValuesWithOtherOrder);
+      });
+
+      it("should not fail on checking if the list contains only a substring of unique values", {
+        expect(testValues ~ testValues).not.to.containOnly(testValues);
+      });
+
+      it("should throw a detailed error when the array does not contain only the provided values", {
+        auto msg = ({
+          expect(testValues).to.containOnly(testValues[0..2]);
+        }).should.throwException!TestException.msg;
+
+        msg.split('\n')[2].strip.should.equal("Actual:" ~ strTestValues);
+        msg.split('\n')[4].strip.should.equal("Missing:" ~ SerializerRegistry.instance.niceValue(testValues[$-1..$]));
+      });
+
+      it("should throw a detailed error when the list shoul not contain some values", {
+        auto msg = ({
+          expect(testValues).to.not.containOnly(testValuesWithOtherOrder);
+        }).should.throwException!TestException.msg;
+
+        msg.split('\n')[0].should.equal(strTestValues ~ " should not contain only " ~ strTestValuesWithOtherOrder ~ ".");
+        msg.split('\n')[2].strip.should.equal("Expected:to not contain " ~ strTestValuesWithOtherOrder);
+        msg.split('\n')[3].strip.should.equal("Actual:" ~ strTestValues);
+      });
+    });
 });
+
+
+version(unittest) :
+class Thing {
+	int x;
+	this(int x) { this.x = x; }
+	override bool opEquals(Object o) {
+		if(typeid(this) != typeid(o)) return false;
+		alias a = this;
+		auto b = cast(typeof(this)) o;
+		return a.x == b.x;
+	}
+}

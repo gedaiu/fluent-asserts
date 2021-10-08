@@ -30,7 +30,10 @@ IResult[] contain(ref Evaluation evaluation) @safe nothrow {
     if(missingValues.length > 0) {
       addLifecycleMessage(evaluation, missingValues);
       try results ~= new ExpectedActualResult(createResultMessage(evaluation.expectedValue, expectedPieces), testData);
-      catch(Exception) {}
+      catch(Exception e) {
+        results ~= e.toResults;
+        return results;
+      }
     }
   } else {
     auto presentValues = expectedPieces.filter!(a => testData.canFind(a)).array;
@@ -64,7 +67,10 @@ IResult[] contain(ref Evaluation evaluation) @safe nothrow {
       evaluation.message.addText(".");
 
       try results ~= new ExpectedActualResult(message, testData);
-      catch(Exception) {}
+      catch(Exception e) {
+        results ~= e.toResults;
+        return results;
+      }
     }
   }
 
@@ -72,29 +78,35 @@ IResult[] contain(ref Evaluation evaluation) @safe nothrow {
 }
 
 ///
-IResult[] arrayContain(ref Evaluation evaluation) @safe nothrow {
+IResult[] arrayContain(ref Evaluation evaluation) @trusted nothrow {
   evaluation.message.addText(".");
 
   IResult[] results = [];
 
-  auto expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString;
-  auto testData = evaluation.currentValue.strValue.parseList.cleanString;
+  auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
+  auto testData = evaluation.currentValue.proxyValue.toArray;
 
   if(!evaluation.isNegated) {
-    auto missingValues = expectedPieces.filter!(a => !testData.canFind(a)).array;
+    auto missingValues = expectedPieces.filter!(a => testData.filter!(b => b.isEqualTo(a)).empty).array;
 
     if(missingValues.length > 0) {
       addLifecycleMessage(evaluation, missingValues);
       try results ~= new ExpectedActualResult(createResultMessage(evaluation.expectedValue, expectedPieces), evaluation.currentValue.strValue);
-      catch(Exception) {}
+      catch(Exception e) {
+        results ~= e.toResults;
+        return results;
+      }
     }
   } else {
-    auto presentValues = expectedPieces.filter!(a => testData.canFind(a)).array;
+    auto presentValues = expectedPieces.filter!(a => !testData.filter!(b => b.isEqualTo(a)).empty).array;
 
     if(presentValues.length > 0) {
       addNegatedLifecycleMessage(evaluation, presentValues);
       try results ~= new ExpectedActualResult(createNegatedResultMessage(evaluation.expectedValue, expectedPieces), evaluation.currentValue.strValue);
-      catch(Exception) {}
+      catch(Exception e) {
+        results ~= e.toResults;
+        return results;
+      }
     }
   }
 
@@ -107,14 +119,24 @@ IResult[] arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
 
   IResult[] results = [];
 
-  auto expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString;
-  auto testData = evaluation.currentValue.strValue.parseList.cleanString;
+  auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
+  auto testData = evaluation.currentValue.proxyValue.toArray;
 
-  auto comparison = ListComparison!string(testData, expectedPieces);
+  auto comparison = ListComparison!EquableValue(testData, expectedPieces);
 
-  auto missing = comparison.missing;
-  auto extra = comparison.extra;
-  auto common = comparison.common;
+  EquableValue[] missing;
+  EquableValue[] extra;
+  EquableValue[] common;
+
+  try {
+    missing = comparison.missing;
+    extra = comparison.extra;
+    common = comparison.common;
+  } catch(Exception e) {
+    results ~= e.toResults;
+
+    return results;
+  }
 
   string strExtra = "";
   string strMissing = "";
@@ -132,17 +154,26 @@ IResult[] arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
 
     if(!isSuccess) {
       try results ~= new ExpectedActualResult("", testData.niceJoin(evaluation.currentValue.typeName));
-      catch(Exception) {}
+      catch(Exception e) {
+        results ~= e.toResults;
+        return results;
+      }
 
       try results ~= new ExtraMissingResult(strExtra, strMissing);
-      catch(Exception) {}
+      catch(Exception e) {
+        results ~= e.toResults;
+        return results;
+      }
     }
   } else {
     auto isSuccess = (missing.length != 0 || extra.length != 0) || common.length != testData.length;
 
     if(!isSuccess) {
       try results ~= new ExpectedActualResult("to not contain " ~ expectedPieces.niceJoin(evaluation.currentValue.typeName), testData.niceJoin(evaluation.currentValue.typeName));
-      catch(Exception) {}
+      catch(Exception e) {
+        results ~= e.toResults;
+        return results;
+      }
     }
   }
 
@@ -154,7 +185,7 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
   evaluation.message.addText(" ");
 
   if(missingValues.length == 1) {
-    try evaluation.message.addValue(missingValues[0]); catch(Exception e) {
+    try evaluation.message.addValue(missingValues[0]); catch(Exception) {
       evaluation.message.addText(" some value ");
     }
 
@@ -162,7 +193,7 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
   } else {
     try {
       evaluation.message.addValue(missingValues.niceJoin(evaluation.currentValue.typeName));
-    } catch(Exception e) {
+    } catch(Exception) {
       evaluation.message.addText(" some values ");
     }
 
@@ -171,6 +202,13 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
 
   evaluation.message.addValue(evaluation.currentValue.strValue);
   evaluation.message.addText(".");
+}
+
+///
+void addLifecycleMessage(ref Evaluation evaluation, EquableValue[] missingValues) @safe nothrow {
+  auto missing = missingValues.map!(a => a.getSerialized.cleanString).array;
+
+  addLifecycleMessage(evaluation, missing);
 }
 
 ///
@@ -196,6 +234,13 @@ void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValue
   evaluation.message.addText(".");
 }
 
+///
+void addNegatedLifecycleMessage(ref Evaluation evaluation, EquableValue[] missingValues) @safe nothrow {
+  auto missing = missingValues.map!(a => a.getSerialized).array;
+
+  addNegatedLifecycleMessage(evaluation, missing);
+}
+
 string createResultMessage(ValueEvaluation expectedValue, string[] expectedPieces) @safe nothrow {
   string message = "to contain ";
 
@@ -208,6 +253,13 @@ string createResultMessage(ValueEvaluation expectedValue, string[] expectedPiece
   return message;
 }
 
+///
+string createResultMessage(ValueEvaluation expectedValue, EquableValue[] missingValues) @safe nothrow {
+  auto missing = missingValues.map!(a => a.getSerialized).array;
+
+  return createResultMessage(expectedValue, missing);
+}
+
 string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expectedPieces) @safe nothrow {
   string message = "to not contain ";
 
@@ -218,6 +270,13 @@ string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expect
   message ~= expectedValue.strValue;
 
   return message;
+}
+
+///
+string createNegatedResultMessage(ValueEvaluation expectedValue, EquableValue[] missingValues) @safe nothrow {
+  auto missing = missingValues.map!(a => a.getSerialized).array;
+
+  return createNegatedResultMessage(expectedValue, missing);
 }
 
 string niceJoin(string[] values, string typeName = "") @safe nothrow {
@@ -233,3 +292,8 @@ string niceJoin(string[] values, string typeName = "") @safe nothrow {
 
   return result;
 }
+
+string niceJoin(EquableValue[] values, string typeName = "") @safe nothrow {
+  return values.map!(a => a.getSerialized.cleanString).array.niceJoin(typeName);
+}
+

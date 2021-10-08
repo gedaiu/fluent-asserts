@@ -1,6 +1,7 @@
 module test.operations.arrayContain;
 
 import fluentasserts.core.expect;
+import fluentasserts.core.serializers;
 import fluent.asserts;
 
 import trial.discovery.spec;
@@ -90,4 +91,88 @@ alias s = Spec!({
       });
     });
   }
+
+  describe("using a range of Objects", {
+      Thing[] testValues;
+      Thing[] someTestValues;
+      Thing[] otherTestValues;
+
+      string strTestValues;
+      string strSomeTestValues;
+      string strOtherTestValues;
+
+      before({
+        testValues = [ new Thing(40), new Thing(41), new Thing(42) ];
+        someTestValues = [ new Thing(42), new Thing(41) ];
+        otherTestValues = [ new Thing(50), new Thing(51) ];
+
+        strTestValues = SerializerRegistry.instance.niceValue(testValues);
+        strSomeTestValues = SerializerRegistry.instance.niceValue(someTestValues);
+        strOtherTestValues = SerializerRegistry.instance.niceValue(strOtherTestValues);
+      });
+
+      it("should find two values in a list", {
+        expect(testValues.map!"a").to.contain(someTestValues);
+      });
+
+      it("should find a value in a list", {
+        expect(testValues.map!"a").to.contain(someTestValues[0]);
+      });
+
+      it("should find other values in a list", {
+        expect(testValues.map!"a").to.not.contain(otherTestValues);
+      });
+
+      it("should find other value in a list", {
+        expect(testValues.map!"a").to.not.contain(otherTestValues[0]);
+      });
+
+      it("should show a detailed error message when the list does not contain 2 values", {
+        auto msg = ({
+          expect(testValues.map!"a").to.contain([4, 5]);
+        }).should.throwException!TestException.msg;
+
+        msg.split('\n')[2].strip.should.equal("Expected:to contain all [4, 5]");
+        msg.split('\n')[3].strip.should.equal("Actual:" ~ strTestValues.to!string);
+      });
+
+      it("should show a detailed error message when the list does not contain 2 values", {
+        auto msg = ({
+          expect(testValues.map!"a").to.not.contain(testValues[0..2]);
+        }).should.throwException!TestException.msg;
+
+        msg.split('\n')[2].strip.should.equal("Expected:to not contain any " ~  SerializerRegistry.instance.niceValue(testValues[0..2]));
+        msg.split('\n')[3].strip.should.equal("Actual:" ~ strTestValues.to!string);
+      });
+
+      it("should show a detailed error message when the list does not contain a value", {
+        auto msg = ({
+          expect(testValues.map!"a").to.contain(otherTestValues[0]);
+        }).should.throwException!TestException.msg;
+
+        msg.split('\n')[2].strip.should.equal("Expected:to contain " ~  SerializerRegistry.instance.niceValue(otherTestValues[0]));
+        msg.split('\n')[3].strip.should.equal("Actual:" ~ strTestValues);
+      });
+
+      it("should show a detailed error message when the list does contains a value", {
+        auto msg = ({
+          expect(testValues.map!"a").to.not.contain(testValues[0]);
+        }).should.throwException!TestException.msg;
+
+        msg.split('\n')[2].strip.should.equal("Expected:to not contain " ~  SerializerRegistry.instance.niceValue(testValues[0]));
+        msg.split('\n')[3].strip.should.equal("Actual:" ~ strTestValues);
+      });
+    });
 });
+
+version(unittest) :
+class Thing {
+	int x;
+	this(int x) { this.x = x; }
+	override bool opEquals(Object o) {
+		if(typeid(this) != typeid(o)) return false;
+		alias a = this;
+		auto b = cast(typeof(this)) o;
+		return a.x == b.x;
+	}
+}

@@ -109,6 +109,10 @@ static this() {
     Registry.instance.register("object.Object[]", "object.Object[]", "containOnly", &arrayContainOnly);
   }
 
+
+  Registry.instance.register("*[]", "*[]", "contain", &arrayContain);
+  Registry.instance.register("*[]", "*[]", "containOnly", &arrayContainOnly);
+
   static foreach(Type1; StringTypes) {
     Registry.instance.register(Type1.stringof ~ "[]", "void[]", "equal", &arrayEqual);
 
@@ -118,8 +122,6 @@ static this() {
 
       Registry.instance.register(Type1.stringof, Type2.stringof ~ "[]", "contain", &contain);
       Registry.instance.register(Type1.stringof, Type2.stringof, "contain", &contain);
-      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof, "contain", &arrayContain);
-      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "contain", &arrayContain);
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "containOnly", &arrayContainOnly);
 
       Registry.instance.register(Type1.stringof, Type2.stringof, "startWith", &startWith);

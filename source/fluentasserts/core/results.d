@@ -561,12 +561,10 @@ class ExpectedActualResult : IResult {
     KeyResult!"Actual" actual;
   }
 
-
   this(string title, string expected, string actual) nothrow @safe {
     this.title = title;
     this(expected, actual);
   }
-
 
   this(string expected, string actual) nothrow @safe {
     this.expected = new KeyResult!"Expected"(expected);
@@ -1634,4 +1632,12 @@ unittest {
   as:1,2,3
  abs:2,3
  abc:3`);
+}
+
+IResult[] toResults(Exception e) nothrow @trusted {
+  try {
+    return [ new MessageResult(e.message.to!string) ];
+  } catch(Exception) {
+    return [ new MessageResult("Unknown error!") ];
+  }
 }

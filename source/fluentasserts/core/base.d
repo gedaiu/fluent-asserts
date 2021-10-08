@@ -199,6 +199,14 @@ mixin template ShouldCommons()
       messages ~= Message(true, msg);
     }
 
+    void addValue(EquableValue msg) {
+      if(mesageCheckIndex != 0) {
+        return;
+      }
+
+      messages ~= Message(true, msg.getSerialized);
+    }
+
     void beginCheck() {
       if(mesageCheckIndex != 0) {
         return;
