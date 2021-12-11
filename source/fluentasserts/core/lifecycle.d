@@ -25,7 +25,7 @@ import std.conv;
 import std.datetime;
 
 alias BasicNumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
-alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real, ifloat, idouble, ireal, cfloat, cdouble, creal, char, wchar, dchar);
+alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real/* , ifloat, idouble, ireal, cfloat, cdouble, creal, char, wchar, dchar*/);
 alias StringTypes = AliasSeq!(string, wstring, dstring, const(char)[]);
 
 static this() {

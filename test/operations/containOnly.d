@@ -65,7 +65,7 @@ alias s = Spec!({
     });
   }
 
-  alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real, ifloat, idouble, ireal, cfloat, cdouble, creal);
+  alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real/*, ifloat, idouble, ireal, cfloat, cdouble, creal*/);
   static foreach(Type; NumericTypes) {
     describe("using a range of " ~ Type.stringof, {
       Type[] testValues;

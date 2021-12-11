@@ -13,7 +13,7 @@ import std.meta;
 alias s = Spec!({
 
   alias StringTypes = AliasSeq!(string, wstring, dstring);
-  alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real, ifloat, idouble, ireal, cfloat, cdouble, creal);
+  alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real /*, ifloat, idouble, ireal, cfloat, cdouble, creal*/);
 
   static foreach(Type; StringTypes) {
     describe("using an array of " ~ Type.stringof, {
