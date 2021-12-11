@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
-        dc: [ldc-latest, dmd-2.096.0, dmd-2.095.0, dmd-2.094.0, ldc-1.25.0, ldc-1.24.0, ldc-1.23.0]
+        dc: [ldc-latest, dmd-2.098.0, dmd-2.097.0, dmd-2.096.0, ldc-1.28.0, ldc-1.27.0, ldc-1.26.0]
 
     runs-on: ${{ matrix.os }}
     steps:
