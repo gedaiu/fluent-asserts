@@ -74,6 +74,10 @@ class Registry {
 
   ///
   IResult[] handle(ref Evaluation evaluation) @safe nothrow {
+    if(evaluation.operationName == "" || evaluation.operationName == "to" || evaluation.operationName == "should") {
+      return [];
+    }
+
     auto operation = this.get(
       evaluation.currentValue.typeName,
       evaluation.expectedValue.typeName,

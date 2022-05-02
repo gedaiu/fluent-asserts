@@ -334,7 +334,6 @@ class ArrayEquable(U: T[], T) : EquableValue {
     }
 
     @trusted EquableValue[] toArray() {
-      try { "array.toArray".writeln; } catch(Exception) {}
       static if(is(T == void)) {
         return [];
       } else {
