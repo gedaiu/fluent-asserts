@@ -273,6 +273,12 @@ class ObjectEquable(T) : EquableValue {
     }
 
     EquableValue[] toArray() {
+      static if(__traits(hasMember, T, "byValue")) {
+        try {
+          return value.byValue.map!(a => a.equableValue(SerializerRegistry.instance.serialize(a))).array;
+        } catch(Exception) {}
+      }
+
       return [ this ];
     }
 
@@ -285,6 +291,20 @@ class ObjectEquable(T) : EquableValue {
     }
 }
 
+/// an object with byValue method should return an array with all elements
+unittest {
+  class TestObject {
+    auto byValue() {
+      auto items = [1, 2];
+      return items.inputRangeObject;
+    }
+  }
+
+  auto value = equableValue(new TestObject(), "[1, 2]").toArray;
+  assert(value.length == 2, "invalid length");
+  assert(value[0].toString == "Equable.1", value[0].toString ~ " != Equable.1");
+  assert(value[1].toString == "Equable.2", value[1].toString ~ " != Equable.2");
+}
 
 ///
 class ArrayEquable(U: T[], T) : EquableValue {
@@ -314,6 +334,7 @@ class ArrayEquable(U: T[], T) : EquableValue {
     }
 
     @trusted EquableValue[] toArray() {
+      try { "array.toArray".writeln; } catch(Exception) {}
       static if(is(T == void)) {
         return [];
       } else {
@@ -328,14 +349,13 @@ class ArrayEquable(U: T[], T) : EquableValue {
     }
 
     EquableValue generalize() {
-        return this;
+      return this;
     }
 
     override string toString() {
       return serialized;
     }
 }
-
 
 ///
 class AssocArrayEquable(U: T[V], T, V) : ArrayEquable!(string[], string) {
