@@ -4,11 +4,11 @@
     "Szabo Bogdan"
   ],
   "description": "Fluent assertions done right",
-  "copyright": "Copyright © 2020, Szabo Bogdan",
+  "copyright": "Copyright © 2022, Szabo Bogdan",
   "license": "MIT",
   "homepage": "http://fluentasserts.szabobogdan.com/",
   "dependencies": {
-    "libdparse": "~>0.18.1",
+    "libdparse": "~>0.20.0",
     "ddmp": "~>0.0.1-0.dev.3",
     "unit-threaded": {
       "version": "*",
