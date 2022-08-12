@@ -15,6 +15,9 @@ version(unittest) {
   import fluentasserts.core.expect;
 }
 
+static immutable containDescription = "When the tested value is a string, it asserts that the given string val is a substring of the target. \n\n" ~
+  "When the tested value is an array, it asserts that the given val is inside the tested value.";
+
 ///
 IResult[] contain(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(".");

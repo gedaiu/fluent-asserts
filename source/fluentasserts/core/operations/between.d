@@ -12,6 +12,9 @@ version(unittest) {
   import fluentasserts.core.expect;
 }
 
+static immutable betweenDescription = "Asserts that the target is a number or a date greater than or equal to the given number or date start, " ~
+  "and less than or equal to the given number or date finish respectively. However, it's often best to assert that the target is equal to its expected value.";
+
 ///
 IResult[] between(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(" and ");

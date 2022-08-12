@@ -11,6 +11,8 @@ import std.conv;
 import std.algorithm;
 import std.array;
 
+static immutable throwAnyDescription = "Tests that the tested callable throws an exception.";
+
 version(unittest) {
   class CustomException : Exception {
     this(string msg, string fileName = "", size_t line = 0, Throwable next = null) {

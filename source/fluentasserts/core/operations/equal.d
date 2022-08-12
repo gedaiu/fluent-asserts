@@ -9,6 +9,8 @@ version(unittest) {
   import fluentasserts.core.expect;
 }
 
+static immutable equalDescription = "Asserts that the target is strictly == equal to the given val.";
+
 ///
 IResult[] equal(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(".");

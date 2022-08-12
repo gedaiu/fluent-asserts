@@ -31,6 +31,8 @@ unittest {
     string content = "# The `" ~ operation ~ "` operation\n\n";
     content ~= "[up](../README.md)\n\n";
 
+    content ~= Registry.instance.describe(operation) ~ "\n\n";
+
     content ~= "Works with:\n" ;
     content ~= Registry.instance.bindingsForName(operation)
       .map!(a => "  - expect(`" ~ a.valueType ~ "`).[to].[be]." ~ operation ~ "(`" ~ a.expectedValueType ~ "`)")

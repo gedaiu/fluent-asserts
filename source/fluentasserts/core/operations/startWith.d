@@ -12,6 +12,8 @@ version(unittest) {
   import fluentasserts.core.expect;
 }
 
+static immutable startWithDescription = "Tests that the tested string starts with the expected value.";
+
 ///
 IResult[] startWith(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(".");

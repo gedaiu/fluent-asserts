@@ -28,6 +28,7 @@ class Registry {
   private {
     Operation[string] operations;
     OperationPair[][string] pairs;
+    string[string] descriptions;
   }
 
   /// Register a new assert operation
@@ -96,10 +97,26 @@ class Registry {
     return operation(evaluation);
   }
 
+  ///
+  void describe(string name, string text) {
+    descriptions[name] = text;
+  }
+
+  ///
+  string describe(string name) {
+    if(name !in descriptions) {
+      return "";
+    }
+
+    return descriptions[name];
+  }
+
+  ///
   OperationPair[] bindingsForName(string name) {
     return pairs[name];
   }
 
+  ///
   string[] registeredOperations() {
     return operations.keys
       .map!(a => a.split("."))

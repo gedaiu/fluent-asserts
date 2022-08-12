@@ -2,5 +2,7 @@
 
 [up](../README.md)
 
+
+
 Works with:
   - expect(`*`).[to].[be].instanceOf(`*`)

@@ -36,6 +36,17 @@ static this() {
 
   Registry.instance = new Registry();
 
+  Registry.instance.describe("approximately", approximatelyDescription);
+  Registry.instance.describe("equal", equalDescription);
+  Registry.instance.describe("beNull", beNullDescription);
+  Registry.instance.describe("between", betweenDescription);
+  Registry.instance.describe("within", betweenDescription);
+  Registry.instance.describe("contain", containDescription);
+  Registry.instance.describe("greaterThan", greaterThanDescription);
+  Registry.instance.describe("above", greaterThanDescription);
+  Registry.instance.describe("greaterOrEqualTo", greaterOrEqualToDescription);
+  Registry.instance.describe("lessThan", lessThanDescription);
+
   Registry.instance.register!(Duration, Duration)("lessThan", &lessThanDuration);
   Registry.instance.register!(Duration, Duration)("below", &lessThanDuration);
 

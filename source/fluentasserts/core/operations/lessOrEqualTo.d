@@ -12,6 +12,8 @@ version(unittest) {
   import fluentasserts.core.expect;
 }
 
+static immutable lessOrEqualToDescription = "Asserts that the tested value is less or equal than the tested value. However, it's often best to assert that the target is equal to its expected value.";
+
 ///
 IResult[] lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(".");

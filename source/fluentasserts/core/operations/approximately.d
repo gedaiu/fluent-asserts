@@ -17,6 +17,8 @@ version(unittest) {
   import fluentasserts.core.expect;
 }
 
+static immutable approximatelyDescription = "Asserts that the target is a number that's within a given +/- `delta` range of the given number expected. However, it's often best to assert that the target is equal to its expected value.";
+
 ///
 IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
   IResult[] results = [];

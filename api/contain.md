@@ -2,6 +2,10 @@
 
 [up](../README.md)
 
+When the tested value is a string, it asserts that the given string val is a substring of the target. 
+
+When the tested value is an array, it asserts that the given val is inside the tested value.
+
 Works with:
   - expect(`*[]`).[to].[be].contain(`*`)
   - expect(`byte[]`).[to].[be].contain(`byte[]`)

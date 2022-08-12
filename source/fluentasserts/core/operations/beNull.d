@@ -6,6 +6,8 @@ import fluentasserts.core.evaluation;
 import fluentasserts.core.lifecycle;
 import std.algorithm;
 
+static immutable beNullDescription = "Asserts that the value is null.";
+
 ///
 IResult[] beNull(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(".");

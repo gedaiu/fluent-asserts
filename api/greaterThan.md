@@ -2,6 +2,8 @@
 
 [up](../README.md)
 
+Asserts that the tested value is greater than the tested value. However, it's often best to assert that the target is equal to its expected value.
+
 Works with:
   - expect(`core.time.Duration`).[to].[be].greaterThan(`core.time.Duration`)
   - expect(`std.datetime.systime.SysTime`).[to].[be].greaterThan(`std.datetime.systime.SysTime`)

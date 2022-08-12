@@ -12,6 +12,8 @@ version(unittest) {
   import fluentasserts.core.expect;
 }
 
+static immutable endWithDescription = "Tests that the tested string ends with the expected value.";
+
 ///
 IResult[] endWith(ref Evaluation evaluation) @safe nothrow {
   evaluation.message.addText(".");

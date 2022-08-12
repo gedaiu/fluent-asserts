@@ -2,6 +2,8 @@
 
 [up](../README.md)
 
+Asserts that the tested value is less than the tested value. However, it's often best to assert that the target is equal to its expected value.
+
 Works with:
   - expect(`core.time.Duration`).[to].[be].lessThan(`core.time.Duration`)
   - expect(`std.datetime.systime.SysTime`).[to].[be].lessThan(`std.datetime.systime.SysTime`)

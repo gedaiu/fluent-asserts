@@ -13,6 +13,8 @@ version(unittest) {
   import fluentasserts.core.expect;
 }
 
+static immutable instanceOfDescription = "Asserts that the tested value is related to a type.";
+
 ///
 IResult[] instanceOf(ref Evaluation evaluation) @safe nothrow {
   string expectedType = evaluation.expectedValue.strValue[1 .. $-1];

@@ -2,6 +2,8 @@
 
 [up](../README.md)
 
+
+
 Works with:
   - expect(`string`).[to].[be].endWith(`string`)
   - expect(`string`).[to].[be].endWith(`wstring`)

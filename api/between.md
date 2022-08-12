@@ -2,6 +2,8 @@
 
 [up](../README.md)
 
+Asserts that the target is a number or a date greater than or equal to the given number or date start, and less than or equal to the given number or date finish respectively. However, it's often best to assert that the target is equal to its expected value.
+
 Works with:
   - expect(`core.time.Duration`).[to].[be].between(`core.time.Duration`)
   - expect(`std.datetime.systime.SysTime`).[to].[be].between(`std.datetime.systime.SysTime`)
