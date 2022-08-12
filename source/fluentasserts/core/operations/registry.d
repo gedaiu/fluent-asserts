@@ -14,6 +14,12 @@ alias Operation     = IResult[] delegate(ref Evaluation) @safe nothrow;
 /// ditto
 alias OperationFunc = IResult[] delegate(ref Evaluation) @safe nothrow;
 
+
+struct OperationPair {
+  string valueType;
+  string expectedValueType;
+}
+
 ///
 class Registry {
   /// Global instance for the assert operations
@@ -21,6 +27,7 @@ class Registry {
 
   private {
     Operation[string] operations;
+    OperationPair[][string] pairs;
   }
 
   /// Register a new assert operation
@@ -45,6 +52,7 @@ class Registry {
     string key = valueType ~ "." ~ expectedValueType ~ "." ~ name;
 
     operations[key] = operation;
+    pairs[name] ~= OperationPair(valueType, expectedValueType);
 
     return this;
   }
@@ -88,17 +96,26 @@ class Registry {
     return operation(evaluation);
   }
 
+  OperationPair[] bindingsForName(string name) {
+    return pairs[name];
+  }
+
+  string[] registeredOperations() {
+    return operations.keys
+      .map!(a => a.split("."))
+      .map!(a => a[a.length - 1])
+      .array
+      .sort
+      .uniq
+      .array;
+  }
+
   ///
   string docs() {
     string result = "";
 
-    string[] operationNames = operations.keys
-      .map!(a => a.split("."))
-      .map!(a => a[a.length - 1])
+    string[] operationNames = registeredOperations
       .map!(a => "- [" ~ a ~ "](api/" ~ a ~ ".md)")
-      .array
-      .sort
-      .uniq
       .array;
 
     return operationNames.join("\n");
