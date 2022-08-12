@@ -5,9 +5,11 @@ import fluentasserts.core.evaluation;
 
 import std.functional;
 import std.string;
+import std.array;
+import std.algorithm;
 
 /// Delegate type that can handle asserts
-alias Operation = IResult[] delegate(ref Evaluation) @safe nothrow;
+alias Operation     = IResult[] delegate(ref Evaluation) @safe nothrow;
 
 /// ditto
 alias OperationFunc = IResult[] delegate(ref Evaluation) @safe nothrow;
@@ -85,6 +87,36 @@ class Registry {
 
     return operation(evaluation);
   }
+
+  ///
+  string docs() {
+    string result = "";
+
+    string[] operationNames = operations.keys
+      .map!(a => a.split("."))
+      .map!(a => a[a.length - 1])
+      .map!(a => "- [" ~ a ~ "](api/" ~ a ~ ".md)")
+      .array
+      .sort
+      .uniq
+      .array;
+
+    return operationNames.join("\n");
+  }
+}
+
+/// It generates a list of md links for docs
+unittest {
+  import std.datetime;
+  import fluentasserts.core.operations.equal;
+  import fluentasserts.core.operations.lessThan;
+
+  auto instance = new Registry();
+
+  instance.register("*", "*", "equal", &equal);
+  instance.register!(Duration, Duration)("lessThan", &lessThanDuration);
+
+  instance.docs.should.equal("- [equal](api/equal.md)\n" ~ "- [lessThan](api/lessThan.md)");
 }
 
 string[] generalizeKey(string valueType, string expectedValueType, string name) @safe nothrow {

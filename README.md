@@ -1,9 +1,6 @@
-[![Build Status](https://travis-ci.org/gedaiu/fluent-asserts.svg?branch=master)](https://travis-ci.org/gedaiu/fluent-asserts)
 [![Line Coverage](https://szabobogdan3.gitlab.io/fluent-asserts-coverage/coverage-shield.svg)](https://szabobogdan3.gitlab.io/fluent-asserts-coverage/)
 [![DUB Version](https://img.shields.io/dub/v/fluent-asserts.svg)](https://code.dlang.org/packages/fluent-asserts)
 [![DUB Installs](https://img.shields.io/dub/dt/fluent-asserts.svg)](https://code.dlang.org/packages/fluent-asserts)
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/gedaiu/fluent-asserts.svg)](http://isitmaintained.com/project/gedaiu/fluent-asserts "Percentage of issues still open")
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/gedaiu/fluent-asserts.svg)](http://isitmaintained.com/project/gedaiu/fluent-asserts "Average time to resolve an issue")
 
 [Writing unit tests is easy with Dlang](https://dlang.org/spec/unittest.html). The `unittest` block allows you to start writing tests and to be productive with no special setup.
 
@@ -14,31 +11,11 @@ Unfortunately the [assert expression](https://dlang.org/spec/expression.html#Ass
 1. Add the DUB dependency:
 [https://code.dlang.org/packages/fluent-asserts](https://code.dlang.org/packages/fluent-asserts)
 
-2. Import it:
+```bash
+$ dub add fluent-asserts
+```
 
-    in `dub.json`:
-    ```json
-        ...
-        "configurations": [
-            ...
-            {
-                "name": "unittest",
-                "dependencies": {
-                    "fluent-asserts": "~>0.13.0",
-                    ...
-                }
-            },
-            ...
-        ]
-        ...
-    ```
-
-    in your source files:
-    ```D
-    version(unittest) import fluent.asserts;
-    ```
-
-3. Use it:
+2. Use it:
 ```D
     unittest {
         true.should.equal(false).because("this is a failing assert");
@@ -49,7 +26,7 @@ Unfortunately the [assert expression](https://dlang.org/spec/expression.html#Ass
     }
 ```
 
-4. Run the tests:
+3. Run the tests:
 ```D
 ➜  dub test --compiler=ldc2
 ```
@@ -69,7 +46,6 @@ use any assert operation provided by the base library or any other operations th
 ```D
 Expect expect(T)(lazy T testedValue, ...);
 Expect expect(void delegate() callable, ...);
-
 ...
 
 expect(testedValue).to.equal(42);
@@ -133,27 +109,68 @@ just add `not` before the assert name:
     Assert.notEqual(testedValue, 42);
 ```
 
-You can use fluent asserts with:
+## Built in operations
 
-- [Basic Data Types](api/basic.md)
-- [Objects](api/objects.md)
-- [Strings](api/strings.md)
-- [Ranges and Arrays](api/ranges.md)
-- [Callable](api/callable.md)
-- [Vibe.d Json](api/vibe-json.md)
-- [Vibe.d requests](api/vibe-requests.md)
+- [above](api/above.md)
+- [approximately](api/approximately.md)
+- [beNull](api/beNull.md)
+- [below](api/below.md)
+- [between](api/between.md)
+- [containOnly](api/containOnly.md)
+- [contain](api/contain.md)
+- [endWith](api/endWith.md)
+- [equal](api/equal.md)
+- [greaterOrEqualTo](api/greaterOrEqualTo.md)
+- [greaterThan](api/greaterThan.md)
+- [instanceOf](api/instanceOf.md)
+- [lessOrEqualTo](api/lessOrEqualTo.md)
+- [lessThan](api/lessThan.md)
+- [startWith](api/startWith.md)
+- [throwAnyException](api/throwAnyException.md)
+- [throwException](api/throwException.md)
+- [throwSomething](api/throwSomething.md)
+- [within](api/within.md)
 
-# Do you already have a lot of tests?
+# Extend the library
 
-If you want to get the failure location for failing tests written using the `Dlang's assert` you can use the
-fluent assert handler which will add extra information to the default assert message.
+## Registering new operations
 
-```D
-    shared static this() {
-        import fluent.asserts;
-        setupFluentHandler;
-    }
+Even though this library has an extensive set of operations, sometimes a new operation might be needed to test your code. Operations are functions that recieve an `Evaluation` and returns an `IResult` list in case there was a failure. You can check any of the built in operations for a refference implementation.
+
+```d
+IResult[] customOperation(ref Evaluation evaluation) @safe nothrow {
+    ...
+}
 ```
+
+Once the operation is ready to use, it has to be registered with the global registry:
+
+```d
+static this() {
+    /// bind the type to different matchers
+    Registry.instance.register!(SysTime, SysTime)("between", &customOperation);
+    Registry.instance.register!(SysTime, SysTime)("within", &customOperation);
+
+    /// or use * to match any type
+    Registry.instance.register("*", "*", "customOperation", &customOperation);
+}
+
+```
+
+## Registering new serializers
+
+In order to setup an `Evaluation`, the actual and expected values need to be converted to a string. Most of the time, the default serializer will do a great job, but sometimes you might want to add a custom serializer for your types.
+
+```d
+static this() {
+    SerializerRegistry.instance.register(&jsonToString);
+}
+
+string jsonToString(Json value) {
+    /// you can add here your custom serializer for Jsons
+}
+```
+
 
 # License
 

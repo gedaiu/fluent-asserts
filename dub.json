@@ -20,6 +20,9 @@
       "name": "library",
       "sourcePaths": [
         "source"
+      ],
+      "excludedSourceFiles": [
+        "source/updateDocs.d"
       ]
     },
     {
