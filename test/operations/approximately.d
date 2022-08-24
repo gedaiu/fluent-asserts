@@ -1,6 +1,5 @@
 module test.operations.approximately;
 
-
 import fluentasserts.core.expect;
 import fluent.asserts;
 

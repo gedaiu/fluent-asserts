@@ -273,7 +273,7 @@ class ObjectEquable(T) : EquableValue {
     }
 
     EquableValue[] toArray() {
-      static if(__traits(hasMember, T, "byValue")) {
+      static if(__traits(hasMember, T, "byValue") && !__traits(hasMember, T, "byKeyValue")) {
         try {
           return value.byValue.map!(a => a.equableValue(SerializerRegistry.instance.serialize(a))).array;
         } catch(Exception) {}
