@@ -19,13 +19,13 @@ import std.conv;
     int refCount;
   }
 
-  this(ValueEvaluation value, const string fileName, const size_t line, string prependText = null) @trusted {
+  this(ValueEvaluation value) @trusted {
     this.evaluation = new Evaluation();
 
     evaluation.id = Lifecycle.instance.beginEvaluation(value);
     evaluation.currentValue = value;
     evaluation.message = new MessageResult();
-    evaluation.source = new SourceResult(fileName, line);
+    evaluation.source = new SourceResult(value.fileName, value.line);
 
     try {
       auto sourceValue = evaluation.source.getValue;
@@ -41,8 +41,8 @@ import std.conv;
 
     evaluation.message.addText(" should");
 
-    if(prependText) {
-      evaluation.message.addText(prependText);
+    if(value.prependText) {
+      evaluation.message.addText(value.prependText);
     }
   }
 
@@ -274,12 +274,16 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
     value.meta["Throwable"] = "yes";
   }
 
-  return Expect(value, file, line, prependText);
+  value.fileName = file;
+  value.line = line;
+  value.prependText = prependText;
+
+  return Expect(value);
 }
 
 ///
 Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
-  return Expect(testedValue.evaluate.evaluation, file, line, prependText);
+  return Expect(testedValue.evaluate(file, line, prependText).evaluation);
 }
 
 ///

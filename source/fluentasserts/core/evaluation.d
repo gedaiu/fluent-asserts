@@ -35,6 +35,15 @@ struct ValueEvaluation {
   /// Other info about the value
   string[string] meta;
 
+  /// The file name contining the evaluated value
+  string fileName;
+
+  /// The line number of the evaluated value
+  size_t line;
+
+  /// a custom text to be prepended to the value
+  string prependText;
+
   string typeName() @safe nothrow {
     if(typeNames.length == 0) {
       return "unknown";
@@ -78,12 +87,12 @@ class Evaluation {
 }
 
 ///
-auto evaluate(T)(lazy T testData) @trusted if(isInputRange!T && !isArray!T && !isAssociativeArray!T) {
-  return evaluate(testData.array);
+auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(isInputRange!T && !isArray!T && !isAssociativeArray!T) {
+  return evaluate(testData.array, file, line, prependText);
 }
 
 ///
-auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || isAssociativeArray!T) {
+auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(!isInputRange!T || isArray!T || isAssociativeArray!T) {
   auto begin = Clock.currTime;
   alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
 
@@ -101,7 +110,13 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
     auto duration = Clock.currTime - begin;
     auto serializedValue = SerializerRegistry.instance.serialize(value);
     auto niceValue = SerializerRegistry.instance.niceValue(value);
-    return Result(value, ValueEvaluation(null, duration, serializedValue, equableValue(value, niceValue), niceValue, extractTypes!TT ));
+
+    auto valueEvaluation = ValueEvaluation(null, duration, serializedValue, equableValue(value, niceValue), niceValue, extractTypes!TT);
+    valueEvaluation.fileName = file;
+    valueEvaluation.line = line;
+    valueEvaluation.prependText = prependText;
+
+    return Result(value, valueEvaluation);
   } catch(Throwable t) {
     T result;
 
@@ -109,7 +124,12 @@ auto evaluate(T)(lazy T testData) @trusted if(!isInputRange!T || isArray!T || is
       result = testData;
     }
 
-    return Result(result, ValueEvaluation(t, Clock.currTime - begin, result.to!string, equableValue(result, result.to!string), result.to!string, extractTypes!T ));
+    auto valueEvaluation = ValueEvaluation(t, Clock.currTime - begin, result.to!string, equableValue(result, result.to!string), result.to!string, extractTypes!T);
+    valueEvaluation.fileName = file;
+    valueEvaluation.line = line;
+    valueEvaluation.prependText = prependText;
+
+    return Result(result, valueEvaluation);
   }
 }
 
@@ -191,9 +211,9 @@ unittest {
 
   auto result = extractTypes!(T[]);
 
-  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L188_C1.T[]", `Expected: ` ~ result[0]);
+  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L208_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L208_C1.T[]" got "` ~ result[0] ~ `"`);
   assert(result[1] == "object.Object[]", `Expected: ` ~ result[1] );
-  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L188_C1.I[]", `Expected: ` ~ result[2] );
+  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L208_C1.I[]", `Expected: ` ~ result[2] );
 }
 
 /// A proxy type that allows to compare the native values

@@ -232,10 +232,14 @@ unittest {
 
 /// it shows null chars in the diff
 unittest {
-  auto msg = ({
+  string msg;
+
+  try {
     ubyte[] data = [115, 111, 109, 101, 32, 100, 97, 116, 97, 0, 0];
     data.assumeUTF.to!string.should.equal("some data");
-  }).should.throwException!TestException.msg;
+  } catch(TestException e) {
+    msg = e.message.to!string;
+  }
 
   msg.should.contain(`Actual:"some data\0\0"`);
   msg.should.contain(`data.assumeUTF.to!string should equal "some data". "some data\0\0" is not equal to "some data".`);
