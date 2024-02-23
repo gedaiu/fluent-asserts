@@ -45,16 +45,16 @@ unittest {
     5.should.equal(6);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("5 should equal 6. 5 is not equal to 6.");
+  msg.split("\n")[0].should.equal("5 should equal 6. 5 is not equal to 6. ");
 
   msg = ({
     5.should.not.equal(5);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("5 should not equal 5. 5 is equal to 5.");
+  msg.split("\n")[0].should.equal("5 should not equal 5. 5 is equal to 5. ");
 }
 
-@("bools equal")
+/// bools equal
 unittest {
   ({
     true.should.equal(true);
@@ -65,7 +65,7 @@ unittest {
     true.should.equal(false);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("true should equal false.");
+  msg.split("\n")[0].should.equal("true should equal false. ");
   msg.split("\n")[2].strip.should.equal("Expected:false");
   msg.split("\n")[3].strip.should.equal("Actual:true");
 
@@ -73,12 +73,12 @@ unittest {
     true.should.not.equal(true);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("true should not equal true.");
+  msg.split("\n")[0].should.equal("true should not equal true. ");
   msg.split("\n")[2].strip.should.equal("Expected:not true");
   msg.split("\n")[3].strip.should.equal("Actual:true");
 }
 
-@("numbers greater than")
+/// numbers greater than
 unittest {
   ({
     5.should.be.greaterThan(4);

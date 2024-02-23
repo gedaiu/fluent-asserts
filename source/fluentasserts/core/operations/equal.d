@@ -4,6 +4,7 @@ import fluentasserts.core.results;
 import fluentasserts.core.evaluation;
 
 import fluentasserts.core.lifecycle;
+import fluentasserts.core.message;
 
 version(unittest) {
   import fluentasserts.core.expect;
@@ -11,9 +12,15 @@ version(unittest) {
 
 static immutable equalDescription = "Asserts that the target is strictly == equal to the given val.";
 
+static immutable isEqualTo = Message(Message.Type.info, " is equal to ");
+static immutable isNotEqualTo = Message(Message.Type.info, " is not equal to ");
+static immutable endSentence = Message(Message.Type.info, ". ");
+
 ///
 IResult[] equal(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  EvaluationResult evaluationResult;
+
+  evaluation.message.add(endSentence);
 
   bool result = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
 
@@ -32,22 +39,23 @@ IResult[] equal(ref Evaluation evaluation) @safe nothrow {
   IResult[] results = [];
 
   if(evaluation.currentValue.typeName != "bool") {
-    evaluation.message.addText(" ");
-    evaluation.message.addValue(evaluation.currentValue.strValue);
+    evaluation.message.add(Message(Message.Type.value, evaluation.currentValue.strValue));
 
     if(evaluation.isNegated) {
-      evaluation.message.addText(" is equal to ");
+      evaluation.message.add(isEqualTo);
     } else {
-      evaluation.message.addText(" is not equal to ");
+      evaluation.message.add(isNotEqualTo);
     }
 
-    evaluation.message.addValue(evaluation.expectedValue.strValue);
-    evaluation.message.addText(".");
+    evaluation.message.add(Message(Message.Type.value, evaluation.expectedValue.strValue));
+    evaluation.message.add(endSentence);
 
+    evaluationResult.addDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
     try results ~= new DiffResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
   }
 
-  try results ~= new ExpectedActualResult((evaluation.isNegated ? "not " : "") ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
+  evaluationResult.addExpected(evaluation.isNegated, evaluation.expectedValue.strValue);
+  evaluationResult.addResult(evaluation.currentValue.strValue);
 
-  return results;
+  return evaluationResult.toException;
 }

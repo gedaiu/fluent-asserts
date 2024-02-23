@@ -12,85 +12,35 @@ import std.typecons;
 import dparse.lexer;
 import dparse.parser;
 
+public import fluentasserts.core.message;
+
 @safe:
-
-/// Glyphs used to display special chars in the results
-struct ResultGlyphs {
-  static {
-    /// Glyph for the tab char
-    string tab;
-
-    /// Glyph for the \r char
-    string carriageReturn;
-
-    /// Glyph for the \n char
-    string newline;
-
-    /// Glyph for the space char
-    string space;
-
-    /// Glyph for the \0 char
-    string nullChar;
-
-    /// Glyph that indicates the error line
-    string sourceIndicator;
-
-    /// Glyph that sepparates the line number
-    string sourceLineSeparator;
-
-    /// Glyph for the diff begin indicator
-    string diffBegin;
-
-    /// Glyph for the diff end indicator
-    string diffEnd;
-
-    /// Glyph that marks an inserted text in diff
-    string diffInsert;
-
-    /// Glyph that marks deleted text in diff
-    string diffDelete;
-  }
-
-  /// Set the default values. The values are
-  static resetDefaults() {
-    version(windows) {
-      ResultGlyphs.tab = `\t`;
-      ResultGlyphs.carriageReturn = `\r`;
-      ResultGlyphs.newline = `\n`;
-      ResultGlyphs.space = ` `;
-      ResultGlyphs.nullChar = `␀`;
-    } else {
-      ResultGlyphs.tab = `¤`;
-      ResultGlyphs.carriageReturn = `←`;
-      ResultGlyphs.newline = `↲`;
-      ResultGlyphs.space = `᛫`;
-      ResultGlyphs.nullChar = `\0`;
-    }
-
-    ResultGlyphs.sourceIndicator = ">";
-    ResultGlyphs.sourceLineSeparator = ":";
-
-    ResultGlyphs.diffBegin = "[";
-    ResultGlyphs.diffEnd = "]";
-    ResultGlyphs.diffInsert = "+";
-    ResultGlyphs.diffDelete = "-";
-  }
-}
 
 ///
 interface ResultPrinter {
-  void primary(string);
-  void info(string);
-  void danger(string);
-  void success(string);
+  nothrow:
+    void print(Message);
+    void primary(string);
+    void info(string);
+    void danger(string);
+    void success(string);
 
-  void dangerReverse(string);
-  void successReverse(string);
+    void dangerReverse(string);
+    void successReverse(string);
 }
 
 version(unittest) {
   class MockPrinter : ResultPrinter {
     string buffer;
+
+    void print(Message message) {
+      import std.conv : to;
+      try {
+        buffer ~= "[" ~ message.type.to!string ~ ":" ~ message.text ~ "]";
+      } catch(Exception) {
+        buffer ~= "ERROR";
+      }
+    }
 
     void primary(string val) {
       buffer ~= "[primary:" ~ val ~ "]";
@@ -133,51 +83,74 @@ WhiteIntervals getWhiteIntervals(string text) {
   return WhiteIntervals(text.indexOf(stripText[0]), text.lastIndexOf(stripText[stripText.length - 1]));
 }
 
-/// This is the most simple implementation of a ResultPrinter.
-/// All the plain data is printed to stdout
-class DefaultResultPrinter : ResultPrinter {
-  void primary(string text) {
+void writeNoThrow(T)(T text) nothrow {
+  try {
     write(text);
-  }
-
-  void info(string text) {
-    write(text);
-  }
-
-  void danger(string text) {
-    write(text);
-  }
-
-  void success(string text) {
-    write(text);
-  }
-
-  void dangerReverse(string text) {
-    write(text);
-  }
-
-  void successReverse(string text) {
-    write(text);
+  } catch(Exception e) {
+    assert(true, "Can't write to stdout!");
   }
 }
 
-interface IResult
-{
+/// This is the most simple implementation of a ResultPrinter.
+/// All the plain data is printed to stdout
+class DefaultResultPrinter : ResultPrinter {
+  nothrow:
+
+  void print(Message message) {
+
+  }
+
+  void primary(string text) {
+    writeNoThrow(text);
+  }
+
+  void info(string text) {
+    writeNoThrow(text);
+  }
+
+  void danger(string text) {
+    writeNoThrow(text);
+  }
+
+  void success(string text) {
+    writeNoThrow(text);
+  }
+
+  void dangerReverse(string text) {
+    writeNoThrow(text);
+  }
+
+  void successReverse(string text) {
+    writeNoThrow(text);
+  }
+}
+
+interface IResult {
   string toString();
   void print(ResultPrinter);
 }
 
-/// A result that prints a simple message to the user
-class MessageResult : IResult
-{
-  private
-  {
-    struct Message {
-      bool isValue;
-      string text;
-    }
+class EvaluationResultInstance : IResult {
 
-    Message[] messages;
+  EvaluationResult result;
+
+  this(EvaluationResult result) nothrow {
+    this.result = result;
+  }
+
+  override string toString() nothrow {
+    return result.toString;
+  }
+
+  void print(ResultPrinter printer) nothrow {
+    result.print(printer);
+  }
+}
+
+/// A result that prints a simple message to the user
+class MessageResult : IResult {
+  private {
+    immutable(Message)[] messages;
   }
 
   this(string message) nothrow
@@ -192,20 +165,24 @@ class MessageResult : IResult
   }
 
   void startWith(string message) @safe nothrow {
-    Message[] newMessages;
+    immutable(Message)[] newMessages;
 
-    newMessages ~= Message(false, message);
+    newMessages ~= Message(Message.Type.info, message);
     newMessages ~= this.messages;
 
     this.messages = newMessages;
   }
 
   void add(bool isValue, string message) nothrow {
-    this.messages ~= Message(isValue, message
+    this.messages ~= Message(isValue ? Message.Type.value : Message.Type.info, message
       .replace("\r", ResultGlyphs.carriageReturn)
       .replace("\n", ResultGlyphs.newline)
       .replace("\0", ResultGlyphs.nullChar)
       .replace("\t", ResultGlyphs.tab));
+  }
+
+  void add(Message message) nothrow {
+    this.messages ~= message;
   }
 
   void addValue(string text) @safe nothrow {
@@ -217,21 +194,21 @@ class MessageResult : IResult
       text = "throw any exception";
     }
 
-    this.messages ~= Message(false, text);
+    this.messages ~= Message(Message.Type.info, text);
   }
 
   void prependText(string text) @safe nothrow  {
-    this.messages = Message(false, text) ~ this.messages;
+    this.messages = Message(Message.Type.info, text) ~ this.messages;
   }
 
   void prependValue(string text) @safe nothrow {
-    this.messages = Message(true, text) ~ this.messages;
+    this.messages = Message(Message.Type.value, text) ~ this.messages;
   }
 
   void print(ResultPrinter printer)
   {
     foreach(message; messages) {
-      if(message.isValue) {
+      if(message.type == Message.Type.value) {
         printer.info(message.text);
       } else {
         printer.primary(message.text);
@@ -309,8 +286,7 @@ unittest
 class DiffResult : IResult {
   import ddmp.diff;
 
-  protected
-  {
+  protected {
     string expected;
     string actual;
   }

@@ -71,11 +71,6 @@ struct Result {
   }
 }
 
-struct Message {
-  bool isValue;
-  string text;
-}
-
 mixin template DisabledShouldThrowableCommons() {
   auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
     static assert("`throwSomething` does not work for arrays and ranges");
@@ -491,13 +486,13 @@ auto should(T)(lazy T testData, const string file = __FILE__, const size_t line 
   }
 }
 
-@("because")
+/// "because" adds a text before the assert message
 unittest {
   auto msg = ({
     true.should.equal(false).because("of test reasons");
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal("Because of test reasons, true should equal false.");
+  msg.split("\n")[0].should.equal("Because of test reasons, true should equal false. ");
 }
 
 struct Assert {

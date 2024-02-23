@@ -4,11 +4,12 @@
     "Szabo Bogdan"
   ],
   "description": "Fluent assertions done right",
-  "copyright": "Copyright © 2022, Szabo Bogdan",
+  "copyright": "Copyright © 2023, Szabo Bogdan",
   "license": "MIT",
   "homepage": "http://fluentasserts.szabobogdan.com/",
   "dependencies": {
     "libdparse": "~>0.20.0",
+    "either": "~>1.1.3",
     "ddmp": "~>0.0.1-0.dev.3",
     "unit-threaded": {
       "version": "*",
@@ -26,11 +27,11 @@
       ]
     },
     {
-      "name": "trial",
-      "sourcePaths": [
-        "source",
-        "test/operations"
-      ]
+      "name": "unittest",
+      "targetType": "library",
+      "dependencies": {
+        "silly": "~>1.2.0-dev.2"
+      }
     }
   ]
 }

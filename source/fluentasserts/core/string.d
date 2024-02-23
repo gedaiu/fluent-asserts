@@ -221,15 +221,18 @@ unittest {
     "test string".should.equal("test");
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal(`"test string" should equal "test". "test string" is not equal to "test".`);
+  msg.split("\n")[0].should.equal(`"test string" should equal "test". "test string" is not equal to "test". `);
 
   msg = ({
     "test string".should.not.equal("test string");
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal(`"test string" should not equal "test string". "test string" is equal to "test string".`);
+  msg.split("\n")[0].should.equal(`"test string" should not equal "test string". "test string" is equal to "test string". `);
+}
 
-  msg = ({
+/// it shows null chars in the diff
+unittest {
+  auto msg = ({
     ubyte[] data = [115, 111, 109, 101, 32, 100, 97, 116, 97, 0, 0];
     data.assumeUTF.to!string.should.equal("some data");
   }).should.throwException!TestException.msg;
