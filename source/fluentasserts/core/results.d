@@ -300,11 +300,11 @@ class DiffResult : IResult {
   private string getResult(const Diff d) {
     final switch(d.operation) {
         case Operation.DELETE:
-          return ResultGlyphs.diffBegin ~ ResultGlyphs.diffDelete ~ d.text ~ ResultGlyphs.diffEnd;
+          return ResultGlyphs.diffBegin ~ ResultGlyphs.diffDelete ~ d.text.to!string ~ ResultGlyphs.diffEnd;
         case Operation.INSERT:
-          return ResultGlyphs.diffBegin ~ ResultGlyphs.diffInsert ~ d.text ~ ResultGlyphs.diffEnd;
+          return ResultGlyphs.diffBegin ~ ResultGlyphs.diffInsert ~ d.text.to!string ~ ResultGlyphs.diffEnd;
         case Operation.EQUAL:
-          return d.text;
+          return d.text.to!string;
     }
   }
 
@@ -318,15 +318,15 @@ class DiffResult : IResult {
 
     foreach(diff; result) {
       if(diff.operation == Operation.EQUAL) {
-        printer.primary(diff.text);
+        printer.primary(diff.text.to!string);
       }
 
       if(diff.operation == Operation.INSERT) {
-        printer.successReverse(diff.text);
+        printer.successReverse(diff.text.to!string);
       }
 
       if(diff.operation == Operation.DELETE) {
-        printer.dangerReverse(diff.text);
+        printer.dangerReverse(diff.text.to!string);
       }
     }
 
