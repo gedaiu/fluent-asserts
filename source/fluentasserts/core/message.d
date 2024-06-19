@@ -181,15 +181,15 @@ void addDiff(ref EvaluationResult result, string actual, string expected) nothro
 
     foreach(diff; diffResult) {
       if(diff.operation == Operation.EQUAL) {
-        result.add(Message(Message.Type.info, diff.text));
+        result.add(Message(Message.Type.info, diff.text.to!string));
       }
 
       if(diff.operation == Operation.INSERT) {
-        result.add(Message(Message.Type.insert, diff.text));
+        result.add(Message(Message.Type.insert, diff.text.to!string));
       }
 
       if(diff.operation == Operation.DELETE) {
-        result.add(Message(Message.Type.delete_, diff.text));
+        result.add(Message(Message.Type.delete_, diff.text.to!string));
       }
     }
   } catch(Exception e) {
