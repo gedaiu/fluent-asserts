@@ -25,7 +25,7 @@ import std.conv;
 import std.datetime;
 
 alias BasicNumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
-alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real/* , ifloat, idouble, ireal, cfloat, cdouble, creal, char, wchar, dchar*/);
+alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
 alias StringTypes = AliasSeq!(string, wstring, dstring, const(char)[]);
 
 static this() {
@@ -47,118 +47,74 @@ static this() {
   Registry.instance.describe("greaterOrEqualTo", greaterOrEqualToDescription);
   Registry.instance.describe("lessThan", lessThanDescription);
 
-  Registry.instance.register!(Duration, Duration)("lessThan", &lessThanDuration);
-  Registry.instance.register!(Duration, Duration)("below", &lessThanDuration);
+  Registry.instance.register("*", "*", "equal", &equal);
+  Registry.instance.register("*[]", "*[]", "equal", &arrayEqual);
+  Registry.instance.register("*[*]", "*[*]", "equal", &arrayEqual);
+  Registry.instance.register("*[][]", "*[][]", "equal", &arrayEqual);
 
-  Registry.instance.register!(SysTime, SysTime)("lessThan", &lessThanSysTime);
-  Registry.instance.register!(SysTime, SysTime)("below", &lessThanSysTime);
+  Registry.instance.register("*", "*", "beNull", &beNull);
+  Registry.instance.register("*", "*", "instanceOf", &instanceOf);
 
   Registry.instance.register("*", "*", "lessThan", &lessThanGeneric);
   Registry.instance.register("*", "*", "below", &lessThanGeneric);
-
-  Registry.instance.register!(Duration, Duration)("greaterThan", &greaterThanDuration);
-  Registry.instance.register!(Duration, Duration)("greaterOrEqualTo", &greaterOrEqualToDuration);
-  Registry.instance.register!(Duration, Duration)("above", &greaterThanDuration);
-
-  Registry.instance.register!(SysTime, SysTime)("greaterThan", &greaterThanSysTime);
-  Registry.instance.register!(SysTime, SysTime)("greaterOrEqualTo", &greaterOrEqualToSysTime);
-  Registry.instance.register!(SysTime, SysTime)("above", &greaterThanSysTime);
-
-  Registry.instance.register!(Duration, Duration)("between", &betweenDuration);
-  Registry.instance.register!(Duration, Duration)("within", &betweenDuration);
-
-  Registry.instance.register!(SysTime, SysTime)("between", &betweenSysTime);
-  Registry.instance.register!(SysTime, SysTime)("within", &betweenSysTime);
-
-  Registry.instance.register("*", "*", "equal", &equal);
-
-  static foreach(Type; NumericTypes) {
-    Registry.instance.register(Type.stringof ~ "[]", Type.stringof ~ "[]", "equal", &arrayEqual);
-    Registry.instance.register(Type.stringof ~ "[]", "void[]", "equal", &arrayEqual);
-  }
 
   static foreach(Type; BasicNumericTypes) {
     Registry.instance.register(Type.stringof, Type.stringof, "greaterOrEqualTo", &greaterOrEqualTo!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "greaterThan", &greaterThan!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "above", &greaterThan!Type);
-
     Registry.instance.register(Type.stringof, Type.stringof, "lessOrEqualTo", &lessOrEqualTo!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "lessThan", &lessThan!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "below", &lessThan!Type);
-
     Registry.instance.register(Type.stringof, Type.stringof, "between", &between!Type);
     Registry.instance.register(Type.stringof, Type.stringof, "within", &between!Type);
-  }
-
-  /// special cases for .length and other comparisons with int types
-  static foreach(Type; BasicNumericTypes) {
     Registry.instance.register(Type.stringof, "int", "lessOrEqualTo", &lessOrEqualTo!Type);
     Registry.instance.register(Type.stringof, "int", "lessThan", &lessThan!Type);
     Registry.instance.register(Type.stringof, "int", "greaterOrEqualTo", &greaterOrEqualTo!Type);
     Registry.instance.register(Type.stringof, "int", "greaterThan", &greaterThan!Type);
   }
 
-  ///
   static foreach(Type1; NumericTypes) {
     Registry.instance.register(Type1.stringof ~ "[]", "void[]", "approximately", &approximatelyList);
-    Registry.instance.register("*[]", "*", "contain", &arrayContain);
-    Registry.instance.register("*[][]", "*[][]", "containOnly", &arrayContainOnly);
-
     static foreach(Type2; NumericTypes) {
-      Registry.instance.register(Type1.stringof, Type2.stringof, "equal", &equal);
-      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "equal", &arrayEqual);
-      Registry.instance.register(Type1.stringof ~ "[]", "void[]", "equal", &arrayEqual);
-
-      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "contain", &arrayContain);
-      Registry.instance.register(Type1.stringof ~ "[]", "void[]", "contain", &arrayContain);
-      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof, "contain", &arrayContain);
-
-      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "containOnly", &arrayContainOnly);
-      Registry.instance.register(Type1.stringof ~ "[]", "void[]", "containOnly", &arrayContainOnly);
       Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "approximately", &approximatelyList);
-
       Registry.instance.register(Type1.stringof, Type2.stringof, "approximately", &approximately);
     }
-
-    Registry.instance.register("object.Object[]", "object.Object[]", "containOnly", &arrayContainOnly);
   }
 
-
+  Registry.instance.register("*[]", "*", "contain", &arrayContain);
   Registry.instance.register("*[]", "*[]", "contain", &arrayContain);
   Registry.instance.register("*[]", "*[]", "containOnly", &arrayContainOnly);
+  Registry.instance.register("*[][]", "*[][]", "containOnly", &arrayContainOnly);
 
   static foreach(Type1; StringTypes) {
-    Registry.instance.register(Type1.stringof ~ "[]", "void[]", "equal", &arrayEqual);
-
     static foreach(Type2; StringTypes) {
-      Registry.instance.register(Type1.stringof, Type2.stringof, "equal", &equal);
-      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "equal", &arrayEqual);
-
       Registry.instance.register(Type1.stringof, Type2.stringof ~ "[]", "contain", &contain);
       Registry.instance.register(Type1.stringof, Type2.stringof, "contain", &contain);
-      Registry.instance.register(Type1.stringof ~ "[]", Type2.stringof ~ "[]", "containOnly", &arrayContainOnly);
-
       Registry.instance.register(Type1.stringof, Type2.stringof, "startWith", &startWith);
       Registry.instance.register(Type1.stringof, Type2.stringof, "endWith", &endWith);
     }
+    Registry.instance.register(Type1.stringof, "char", "contain", &contain);
+    Registry.instance.register(Type1.stringof, "char", "startWith", &startWith);
+    Registry.instance.register(Type1.stringof, "char", "endWith", &endWith);
   }
 
-  Registry.instance.register("*[]", "*[]", "equal", &arrayEqual);
-  Registry.instance.register("*[*]", "*[*]", "equal", &arrayEqual);
-  Registry.instance.register("*[][]", "*[][]", "equal", &arrayEqual);
-  Registry.instance.register("*", "*", "equal", &equal);
-
-  static foreach(Type; StringTypes) {
-    Registry.instance.register(Type.stringof, "char", "contain", &contain);
-    Registry.instance.register(Type.stringof, "char", "startWith", &startWith);
-    Registry.instance.register(Type.stringof, "char", "endWith", &endWith);
-  }
-
-  Registry.instance.register("*", "*", "instanceOf", &instanceOf);
+  Registry.instance.register!(Duration, Duration)("lessThan", &lessThanDuration);
+  Registry.instance.register!(Duration, Duration)("below", &lessThanDuration);
+  Registry.instance.register!(SysTime, SysTime)("lessThan", &lessThanSysTime);
+  Registry.instance.register!(SysTime, SysTime)("below", &lessThanSysTime);
+  Registry.instance.register!(Duration, Duration)("greaterThan", &greaterThanDuration);
+  Registry.instance.register!(Duration, Duration)("greaterOrEqualTo", &greaterOrEqualToDuration);
+  Registry.instance.register!(Duration, Duration)("above", &greaterThanDuration);
+  Registry.instance.register!(SysTime, SysTime)("greaterThan", &greaterThanSysTime);
+  Registry.instance.register!(SysTime, SysTime)("greaterOrEqualTo", &greaterOrEqualToSysTime);
+  Registry.instance.register!(SysTime, SysTime)("above", &greaterThanSysTime);
+  Registry.instance.register!(Duration, Duration)("between", &betweenDuration);
+  Registry.instance.register!(Duration, Duration)("within", &betweenDuration);
+  Registry.instance.register!(SysTime, SysTime)("between", &betweenSysTime);
+  Registry.instance.register!(SysTime, SysTime)("within", &betweenSysTime);
 
   Registry.instance.register("callable", "", "throwAnyException", &throwAnyException);
   Registry.instance.register("callable", "", "throwException", &throwException);
-
   Registry.instance.register("*", "*", "throwAnyException", &throwAnyException);
   Registry.instance.register("*", "*", "throwAnyException.withMessage", &throwAnyExceptionWithMessage);
   Registry.instance.register("*", "*", "throwAnyException.withMessage.equal", &throwAnyExceptionWithMessage);
@@ -168,7 +124,6 @@ static this() {
   Registry.instance.register("*", "*", "throwSomething", &throwAnyException);
   Registry.instance.register("*", "*", "throwSomething.withMessage", &throwAnyExceptionWithMessage);
   Registry.instance.register("*", "*", "throwSomething.withMessage.equal", &throwAnyExceptionWithMessage);
-  Registry.instance.register("*", "*", "beNull", &beNull);
 }
 
 /// The assert lifecycle
