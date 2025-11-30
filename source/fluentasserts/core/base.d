@@ -275,7 +275,7 @@ class TestException : ReferenceException {
   }
 }
 
-/// Test Exception should separate the results by a new line
+@("TestException separates the results by a new line")
 unittest {
   import std.stdio;
   IResult[] results = [
@@ -486,7 +486,7 @@ auto should(T)(lazy T testData, const string file = __FILE__, const size_t line 
   }
 }
 
-/// "because" adds a text before the assert message
+@("because adds a text before the assert message")
 unittest {
   auto msg = ({
     true.should.equal(false).because("of test reasons");
@@ -597,7 +597,7 @@ struct Assert {
   }
 }
 
-/// Assert should work for base types
+@("Assert works for base types")
 unittest {
   Assert.equal(1, 1, "they are the same value");
   Assert.notEqual(1, 2, "they are not the same value");
@@ -624,14 +624,14 @@ unittest {
   Assert.notApproximately(1.5f, 1, 0.2f);
 }
 
-/// Assert should work for objects
+@("Assert works for objects")
 unittest {
   Object o = null;
   Assert.beNull(o, "it's a null");
   Assert.notNull(new Object, "it's not a null");
 }
 
-/// Assert should work for strings
+@("Assert works for strings")
 unittest {
   Assert.equal("abcd", "abcd");
   Assert.notEqual("abcd", "abwcd");
@@ -652,7 +652,7 @@ unittest {
   Assert.notEndWith("abcd", 'c');
 }
 
-/// Assert should work for ranges
+@("Assert works for ranges")
 unittest {
   Assert.equal([1, 2, 3], [1, 2, 3]);
   Assert.notEqual([1, 2, 3], [1, 1, 3]);
@@ -678,7 +678,7 @@ void setupFluentHandler() {
   core.exception.assertHandler = &fluentHandler;
 }
 
-/// It should call the fluent handler
+@("calls the fluent handler")
 @trusted
 unittest {
   import core.exception;

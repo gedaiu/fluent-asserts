@@ -156,7 +156,7 @@ class SerializerRegistry {
   }
 }
 
-/// It should be able to override the default struct serializer
+@("overrides the default struct serializer")
 unittest {
   struct A {}
 
@@ -171,7 +171,7 @@ unittest {
   registry.serialize(["key": A()]).should.equal(`["key":custom value]`);
 }
 
-/// It should be able to override the default const struct serializer
+@("overrides the default const struct serializer")
 unittest {
   struct A {}
 
@@ -188,7 +188,7 @@ unittest {
   registry.serialize(["key": value]).should.equal(`["key":custom value]`);
 }
 
-/// It should be able to override the default immutable struct serializer
+@("overrides the default immutable struct serializer")
 unittest {
   struct A {}
 
@@ -211,7 +211,7 @@ unittest {
 }
 
 
-/// It should be able to override the default class serializer
+@("overrides the default class serializer")
 unittest {
   class A {}
 
@@ -226,7 +226,7 @@ unittest {
   registry.serialize(["key": new A()]).should.equal(`["key":custom value]`);
 }
 
-/// It should be able to override the default const class serializer
+@("overrides the default const class serializer")
 unittest {
   class A {}
 
@@ -243,7 +243,7 @@ unittest {
   registry.serialize(["key": value]).should.equal(`["key":custom value]`);
 }
 
-/// It should be able to override the default immutable class serializer
+@("overrides the default immutable class serializer")
 unittest {
   class A {}
 
@@ -265,7 +265,7 @@ unittest {
   registry.serialize(["key": ivalue]).should.equal(`["key":value]`);
 }
 
-/// It should serialize a char
+@("serializes a char")
 unittest {
   char ch = 'a';
   const char cch = 'a';
@@ -276,7 +276,7 @@ unittest {
   SerializerRegistry.instance.serialize(ich).should.equal("'a'");
 }
 
-/// It should serialize a SysTime
+@("serializes a SysTime")
 unittest {
   SysTime val = SysTime.fromISOExtString("2010-07-04T07:06:12");
   const SysTime cval = SysTime.fromISOExtString("2010-07-04T07:06:12");
@@ -287,7 +287,7 @@ unittest {
   SerializerRegistry.instance.serialize(ival).should.equal("2010-07-04T07:06:12");
 }
 
-/// It should serialize a string
+@("serializes a string")
 unittest {
   string str = "aaa";
   const string cstr = "aaa";
@@ -298,7 +298,7 @@ unittest {
   SerializerRegistry.instance.serialize(istr).should.equal(`"aaa"`);
 }
 
-/// It should serialize an int
+@("serializes an int")
 unittest {
   int value = 23;
   const int cvalue = 23;
@@ -309,7 +309,7 @@ unittest {
   SerializerRegistry.instance.serialize(ivalue).should.equal(`23`);
 }
 
-/// It should serialize an int list
+@("serializes an int list")
 unittest {
   int[] value = [2,3];
   const int[] cvalue = [2,3];
@@ -320,7 +320,7 @@ unittest {
   SerializerRegistry.instance.serialize(ivalue).should.equal(`[2, 3]`);
 }
 
-/// It should serialize a void list
+@("serializes a void list")
 unittest {
   void[] value = [];
   const void[] cvalue = [];
@@ -331,7 +331,7 @@ unittest {
   SerializerRegistry.instance.serialize(ivalue).should.equal(`[]`);
 }
 
-/// It should serialize a nested int list
+@("serializes a nested int list")
 unittest {
   int[][] value = [[0,1],[2,3]];
   const int[][] cvalue = [[0,1],[2,3]];
@@ -342,7 +342,7 @@ unittest {
   SerializerRegistry.instance.serialize(ivalue).should.equal(`[[0, 1], [2, 3]]`);
 }
 
-/// It should serialize an assoc array
+@("serializes an assoc array")
 unittest {
   int[string] value = ["a": 2,"b": 3, "c": 4];
   const int[string] cvalue = ["a": 2,"b": 3, "c": 4];
@@ -353,7 +353,7 @@ unittest {
   SerializerRegistry.instance.serialize(ivalue).should.equal(`["a":2, "b":3, "c":4]`);
 }
 
-/// It should serialize a string enum
+@("serializes a string enum")
 unittest {
   enum TestType : string {
     a = "a",
@@ -369,7 +369,7 @@ unittest {
 }
 
 version(unittest) { struct TestStruct { int a; string b; }; }
-/// It should serialize a struct
+@("serializes a struct")
 unittest {
   TestStruct value = TestStruct(1, "2");
   const TestStruct cvalue = TestStruct(1, "2");
@@ -488,14 +488,14 @@ string[] parseList(string value) @safe nothrow {
   return result;
 }
 
-/// it should parse an empty string
+@("parseList parses an empty string")
 unittest {
   auto pieces = "".parseList;
 
   pieces.should.equal([]);
 }
 
-/// it should not parse a string that does not contain []
+@("parseList does not parse a string that does not contain []")
 unittest {
   auto pieces = "test".parseList;
 
@@ -503,108 +503,102 @@ unittest {
 }
 
 
-/// it should not parse a char that does not contain []
+@("parseList does not parse a char that does not contain []")
 unittest {
   auto pieces = "t".parseList;
 
   pieces.should.equal([ "t" ]);
 }
 
-/// it should parse an empty array
+@("parseList parses an empty array")
 unittest {
   auto pieces = "[]".parseList;
 
   pieces.should.equal([]);
 }
 
-/// it should parse a list of one number
+@("parseList parses a list of one number")
 unittest {
   auto pieces = "[1]".parseList;
 
   pieces.should.equal(["1"]);
 }
 
-/// it should parse a list of two numbers
+@("parseList parses a list of two numbers")
 unittest {
   auto pieces = "[1,2]".parseList;
 
   pieces.should.equal(["1","2"]);
 }
 
-/// it should remove the whitespaces from the parsed values
+@("parseList removes the whitespaces from the parsed values")
 unittest {
   auto pieces = "[ 1, 2 ]".parseList;
 
   pieces.should.equal(["1","2"]);
 }
 
-/// it should parse two string values that contain a `,`
+@("parseList parses two string values that contain a comma")
 unittest {
   auto pieces = `[ "a,b", "c,d" ]`.parseList;
 
   pieces.should.equal([`"a,b"`,`"c,d"`]);
 }
 
-/// it should parse two string values that contain a `'`
+@("parseList parses two string values that contain a single quote")
 unittest {
   auto pieces = `[ "a'b", "c'd" ]`.parseList;
 
   pieces.should.equal([`"a'b"`,`"c'd"`]);
 }
 
-/// it should parse two char values that contain a `,`
+@("parseList parses two char values that contain a comma")
 unittest {
   auto pieces = `[ ',' , ',' ]`.parseList;
 
   pieces.should.equal([`','`,`','`]);
 }
 
-/// it should parse two char values that contain `[` and `]`
+@("parseList parses two char values that contain brackets")
 unittest {
   auto pieces = `[ '[' , ']' ]`.parseList;
 
   pieces.should.equal([`'['`,`']'`]);
 }
 
-/// it should parse two string values that contain `[` and `]`
+@("parseList parses two string values that contain brackets")
 unittest {
   auto pieces = `[ "[" , "]" ]`.parseList;
 
   pieces.should.equal([`"["`,`"]"`]);
 }
 
-/// it should parse two char values that contain a `"`
+@("parseList parses two char values that contain a double quote")
 unittest {
   auto pieces = `[ '"' , '"' ]`.parseList;
 
   pieces.should.equal([`'"'`,`'"'`]);
 }
 
-/// it should parse two empty lists
+@("parseList parses two empty lists")
 unittest {
   auto pieces = `[ [] , [] ]`.parseList;
   pieces.should.equal([`[]`,`[]`]);
 }
 
-/// it should parse two nested lists
+@("parseList parses two nested lists")
 unittest {
   auto pieces = `[ [[],[]] , [[[]],[]] ]`.parseList;
   pieces.should.equal([`[[],[]]`,`[[[]],[]]`]);
 }
 
-/// it should parse two lists with items
+@("parseList parses two lists with items")
 unittest {
   auto pieces = `[ [1,2] , [3,4] ]`.parseList;
   pieces.should.equal([`[1,2]`,`[3,4]`]);
 }
 
-/// it should parse two lists with string and char items
-unittest {
-  auto pieces = `[ ["1", "2"] , ['3', '4'] ]`.parseList;
-  pieces.should.equal([`["1", "2"]`,`['3', '4']`]);
-}
-
-/// it should parse two lists with string and char items
+@("parseList parses two lists with string and char items")
 unittest {
   auto pieces = `[ ["1", "2"] , ['3', '4'] ]`.parseList;
   pieces.should.equal([`["1", "2"]`,`['3', '4']`]);
@@ -627,22 +621,22 @@ string cleanString(string value) @safe nothrow {
   return value;
 }
 
-/// it should return an empty string when the input is an empty string
+@("cleanString returns an empty string when the input is an empty string")
 unittest {
   "".cleanString.should.equal("");
 }
 
-/// it should return the input value when it has one char
+@("cleanString returns the input value when it has one char")
 unittest {
   "'".cleanString.should.equal("'");
 }
 
-/// it should remove the " from start and end of the string
+@("cleanString removes the double quote from start and end of the string")
 unittest {
   `""`.cleanString.should.equal(``);
 }
 
-/// it should remove the ' from start and end of the string
+@("cleanString removes the single quote from start and end of the string")
 unittest {
   `''`.cleanString.should.equal(``);
 }
@@ -652,14 +646,14 @@ string[] cleanString(string[] pieces) @safe nothrow {
   return pieces.map!(a => a.cleanString).array;
 }
 
-/// It should return an empty array when the input list is empty
+@("cleanString returns an empty array when the input list is empty")
 unittest {
   string[] empty;
 
   empty.cleanString.should.equal(empty);
 }
 
-/// It should remove the `"` from the begin and end of the string
+@("cleanString removes the double quote from the begin and end of the string")
 unittest {
   [`"1"`, `"2"`].cleanString.should.equal([`1`, `2`]);
 }

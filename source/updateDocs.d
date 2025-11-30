@@ -8,7 +8,7 @@ import std.array;
 import std.algorithm;
 import std.string;
 
-/// updating the built in operations in readme.md file
+@("updates the built in operations in readme.md file")
 unittest {
   auto content = readText("README.md").split("#");
 
@@ -25,7 +25,7 @@ unittest {
   std.file.write("README.md", content.join("#"));
 }
 
-/// updating the operations md files
+@("updates the operations md files")
 unittest {
   foreach(operation; Registry.instance.registeredOperations) {
     string content = "# The `" ~ operation ~ "` operation\n\n";

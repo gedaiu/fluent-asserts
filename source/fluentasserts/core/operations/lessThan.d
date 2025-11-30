@@ -120,38 +120,38 @@ private IResult[] lessThanResults(bool result, string niceExpectedValue, string 
   return results;
 }
 
-/// lessThan passes when current value is less than expected
+@("lessThan passes when current value is less than expected")
 unittest {
   5.should.be.lessThan(6);
 }
 
-/// lessThan fails when current value is greater than expected
+@("lessThan fails when current value is greater than expected")
 unittest {
   ({
     5.should.be.lessThan(4);
   }).should.throwException!TestException;
 }
 
-/// lessThan fails when values are equal
+@("lessThan fails when values are equal")
 unittest {
   ({
     5.should.be.lessThan(5);
   }).should.throwException!TestException;
 }
 
-/// lessThan works with negation
+@("lessThan works with negation")
 unittest {
   5.should.not.be.lessThan(4);
   5.should.not.be.lessThan(5);
 }
 
-/// lessThan works with floating point
+@("lessThan works with floating point")
 unittest {
   3.14.should.be.lessThan(3.15);
   3.15.should.not.be.lessThan(3.14);
 }
 
-/// lessThan works with custom comparable struct
+@("lessThan works with custom comparable struct")
 unittest {
   static struct Money {
     int cents;
@@ -165,7 +165,7 @@ unittest {
   Money(100).should.not.be.lessThan(Money(100));
 }
 
-/// below is alias for lessThan
+@("below is alias for lessThan")
 unittest {
   5.should.be.below(6);
   5.should.not.be.below(4);

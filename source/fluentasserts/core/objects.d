@@ -8,7 +8,7 @@ import std.stdio;
 import std.traits;
 import std.conv;
 
-/// When there is a lazy object that throws an it should throw that exception
+@("lazy object that throws propagates the exception")
 unittest {
   Object someLazyObject() {
     throw new Exception("This is it.");
@@ -27,7 +27,7 @@ unittest {
   }).should.throwAnyException.withMessage("This is it.");
 }
 
-/// object beNull
+@("object beNull")
 unittest {
   Object o = null;
 
@@ -53,7 +53,7 @@ unittest {
   msg.split("\n")[3].strip.strip.should.equal("Actual:object.Object");
 }
 
-/// object instanceOf
+@("object instanceOf")
 unittest {
   class BaseClass { }
   class ExtendedClass : BaseClass { }
@@ -87,7 +87,7 @@ unittest {
   msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
 }
 
-/// object instanceOf interface
+@("object instanceOf interface")
 unittest {
   interface MyInterface { }
   class BaseClass : MyInterface { }
@@ -119,7 +119,7 @@ unittest {
   msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L91_C1.BaseClass");
 }
 
-/// should throw exceptions for delegates that return basic types
+@("delegates returning objects that throw propagate the exception")
 unittest {
   class SomeClass { }
 
@@ -143,7 +143,7 @@ unittest {
   thrown.should.equal(true);
 }
 
-/// object equal
+@("object equal")
 unittest {
   class TestEqual {
     private int value;
@@ -171,7 +171,7 @@ unittest {
   msg.should.startWith("instance should equal TestEqual");
 }
 
-/// null object comparison
+@("null object comparison")
 unittest
 {
   Object nullObject;

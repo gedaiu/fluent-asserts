@@ -7,7 +7,7 @@ import std.string;
 import std.conv;
 import std.algorithm;
 
-/// When there is a lazy number that throws an it should throw that exception
+@("lazy number that throws propagates the exception")
 unittest {
   int someLazyInt() {
     throw new Exception("This is it.");
@@ -54,7 +54,7 @@ unittest {
   msg.split("\n")[0].should.equal("5 should not equal 5. 5 is equal to 5. ");
 }
 
-/// bools equal
+@("bools equal")
 unittest {
   ({
     true.should.equal(true);
@@ -78,7 +78,7 @@ unittest {
   msg.split("\n")[3].strip.should.equal("Actual:true");
 }
 
-/// numbers greater than
+@("numbers greater than")
 unittest {
   ({
     5.should.be.greaterThan(4);
@@ -181,7 +181,7 @@ unittest {
   msg.split("\n")[3].strip.should.equal("Actual:5");
 }
 
-/// numbers approximately
+@("numbers approximately")
 unittest {
   ({
     (10f/3f).should.be.approximately(3, 0.34);
@@ -205,7 +205,7 @@ unittest {
   msg.split("\n")[3].strip.should.contain("Actual:3.33333");
 }
 
-/// should throw exceptions for delegates that return basic types
+@("delegates returning basic types that throw propagate the exception")
 unittest {
   int value() {
     throw new Exception("not implemented value");
@@ -242,7 +242,7 @@ unittest {
   thrown.should.equal(true);
 }
 
-/// it should compile const comparison
+@("compiles const comparison")
 unittest {
   const actual = 42;
   actual.should.equal(42);

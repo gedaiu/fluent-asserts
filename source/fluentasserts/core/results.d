@@ -334,13 +334,13 @@ class DiffResult : IResult {
   }
 }
 
-/// DiffResult should find the differences
+@("DiffResult finds the differences")
 unittest {
   auto diff = new DiffResult("abc", "asc");
   diff.toString.should.equal("Diff:\na[-b][+s]c");
 }
 
-/// DiffResult should use the custom glyphs
+@("DiffResult uses the custom glyphs")
 unittest {
   scope(exit) {
     ResultGlyphs.resetDefaults;
@@ -474,7 +474,7 @@ class KeyResult(string key) : IResult {
   }
 }
 
-/// KeyResult should not dispaly spaces between words with special chars
+@("KeyResult does not display spaces between words with special chars")
 unittest {
   auto result = new KeyResult!"key"(" row1  row2 ");
   auto printer = new MockPrinter();
@@ -483,7 +483,7 @@ unittest {
   printer.buffer.should.equal(`[info:      key:][info:᛫][primary:row1  row2][info:᛫]`);
 }
 
-/// KeyResult should dispaly spaces with special chars on space lines
+@("KeyResult displays spaces with special chars on space lines")
 unittest {
   auto result = new KeyResult!"key"("   ");
   auto printer = new MockPrinter();
@@ -492,7 +492,7 @@ unittest {
   printer.buffer.should.equal(`[info:      key:][info:᛫᛫᛫]`);
 }
 
-/// KeyResult should display no char for empty lines
+@("KeyResult displays no char for empty lines")
 unittest {
   auto result = new KeyResult!"key"("");
   auto printer = new MockPrinter();
@@ -501,7 +501,7 @@ unittest {
   printer.buffer.should.equal(``);
 }
 
-/// KeyResult should display special characters with different contexts
+@("KeyResult displays special characters with different contexts")
 unittest {
   auto result = new KeyResult!"key"("row1\n \trow2");
   auto printer = new MockPrinter();
@@ -511,7 +511,7 @@ unittest {
   printer.buffer.should.equal(`[info:      key:][primary:row1][info:↲][primary:` ~ "\n" ~ `][info:         :][info:᛫¤][primary:row2]`);
 }
 
-/// KeyResult should display custom glyphs with different contexts
+@("KeyResult displays custom glyphs with different contexts")
 unittest {
   scope(exit) {
     ResultGlyphs.resetDefaults;
@@ -721,7 +721,7 @@ auto getScope(const(Token)[] tokens, size_t line) nothrow {
   return const Tuple!(size_t, "begin", size_t, "end")(beginToken, endToken);
 }
 
-/// Get the spec function and scope that contains a lambda
+@("getScope returns the spec function and scope that contains a lambda")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -736,7 +736,7 @@ unittest {
     }");
 }
 
-/// Get the a method scope and signature
+@("getScope returns a method scope and signature")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/class.d"), tokens);
@@ -749,7 +749,7 @@ unittest {
     }");
 }
 
-/// Get the a method scope without assert
+@("getScope returns a method scope without assert")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/class.d"), tokens);
@@ -810,7 +810,7 @@ size_t getFunctionEnd(const(Token)[] tokens, size_t start) {
   return result;
 }
 
-/// Get the end of a spec function with a lambda
+@("getFunctionEnd returns the end of a spec function with a lambda")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -827,7 +827,7 @@ unittest {
 }
 
 
-/// Get the end of an unittest function with a lambda
+@("getFunctionEnd returns the end of an unittest function with a lambda")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -844,7 +844,7 @@ unittest {
 }");
 }
 
-/// Get tokens from a scope that contains a lambda
+@("getScope returns tokens from a scope that contains a lambda")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -919,7 +919,7 @@ size_t getPreviousIdentifier(const(Token)[] tokens, size_t startIndex) {
   return 0;
 }
 
-/// Get the the previous unittest identifier from a list of tokens
+@("getPreviousIdentifier returns the previous unittest identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -931,7 +931,7 @@ unittest {
   tokens[result .. scopeResult.begin].toString.strip.should.equal(`unittest`);
 }
 
-/// Get the the previous paranthesis identifier from a list of tokens
+@("getPreviousIdentifier returns the previous paranthesis identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -945,7 +945,7 @@ unittest {
   tokens[result .. end].toString.strip.should.equal(`(5, (11))`);
 }
 
-/// Get the the previous function call identifier from a list of tokens
+@("getPreviousIdentifier returns the previous function call identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -959,7 +959,7 @@ unittest {
   tokens[result .. end].toString.strip.should.equal(`found(4)`);
 }
 
-/// Get the the previous map!"" identifier from a list of tokens
+@("getPreviousIdentifier returns the previous map identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -986,7 +986,7 @@ size_t getAssertIndex(const(Token)[] tokens, size_t startLine) {
   return assertTokens[assertTokens.length - 1].index;
 }
 
-/// Get the index of the Assert structure identifier from a list of tokens
+@("getAssertIndex returns the index of the Assert structure identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -1027,7 +1027,7 @@ auto getParameter(const(Token)[] tokens, size_t startToken) {
   return 0;
 }
 
-/// Get the first parameter from a list of tokens
+@("getParameter returns the first parameter from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -1037,7 +1037,7 @@ unittest {
   tokens[begin .. end].toString.strip.should.equal(`(5, (11))`);
 }
 
-/// Get the first list parameter from a list of tokens
+@("getParameter returns the first list parameter from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -1047,7 +1047,7 @@ unittest {
   tokens[begin .. end].toString.strip.should.equal(`[ new Value(1), new Value(2) ]`);
 }
 
-/// Get the previous array identifier from a list of tokens
+@("getPreviousIdentifier returns the previous array identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -1060,7 +1060,7 @@ unittest {
   tokens[result .. end].toString.strip.should.equal(`[1, 2, 3]`);
 }
 
-/// Get the previous array of instances identifier from a list of tokens
+@("getPreviousIdentifier returns the previous array of instances identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -1087,7 +1087,7 @@ size_t getShouldIndex(const(Token)[] tokens, size_t startLine) {
   return shouldTokens[shouldTokens.length - 1].index;
 }
 
-/// Get the index of the should call
+@("getShouldIndex returns the index of the should call")
 unittest {
   const(Token)[] tokens = [];
   splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
@@ -1439,7 +1439,7 @@ unittest
   })");
 }
 
-/// Source reporter should print the source code
+@("Source reporter prints the source code")
 unittest
 {
   auto result = new SourceResult("test/values.d", 36);
@@ -1563,7 +1563,7 @@ class ListInfoResult : IResult {
   }
 }
 
-/// convert to string the added data to ListInfoResult
+@("convert to string the added data to ListInfoResult")
 unittest {
   auto result = new ListInfoResult();
 
@@ -1577,7 +1577,7 @@ unittest {
  abc:3`);
 }
 
-/// print the added data to ListInfoResult
+@("print the added data to ListInfoResult")
 unittest {
   auto printer = new MockPrinter();
   auto result = new ListInfoResult();
@@ -1595,7 +1595,7 @@ unittest {
 }
 
 
-/// convert to string the added data lists to ListInfoResult
+@("convert to string the added data lists to ListInfoResult")
 unittest {
   auto result = new ListInfoResult();
 

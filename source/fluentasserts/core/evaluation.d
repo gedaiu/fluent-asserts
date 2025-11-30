@@ -133,7 +133,7 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
   }
 }
 
-/// evaluate a lazy value should capture an exception
+@("evaluate captures an exception from a lazy value")
 unittest {
   int value() {
     throw new Exception("message");
@@ -145,7 +145,7 @@ unittest {
   assert(result.evaluation.throwable.msg == "message");
 }
 
-/// evaluate should capture an exception thrown by a callable
+@("evaluate captures an exception from a callable")
 unittest {
   void value() {
     throw new Exception("message");
@@ -186,25 +186,25 @@ string[] extractTypes(T: U[K], U, K)() {
   return extractTypes!(U).map!(a => a ~ "[" ~ k ~ "]").array;
 }
 
-/// It can get the type of a string
+@("extractTypes returns [string] for string")
 unittest {
   auto result = extractTypes!string;
   assert(result == ["string"]);
 }
 
-/// It can get the type of a string list
+@("extractTypes returns [string[]] for string[]")
 unittest {
   auto result = extractTypes!(string[]);
   assert(result == ["string[]"]);
 }
 
-/// It can get the type of a string assoc array
+@("extractTypes returns [string[string]] for string[string]")
 unittest {
   auto result = extractTypes!(string[string]);
   assert(result == ["string[string]"]);
 }
 
-/// It can get all types of a class
+@("extractTypes returns all types of a class")
 unittest {
   interface I {}
   class T : I {}
@@ -330,7 +330,7 @@ class ObjectEquable(T) : EquableValue {
     }
 }
 
-/// an object with byValue method should return an array with all elements
+@("an object with byValue returns an array with all elements")
 unittest {
   class TestObject {
     auto byValue() {
@@ -345,7 +345,7 @@ unittest {
   assert(value[1].toString == "Equable.2", value[1].toString ~ " != Equable.2");
 }
 
-/// isLessThan returns true when value is less than other
+@("isLessThan returns true when value is less than other")
 unittest {
   auto value1 = equableValue(5, "5");
   auto value2 = equableValue(10, "10");
@@ -354,7 +354,7 @@ unittest {
   assert(value2.isLessThan(value1) == false);
 }
 
-/// isLessThan returns false when values are equal
+@("isLessThan returns false when values are equal")
 unittest {
   auto value1 = equableValue(5, "5");
   auto value2 = equableValue(5, "5");
@@ -362,7 +362,7 @@ unittest {
   assert(value1.isLessThan(value2) == false);
 }
 
-/// isLessThan works with floating point numbers
+@("isLessThan works with floating point numbers")
 unittest {
   auto value1 = equableValue(3.14, "3.14");
   auto value2 = equableValue(3.15, "3.15");
@@ -371,7 +371,7 @@ unittest {
   assert(value2.isLessThan(value1) == false);
 }
 
-/// isLessThan returns false for arrays
+@("isLessThan returns false for arrays")
 unittest {
   auto value1 = equableValue([1, 2, 3], "[1, 2, 3]");
   auto value2 = equableValue([4, 5, 6], "[4, 5, 6]");

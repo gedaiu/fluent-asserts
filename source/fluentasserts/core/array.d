@@ -122,7 +122,7 @@ struct ListComparison(Type) {
   }
 }
 
-/// ListComparison should be able to get the missing elements
+@("ListComparison gets missing elements")
 unittest {
   auto comparison = ListComparison!int([1, 2, 3], [4]);
 
@@ -134,7 +134,7 @@ unittest {
   assert(missing[2] == 3);
 }
 
-/// ListComparison should be able to get the missing elements with duplicates
+@("ListComparison gets missing elements with duplicates")
 unittest {
   auto comparison = ListComparison!int([2, 2], [2]);
 
@@ -144,7 +144,7 @@ unittest {
   assert(missing[0] == 2);
 }
 
-/// ListComparison should be able to get the extra elements
+@("ListComparison gets extra elements")
 unittest {
   auto comparison = ListComparison!int([4], [1, 2, 3]);
 
@@ -156,7 +156,7 @@ unittest {
   assert(extra[2] == 3);
 }
 
-/// ListComparison should be able to get the extra elements with duplicates
+@("ListComparison gets extra elements with duplicates")
 unittest {
   auto comparison = ListComparison!int([2], [2, 2]);
 
@@ -166,7 +166,7 @@ unittest {
   assert(extra[0] == 2);
 }
 
-/// ListComparison should be able to get the common elements
+@("ListComparison gets common elements")
 unittest {
   auto comparison = ListComparison!int([1, 2, 3, 4], [2, 3]);
 
@@ -177,7 +177,7 @@ unittest {
   assert(common[1] == 3);
 }
 
-/// ListComparison should be able to get the common elements with duplicates
+@("ListComparison gets common elements with duplicates")
 unittest {
   auto comparison = ListComparison!int([2, 2, 2, 2], [2, 2]);
 
@@ -410,7 +410,7 @@ struct ShouldList(T) if(isInputRange!(T)) {
   }
 }
 
-/// When there is a lazy array that throws an it should throw that exception
+@("lazy array that throws propagates the exception")
 unittest {
   int[] someLazyArray() {
     throw new Exception("This is it.");
@@ -463,7 +463,7 @@ unittest {
   msg.split('\n')[0].should.contain("4 is missing from [1, 2, 3]");
 }
 
-/// const range contain
+@("const range contain")
 unittest {
   const(int)[] data = [1, 2, 3];
   data.map!"a".should.contain([2, 1]);
@@ -475,7 +475,7 @@ unittest {
   }).should.not.throwAnyException;
 }
 
-/// immutable range contain
+@("immutable range contain")
 unittest {
   immutable(int)[] data = [1, 2, 3];
   data.map!"a".should.contain([2, 1]);
@@ -487,7 +487,7 @@ unittest {
   }).should.not.throwAnyException;
 }
 
-/// contain only
+@("contain only")
 unittest {
   ({
     [1, 2, 3].should.containOnly([3, 2, 1]);
@@ -531,14 +531,14 @@ unittest {
   msg.split('\n')[0].should.equal("[2, 2] should not contain only [2, 2].");
 }
 
-/// contain only with  void array
+@("contain only with void array")
 unittest {
   int[] list;
   list.should.containOnly([]);
 }
 
 
-/// const range containOnly
+@("const range containOnly")
 unittest {
   const(int)[] data = [1, 2, 3];
   data.map!"a".should.containOnly([3, 2, 1]);
@@ -550,7 +550,7 @@ unittest {
   }).should.not.throwAnyException;
 }
 
-/// immutable range containOnly
+@("immutable range containOnly")
 unittest {
   immutable(int)[] data = [1, 2, 3];
   data.map!"a".should.containOnly([2, 1, 3]);
@@ -562,7 +562,7 @@ unittest {
   }).should.not.throwAnyException;
 }
 
-/// array contain
+@("array contain")
 unittest {
   ({
     [1, 2, 3].should.contain([2, 1]);
@@ -602,7 +602,7 @@ unittest {
   msg[0].should.equal("[1, 2, 3] should not contain 2. 2 is present in [1, 2, 3].");
 }
 
-/// array equals
+@("array equals")
 unittest {
   ({
     [1, 2, 3].should.equal([1, 2, 3]);
@@ -639,7 +639,7 @@ unittest {
   msg[0].strip.should.startWith("[1, 2, 3] should not equal [1, 2, 3]");
 }
 
-///array equals with structs
+@("array equals with structs")
 unittest {
   struct TestStruct {
     int value;
@@ -658,7 +658,7 @@ unittest {
   msg.should.startWith("[TestStruct(2)] should equal [TestStruct(1)].");
 }
 
-/// const array equal
+@("const array equal")
 unittest {
   const(string)[] constValue = ["test", "string"];
   immutable(string)[] immutableValue = ["test", "string"];
@@ -679,7 +679,7 @@ version(unittest) {
   }
 }
 
-///array equals with classes
+@("array equals with classes")
 unittest {
 
   ({
@@ -692,7 +692,7 @@ unittest {
   }).should.throwException!TestException;
 }
 
-/// range equals
+@("range equals")
 unittest {
   ({
     [1, 2, 3].map!"a".should.equal([1, 2, 3]);
@@ -729,7 +729,7 @@ unittest {
   msg.split("\n")[0].strip.should.startWith(`[1, 2, 3].map!"a" should not equal [1, 2, 3]`);
 }
 
-/// custom range asserts
+@("custom range asserts")
 unittest {
   struct Range {
     int n;
@@ -767,7 +767,7 @@ unittest {
   msg.split("\n")[0].strip.should.startWith("Range() should contain 3. 3 is missing from [0, 1, 2].");
 }
 
-/// custom const range equals
+@("custom const range equals")
 unittest {
   struct ConstRange {
     int n;
@@ -788,7 +788,7 @@ unittest {
   ConstRange().should.equal([0,1,2]);
 }
 
-/// custom immutable range equals
+@("custom immutable range equals")
 unittest {
   struct ImmutableRange {
     int n;
@@ -809,7 +809,7 @@ unittest {
   ImmutableRange().should.equal([0,1,2]);
 }
 
-/// approximately equals
+@("approximately equals")
 unittest {
   [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.01);
 
@@ -826,20 +826,20 @@ unittest {
   msg.should.contain("Missing:[0.501±0.0001, 0.341±0.0001]");
 }
 
-/// approximately equals with Assert
+@("approximately equals with Assert")
 unittest {
   Assert.approximately([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.01);
   Assert.notApproximately([0.350, 0.501, 0.341], [0.350, 0.501], 0.0001);
 }
 
-/// immutable string
+@("immutable string")
 unittest {
   immutable string[] someList;
 
   someList.should.equal([]);
 }
 
-/// Compare const objects
+@("compare const objects")
 unittest {
   class A {}
   A a = new A();

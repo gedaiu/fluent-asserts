@@ -63,28 +63,28 @@ struct ShouldCallable(T) {
   }
 }
 
-/// Should be able to catch any exception
+@("catches any exception")
 unittest {
   ({
     throw new Exception("test");
   }).should.throwAnyException.msg.should.equal("test");
 }
 
-/// Should be able to catch any assert
+@("catches any assert")
 unittest {
   ({
     assert(false, "test");
   }).should.throwSomething.withMessage.equal("test");
 }
 
-/// Should be able to use with message without a custom assert
+@("uses withMessage without a custom assert")
 unittest {
   ({
     assert(false, "test");
   }).should.throwSomething.withMessage("test");
 }
 
-/// Should be able to catch a certain exception type
+@("catches a certain exception type")
 unittest {
   class CustomException : Exception {
     this(string msg, string fileName = "", size_t line = 0, Throwable next = null) {
@@ -110,7 +110,7 @@ unittest {
   hasException.should.equal(true).because("we want to catch a CustomException not an Exception");
 }
 
-/// Should be able to retrieve a typed version of a custom exception
+@("retrieves a typed version of a custom exception")
 unittest {
   class CustomException : Exception {
     int data;
@@ -130,7 +130,7 @@ unittest {
   (cast(CustomException) thrown).data.should.equal(2);
 }
 
-/// Should fail if an exception is not thrown
+@("fails when an exception is not thrown")
 unittest {
   auto thrown = false;
   try {
@@ -143,7 +143,7 @@ unittest {
   thrown.should.equal(true);
 }
 
-/// Should fail if an exception is not expected
+@("fails when an exception is not expected")
 unittest {
   auto thrown = false;
   try {
@@ -158,14 +158,14 @@ unittest {
   thrown.should.equal(true);
 }
 
-/// Should be able to benchmark some code
+@("benchmarks some code")
 unittest {
   ({
 
   }).should.haveExecutionTime.lessThan(1.seconds);
 }
 
-/// Should fail on benchmark timeout
+@("fails on benchmark timeout")
 unittest {
   import core.thread;
 
@@ -183,7 +183,7 @@ unittest {
   exception.msg.should.startWith("({\n      Thread.sleep(2.msecs);\n    }) should have execution time less than 1 ms.");
 }
 
-/// It should check if a delegate is null
+@("checks if a delegate is null")
 unittest {
   void delegate() action;
   action.should.beNull;

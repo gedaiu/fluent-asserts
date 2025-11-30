@@ -62,13 +62,13 @@ IResult[] throwAnyException(ref Evaluation evaluation) @trusted nothrow {
   return results;
 }
 
-/// It should be successfull when the function does not throw
+@("it is successful when the function does not throw")
 unittest {
   void test() {}
   expect({ test(); }).to.not.throwAnyException();
 }
 
-/// It should fail when an exception is thrown and none is expected
+@("it fails when an exception is thrown and none is expected")
 unittest {
   void test() { throw new Exception("Test exception"); }
 
@@ -87,13 +87,13 @@ unittest {
   assert(thrown, "The exception was not thrown");
 }
 
-/// It should be successfull when the function throws an expected exception
+@("it is successful when the function throws an expected exception")
 unittest {
   void test() { throw new Exception("test"); }
   expect({ test(); }).to.throwAnyException;
 }
 
-/// It should not be successfull when the function throws a throwable and an exception is expected
+@("it fails when the function throws a Throwable and an Exception is expected")
 unittest {
   void test() { assert(false); }
 
@@ -114,7 +114,7 @@ unittest {
   assert(thrown, "The exception was not thrown");
 }
 
-/// It should be successfull when the function throws an expected exception
+@("it is successful when the function throws any exception")
 unittest {
   void test() { throw new Exception("test"); }
   expect({ test(); }).to.throwAnyException;
@@ -274,14 +274,14 @@ IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
   return results;
 }
 
-/// Should be able to catch a certain exception type
+@("catches a certain exception type")
 unittest {
   expect({
     throw new CustomException("test");
   }).to.throwException!CustomException;
 }
 
-/// It fails when no exception is thrown but one is expected
+@("fails when no exception is thrown but one is expected")
 unittest {
   bool thrown;
 
@@ -294,7 +294,7 @@ unittest {
   assert(thrown, "The test should have failed because no exception was thrown");
 }
 
-/// It should fail when an unexpected exception is thrown
+@("fails when an unexpected exception is thrown")
 unittest {
   bool thrown;
 
@@ -314,14 +314,14 @@ unittest {
   assert(thrown, "The exception was not thrown");
 }
 
-/// It should not fail when an exception is thrown and it is not expected
+@("does not fail when an exception is thrown and it is not expected")
 unittest {
   expect({
     throw new Exception("test");
   }).to.not.throwException!CustomException;
 }
 
-/// It should fail when an different exception than the one checked is thrown
+@("fails when the checked exception type is thrown but not expected")
 unittest {
   bool thrown;
 
@@ -340,7 +340,6 @@ unittest {
   assert(thrown, "The exception was not thrown");
 }
 
-///
 IResult[] throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
   import std.stdio;
 
@@ -397,7 +396,7 @@ IResult[] throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow 
   return results;
 }
 
-/// It fails when an exception is not catched
+@("fails when an exception is not caught")
 unittest {
   Exception exception;
 
@@ -413,7 +412,7 @@ unittest {
   assert(exception.message.indexOf("No exception was thrown.") != -1);
 }
 
-/// It does not fail when an exception is not expected and none is not catched
+@("does not fail when an exception is not expected and none is caught")
 unittest {
   Exception exception;
 
@@ -426,7 +425,7 @@ unittest {
   assert(exception is null);
 }
 
-/// It fails when the caught exception has a different type
+@("fails when the caught exception has a different type")
 unittest {
   Exception exception;
 
@@ -444,7 +443,7 @@ unittest {
   assert(exception.message.indexOf("`fluentasserts.core.operations.throwable.CustomException` saying `hello` was thrown.") != -1);
 }
 
-/// It does not fail when a certain exception type is not catched
+@("does not fail when a certain exception type is not caught")
 unittest {
   Exception exception;
 
@@ -459,7 +458,7 @@ unittest {
   assert(exception is null);
 }
 
-/// It fails when the caught exception has a different message
+@("fails when the caught exception has a different message")
 unittest {
   Exception exception;
 
@@ -477,7 +476,7 @@ unittest {
   assert(exception.message.indexOf("`fluentasserts.core.operations.throwable.CustomException` saying `hello` was thrown.") != -1);
 }
 
-/// It does not fails when the caught exception is expected to have a different message
+@("does not fail when the caught exception is expected to have a different message")
 unittest {
   Exception exception;
 

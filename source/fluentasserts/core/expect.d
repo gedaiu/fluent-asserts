@@ -518,7 +518,7 @@ string toNiceOperation(string value) @safe nothrow {
   return newValue;
 }
 
-/// toNiceOperation converts to a nice and readable string
+@("toNiceOperation converts to a nice and readable string")
 unittest {
   expect("".toNiceOperation).to.equal("");
   expect("a.b".toNiceOperation).to.equal("a b");

@@ -142,7 +142,7 @@ class Registry {
   }
 }
 
-/// It generates a list of md links for docs
+@("generates a list of md links for docs")
 unittest {
   import std.datetime;
   import fluentasserts.core.operations.equal;
@@ -221,32 +221,32 @@ version(unittest) {
   import fluentasserts.core.base;
 }
 
-/// It can generalize an int
+@("generalizeType returns [*] for int")
 unittest {
   generalizeType("int").should.equal(["*"]);
 }
 
-/// It can generalize a list
+@("generalizeType returns [*[]] for int[]")
 unittest {
   generalizeType("int[]").should.equal(["*[]"]);
 }
 
-/// It can generalize a list of lists
+@("generalizeType returns [*[][]] for int[][]")
 unittest {
   generalizeType("int[][]").should.equal(["*[][]"]);
 }
 
-/// It can generalize an assoc array
+@("generalizeType returns generalized forms for int[int]")
 unittest {
   generalizeType("int[int]").should.equal(["*[int]", "int[*]", "*[*]"]);
 }
 
-/// It can generalize a combination of assoc arrays and lists
+@("generalizeType returns generalized forms for int[int][][string][]")
 unittest {
   generalizeType("int[int][][string][]").should.equal(["*[int][][string][]", "int[*][][*][]", "*[*][][*][]"]);
 }
 
-/// It can generalize an assoc array with a key list
+@("generalizeType returns generalized forms for int[int[]]")
 unittest {
   generalizeType("int[int[]]").should.equal(["*[int[]]", "int[*]", "*[*]"]);
 }

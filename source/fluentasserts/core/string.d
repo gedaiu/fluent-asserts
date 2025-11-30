@@ -8,7 +8,7 @@ import std.conv;
 import std.algorithm;
 import std.array;
 
-/// When there is a lazy string that throws an it should throw that exception
+@("lazy string that throws propagates the exception")
 unittest {
   string someLazyString() {
     throw new Exception("This is it.");
@@ -230,7 +230,7 @@ unittest {
   msg.split("\n")[0].should.equal(`"test string" should not equal "test string". "test string" is equal to "test string". `);
 }
 
-/// it shows null chars in the diff
+@("shows null chars in the diff")
 unittest {
   string msg;
 
@@ -246,7 +246,7 @@ unittest {
   msg.should.contain(`some data[+\0\0]`);
 }
 
-/// should throw exceptions for delegates that return basic types
+@("throws exceptions for delegates that return basic types")
 unittest {
   string value() {
     throw new Exception("not implemented");
