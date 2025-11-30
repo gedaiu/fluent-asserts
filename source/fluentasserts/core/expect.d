@@ -20,7 +20,7 @@ import fluentasserts.core.operations.lessThan : lessThanOp = lessThan, lessThanD
 import fluentasserts.core.operations.lessOrEqualTo : lessOrEqualToOp = lessOrEqualTo;
 import fluentasserts.core.operations.between : betweenOp = between, betweenDurationOp = betweenDuration, betweenSysTimeOp = betweenSysTime;
 import fluentasserts.core.operations.approximately : approximatelyOp = approximately, approximatelyListOp = approximatelyList;
-import fluentasserts.core.operations.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage;
+import fluentasserts.core.operations.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage, throwSomethingOp = throwSomething, throwSomethingWithMessageOp = throwSomethingWithMessage;
 
 import std.datetime : Duration, SysTime;
 
@@ -161,7 +161,7 @@ import std.conv;
     addOperationName("throwSomething");
     finalizeMessage();
     inhibit();
-    return ThrowableEvaluator(_evaluation, &throwAnyExceptionOp, &throwAnyExceptionWithMessageOp);
+    return ThrowableEvaluator(_evaluation, &throwSomethingOp, &throwSomethingWithMessageOp);
   }
 
   ///

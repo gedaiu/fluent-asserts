@@ -159,6 +159,69 @@ IResult[] throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothr
   return results;
 }
 
+/// throwSomething - accepts any Throwable including Error/AssertError
+IResult[] throwSomething(ref Evaluation evaluation) @trusted nothrow {
+  IResult[] results;
+
+  evaluation.message.addText(". ");
+  auto thrown = evaluation.currentValue.throwable;
+
+  if (thrown && evaluation.isNegated) {
+    string message;
+    try message = thrown.message.to!string; catch (Exception) {}
+
+    evaluation.message.addText("`");
+    evaluation.message.addValue(thrown.classinfo.name);
+    evaluation.message.addText("` saying `");
+    evaluation.message.addValue(message);
+    evaluation.message.addText("` was thrown.");
+
+    try results ~= new ExpectedActualResult("No throwable to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch (Exception) {}
+  }
+
+  if (!thrown && !evaluation.isNegated) {
+    evaluation.message.addText("Nothing was thrown.");
+
+    try results ~= new ExpectedActualResult("Any throwable to be thrown", "Nothing was thrown"); catch (Exception) {}
+  }
+
+  evaluation.throwable = thrown;
+  evaluation.currentValue.throwable = null;
+
+  return results;
+}
+
+/// throwSomethingWithMessage - accepts any Throwable including Error/AssertError
+IResult[] throwSomethingWithMessage(ref Evaluation evaluation) @trusted nothrow {
+  IResult[] results;
+
+  auto thrown = evaluation.currentValue.throwable;
+
+  if (thrown !is null && evaluation.isNegated) {
+    string message;
+    try message = thrown.message.to!string; catch (Exception) {}
+
+    evaluation.message.addText("`");
+    evaluation.message.addValue(thrown.classinfo.name);
+    evaluation.message.addText("` saying `");
+    evaluation.message.addValue(message);
+    evaluation.message.addText("` was thrown.");
+
+    try results ~= new ExpectedActualResult("No throwable to be thrown", "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch (Exception) {}
+  }
+
+  if (thrown is null && !evaluation.isNegated) {
+    evaluation.message.addText("Nothing was thrown.");
+
+    try results ~= new ExpectedActualResult("Any throwable to be thrown", "Nothing was thrown"); catch (Exception) {}
+  }
+
+  evaluation.throwable = thrown;
+  evaluation.currentValue.throwable = null;
+
+  return results;
+}
+
 ///
 IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
   evaluation.message.addText(".");
@@ -198,6 +261,12 @@ IResult[] throwException(ref Evaluation evaluation) @trusted nothrow {
     try results ~= new ExpectedActualResult(exceptionType, "`" ~ thrown.classinfo.name ~ "` saying `" ~ message ~ "`"); catch(Exception) {}
   }
 
+  if(!thrown && !evaluation.isNegated) {
+    evaluation.message.addText(" No exception was thrown.");
+
+    try results ~= new ExpectedActualResult("`" ~ exceptionType ~ "` to be thrown", "Nothing was thrown"); catch(Exception) {}
+  }
+
   evaluation.throwable = thrown;
   evaluation.currentValue.throwable = null;
 
@@ -209,6 +278,19 @@ unittest {
   expect({
     throw new CustomException("test");
   }).to.throwException!CustomException;
+}
+
+/// It fails when no exception is thrown but one is expected
+unittest {
+  bool thrown;
+
+  try {
+    ({}).should.throwException!Exception;
+  } catch (TestException e) {
+    thrown = true;
+  }
+
+  assert(thrown, "The test should have failed because no exception was thrown");
 }
 
 /// It should fail when an unexpected exception is thrown
