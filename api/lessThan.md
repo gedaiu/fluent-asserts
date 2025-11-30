@@ -7,6 +7,7 @@ Asserts that the tested value is less than the tested value. However, it's often
 Works with:
   - expect(`core.time.Duration`).[to].[be].lessThan(`core.time.Duration`)
   - expect(`std.datetime.systime.SysTime`).[to].[be].lessThan(`std.datetime.systime.SysTime`)
+  - expect(`*`).[to].[be].lessThan(`*`)
   - expect(`byte`).[to].[be].lessThan(`byte`)
   - expect(`ubyte`).[to].[be].lessThan(`ubyte`)
   - expect(`short`).[to].[be].lessThan(`short`)

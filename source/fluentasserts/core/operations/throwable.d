@@ -104,9 +104,10 @@ unittest {
   } catch(TestException e) {
     thrown = true;
 
-    assert(e.message.indexOf("should throw any exception. A `Throwable` saying `Assertion failure` was thrown.") != -1);
-    assert(e.message.indexOf("\n Expected:Any exception to be thrown\n") != -1);
-    assert(e.message.indexOf("\n   Actual:A `Throwable` with message `Assertion failure` was thrown\n") != -1);
+    assert(e.message.indexOf("should throw any exception.") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("A `Throwable` saying `Assertion failure` was thrown.") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("\n Expected:Any exception to be thrown\n") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("\n   Actual:A `Throwable` with message `Assertion failure` was thrown\n") != -1, "Message was: " ~ e.message);
     assert(e.file == "source/fluentasserts/core/operations/throwable.d");
   }
 

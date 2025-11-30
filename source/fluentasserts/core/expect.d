@@ -16,7 +16,7 @@ import fluentasserts.core.operations.beNull : beNullOp = beNull;
 import fluentasserts.core.operations.instanceOf : instanceOfOp = instanceOf;
 import fluentasserts.core.operations.greaterThan : greaterThanOp = greaterThan, greaterThanDurationOp = greaterThanDuration, greaterThanSysTimeOp = greaterThanSysTime;
 import fluentasserts.core.operations.greaterOrEqualTo : greaterOrEqualToOp = greaterOrEqualTo, greaterOrEqualToDurationOp = greaterOrEqualToDuration, greaterOrEqualToSysTimeOp = greaterOrEqualToSysTime;
-import fluentasserts.core.operations.lessThan : lessThanOp = lessThan, lessThanDurationOp = lessThanDuration, lessThanSysTimeOp = lessThanSysTime;
+import fluentasserts.core.operations.lessThan : lessThanOp = lessThan, lessThanDurationOp = lessThanDuration, lessThanSysTimeOp = lessThanSysTime, lessThanGenericOp = lessThanGeneric;
 import fluentasserts.core.operations.lessOrEqualTo : lessOrEqualToOp = lessOrEqualTo;
 import fluentasserts.core.operations.between : betweenOp = between, betweenDurationOp = betweenDuration, betweenSysTimeOp = betweenSysTime;
 import fluentasserts.core.operations.approximately : approximatelyOp = approximately, approximatelyListOp = approximatelyList;
@@ -273,8 +273,10 @@ import std.conv;
       return Evaluator(_evaluation, &lessThanDurationOp);
     } else static if (is(T == SysTime)) {
       return Evaluator(_evaluation, &lessThanSysTimeOp);
-    } else {
+    } else static if (isNumeric!T) {
       return Evaluator(_evaluation, &lessThanOp!T);
+    } else {
+      return Evaluator(_evaluation, &lessThanGenericOp);
     }
   }
 
@@ -298,8 +300,10 @@ import std.conv;
       return Evaluator(_evaluation, &lessThanDurationOp);
     } else static if (is(T == SysTime)) {
       return Evaluator(_evaluation, &lessThanSysTimeOp);
-    } else {
+    } else static if (isNumeric!T) {
       return Evaluator(_evaluation, &lessThanOp!T);
+    } else {
+      return Evaluator(_evaluation, &lessThanGenericOp);
     }
   }
 

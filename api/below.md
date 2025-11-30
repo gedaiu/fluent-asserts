@@ -7,6 +7,7 @@
 Works with:
   - expect(`core.time.Duration`).[to].[be].below(`core.time.Duration`)
   - expect(`std.datetime.systime.SysTime`).[to].[be].below(`std.datetime.systime.SysTime`)
+  - expect(`*`).[to].[be].below(`*`)
   - expect(`byte`).[to].[be].below(`byte`)
   - expect(`ubyte`).[to].[be].below(`ubyte`)
   - expect(`short`).[to].[be].below(`short`)

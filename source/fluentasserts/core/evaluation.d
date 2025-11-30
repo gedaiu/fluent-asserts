@@ -220,6 +220,7 @@ unittest {
 interface EquableValue {
   @safe nothrow:
     bool isEqualTo(EquableValue value);
+    bool isLessThan(EquableValue value);
     EquableValue[] toArray();
     string toString();
     EquableValue generalize();
@@ -276,6 +277,24 @@ class ObjectEquable(T) : EquableValue {
       }
     }
 
+    bool isLessThan(EquableValue otherEquable) {
+      static if (__traits(compiles, value < value)) {
+        try {
+          auto other = cast(ObjectEquable) otherEquable;
+
+          if(other !is null) {
+            return value < other.value;
+          }
+
+          return false;
+        } catch(Exception) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+
     string getSerialized() {
       return serialized;
     }
@@ -326,6 +345,40 @@ unittest {
   assert(value[1].toString == "Equable.2", value[1].toString ~ " != Equable.2");
 }
 
+/// isLessThan returns true when value is less than other
+unittest {
+  auto value1 = equableValue(5, "5");
+  auto value2 = equableValue(10, "10");
+
+  assert(value1.isLessThan(value2) == true);
+  assert(value2.isLessThan(value1) == false);
+}
+
+/// isLessThan returns false when values are equal
+unittest {
+  auto value1 = equableValue(5, "5");
+  auto value2 = equableValue(5, "5");
+
+  assert(value1.isLessThan(value2) == false);
+}
+
+/// isLessThan works with floating point numbers
+unittest {
+  auto value1 = equableValue(3.14, "3.14");
+  auto value2 = equableValue(3.15, "3.15");
+
+  assert(value1.isLessThan(value2) == true);
+  assert(value2.isLessThan(value1) == false);
+}
+
+/// isLessThan returns false for arrays
+unittest {
+  auto value1 = equableValue([1, 2, 3], "[1, 2, 3]");
+  auto value2 = equableValue([4, 5, 6], "[4, 5, 6]");
+
+  assert(value1.isLessThan(value2) == false);
+}
+
 ///
 class ArrayEquable(U: T[], T) : EquableValue {
   private {
@@ -347,6 +400,10 @@ class ArrayEquable(U: T[], T) : EquableValue {
       }
 
       return serialized == other.serialized;
+    }
+
+    bool isLessThan(EquableValue otherEquable) {
+      return false;
     }
 
     string getSerialized() {
