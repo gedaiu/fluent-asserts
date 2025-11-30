@@ -157,10 +157,13 @@ static this() {
   Registry.instance.register("callable", "", "throwException", &throwException);
 
   Registry.instance.register("*", "*", "throwAnyException", &throwAnyException);
+  Registry.instance.register("*", "*", "throwAnyException.withMessage", &throwAnyExceptionWithMessage);
   Registry.instance.register("*", "*", "throwAnyException.withMessage.equal", &throwAnyExceptionWithMessage);
   Registry.instance.register("*", "*", "throwException", &throwException);
+  Registry.instance.register("*", "*", "throwException.withMessage", &throwExceptionWithMessage);
   Registry.instance.register("*", "*", "throwException.withMessage.equal", &throwExceptionWithMessage);
   Registry.instance.register("*", "*", "throwSomething", &throwAnyException);
+  Registry.instance.register("*", "*", "throwSomething.withMessage", &throwAnyExceptionWithMessage);
   Registry.instance.register("*", "*", "throwSomething.withMessage.equal", &throwAnyExceptionWithMessage);
   Registry.instance.register("*", "*", "beNull", &beNull);
 }

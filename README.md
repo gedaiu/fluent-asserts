@@ -129,6 +129,7 @@ just add `not` before the assert name:
 - [throwAnyException](api/throwAnyException.md)
 - [throwException](api/throwException.md)
 - [throwSomething](api/throwSomething.md)
+- [withMessage](api/withMessage.md)
 - [within](api/within.md)
 
 # Extend the library

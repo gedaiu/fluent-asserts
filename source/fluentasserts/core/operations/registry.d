@@ -113,6 +113,9 @@ class Registry {
 
   ///
   OperationPair[] bindingsForName(string name) {
+    if (name !in pairs) {
+      return [];
+    }
     return pairs[name];
   }
 

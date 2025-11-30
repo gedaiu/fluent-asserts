@@ -2,9 +2,27 @@ module fluentasserts.core.expect;
 
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluator;
 import fluentasserts.core.results;
 
 import fluentasserts.core.serializers;
+
+import fluentasserts.core.operations.equal : equalOp = equal;
+import fluentasserts.core.operations.arrayEqual : arrayEqualOp = arrayEqual;
+import fluentasserts.core.operations.contain : containOp = contain, arrayContainOp = arrayContain, arrayContainOnlyOp = arrayContainOnly;
+import fluentasserts.core.operations.startWith : startWithOp = startWith;
+import fluentasserts.core.operations.endWith : endWithOp = endWith;
+import fluentasserts.core.operations.beNull : beNullOp = beNull;
+import fluentasserts.core.operations.instanceOf : instanceOfOp = instanceOf;
+import fluentasserts.core.operations.greaterThan : greaterThanOp = greaterThan, greaterThanDurationOp = greaterThanDuration, greaterThanSysTimeOp = greaterThanSysTime;
+import fluentasserts.core.operations.greaterOrEqualTo : greaterOrEqualToOp = greaterOrEqualTo, greaterOrEqualToDurationOp = greaterOrEqualToDuration, greaterOrEqualToSysTimeOp = greaterOrEqualToSysTime;
+import fluentasserts.core.operations.lessThan : lessThanOp = lessThan, lessThanDurationOp = lessThanDuration, lessThanSysTimeOp = lessThanSysTime;
+import fluentasserts.core.operations.lessOrEqualTo : lessOrEqualToOp = lessOrEqualTo;
+import fluentasserts.core.operations.between : betweenOp = between, betweenDurationOp = betweenDuration, betweenSysTimeOp = betweenSysTime;
+import fluentasserts.core.operations.approximately : approximatelyOp = approximately, approximatelyListOp = approximatelyList;
+import fluentasserts.core.operations.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage;
+
+import std.datetime : Duration, SysTime;
 
 import std.traits;
 import std.string;
@@ -15,39 +33,44 @@ import std.conv;
 @safe struct Expect {
 
   private {
-    Evaluation evaluation;
+    Evaluation _evaluation;
     int refCount;
   }
 
-  this(ValueEvaluation value) @trusted {
-    this.evaluation = new Evaluation();
+  /// Getter for evaluation - allows external extensions via UFCS
+  Evaluation evaluation() {
+    return _evaluation;
+  }
 
-    evaluation.id = Lifecycle.instance.beginEvaluation(value);
-    evaluation.currentValue = value;
-    evaluation.message = new MessageResult();
-    evaluation.source = new SourceResult(value.fileName, value.line);
+  this(ValueEvaluation value) @trusted {
+    this._evaluation = new Evaluation();
+
+    _evaluation.id = Lifecycle.instance.beginEvaluation(value);
+    _evaluation.currentValue = value;
+    _evaluation.message = new MessageResult();
+    _evaluation.source = new SourceResult(value.fileName, value.line);
 
     try {
-      auto sourceValue = evaluation.source.getValue;
+      auto sourceValue = _evaluation.source.getValue;
 
       if(sourceValue == "") {
-        evaluation.message.startWith(evaluation.currentValue.niceValue);
+        _evaluation.message.startWith(_evaluation.currentValue.niceValue);
       } else {
-        evaluation.message.startWith(sourceValue);
+        _evaluation.message.startWith(sourceValue);
       }
     } catch(Exception) {
-      evaluation.message.startWith(evaluation.currentValue.strValue);
+      _evaluation.message.startWith(_evaluation.currentValue.strValue);
     }
 
-    evaluation.message.addText(" should");
+    _evaluation.message.addText(" should");
 
     if(value.prependText) {
-      evaluation.message.addText(value.prependText);
+      _evaluation.message.addText(value.prependText);
     }
   }
 
   this(ref return scope Expect another) {
-    this.evaluation = another.evaluation;
+    this._evaluation = another._evaluation;
     this.refCount = another.refCount + 1;
   }
 
@@ -55,18 +78,32 @@ import std.conv;
     refCount--;
 
     if(refCount < 0) {
-      evaluation.message.addText(" ");
-      evaluation.message.addText(evaluation.operationName.toNiceOperation);
+      _evaluation.message.addText(" ");
+      _evaluation.message.addText(_evaluation.operationName.toNiceOperation);
 
-      if(evaluation.expectedValue.niceValue) {
-        evaluation.message.addText(" ");
-        evaluation.message.addValue(evaluation.expectedValue.niceValue);
-      } else if(evaluation.expectedValue.strValue) {
-        evaluation.message.addText(" ");
-        evaluation.message.addValue(evaluation.expectedValue.strValue);
+      if(_evaluation.expectedValue.niceValue) {
+        _evaluation.message.addText(" ");
+        _evaluation.message.addValue(_evaluation.expectedValue.niceValue);
+      } else if(_evaluation.expectedValue.strValue) {
+        _evaluation.message.addText(" ");
+        _evaluation.message.addValue(_evaluation.expectedValue.strValue);
       }
 
-      Lifecycle.instance.endEvaluation(evaluation);
+      Lifecycle.instance.endEvaluation(_evaluation);
+    }
+  }
+
+  /// Finalize the message before creating an Evaluator - for external extensions
+  void finalizeMessage() {
+    _evaluation.message.addText(" ");
+    _evaluation.message.addText(_evaluation.operationName.toNiceOperation);
+
+    if(_evaluation.expectedValue.niceValue) {
+      _evaluation.message.addText(" ");
+      _evaluation.message.addValue(_evaluation.expectedValue.niceValue);
+    } else if(_evaluation.expectedValue.strValue) {
+      _evaluation.message.addText(" ");
+      _evaluation.message.addValue(_evaluation.expectedValue.strValue);
     }
   }
 
@@ -84,13 +121,12 @@ import std.conv;
   }
 
   Expect withMessage(string message, const size_t line = __LINE__, const string file = __FILE__) {
-    addOperationName("withMessage");
-    return this.equal(message);
+    return opDispatch!"withMessage"(message);
   }
 
   Throwable thrown() {
-    Lifecycle.instance.endEvaluation(evaluation);
-    return evaluation.throwable;
+    Lifecycle.instance.endEvaluation(_evaluation);
+    return _evaluation.throwable;
   }
 
   ///
@@ -100,14 +136,14 @@ import std.conv;
 
   ///
   Expect be () {
-    evaluation.message.addText(" be");
+    _evaluation.message.addText(" be");
     return this;
   }
 
   ///
   Expect not() {
-    evaluation.isNegated = !evaluation.isNegated;
-    evaluation.message.addText(" not");
+    _evaluation.isNegated = !_evaluation.isNegated;
+    _evaluation.message.addText(" not");
 
     return this;
   }
@@ -119,88 +155,203 @@ import std.conv;
 
   ///
   Expect throwException(Type)() {
-    this.evaluation.expectedValue.meta["exceptionType"] = fullyQualifiedName!Type;
-    this.evaluation.expectedValue.meta["throwableType"] = fullyQualifiedName!Type;
+    this._evaluation.expectedValue.meta["exceptionType"] = fullyQualifiedName!Type;
+    this._evaluation.expectedValue.meta["throwableType"] = fullyQualifiedName!Type;
 
     return opDispatch!"throwException"(fullyQualifiedName!Type);
   }
 
   auto because(string reason) {
-    evaluation.message.prependText("Because " ~ reason ~ ", ");
+    _evaluation.message.prependText("Because " ~ reason ~ ", ");
     return this;
   }
 
   ///
-  auto equal(T)(T value) {
+  Expect equal(T)(T value) {
     return opDispatch!"equal"(value);
   }
 
   ///
-  auto contain(T)(T value) {
+  Expect contain(T)(T value) {
     return opDispatch!"contain"(value);
   }
 
   ///
-  auto greaterThan(T)(T value) {
-    return opDispatch!"greaterThan"(value);
+  Evaluator greaterThan(T)(T value) {
+    addOperationName("greaterThan");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+
+    static if (is(T == Duration)) {
+      return Evaluator(_evaluation, &greaterThanDurationOp);
+    } else static if (is(T == SysTime)) {
+      return Evaluator(_evaluation, &greaterThanSysTimeOp);
+    } else {
+      return Evaluator(_evaluation, &greaterThanOp!T);
+    }
   }
 
   ///
-  auto greaterOrEqualTo(T)(T value) {
-    return opDispatch!"greaterOrEqualTo"(value);
+  Evaluator greaterOrEqualTo(T)(T value) {
+    addOperationName("greaterOrEqualTo");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+
+    static if (is(T == Duration)) {
+      return Evaluator(_evaluation, &greaterOrEqualToDurationOp);
+    } else static if (is(T == SysTime)) {
+      return Evaluator(_evaluation, &greaterOrEqualToSysTimeOp);
+    } else {
+      return Evaluator(_evaluation, &greaterOrEqualToOp!T);
+    }
   }
 
   ///
-  auto above(T)(T value) {
-    return opDispatch!"above"(value);
-  }
-  ///
-  auto lessThan(T)(T value) {
-    return opDispatch!"lessThan"(value);
+  Evaluator above(T)(T value) {
+    addOperationName("above");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+
+    static if (is(T == Duration)) {
+      return Evaluator(_evaluation, &greaterThanDurationOp);
+    } else static if (is(T == SysTime)) {
+      return Evaluator(_evaluation, &greaterThanSysTimeOp);
+    } else {
+      return Evaluator(_evaluation, &greaterThanOp!T);
+    }
   }
 
   ///
-  auto lessOrEqualTo(T)(T value) {
-    return opDispatch!"lessOrEqualTo"(value);
+  Evaluator lessThan(T)(T value) {
+    addOperationName("lessThan");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+
+    static if (is(T == Duration)) {
+      return Evaluator(_evaluation, &lessThanDurationOp);
+    } else static if (is(T == SysTime)) {
+      return Evaluator(_evaluation, &lessThanSysTimeOp);
+    } else {
+      return Evaluator(_evaluation, &lessThanOp!T);
+    }
   }
 
   ///
-  auto below(T)(T value) {
-    return opDispatch!"below"(value);
+  Evaluator lessOrEqualTo(T)(T value) {
+    addOperationName("lessOrEqualTo");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+    return Evaluator(_evaluation, &lessOrEqualToOp!T);
   }
 
   ///
-  auto startWith(T)(T value) {
-    return opDispatch!"startWith"(value);
+  Evaluator below(T)(T value) {
+    addOperationName("below");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+
+    static if (is(T == Duration)) {
+      return Evaluator(_evaluation, &lessThanDurationOp);
+    } else static if (is(T == SysTime)) {
+      return Evaluator(_evaluation, &lessThanSysTimeOp);
+    } else {
+      return Evaluator(_evaluation, &lessThanOp!T);
+    }
   }
 
   ///
-  auto endWith(T)(T value) {
-    return opDispatch!"endWith"(value);
+  Evaluator startWith(T)(T value) {
+    addOperationName("startWith");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+    return Evaluator(_evaluation, &startWithOp);
   }
 
-  auto containOnly(T)(T value) {
-    return opDispatch!"containOnly"(value);
+  ///
+  Evaluator endWith(T)(T value) {
+    addOperationName("endWith");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+    return Evaluator(_evaluation, &endWithOp);
   }
 
-  auto beNull() {
-    return opDispatch!"beNull";
+  Evaluator containOnly(T)(T value) {
+    addOperationName("containOnly");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+    return Evaluator(_evaluation, &arrayContainOnlyOp);
   }
 
-  auto instanceOf(Type)() {
-    return opDispatch!"instanceOf"(fullyQualifiedName!Type);
+  Evaluator beNull() {
+    addOperationName("beNull");
+    finalizeMessage();
+    inhibit();
+    return Evaluator(_evaluation, &beNullOp);
   }
 
-  auto approximately(T, U)(T value, U range) {
-    return opDispatch!"approximately"(value, range);
+  Evaluator instanceOf(Type)() {
+    addOperationName("instanceOf");
+    this._evaluation.expectedValue.strValue = "\"" ~ fullyQualifiedName!Type ~ "\"";
+    finalizeMessage();
+    inhibit();
+    return Evaluator(_evaluation, &instanceOfOp);
   }
 
-  auto between(T, U)(T value, U range) {
-    return opDispatch!"between"(value, range);
+  Evaluator approximately(T, U)(T value, U range) {
+    import std.traits : isArray;
+
+    addOperationName("approximately");
+    setExpectedValue(value);
+    () @trusted { _evaluation.expectedValue.meta["1"] = SerializerRegistry.instance.serialize(range); } ();
+    finalizeMessage();
+    inhibit();
+
+    static if (isArray!T) {
+      return Evaluator(_evaluation, &approximatelyListOp);
+    } else {
+      return Evaluator(_evaluation, &approximatelyOp);
+    }
   }
 
-  auto within(T, U)(T value, U range) {
-    return opDispatch!"within"(value, range);
+  Evaluator between(T, U)(T value, U range) {
+    addOperationName("between");
+    setExpectedValue(value);
+    () @trusted { _evaluation.expectedValue.meta["1"] = SerializerRegistry.instance.serialize(range); } ();
+    finalizeMessage();
+    inhibit();
+
+    static if (is(T == Duration)) {
+      return Evaluator(_evaluation, &betweenDurationOp);
+    } else static if (is(T == SysTime)) {
+      return Evaluator(_evaluation, &betweenSysTimeOp);
+    } else {
+      return Evaluator(_evaluation, &betweenOp!T);
+    }
+  }
+
+  Evaluator within(T, U)(T value, U range) {
+    addOperationName("within");
+    setExpectedValue(value);
+    () @trusted { _evaluation.expectedValue.meta["1"] = SerializerRegistry.instance.serialize(range); } ();
+    finalizeMessage();
+    inhibit();
+
+    static if (is(T == Duration)) {
+      return Evaluator(_evaluation, &betweenDurationOp);
+    } else static if (is(T == SysTime)) {
+      return Evaluator(_evaluation, &betweenSysTimeOp);
+    } else {
+      return Evaluator(_evaluation, &betweenOp!T);
+    }
   }
 
   void inhibit() {
@@ -210,18 +361,18 @@ import std.conv;
   auto haveExecutionTime() {
     this.inhibit;
 
-    auto result = expect(evaluation.currentValue.duration, evaluation.source.file, evaluation.source.line, " have execution time");
+    auto result = expect(_evaluation.currentValue.duration, _evaluation.source.file, _evaluation.source.line, " have execution time");
 
     return result;
   }
 
   void addOperationName(string value) {
 
-    if(this.evaluation.operationName) {
-      this.evaluation.operationName ~= ".";
+    if(this._evaluation.operationName) {
+      this._evaluation.operationName ~= ".";
     }
 
-    this.evaluation.operationName ~= value;
+    this._evaluation.operationName ~= value;
   }
 
   ///
@@ -238,20 +389,32 @@ import std.conv;
     static if(Params.length > 0) {
       auto expectedValue = params[0].evaluate.evaluation;
 
-      foreach(key, value; evaluation.expectedValue.meta) {
+      foreach(key, value; _evaluation.expectedValue.meta) {
         expectedValue.meta[key] = value;
       }
 
-      evaluation.expectedValue = expectedValue;
+      _evaluation.expectedValue = expectedValue;
     }
 
     static if(Params.length >= 1) {
       static foreach (i, Param; Params) {
-        () @trusted { evaluation.expectedValue.meta[i.to!string] = SerializerRegistry.instance.serialize(params[i]); } ();
+        () @trusted { _evaluation.expectedValue.meta[i.to!string] = SerializerRegistry.instance.serialize(params[i]); } ();
       }
     }
 
     return this;
+  }
+
+  /// Set expected value - helper for terminal operations
+  void setExpectedValue(T)(T value) @trusted {
+    auto expectedValue = value.evaluate.evaluation;
+
+    foreach(key, v; _evaluation.expectedValue.meta) {
+      expectedValue.meta[key] = v;
+    }
+
+    _evaluation.expectedValue = expectedValue;
+    _evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(value);
   }
 }
 
