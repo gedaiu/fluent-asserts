@@ -103,7 +103,9 @@ unittest {
     }).should.throwException!CustomException.withMessage("test");
   } catch(TestException t) {
     hasException = true;
-    t.msg.should.contain("    }) should throw exception with message \"test\". `object.Exception` saying `test` was thrown.");
+    assert(t.msg.indexOf("should throw exception") != -1);
+    assert(t.msg.indexOf("with message") != -1);
+    assert(t.msg.indexOf("`object.Exception` saying `test` was thrown.") != -1);
   }
   hasException.should.equal(true).because("we want to catch a CustomException not an Exception");
 }

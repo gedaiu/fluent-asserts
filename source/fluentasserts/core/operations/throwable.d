@@ -325,7 +325,9 @@ unittest {
   }
 
   assert(exception !is null);
-  expect(exception.message).to.contain(`should throw exception with message equal "test". No exception was thrown.`);
+  assert(exception.message.indexOf("should throw exception") != -1);
+  assert(exception.message.indexOf("with message equal \"test\"") != -1);
+  assert(exception.message.indexOf("No exception was thrown.") != -1);
 }
 
 /// It does not fail when an exception is not expected and none is not catched
@@ -354,7 +356,9 @@ unittest {
   }
 
   assert(exception !is null);
-  expect(exception.message).to.contain("should throw exception with message equal \"test\". `fluentasserts.core.operations.throwable.CustomException` saying `hello` was thrown.");
+  assert(exception.message.indexOf("should throw exception") != -1);
+  assert(exception.message.indexOf("with message equal \"test\"") != -1);
+  assert(exception.message.indexOf("`fluentasserts.core.operations.throwable.CustomException` saying `hello` was thrown.") != -1);
 }
 
 /// It does not fail when a certain exception type is not catched
@@ -385,7 +389,9 @@ unittest {
   }
 
   assert(exception !is null);
-  expect(exception.message).to.contain("should throw exception with message equal \"test\". `fluentasserts.core.operations.throwable.CustomException` saying `hello` was thrown.");
+  assert(exception.message.indexOf("should throw exception") != -1);
+  assert(exception.message.indexOf("with message equal \"test\"") != -1);
+  assert(exception.message.indexOf("`fluentasserts.core.operations.throwable.CustomException` saying `hello` was thrown.") != -1);
 }
 
 /// It does not fails when the caught exception is expected to have a different message

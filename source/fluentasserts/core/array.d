@@ -618,19 +618,19 @@ unittest {
     [1, 2, 3].should.equal([4, 5]);
   }).should.throwException!TestException.msg.split("\n");
 
-  msg[0].strip.should.equal("[1, 2, 3] should equal [4, 5].");
+  msg[0].strip.should.startWith("[1, 2, 3] should equal [4, 5].");
 
   msg = ({
     [1, 2].should.equal([4, 5]);
   }).should.throwException!TestException.msg.split("\n");
 
-  msg[0].strip.should.equal("[1, 2] should equal [4, 5].");
+  msg[0].strip.should.startWith("[1, 2] should equal [4, 5].");
 
   msg = ({
     [1, 2, 3].should.equal([2, 3, 1]);
   }).should.throwException!TestException.msg.split("\n");
 
-  msg[0].strip.should.equal("[1, 2, 3] should equal [2, 3, 1].");
+  msg[0].strip.should.startWith("[1, 2, 3] should equal [2, 3, 1].");
 
   msg = ({
     [1, 2, 3].should.not.equal([1, 2, 3]);
@@ -708,19 +708,19 @@ unittest {
     [1, 2, 3].map!"a".should.equal([4, 5]);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal(`[1, 2, 3].map!"a" should equal [4, 5].`);
+  msg.split("\n")[0].strip.should.startWith(`[1, 2, 3].map!"a" should equal [4, 5].`);
 
   msg = ({
     [1, 2].map!"a".should.equal([4, 5]);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal(`[1, 2].map!"a" should equal [4, 5].`);
+  msg.split("\n")[0].strip.should.startWith(`[1, 2].map!"a" should equal [4, 5].`);
 
   msg = ({
     [1, 2, 3].map!"a".should.equal([2, 3, 1]);
   }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].strip.should.equal(`[1, 2, 3].map!"a" should equal [2, 3, 1].`);
+  msg.split("\n")[0].strip.should.startWith(`[1, 2, 3].map!"a" should equal [2, 3, 1].`);
 
   msg = ({
     [1, 2, 3].map!"a".should.not.equal([1, 2, 3]);

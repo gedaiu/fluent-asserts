@@ -149,16 +149,32 @@ import std.conv;
   }
 
   ///
-  auto throwAnyException() {
-    return opDispatch!"throwAnyException";
+  ThrowableEvaluator throwAnyException() {
+    addOperationName("throwAnyException");
+    finalizeMessage();
+    inhibit();
+    return ThrowableEvaluator(_evaluation, &throwAnyExceptionOp, &throwAnyExceptionWithMessageOp);
   }
 
   ///
-  Expect throwException(Type)() {
+  ThrowableEvaluator throwSomething() {
+    addOperationName("throwSomething");
+    finalizeMessage();
+    inhibit();
+    return ThrowableEvaluator(_evaluation, &throwAnyExceptionOp, &throwAnyExceptionWithMessageOp);
+  }
+
+  ///
+  ThrowableEvaluator throwException(Type)() {
     this._evaluation.expectedValue.meta["exceptionType"] = fullyQualifiedName!Type;
     this._evaluation.expectedValue.meta["throwableType"] = fullyQualifiedName!Type;
+    this._evaluation.expectedValue.strValue = "\"" ~ fullyQualifiedName!Type ~ "\"";
 
-    return opDispatch!"throwException"(fullyQualifiedName!Type);
+    addOperationName("throwException");
+    _evaluation.message.addText(" throw exception ");
+    _evaluation.message.addValue(_evaluation.expectedValue.strValue);
+    inhibit();
+    return ThrowableEvaluator(_evaluation, &throwExceptionOp, &throwExceptionWithMessageOp);
   }
 
   auto because(string reason) {
@@ -167,13 +183,35 @@ import std.conv;
   }
 
   ///
-  Expect equal(T)(T value) {
-    return opDispatch!"equal"(value);
+  Evaluator equal(T)(T value) {
+    import std.algorithm : endsWith;
+
+    addOperationName("equal");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+
+    if (_evaluation.currentValue.typeName.endsWith("[]") || _evaluation.currentValue.typeName.endsWith("]")) {
+      return Evaluator(_evaluation, &arrayEqualOp);
+    } else {
+      return Evaluator(_evaluation, &equalOp);
+    }
   }
 
   ///
-  Expect contain(T)(T value) {
-    return opDispatch!"contain"(value);
+  TrustedEvaluator contain(T)(T value) {
+    import std.algorithm : endsWith;
+
+    addOperationName("contain");
+    setExpectedValue(value);
+    finalizeMessage();
+    inhibit();
+
+    if (_evaluation.currentValue.typeName.endsWith("[]")) {
+      return TrustedEvaluator(_evaluation, &arrayContainOp);
+    } else {
+      return TrustedEvaluator(_evaluation, &containOp);
+    }
   }
 
   ///
