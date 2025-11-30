@@ -13,13 +13,13 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 
 @safe struct Evaluator {
     private {
-        Evaluation evaluation;
+        Evaluation* evaluation;
         IResult[] delegate(ref Evaluation) @safe nothrow operation;
         int refCount;
     }
 
-    this(Evaluation eval, OperationFunc op) @trusted {
-        this.evaluation = eval;
+    this(ref Evaluation eval, OperationFunc op) @trusted {
+        this.evaluation = &eval;
         this.operation = op.toDelegate;
         this.refCount = 0;
     }
@@ -32,7 +32,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 
     ~this() @trusted {
         refCount--;
-        if (refCount < 0) {
+        if (refCount < 0 && evaluation !is null) {
             executeOperation();
         }
     }
@@ -65,7 +65,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         }
         evaluation.isEvaluated = true;
 
-        auto results = operation(evaluation);
+        auto results = operation(*evaluation);
 
         if (evaluation.currentValue.throwable !is null) {
             throw evaluation.currentValue.throwable;
@@ -81,33 +81,33 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 
         version (DisableSourceResult) {
         } else {
-            results ~= evaluation.source;
+            results ~= evaluation.getSourceResult();
         }
 
         if (evaluation.message !is null) {
             results = evaluation.message ~ results;
         }
 
-        throw new TestException(results, evaluation.source.file, evaluation.source.line);
+        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
     }
 }
 
 /// Evaluator for @trusted nothrow operations
 @safe struct TrustedEvaluator {
     private {
-        Evaluation evaluation;
+        Evaluation* evaluation;
         IResult[] delegate(ref Evaluation) @trusted nothrow operation;
         int refCount;
     }
 
-    this(Evaluation eval, OperationFuncTrusted op) @trusted {
-        this.evaluation = eval;
+    this(ref Evaluation eval, OperationFuncTrusted op) @trusted {
+        this.evaluation = &eval;
         this.operation = op.toDelegate;
         this.refCount = 0;
     }
 
-    this(Evaluation eval, OperationFunc op) @trusted {
-        this.evaluation = eval;
+    this(ref Evaluation eval, OperationFunc op) @trusted {
+        this.evaluation = &eval;
         this.operation = cast(IResult[] delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
         this.refCount = 0;
     }
@@ -120,7 +120,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 
     ~this() @trusted {
         refCount--;
-        if (refCount < 0) {
+        if (refCount < 0 && evaluation !is null) {
             executeOperation();
         }
     }
@@ -140,7 +140,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         }
         evaluation.isEvaluated = true;
 
-        auto results = operation(evaluation);
+        auto results = operation(*evaluation);
 
         if (evaluation.currentValue.throwable !is null) {
             throw evaluation.currentValue.throwable;
@@ -156,29 +156,29 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 
         version (DisableSourceResult) {
         } else {
-            results ~= evaluation.source;
+            results ~= evaluation.getSourceResult();
         }
 
         if (evaluation.message !is null) {
             results = evaluation.message ~ results;
         }
 
-        throw new TestException(results, evaluation.source.file, evaluation.source.line);
+        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
     }
 }
 
 /// Evaluator for throwable operations that can chain with withMessage
 @safe struct ThrowableEvaluator {
     private {
-        Evaluation evaluation;
+        Evaluation* evaluation;
         IResult[] delegate(ref Evaluation) @trusted nothrow standaloneOp;
         IResult[] delegate(ref Evaluation) @trusted nothrow withMessageOp;
         int refCount;
         bool chainedWithMessage;
     }
 
-    this(Evaluation eval, OperationFuncTrusted standalone, OperationFuncTrusted withMsg) @trusted {
-        this.evaluation = eval;
+    this(ref Evaluation eval, OperationFuncTrusted standalone, OperationFuncTrusted withMsg) @trusted {
+        this.evaluation = &eval;
         this.standaloneOp = standalone.toDelegate;
         this.withMessageOp = withMsg.toDelegate;
         this.refCount = 0;
@@ -195,7 +195,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 
     ~this() @trusted {
         refCount--;
-        if (refCount < 0 && !chainedWithMessage) {
+        if (refCount < 0 && !chainedWithMessage && evaluation !is null) {
             executeOperation(standaloneOp);
         }
     }
@@ -297,7 +297,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         }
         evaluation.isEvaluated = true;
 
-        auto results = op(evaluation);
+        auto results = op(*evaluation);
 
         if (evaluation.currentValue.throwable !is null) {
             throw evaluation.currentValue.throwable;
@@ -313,14 +313,14 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 
         version (DisableSourceResult) {
         } else {
-            results ~= evaluation.source;
+            results ~= evaluation.getSourceResult();
         }
 
         if (evaluation.message !is null) {
             results = evaluation.message ~ results;
         }
 
-        throw new TestException(results, evaluation.source.file, evaluation.source.line);
+        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
     }
 }
 

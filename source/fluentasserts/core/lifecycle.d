@@ -163,13 +163,13 @@ static this() {
     }
 
     version(DisableSourceResult) {} else {
-      results ~= evaluation.source;
+      results ~= evaluation.getSourceResult();
     }
 
     if(evaluation.message !is null) {
       results = evaluation.message ~ results;
     }
 
-    throw new TestException(results, evaluation.source.file, evaluation.source.line);
+    throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
   }
 }

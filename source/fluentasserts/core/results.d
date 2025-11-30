@@ -1100,31 +1100,23 @@ unittest {
   str(token.type).text.should.equal(`identifier`);
 }
 
-/// An alternative to SourceResult that uses
-// DParse to get the source code
-class SourceResult : IResult
-{
+/// Source result data stored as a struct for efficiency
+struct SourceResultData {
   static private {
     const(Token)[][string] fileTokens;
   }
 
-  immutable {
-    string file;
-    size_t line;
-  }
+  string file;
+  size_t line;
+  const(Token)[] tokens;
 
-  private const
-  {
-    Token[] tokens;
-  }
+  static SourceResultData create(string fileName, size_t line) nothrow @trusted {
+    SourceResultData data;
+    data.file = fileName;
+    data.line = line;
 
-  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) nothrow @trusted {
-    this.file = fileName;
-    this.line = line;
-
-    if (!fileName.exists)
-    {
-      return;
+    if (!fileName.exists) {
+      return data;
     }
 
     try {
@@ -1134,9 +1126,11 @@ class SourceResult : IResult
       auto begin = getPreviousIdentifier(fileTokens[fileName], result.begin);
       auto end = getFunctionEnd(fileTokens[fileName], begin) + 1;
 
-      this.tokens = fileTokens[fileName][begin .. end];
+      data.tokens = fileTokens[fileName][begin .. end];
     } catch (Throwable t) {
     }
+
+    return data;
   }
 
   static void updateFileTokens(string fileName) {
@@ -1147,20 +1141,11 @@ class SourceResult : IResult
   }
 
   string getValue() {
-    size_t startIndex = 0;
-    size_t possibleStartIndex = 0;
-    size_t endIndex = 0;
-
-    size_t lastStartIndex = 0;
-    size_t lastEndIndex = 0;
-
-    int paranthesisCount = 0;
     size_t begin;
     size_t end = getShouldIndex(tokens, line);
 
     if(end != 0) {
       begin = tokens.getPreviousIdentifier(end - 1);
-
       return tokens[begin .. end - 1].toString.strip;
     }
 
@@ -1169,15 +1154,13 @@ class SourceResult : IResult
     if(beginAssert > 0) {
       begin = beginAssert + 4;
       end = getParameter(tokens, begin);
-
       return tokens[begin .. end].toString.strip;
     }
 
     return "";
   }
 
-  override string toString() nothrow
-  {
+  string toString() nothrow {
     auto separator = leftJustify("", 20, '-');
     string result = "\n" ~ separator ~ "\n" ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator;
 
@@ -1185,22 +1168,22 @@ class SourceResult : IResult
       return result ~ "\n";
     }
 
-    size_t line = tokens[0].line - 1;
+    size_t currentLine = tokens[0].line - 1;
     size_t column = 1;
     bool afterErrorLine = false;
 
-    foreach(token; this.tokens.filter!(token => token != tok!"whitespace")) {
+    foreach(token; tokens.filter!(token => token != tok!"whitespace")) {
       string prefix = "";
 
-      foreach(lineNumber; line..token.line) {
-        if(lineNumber < this.line -1 || afterErrorLine) {
+      foreach(lineNumber; currentLine..token.line) {
+        if(lineNumber < line - 1 || afterErrorLine) {
           prefix ~= "\n" ~ rightJustify((lineNumber+1).to!string, 6, ' ') ~ ": ";
         } else {
           prefix ~= "\n>" ~ rightJustify((lineNumber+1).to!string, 5, ' ') ~ ": ";
         }
       }
 
-      if(token.line != line) {
+      if(token.line != currentLine) {
         column = 1;
       }
 
@@ -1209,14 +1192,13 @@ class SourceResult : IResult
       }
 
       auto stringRepresentation = token.text == "" ? str(token.type) : token.text;
-
       auto lines = stringRepresentation.split("\n");
 
       result ~= prefix ~ lines[0];
-      line = token.line;
+      currentLine = token.line;
       column = token.column + stringRepresentation.length;
 
-      if(token.line >= this.line && str(token.type) == ";") {
+      if(token.line >= line && str(token.type) == ";") {
         afterErrorLine = true;
       }
     }
@@ -1224,8 +1206,7 @@ class SourceResult : IResult
     return result;
   }
 
-  void print(ResultPrinter printer)
-  {
+  void print(ResultPrinter printer) {
     if(tokens.length == 0) {
       return;
     }
@@ -1233,22 +1214,22 @@ class SourceResult : IResult
     printer.primary("\n");
     printer.info(file ~ ":" ~ line.to!string);
 
-    size_t line = tokens[0].line - 1;
+    size_t currentLine = tokens[0].line - 1;
     size_t column = 1;
     bool afterErrorLine = false;
 
-    foreach(token; this.tokens.filter!(token => token != tok!"whitespace")) {
-      foreach(lineNumber; line..token.line) {
+    foreach(token; tokens.filter!(token => token != tok!"whitespace")) {
+      foreach(lineNumber; currentLine..token.line) {
         printer.primary("\n");
 
-        if(lineNumber < this.line -1 || afterErrorLine) {
+        if(lineNumber < line - 1 || afterErrorLine) {
           printer.primary(rightJustify((lineNumber+1).to!string, 6, ' ') ~ ":");
         } else {
           printer.dangerReverse(">" ~ rightJustify((lineNumber+1).to!string, 5, ' ') ~ ":");
         }
       }
 
-      if(token.line != line) {
+      if(token.line != currentLine) {
         column = 1;
       }
 
@@ -1266,15 +1247,47 @@ class SourceResult : IResult
         printer.primary(token.text);
       }
 
-      line = token.line;
+      currentLine = token.line;
       column = token.column + stringRepresentation.length;
 
-      if(token.line >= this.line && str(token.type) == ";") {
+      if(token.line >= line && str(token.type) == ";") {
         afterErrorLine = true;
       }
     }
 
     printer.primary("\n");
+  }
+}
+
+/// Wrapper class for SourceResultData to implement IResult interface
+class SourceResult : IResult {
+  private SourceResultData data;
+
+  this(string fileName = __FILE__, size_t line = __LINE__, size_t range = 6) nothrow @trusted {
+    data = SourceResultData.create(fileName, line);
+  }
+
+  this(SourceResultData sourceData) nothrow @trusted {
+    data = sourceData;
+  }
+
+  @property string file() { return data.file; }
+  @property size_t line() { return data.line; }
+
+  static void updateFileTokens(string fileName) {
+    SourceResultData.updateFileTokens(fileName);
+  }
+
+  string getValue() {
+    return data.getValue();
+  }
+
+  override string toString() nothrow {
+    return data.toString();
+  }
+
+  void print(ResultPrinter printer) {
+    data.print(printer);
   }
 }
 

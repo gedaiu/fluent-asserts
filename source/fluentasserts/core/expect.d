@@ -33,13 +33,13 @@ import std.conv;
 @safe struct Expect {
 
   private {
-    Evaluation _evaluation;
+    Evaluation* _evaluation;
     int refCount;
   }
 
   /// Getter for evaluation - allows external extensions via UFCS
-  Evaluation evaluation() {
-    return _evaluation;
+  ref Evaluation evaluation() {
+    return *_evaluation;
   }
 
   this(ValueEvaluation value) @trusted {
@@ -48,7 +48,7 @@ import std.conv;
     _evaluation.id = Lifecycle.instance.beginEvaluation(value);
     _evaluation.currentValue = value;
     _evaluation.message = new MessageResult();
-    _evaluation.source = new SourceResult(value.fileName, value.line);
+    _evaluation.source = SourceResultData.create(value.fileName, value.line);
 
     try {
       auto sourceValue = _evaluation.source.getValue;
@@ -77,7 +77,7 @@ import std.conv;
   ~this() {
     refCount--;
 
-    if(refCount < 0) {
+    if(refCount < 0 && _evaluation !is null) {
       _evaluation.message.addText(" ");
       _evaluation.message.addText(_evaluation.operationName.toNiceOperation);
 
@@ -89,7 +89,7 @@ import std.conv;
         _evaluation.message.addValue(_evaluation.expectedValue.strValue);
       }
 
-      Lifecycle.instance.endEvaluation(_evaluation);
+      Lifecycle.instance.endEvaluation(*_evaluation);
     }
   }
 
@@ -125,7 +125,7 @@ import std.conv;
   }
 
   Throwable thrown() {
-    Lifecycle.instance.endEvaluation(_evaluation);
+    Lifecycle.instance.endEvaluation(*_evaluation);
     return _evaluation.throwable;
   }
 
@@ -149,23 +149,23 @@ import std.conv;
   }
 
   ///
-  ThrowableEvaluator throwAnyException() {
+  ThrowableEvaluator throwAnyException() @trusted {
     addOperationName("throwAnyException");
     finalizeMessage();
     inhibit();
-    return ThrowableEvaluator(_evaluation, &throwAnyExceptionOp, &throwAnyExceptionWithMessageOp);
+    return ThrowableEvaluator(*_evaluation, &throwAnyExceptionOp, &throwAnyExceptionWithMessageOp);
   }
 
   ///
-  ThrowableEvaluator throwSomething() {
+  ThrowableEvaluator throwSomething() @trusted {
     addOperationName("throwSomething");
     finalizeMessage();
     inhibit();
-    return ThrowableEvaluator(_evaluation, &throwSomethingOp, &throwSomethingWithMessageOp);
+    return ThrowableEvaluator(*_evaluation, &throwSomethingOp, &throwSomethingWithMessageOp);
   }
 
   ///
-  ThrowableEvaluator throwException(Type)() {
+  ThrowableEvaluator throwException(Type)() @trusted {
     this._evaluation.expectedValue.meta["exceptionType"] = fullyQualifiedName!Type;
     this._evaluation.expectedValue.meta["throwableType"] = fullyQualifiedName!Type;
     this._evaluation.expectedValue.strValue = "\"" ~ fullyQualifiedName!Type ~ "\"";
@@ -174,7 +174,7 @@ import std.conv;
     _evaluation.message.addText(" throw exception ");
     _evaluation.message.addValue(_evaluation.expectedValue.strValue);
     inhibit();
-    return ThrowableEvaluator(_evaluation, &throwExceptionOp, &throwExceptionWithMessageOp);
+    return ThrowableEvaluator(*_evaluation, &throwExceptionOp, &throwExceptionWithMessageOp);
   }
 
   auto because(string reason) {
@@ -192,9 +192,9 @@ import std.conv;
     inhibit();
 
     if (_evaluation.currentValue.typeName.endsWith("[]") || _evaluation.currentValue.typeName.endsWith("]")) {
-      return Evaluator(_evaluation, &arrayEqualOp);
+      return Evaluator(*_evaluation, &arrayEqualOp);
     } else {
-      return Evaluator(_evaluation, &equalOp);
+      return Evaluator(*_evaluation, &equalOp);
     }
   }
 
@@ -208,9 +208,9 @@ import std.conv;
     inhibit();
 
     if (_evaluation.currentValue.typeName.endsWith("[]")) {
-      return TrustedEvaluator(_evaluation, &arrayContainOp);
+      return TrustedEvaluator(*_evaluation, &arrayContainOp);
     } else {
-      return TrustedEvaluator(_evaluation, &containOp);
+      return TrustedEvaluator(*_evaluation, &containOp);
     }
   }
 
@@ -222,11 +222,11 @@ import std.conv;
     inhibit();
 
     static if (is(T == Duration)) {
-      return Evaluator(_evaluation, &greaterThanDurationOp);
+      return Evaluator(*_evaluation, &greaterThanDurationOp);
     } else static if (is(T == SysTime)) {
-      return Evaluator(_evaluation, &greaterThanSysTimeOp);
+      return Evaluator(*_evaluation, &greaterThanSysTimeOp);
     } else {
-      return Evaluator(_evaluation, &greaterThanOp!T);
+      return Evaluator(*_evaluation, &greaterThanOp!T);
     }
   }
 
@@ -238,11 +238,11 @@ import std.conv;
     inhibit();
 
     static if (is(T == Duration)) {
-      return Evaluator(_evaluation, &greaterOrEqualToDurationOp);
+      return Evaluator(*_evaluation, &greaterOrEqualToDurationOp);
     } else static if (is(T == SysTime)) {
-      return Evaluator(_evaluation, &greaterOrEqualToSysTimeOp);
+      return Evaluator(*_evaluation, &greaterOrEqualToSysTimeOp);
     } else {
-      return Evaluator(_evaluation, &greaterOrEqualToOp!T);
+      return Evaluator(*_evaluation, &greaterOrEqualToOp!T);
     }
   }
 
@@ -254,11 +254,11 @@ import std.conv;
     inhibit();
 
     static if (is(T == Duration)) {
-      return Evaluator(_evaluation, &greaterThanDurationOp);
+      return Evaluator(*_evaluation, &greaterThanDurationOp);
     } else static if (is(T == SysTime)) {
-      return Evaluator(_evaluation, &greaterThanSysTimeOp);
+      return Evaluator(*_evaluation, &greaterThanSysTimeOp);
     } else {
-      return Evaluator(_evaluation, &greaterThanOp!T);
+      return Evaluator(*_evaluation, &greaterThanOp!T);
     }
   }
 
@@ -270,13 +270,13 @@ import std.conv;
     inhibit();
 
     static if (is(T == Duration)) {
-      return Evaluator(_evaluation, &lessThanDurationOp);
+      return Evaluator(*_evaluation, &lessThanDurationOp);
     } else static if (is(T == SysTime)) {
-      return Evaluator(_evaluation, &lessThanSysTimeOp);
+      return Evaluator(*_evaluation, &lessThanSysTimeOp);
     } else static if (isNumeric!T) {
-      return Evaluator(_evaluation, &lessThanOp!T);
+      return Evaluator(*_evaluation, &lessThanOp!T);
     } else {
-      return Evaluator(_evaluation, &lessThanGenericOp);
+      return Evaluator(*_evaluation, &lessThanGenericOp);
     }
   }
 
@@ -286,7 +286,7 @@ import std.conv;
     setExpectedValue(value);
     finalizeMessage();
     inhibit();
-    return Evaluator(_evaluation, &lessOrEqualToOp!T);
+    return Evaluator(*_evaluation, &lessOrEqualToOp!T);
   }
 
   ///
@@ -297,13 +297,13 @@ import std.conv;
     inhibit();
 
     static if (is(T == Duration)) {
-      return Evaluator(_evaluation, &lessThanDurationOp);
+      return Evaluator(*_evaluation, &lessThanDurationOp);
     } else static if (is(T == SysTime)) {
-      return Evaluator(_evaluation, &lessThanSysTimeOp);
+      return Evaluator(*_evaluation, &lessThanSysTimeOp);
     } else static if (isNumeric!T) {
-      return Evaluator(_evaluation, &lessThanOp!T);
+      return Evaluator(*_evaluation, &lessThanOp!T);
     } else {
-      return Evaluator(_evaluation, &lessThanGenericOp);
+      return Evaluator(*_evaluation, &lessThanGenericOp);
     }
   }
 
@@ -313,7 +313,7 @@ import std.conv;
     setExpectedValue(value);
     finalizeMessage();
     inhibit();
-    return Evaluator(_evaluation, &startWithOp);
+    return Evaluator(*_evaluation, &startWithOp);
   }
 
   ///
@@ -322,7 +322,7 @@ import std.conv;
     setExpectedValue(value);
     finalizeMessage();
     inhibit();
-    return Evaluator(_evaluation, &endWithOp);
+    return Evaluator(*_evaluation, &endWithOp);
   }
 
   Evaluator containOnly(T)(T value) {
@@ -330,14 +330,14 @@ import std.conv;
     setExpectedValue(value);
     finalizeMessage();
     inhibit();
-    return Evaluator(_evaluation, &arrayContainOnlyOp);
+    return Evaluator(*_evaluation, &arrayContainOnlyOp);
   }
 
   Evaluator beNull() {
     addOperationName("beNull");
     finalizeMessage();
     inhibit();
-    return Evaluator(_evaluation, &beNullOp);
+    return Evaluator(*_evaluation, &beNullOp);
   }
 
   Evaluator instanceOf(Type)() {
@@ -345,7 +345,7 @@ import std.conv;
     this._evaluation.expectedValue.strValue = "\"" ~ fullyQualifiedName!Type ~ "\"";
     finalizeMessage();
     inhibit();
-    return Evaluator(_evaluation, &instanceOfOp);
+    return Evaluator(*_evaluation, &instanceOfOp);
   }
 
   Evaluator approximately(T, U)(T value, U range) {
@@ -358,9 +358,9 @@ import std.conv;
     inhibit();
 
     static if (isArray!T) {
-      return Evaluator(_evaluation, &approximatelyListOp);
+      return Evaluator(*_evaluation, &approximatelyListOp);
     } else {
-      return Evaluator(_evaluation, &approximatelyOp);
+      return Evaluator(*_evaluation, &approximatelyOp);
     }
   }
 
@@ -372,11 +372,11 @@ import std.conv;
     inhibit();
 
     static if (is(T == Duration)) {
-      return Evaluator(_evaluation, &betweenDurationOp);
+      return Evaluator(*_evaluation, &betweenDurationOp);
     } else static if (is(T == SysTime)) {
-      return Evaluator(_evaluation, &betweenSysTimeOp);
+      return Evaluator(*_evaluation, &betweenSysTimeOp);
     } else {
-      return Evaluator(_evaluation, &betweenOp!T);
+      return Evaluator(*_evaluation, &betweenOp!T);
     }
   }
 
@@ -388,11 +388,11 @@ import std.conv;
     inhibit();
 
     static if (is(T == Duration)) {
-      return Evaluator(_evaluation, &betweenDurationOp);
+      return Evaluator(*_evaluation, &betweenDurationOp);
     } else static if (is(T == SysTime)) {
-      return Evaluator(_evaluation, &betweenSysTimeOp);
+      return Evaluator(*_evaluation, &betweenSysTimeOp);
     } else {
-      return Evaluator(_evaluation, &betweenOp!T);
+      return Evaluator(*_evaluation, &betweenOp!T);
     }
   }
 
@@ -403,7 +403,7 @@ import std.conv;
   auto haveExecutionTime() {
     this.inhibit;
 
-    auto result = expect(_evaluation.currentValue.duration, _evaluation.source.file, _evaluation.source.line, " have execution time");
+    auto result = expect(_evaluation.currentValue.duration, _evaluation.sourceFile, _evaluation.sourceLine, " have execution time");
 
     return result;
   }
