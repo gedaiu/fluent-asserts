@@ -5,8 +5,6 @@
 
 
 Works with:
-  - expect(`core.time.Duration`).[to].[be].below(`core.time.Duration`)
-  - expect(`std.datetime.systime.SysTime`).[to].[be].below(`std.datetime.systime.SysTime`)
   - expect(`*`).[to].[be].below(`*`)
   - expect(`byte`).[to].[be].below(`byte`)
   - expect(`ubyte`).[to].[be].below(`ubyte`)
@@ -19,3 +17,5 @@ Works with:
   - expect(`float`).[to].[be].below(`float`)
   - expect(`double`).[to].[be].below(`double`)
   - expect(`real`).[to].[be].below(`real`)
+  - expect(`core.time.Duration`).[to].[be].below(`core.time.Duration`)
+  - expect(`std.datetime.systime.SysTime`).[to].[be].below(`std.datetime.systime.SysTime`)
