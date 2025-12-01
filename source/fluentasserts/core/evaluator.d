@@ -2,6 +2,8 @@ module fluentasserts.core.evaluator;
 
 import fluentasserts.core.evaluation;
 import fluentasserts.core.results;
+import fluentasserts.core.message : Message;
+import fluentasserts.core.asserts : AssertResult;
 import fluentasserts.core.base : TestException;
 import fluentasserts.core.serializers;
 
@@ -11,22 +13,49 @@ import std.conv : to;
 alias OperationFunc = IResult[] function(ref Evaluation) @safe nothrow;
 alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow;
 
+alias MessageOperationFunc = immutable(Message)[] function(ref Evaluation) @safe nothrow;
+alias MessageOperationFuncTrusted = immutable(Message)[] function(ref Evaluation) @trusted nothrow;
+
+alias VoidOperationFunc = void function(ref Evaluation) @safe nothrow;
+alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
+
 @safe struct Evaluator {
     private {
         Evaluation* evaluation;
         IResult[] delegate(ref Evaluation) @safe nothrow operation;
+        immutable(Message)[] delegate(ref Evaluation) @safe nothrow messageOperation;
+        void delegate(ref Evaluation) @safe nothrow voidOperation;
+        int operationType; // 0 = IResult[], 1 = Message[], 2 = void
         int refCount;
     }
 
     this(ref Evaluation eval, OperationFunc op) @trusted {
         this.evaluation = &eval;
         this.operation = op.toDelegate;
+        this.operationType = 0;
+        this.refCount = 0;
+    }
+
+    this(ref Evaluation eval, MessageOperationFunc op) @trusted {
+        this.evaluation = &eval;
+        this.messageOperation = op.toDelegate;
+        this.operationType = 1;
+        this.refCount = 0;
+    }
+
+    this(ref Evaluation eval, VoidOperationFunc op) @trusted {
+        this.evaluation = &eval;
+        this.voidOperation = op.toDelegate;
+        this.operationType = 2;
         this.refCount = 0;
     }
 
     this(ref return scope Evaluator other) {
         this.evaluation = other.evaluation;
         this.operation = other.operation;
+        this.messageOperation = other.messageOperation;
+        this.voidOperation = other.voidOperation;
+        this.operationType = other.operationType;
         this.refCount = other.refCount + 1;
     }
 
@@ -38,7 +67,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     Evaluator because(string reason) {
-        evaluation.message.prependText("Because " ~ reason ~ ", ");
+        evaluation.result.prependText("Because " ~ reason ~ ", ");
         return this;
     }
 
@@ -65,8 +94,6 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         }
         evaluation.isEvaluated = true;
 
-        auto results = operation(*evaluation);
-
         if (evaluation.currentValue.throwable !is null) {
             throw evaluation.currentValue.throwable;
         }
@@ -75,20 +102,64 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
             throw evaluation.expectedValue.throwable;
         }
 
-        if (results.length == 0) {
-            return;
-        }
+        if (operationType == 2) {
+            // Void operation - uses evaluation.result for assertion data
+            voidOperation(*evaluation);
 
-        version (DisableSourceResult) {
+            if (!evaluation.hasResult()) {
+                return;
+            }
+
+            string errorMessage = evaluation.result.toString();
+
+            version (DisableSourceResult) {
+            } else {
+                errorMessage ~= evaluation.source.toString();
+            }
+
+            throw new TestException(errorMessage, evaluation.sourceFile, evaluation.sourceLine);
+        } else if (operationType == 1) {
+            // Message operation - returns messages
+            auto messages = messageOperation(*evaluation);
+            if (messages.length == 0) {
+                return;
+            }
+
+            version (DisableSourceResult) {
+            } else {
+                messages ~= evaluation.source.toMessages();
+            }
+
+            throw new TestException(messages, evaluation.sourceFile, evaluation.sourceLine);
         } else {
-            results ~= evaluation.getSourceResult();
-        }
+            // IResult operation - returns IResult[]
+            auto results = operation(*evaluation);
 
-        if (evaluation.message !is null) {
-            results = evaluation.message ~ results;
-        }
+            if (results.length == 0 && !evaluation.hasResult()) {
+                return;
+            }
 
-        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
+            IResult[] allResults;
+
+            if (evaluation.result.message.length > 0) {
+                auto chainMessage = new MessageResult();
+                chainMessage.data.messages = evaluation.result.message;
+                allResults ~= chainMessage;
+            }
+
+            allResults ~= results;
+
+            if (evaluation.hasResult()) {
+                allResults ~= new AssertResultInstance(evaluation.result);
+            }
+
+            version (DisableSourceResult) {
+            } else {
+                allResults ~= evaluation.getSourceResult();
+            }
+
+            throw new TestException(allResults, evaluation.sourceFile, evaluation.sourceLine);
+        }
     }
 }
 
@@ -126,7 +197,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     TrustedEvaluator because(string reason) {
-        evaluation.message.prependText("Because " ~ reason ~ ", ");
+        evaluation.result.prependText("Because " ~ reason ~ ", ");
         return this;
     }
 
@@ -150,20 +221,30 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
             throw evaluation.expectedValue.throwable;
         }
 
-        if (results.length == 0) {
+        if (results.length == 0 && !evaluation.hasResult()) {
             return;
+        }
+
+        IResult[] allResults;
+
+        if (evaluation.result.message.length > 0) {
+            auto chainMessage = new MessageResult();
+            chainMessage.data.messages = evaluation.result.message;
+            allResults ~= chainMessage;
+        }
+
+        allResults ~= results;
+
+        if (evaluation.hasResult()) {
+            allResults ~= new AssertResultInstance(evaluation.result);
         }
 
         version (DisableSourceResult) {
         } else {
-            results ~= evaluation.getSourceResult();
+            allResults ~= evaluation.getSourceResult();
         }
 
-        if (evaluation.message !is null) {
-            results = evaluation.message ~ results;
-        }
-
-        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
+        throw new TestException(allResults, evaluation.sourceFile, evaluation.sourceLine);
     }
 }
 
@@ -202,13 +283,13 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 
     ThrowableEvaluator withMessage() {
         evaluation.operationName ~= ".withMessage";
-        evaluation.message.addText(" with message");
+        evaluation.result.addText(" with message");
         return this;
     }
 
     ThrowableEvaluator withMessage(T)(T message) {
         evaluation.operationName ~= ".withMessage";
-        evaluation.message.addText(" with message");
+        evaluation.result.addText(" with message");
 
         auto expectedValue = message.evaluate.evaluation;
         foreach (key, value; evaluation.expectedValue.meta) {
@@ -218,11 +299,11 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(message); }();
 
         if (evaluation.expectedValue.niceValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.niceValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.niceValue);
         } else if (evaluation.expectedValue.strValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.strValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.strValue);
         }
 
         chainedWithMessage = true;
@@ -241,13 +322,13 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         evaluation.expectedValue = expectedValue;
         () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(value); }();
 
-        evaluation.message.addText(" equal");
+        evaluation.result.addText(" equal");
         if (evaluation.expectedValue.niceValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.niceValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.niceValue);
         } else if (evaluation.expectedValue.strValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.strValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.strValue);
         }
 
         chainedWithMessage = true;
@@ -257,7 +338,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     ThrowableEvaluator because(string reason) {
-        evaluation.message.prependText("Because " ~ reason ~ ", ");
+        evaluation.result.prependText("Because " ~ reason ~ ", ");
         return this;
     }
 
@@ -279,15 +360,15 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     private void finalizeMessage() {
-        evaluation.message.addText(" ");
-        evaluation.message.addText(toNiceOperation(evaluation.operationName));
+        evaluation.result.addText(" ");
+        evaluation.result.addText(toNiceOperation(evaluation.operationName));
 
         if (evaluation.expectedValue.niceValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.niceValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.niceValue);
         } else if (evaluation.expectedValue.strValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.strValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.strValue);
         }
     }
 
@@ -307,20 +388,30 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
             throw evaluation.expectedValue.throwable;
         }
 
-        if (results.length == 0) {
+        if (results.length == 0 && !evaluation.hasResult()) {
             return;
+        }
+
+        IResult[] allResults;
+
+        if (evaluation.result.message.length > 0) {
+            auto chainMessage = new MessageResult();
+            chainMessage.data.messages = evaluation.result.message;
+            allResults ~= chainMessage;
+        }
+
+        allResults ~= results;
+
+        if (evaluation.hasResult()) {
+            allResults ~= new AssertResultInstance(evaluation.result);
         }
 
         version (DisableSourceResult) {
         } else {
-            results ~= evaluation.getSourceResult();
+            allResults ~= evaluation.getSourceResult();
         }
 
-        if (evaluation.message !is null) {
-            results = evaluation.message ~ results;
-        }
-
-        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
+        throw new TestException(allResults, evaluation.sourceFile, evaluation.sourceLine);
     }
 }
 

@@ -62,7 +62,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" starts with "test"`);
-  msg.split("\n")[2].strip.should.equal(`Expected:to not start with "test"`);
+  msg.split("\n")[2].strip.should.equal(`Expected:not to start with "test"`);
   msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
 
   ({
@@ -86,7 +86,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" starts with 't'`);
-  msg.split("\n")[2].strip.should.equal(`Expected:to not start with 't'`);
+  msg.split("\n")[2].strip.should.equal(`Expected:not to start with 't'`);
   msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
 }
 
@@ -113,7 +113,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should not end with "string". "test string" ends with "string".`);
-  msg.split("\n")[2].strip.should.equal(`Expected:to not end with "string"`);
+  msg.split("\n")[2].strip.should.equal(`Expected:not to end with "string"`);
   msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
 
   ({
@@ -137,7 +137,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" ends with 'g'`);
-  msg.split("\n")[2].strip.should.equal("Expected:to not end with 'g'");
+  msg.split("\n")[2].strip.should.equal("Expected:not to end with 'g'");
   msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
 }
 
@@ -171,7 +171,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should not contain ["test", "string"]. ["test", "string"] are present in "test string".`);
-  msg.split("\n")[2].strip.should.equal(`Expected:to not contain any ["test", "string"]`);
+  msg.split("\n")[2].strip.should.equal(`Expected:not to contain any ["test", "string"]`);
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   msg = ({
@@ -187,7 +187,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should not contain "test". test is present in "test string".`);
-  msg.split("\n")[2].strip.should.equal(`Expected:to not contain "test"`);
+  msg.split("\n")[2].strip.should.equal(`Expected:not to contain "test"`);
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 
   msg = ({
@@ -203,7 +203,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should not contain 't'. t is present in "test string".`);
-  msg.split("\n")[2].strip.should.equal("Expected:to not contain 't'");
+  msg.split("\n")[2].strip.should.equal("Expected:not to contain 't'");
   msg.split("\n")[3].strip.should.equal("Actual:test string");
 }
 

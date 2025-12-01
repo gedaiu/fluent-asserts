@@ -10,7 +10,7 @@ static immutable beNullDescription = "Asserts that the value is null.";
 
 ///
 IResult[] beNull(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   auto result = evaluation.currentValue.typeNames.canFind("null") || evaluation.currentValue.strValue == "null";
 
@@ -22,12 +22,9 @@ IResult[] beNull(ref Evaluation evaluation) @safe nothrow {
     return [];
   }
 
-  IResult[] results = [];
+  evaluation.result.expected = "null";
+  evaluation.result.actual = evaluation.currentValue.typeNames.length ? evaluation.currentValue.typeNames[0] : "unknown";
+  evaluation.result.negated = evaluation.isNegated;
 
-  try results ~= new ExpectedActualResult(
-    evaluation.isNegated ? "not null" : "null",
-    evaluation.currentValue.typeNames.length ? evaluation.currentValue.typeNames[0] : "unknown");
-  catch(Exception) {}
-
-  return results;
+  return [];
 }

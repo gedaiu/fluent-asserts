@@ -66,16 +66,16 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("true should equal false. ");
-  msg.split("\n")[2].strip.should.equal("Expected:false");
-  msg.split("\n")[3].strip.should.equal("Actual:true");
+  msg.split("\n")[1].strip.should.equal("Expected:false");
+  msg.split("\n")[2].strip.should.equal("Actual:true");
 
   msg = ({
     true.should.not.equal(true);
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("true should not equal true. ");
-  msg.split("\n")[2].strip.should.equal("Expected:not true");
-  msg.split("\n")[3].strip.should.equal("Actual:true");
+  msg.split("\n")[1].strip.should.equal("Expected:not true");
+  msg.split("\n")[2].strip.should.equal("Actual:true");
 }
 
 @("numbers greater than")

@@ -23,9 +23,9 @@ static immutable approximatelyDescription = "Asserts that the target is a number
 IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
   IResult[] results = [];
 
-  evaluation.message.addValue("±");
-  evaluation.message.addValue(evaluation.expectedValue.meta["1"]);
-  evaluation.message.addText(".");
+  evaluation.result.addValue("±");
+  evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
+  evaluation.result.addText(".");
 
   real current;
   real expected;
@@ -55,28 +55,30 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
   }
 
   if(evaluation.currentValue.typeName != "bool") {
-    evaluation.message.addText(" ");
-    evaluation.message.addValue(strCurrent);
+    evaluation.result.addText(" ");
+    evaluation.result.addValue(strCurrent);
 
     if(evaluation.isNegated) {
-      evaluation.message.addText(" is approximately ");
+      evaluation.result.addText(" is approximately ");
     } else {
-      evaluation.message.addText(" is not approximately ");
+      evaluation.result.addText(" is not approximately ");
     }
 
-    evaluation.message.addValue(strExpected);
-    evaluation.message.addText(".");
+    evaluation.result.addValue(strExpected);
+    evaluation.result.addText(".");
   }
 
-  try results ~= new ExpectedActualResult((evaluation.isNegated ? "not " : "") ~ strExpected, strCurrent); catch(Exception) {}
+  evaluation.result.expected = strExpected;
+  evaluation.result.actual = strCurrent;
+  evaluation.result.negated = evaluation.isNegated;
 
-  return results;
+  return [];
 }
 
 ///
 IResult[] approximatelyList(ref Evaluation evaluation) @trusted nothrow {
-  evaluation.message.addValue("±" ~ evaluation.expectedValue.meta["1"]);
-  evaluation.message.addText(".");
+  evaluation.result.addValue("±" ~ evaluation.expectedValue.meta["1"]);
+  evaluation.result.addText(".");
 
   double maxRelDiff;
   real[] testData;
@@ -120,18 +122,32 @@ IResult[] approximatelyList(ref Evaluation evaluation) @trusted nothrow {
 
   if(!evaluation.isNegated) {
     if(!allEqual) {
-      try results ~= new ExpectedActualResult(strExpected, evaluation.currentValue.strValue);
-      catch(Exception) {}
+      evaluation.result.expected = strExpected;
+      evaluation.result.actual = evaluation.currentValue.strValue;
 
-      try results ~= new ExtraMissingResult(extra.length == 0 ? "" : extra.to!string, strMissing);
-      catch(Exception) {}
+      if(extra.length > 0) {
+        try {
+          foreach(e; extra) {
+            evaluation.result.extra ~= e.to!string ~ "±" ~ maxRelDiff.to!string;
+          }
+        } catch(Exception) {}
+      }
+
+      if(missing.length > 0) {
+        try {
+          foreach(m; missing) {
+            evaluation.result.missing ~= m.to!string ~ "±" ~ maxRelDiff.to!string;
+          }
+        } catch(Exception) {}
+      }
     }
   } else {
     if(allEqual) {
-      try results ~= new ExpectedActualResult("not " ~ strExpected, evaluation.currentValue.strValue);
-      catch(Exception) {}
+      evaluation.result.expected = strExpected;
+      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.negated = true;
     }
   }
 
-  return results;
+  return [];
 }

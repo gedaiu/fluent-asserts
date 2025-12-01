@@ -17,45 +17,39 @@ static immutable isNotEqualTo = Message(Message.Type.info, " is not equal to ");
 static immutable endSentence = Message(Message.Type.info, ". ");
 
 ///
-IResult[] equal(ref Evaluation evaluation) @safe nothrow {
-  EvaluationResult evaluationResult;
+void equal(ref Evaluation evaluation) @safe nothrow {
+  evaluation.result.add(endSentence);
 
-  evaluation.message.add(endSentence);
+  bool isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
 
-  bool result = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
-
-  if(!result && evaluation.currentValue.proxyValue !is null && evaluation.expectedValue.proxyValue !is null) {
-    result = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
+  if(!isEqual && evaluation.currentValue.proxyValue !is null && evaluation.expectedValue.proxyValue !is null) {
+    isEqual = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
   }
 
   if(evaluation.isNegated) {
-    result = !result;
+    isEqual = !isEqual;
   }
 
-  if(result) {
-    return [];
+  if(isEqual) {
+    return;
   }
 
-  IResult[] results = [];
+  evaluation.result.expected = evaluation.expectedValue.strValue;
+  evaluation.result.actual = evaluation.currentValue.strValue;
+  evaluation.result.negated = evaluation.isNegated;
 
   if(evaluation.currentValue.typeName != "bool") {
-    evaluation.message.add(Message(Message.Type.value, evaluation.currentValue.strValue));
+    evaluation.result.add(Message(Message.Type.value, evaluation.currentValue.strValue));
 
     if(evaluation.isNegated) {
-      evaluation.message.add(isEqualTo);
+      evaluation.result.add(isEqualTo);
     } else {
-      evaluation.message.add(isNotEqualTo);
+      evaluation.result.add(isNotEqualTo);
     }
 
-    evaluation.message.add(Message(Message.Type.value, evaluation.expectedValue.strValue));
-    evaluation.message.add(endSentence);
+    evaluation.result.add(Message(Message.Type.value, evaluation.expectedValue.strValue));
+    evaluation.result.add(endSentence);
 
-    evaluationResult.addDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
-    try results ~= new DiffResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
+    evaluation.result.computeDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
   }
-
-  evaluationResult.addExpected(evaluation.isNegated, evaluation.expectedValue.strValue);
-  evaluationResult.addResult(evaluation.currentValue.strValue);
-
-  return evaluationResult.toException;
 }

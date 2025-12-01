@@ -10,6 +10,8 @@ import std.algorithm : map, sort;
 
 import fluentasserts.core.serializers;
 import fluentasserts.core.results;
+import fluentasserts.core.message : Message, ResultGlyphs;
+import fluentasserts.core.asserts : AssertResult;
 import fluentasserts.core.base : TestException;
 
 ///
@@ -70,9 +72,6 @@ struct Evaluation {
   /// True if the operation result needs to be negated to have a successful result
   bool isNegated;
 
-  /// The nice message printed to the user
-  MessageResult message;
-
   /// Source location data stored as struct
   SourceResultData source;
 
@@ -82,6 +81,9 @@ struct Evaluation {
   /// True when the evaluation is done
   bool isEvaluated;
 
+  /// Result of the assertion stored as struct
+  AssertResult result;
+
   /// Convenience accessors for backwards compatibility
   @property string sourceFile() nothrow @safe { return source.file; }
   @property size_t sourceLine() nothrow @safe { return source.line; }
@@ -89,6 +91,11 @@ struct Evaluation {
   /// Get SourceResult class wrapper (only when needed for IResult compatibility)
   SourceResult getSourceResult() nothrow @trusted {
     return new SourceResult(source);
+  }
+
+  /// Check if there is an assertion result
+  bool hasResult() nothrow @safe {
+    return result.hasContent();
   }
 }
 
@@ -217,9 +224,9 @@ unittest {
 
   auto result = extractTypes!(T[]);
 
-  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L214_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L214_C1.T[]" got "` ~ result[0] ~ `"`);
+  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L221_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L221_C1.T[]" got "` ~ result[0] ~ `"`);
   assert(result[1] == "object.Object[]", `Expected: ` ~ result[1] );
-  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L214_C1.I[]", `Expected: ` ~ result[2] );
+  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L221_C1.I[]", `Expected: ` ~ result[2] );
 }
 
 /// A proxy type that allows to compare the native values

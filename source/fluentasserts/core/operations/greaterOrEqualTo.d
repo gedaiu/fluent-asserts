@@ -16,7 +16,7 @@ static immutable greaterOrEqualToDescription = "Asserts that the tested value is
 
 ///
 IResult[] greaterOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   T expectedValue;
   T currentValue;
@@ -34,7 +34,7 @@ IResult[] greaterOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
 }
 
 IResult[] greaterOrEqualToDuration(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   Duration expectedValue;
   Duration currentValue;
@@ -57,7 +57,7 @@ IResult[] greaterOrEqualToDuration(ref Evaluation evaluation) @safe nothrow {
 }
 
 IResult[] greaterOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   SysTime expectedValue;
   SysTime currentValue;
@@ -85,21 +85,22 @@ private IResult[] greaterOrEqualToResults(bool result, string niceExpectedValue,
     return [];
   }
 
-  evaluation.message.addText(" ");
-  evaluation.message.addValue(evaluation.currentValue.niceValue);
-
-  IResult[] results = [];
+  evaluation.result.addText(" ");
+  evaluation.result.addValue(evaluation.currentValue.niceValue);
 
   if(evaluation.isNegated) {
-    evaluation.message.addText(" is greater or equal than ");
-    results ~= new ExpectedActualResult("less than " ~ niceExpectedValue, niceCurrentValue);
+    evaluation.result.addText(" is greater or equal than ");
+    evaluation.result.expected = "less than " ~ niceExpectedValue;
   } else {
-    evaluation.message.addText(" is less than ");
-    results ~= new ExpectedActualResult("greater or equal than " ~ niceExpectedValue, niceCurrentValue);
+    evaluation.result.addText(" is less than ");
+    evaluation.result.expected = "greater or equal than " ~ niceExpectedValue;
   }
 
-  evaluation.message.addValue(niceExpectedValue);
-  evaluation.message.addText(".");
+  evaluation.result.actual = niceCurrentValue;
+  evaluation.result.negated = evaluation.isNegated;
 
-  return results;
+  evaluation.result.addValue(niceExpectedValue);
+  evaluation.result.addText(".");
+
+  return [];
 }

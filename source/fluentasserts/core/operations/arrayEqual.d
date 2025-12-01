@@ -13,7 +13,7 @@ static immutable arrayEqualDescription = "Asserts that the target is strictly ==
 
 ///
 IResult[] arrayEqual(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
   bool result = true;
 
   EquableValue[] expectedPieces = evaluation.expectedValue.proxyValue.toArray;
@@ -38,14 +38,14 @@ IResult[] arrayEqual(ref Evaluation evaluation) @safe nothrow {
     return [];
   }
 
-  IResult[] results = [];
-
   if(evaluation.isNegated) {
-    try results ~= new ExpectedActualResult("not " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
+    evaluation.result.expected = "not " ~ evaluation.expectedValue.strValue;
+    evaluation.result.negated = true;
   } else {
-    try results ~= new DiffResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
-    try results ~= new ExpectedActualResult(evaluation.expectedValue.strValue, evaluation.currentValue.strValue); catch(Exception) {}
+    evaluation.result.expected = evaluation.expectedValue.strValue;
+    evaluation.result.computeDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
   }
+  evaluation.result.actual = evaluation.currentValue.strValue;
 
-  return results;
+  return [];
 }

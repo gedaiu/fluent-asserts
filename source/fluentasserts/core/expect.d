@@ -47,25 +47,24 @@ import std.conv;
 
     _evaluation.id = Lifecycle.instance.beginEvaluation(value);
     _evaluation.currentValue = value;
-    _evaluation.message = new MessageResult();
     _evaluation.source = SourceResultData.create(value.fileName, value.line);
 
     try {
       auto sourceValue = _evaluation.source.getValue;
 
       if(sourceValue == "") {
-        _evaluation.message.startWith(_evaluation.currentValue.niceValue);
+        _evaluation.result.startWith(_evaluation.currentValue.niceValue);
       } else {
-        _evaluation.message.startWith(sourceValue);
+        _evaluation.result.startWith(sourceValue);
       }
     } catch(Exception) {
-      _evaluation.message.startWith(_evaluation.currentValue.strValue);
+      _evaluation.result.startWith(_evaluation.currentValue.strValue);
     }
 
-    _evaluation.message.addText(" should");
+    _evaluation.result.addText(" should");
 
     if(value.prependText) {
-      _evaluation.message.addText(value.prependText);
+      _evaluation.result.addText(value.prependText);
     }
   }
 
@@ -78,15 +77,15 @@ import std.conv;
     refCount--;
 
     if(refCount < 0 && _evaluation !is null) {
-      _evaluation.message.addText(" ");
-      _evaluation.message.addText(_evaluation.operationName.toNiceOperation);
+      _evaluation.result.addText(" ");
+      _evaluation.result.addText(_evaluation.operationName.toNiceOperation);
 
       if(_evaluation.expectedValue.niceValue) {
-        _evaluation.message.addText(" ");
-        _evaluation.message.addValue(_evaluation.expectedValue.niceValue);
+        _evaluation.result.addText(" ");
+        _evaluation.result.addValue(_evaluation.expectedValue.niceValue);
       } else if(_evaluation.expectedValue.strValue) {
-        _evaluation.message.addText(" ");
-        _evaluation.message.addValue(_evaluation.expectedValue.strValue);
+        _evaluation.result.addText(" ");
+        _evaluation.result.addValue(_evaluation.expectedValue.strValue);
       }
 
       Lifecycle.instance.endEvaluation(*_evaluation);
@@ -95,15 +94,15 @@ import std.conv;
 
   /// Finalize the message before creating an Evaluator - for external extensions
   void finalizeMessage() {
-    _evaluation.message.addText(" ");
-    _evaluation.message.addText(_evaluation.operationName.toNiceOperation);
+    _evaluation.result.addText(" ");
+    _evaluation.result.addText(_evaluation.operationName.toNiceOperation);
 
     if(_evaluation.expectedValue.niceValue) {
-      _evaluation.message.addText(" ");
-      _evaluation.message.addValue(_evaluation.expectedValue.niceValue);
+      _evaluation.result.addText(" ");
+      _evaluation.result.addValue(_evaluation.expectedValue.niceValue);
     } else if(_evaluation.expectedValue.strValue) {
-      _evaluation.message.addText(" ");
-      _evaluation.message.addValue(_evaluation.expectedValue.strValue);
+      _evaluation.result.addText(" ");
+      _evaluation.result.addValue(_evaluation.expectedValue.strValue);
     }
   }
 
@@ -136,14 +135,14 @@ import std.conv;
 
   ///
   Expect be () {
-    _evaluation.message.addText(" be");
+    _evaluation.result.addText(" be");
     return this;
   }
 
   ///
   Expect not() {
     _evaluation.isNegated = !_evaluation.isNegated;
-    _evaluation.message.addText(" not");
+    _evaluation.result.addText(" not");
 
     return this;
   }
@@ -171,14 +170,14 @@ import std.conv;
     this._evaluation.expectedValue.strValue = "\"" ~ fullyQualifiedName!Type ~ "\"";
 
     addOperationName("throwException");
-    _evaluation.message.addText(" throw exception ");
-    _evaluation.message.addValue(_evaluation.expectedValue.strValue);
+    _evaluation.result.addText(" throw exception ");
+    _evaluation.result.addValue(_evaluation.expectedValue.strValue);
     inhibit();
     return ThrowableEvaluator(*_evaluation, &throwExceptionOp, &throwExceptionWithMessageOp);
   }
 
   auto because(string reason) {
-    _evaluation.message.prependText("Because " ~ reason ~ ", ");
+    _evaluation.result.prependText("Because " ~ reason ~ ", ");
     return this;
   }
 

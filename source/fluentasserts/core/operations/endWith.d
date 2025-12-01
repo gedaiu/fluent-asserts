@@ -16,7 +16,7 @@ static immutable endWithDescription = "Tests that the tested string ends with th
 
 ///
 IResult[] endWith(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   IResult[] results = [];
   auto current = evaluation.currentValue.strValue.cleanString;
@@ -32,27 +32,28 @@ IResult[] endWith(ref Evaluation evaluation) @safe nothrow {
 
   if(evaluation.isNegated) {
     if(doesEndWith) {
-      evaluation.message.addText(" ");
-      evaluation.message.addValue(evaluation.currentValue.strValue);
-      evaluation.message.addText(" ends with ");
-      evaluation.message.addValue(evaluation.expectedValue.strValue);
-      evaluation.message.addText(".");
+      evaluation.result.addText(" ");
+      evaluation.result.addValue(evaluation.currentValue.strValue);
+      evaluation.result.addText(" ends with ");
+      evaluation.result.addValue(evaluation.expectedValue.strValue);
+      evaluation.result.addText(".");
 
-      try results ~= new ExpectedActualResult("to not end with " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
-      catch(Exception e) {}
+      evaluation.result.expected = "to end with " ~ evaluation.expectedValue.strValue;
+      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.negated = true;
     }
   } else {
     if(!doesEndWith) {
-      evaluation.message.addText(" ");
-      evaluation.message.addValue(evaluation.currentValue.strValue);
-      evaluation.message.addText(" does not end with ");
-      evaluation.message.addValue(evaluation.expectedValue.strValue);
-      evaluation.message.addText(".");
+      evaluation.result.addText(" ");
+      evaluation.result.addValue(evaluation.currentValue.strValue);
+      evaluation.result.addText(" does not end with ");
+      evaluation.result.addValue(evaluation.expectedValue.strValue);
+      evaluation.result.addText(".");
 
-      try results ~= new ExpectedActualResult("to end with " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
-      catch(Exception e) {}
+      evaluation.result.expected = "to end with " ~ evaluation.expectedValue.strValue;
+      evaluation.result.actual = evaluation.currentValue.strValue;
     }
   }
 
-  return results;
+  return [];
 }

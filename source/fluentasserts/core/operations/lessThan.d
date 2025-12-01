@@ -17,7 +17,7 @@ static immutable lessThanDescription = "Asserts that the tested value is less th
 
 ///
 IResult[] lessThan(T)(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   T expectedValue;
   T currentValue;
@@ -36,7 +36,7 @@ IResult[] lessThan(T)(ref Evaluation evaluation) @safe nothrow {
 
 ///
 IResult[] lessThanDuration(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   Duration expectedValue;
   Duration currentValue;
@@ -60,7 +60,7 @@ IResult[] lessThanDuration(ref Evaluation evaluation) @safe nothrow {
 
 ///
 IResult[] lessThanSysTime(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   SysTime expectedValue;
   SysTime currentValue;
@@ -81,7 +81,7 @@ IResult[] lessThanSysTime(ref Evaluation evaluation) @safe nothrow {
 
 /// Generic lessThan using proxy values - works for any comparable type
 IResult[] lessThanGeneric(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   bool result = false;
 
@@ -101,23 +101,24 @@ private IResult[] lessThanResults(bool result, string niceExpectedValue, string 
     return [];
   }
 
-  evaluation.message.addText(" ");
-  evaluation.message.addValue(evaluation.currentValue.niceValue);
-
-  IResult[] results = [];
+  evaluation.result.addText(" ");
+  evaluation.result.addValue(evaluation.currentValue.niceValue);
 
   if(evaluation.isNegated) {
-    evaluation.message.addText(" is less than ");
-    results ~= new ExpectedActualResult("greater than or equal to " ~ niceExpectedValue, niceCurrentValue);
+    evaluation.result.addText(" is less than ");
+    evaluation.result.expected = "greater than or equal to " ~ niceExpectedValue;
   } else {
-    evaluation.message.addText(" is greater than or equal to ");
-    results ~= new ExpectedActualResult("less than " ~ niceExpectedValue, niceCurrentValue);
+    evaluation.result.addText(" is greater than or equal to ");
+    evaluation.result.expected = "less than " ~ niceExpectedValue;
   }
 
-  evaluation.message.addValue(niceExpectedValue);
-  evaluation.message.addText(".");
+  evaluation.result.actual = niceCurrentValue;
+  evaluation.result.negated = evaluation.isNegated;
 
-  return results;
+  evaluation.result.addValue(niceExpectedValue);
+  evaluation.result.addText(".");
+
+  return [];
 }
 
 @("lessThan passes when current value is less than expected")

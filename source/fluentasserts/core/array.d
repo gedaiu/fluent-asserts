@@ -823,7 +823,7 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.should.contain("Expected:[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
-  msg.should.contain("Missing:[0.501±0.0001, 0.341±0.0001]");
+  msg.should.contain("Missing:0.501±0.0001,0.341±0.0001");
 }
 
 @("approximately equals with Assert")

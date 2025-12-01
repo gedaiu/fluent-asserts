@@ -16,7 +16,7 @@ static immutable lessOrEqualToDescription = "Asserts that the tested value is le
 
 ///
 IResult[] lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   T expectedValue;
   T currentValue;
@@ -38,21 +38,22 @@ IResult[] lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
     return [];
   }
 
-  evaluation.message.addText(" ");
-  evaluation.message.addValue(evaluation.currentValue.niceValue);
-
-  IResult[] results = [];
+  evaluation.result.addText(" ");
+  evaluation.result.addValue(evaluation.currentValue.niceValue);
 
   if(evaluation.isNegated) {
-    evaluation.message.addText(" is less or equal to ");
-    results ~= new ExpectedActualResult("greater than " ~ evaluation.expectedValue.niceValue, evaluation.currentValue.niceValue);
+    evaluation.result.addText(" is less or equal to ");
+    evaluation.result.expected = "greater than " ~ evaluation.expectedValue.niceValue;
   } else {
-    evaluation.message.addText(" is greater than ");
-    results ~= new ExpectedActualResult("less or equal to " ~ evaluation.expectedValue.niceValue, evaluation.currentValue.niceValue);
+    evaluation.result.addText(" is greater than ");
+    evaluation.result.expected = "less or equal to " ~ evaluation.expectedValue.niceValue;
   }
 
-  evaluation.message.addValue(evaluation.expectedValue.niceValue);
-  evaluation.message.addText(".");
+  evaluation.result.actual = evaluation.currentValue.niceValue;
+  evaluation.result.negated = evaluation.isNegated;
 
-  return results;
+  evaluation.result.addValue(evaluation.expectedValue.niceValue);
+  evaluation.result.addText(".");
+
+  return [];
 }

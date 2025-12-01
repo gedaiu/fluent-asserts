@@ -257,19 +257,42 @@ version(Have_unit_threaded) {
 
 class TestException : ReferenceException {
   private {
-    IResult[] results;
+    immutable(Message)[] messages;
+    IResult[] legacyResults;
+  }
+
+  this(string message, string fileName, size_t line, Throwable next = null) {
+    super(message ~ '\n', fileName, line, next);
+  }
+
+  this(immutable(Message)[] messages, string fileName, size_t line, Throwable next = null) {
+    string msg;
+    foreach(m; messages) {
+      msg ~= m.toString;
+    }
+    msg ~= '\n';
+    this.messages = messages;
+
+    super(msg, fileName, line, next);
   }
 
   this(IResult[] results, string fileName, size_t line, Throwable next = null) {
     auto msg = results.map!"a.toString".filter!"a != ``".join("\n") ~ '\n';
-    this.results = results;
+    this.legacyResults = results;
 
     super(msg, fileName, line, next);
   }
 
   void print(ResultPrinter printer) {
-    foreach(result; results) {
-      result.print(printer);
+    if (legacyResults.length > 0) {
+      foreach(result; legacyResults) {
+        result.print(printer);
+        printer.primary("\n");
+      }
+    } else {
+      foreach(message; messages) {
+        printer.print(message);
+      }
       printer.primary("\n");
     }
   }

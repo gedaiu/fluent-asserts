@@ -47,7 +47,7 @@ static this() {
   Registry.instance.describe("greaterOrEqualTo", greaterOrEqualToDescription);
   Registry.instance.describe("lessThan", lessThanDescription);
 
-  Registry.instance.register("*", "*", "equal", &equal);
+  // equal is now handled directly by Expect.equal, not through Registry
   Registry.instance.register("*[]", "*[]", "equal", &arrayEqual);
   Registry.instance.register("*[*]", "*[*]", "equal", &arrayEqual);
   Registry.instance.register("*[][]", "*[][]", "equal", &arrayEqual);
@@ -158,18 +158,29 @@ static this() {
       throw evaluation.currentValue.throwable;
     }
 
-    if(results.length == 0) {
+    if(results.length == 0 && !evaluation.result.hasContent()) {
       return;
     }
 
+    IResult[] allResults;
+
+    if(evaluation.result.message.length > 0) {
+      auto chainMessage = new MessageResult();
+      chainMessage.data.messages = evaluation.result.message;
+      allResults ~= chainMessage;
+    }
+
+    allResults ~= results;
+
+    if(evaluation.result.hasContent()) {
+      auto assertResult = new AssertResultInstance(evaluation.result);
+      allResults ~= assertResult;
+    }
+
     version(DisableSourceResult) {} else {
-      results ~= evaluation.getSourceResult();
+      allResults ~= evaluation.getSourceResult();
     }
 
-    if(evaluation.message !is null) {
-      results = evaluation.message ~ results;
-    }
-
-    throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
+    throw new TestException(allResults, evaluation.sourceFile, evaluation.sourceLine);
   }
 }

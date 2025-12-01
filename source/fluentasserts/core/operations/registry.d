@@ -145,15 +145,15 @@ class Registry {
 @("generates a list of md links for docs")
 unittest {
   import std.datetime;
-  import fluentasserts.core.operations.equal;
   import fluentasserts.core.operations.lessThan;
+  import fluentasserts.core.operations.beNull;
 
   auto instance = new Registry();
 
-  instance.register("*", "*", "equal", &equal);
+  instance.register("*", "*", "beNull", &beNull);
   instance.register!(Duration, Duration)("lessThan", &lessThanDuration);
 
-  instance.docs.should.equal("- [equal](api/equal.md)\n" ~ "- [lessThan](api/lessThan.md)");
+  instance.docs.should.equal("- [beNull](api/beNull.md)\n" ~ "- [lessThan](api/lessThan.md)");
 }
 
 string[] generalizeKey(string valueType, string expectedValueType, string name) @safe nothrow {

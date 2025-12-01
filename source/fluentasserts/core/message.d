@@ -114,6 +114,12 @@ struct Message {
   }
 }
 
+public import fluentasserts.core.asserts : AssertResult, DiffSegment;
+
+immutable(Message)[] toMessages(ref EvaluationResult result) nothrow {
+  return result.messages;
+}
+
 IResult[] toException(ref EvaluationResult result) nothrow {
   if(result.messages.length == 0) {
     return [];

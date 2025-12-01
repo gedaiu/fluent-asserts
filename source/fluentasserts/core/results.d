@@ -147,21 +147,114 @@ class EvaluationResultInstance : IResult {
   }
 }
 
-/// A result that prints a simple message to the user
-class MessageResult : IResult {
-  private {
-    immutable(Message)[] messages;
+class AssertResultInstance : IResult {
+
+  AssertResult result;
+
+  this(AssertResult result) nothrow {
+    this.result = result;
   }
 
-  this(string message) nothrow
-  {
-    add(false, message);
+  override string toString() nothrow {
+    string output;
+
+    if(result.expected.length > 0) {
+      output ~= "\n Expected:";
+      if(result.negated) {
+        output ~= "not ";
+      }
+      output ~= result.formatValue(result.expected);
+    }
+
+    if(result.actual.length > 0) {
+      output ~= "\n   Actual:" ~ result.formatValue(result.actual);
+    }
+
+    if(result.diff.length > 0) {
+      output ~= "\n\nDiff:\n";
+      foreach(segment; result.diff) {
+        output ~= segment.toString();
+      }
+    }
+
+    if(result.extra.length > 0) {
+      output ~= "\n    Extra:";
+      foreach(i, item; result.extra) {
+        if(i > 0) output ~= ",";
+        output ~= result.formatValue(item);
+      }
+    }
+
+    if(result.missing.length > 0) {
+      output ~= "\n  Missing:";
+      foreach(i, item; result.missing) {
+        if(i > 0) output ~= ",";
+        output ~= result.formatValue(item);
+      }
+    }
+
+    return output;
   }
 
-  this() nothrow { }
+  void print(ResultPrinter printer) nothrow {
+    if(result.expected.length > 0) {
+      printer.info("\n Expected:");
+      if(result.negated) {
+        printer.info("not ");
+      }
+      printer.primary(result.formatValue(result.expected));
+    }
 
-  override string toString() {
-    return messages.map!"a.text".join.to!string;
+    if(result.actual.length > 0) {
+      printer.info("\n   Actual:");
+      printer.danger(result.formatValue(result.actual));
+    }
+
+    if(result.diff.length > 0) {
+      printer.info("\n\nDiff:\n");
+      foreach(segment; result.diff) {
+        final switch(segment.operation) {
+          case DiffSegment.Operation.equal:
+            printer.info(segment.toString());
+            break;
+          case DiffSegment.Operation.insert:
+            printer.successReverse(segment.toString());
+            break;
+          case DiffSegment.Operation.delete_:
+            printer.dangerReverse(segment.toString());
+            break;
+        }
+      }
+    }
+
+    if(result.extra.length > 0) {
+      printer.info("\n    Extra:");
+      foreach(i, item; result.extra) {
+        if(i > 0) printer.info(",");
+        printer.danger(result.formatValue(item));
+      }
+    }
+
+    if(result.missing.length > 0) {
+      printer.info("\n  Missing:");
+      foreach(i, item; result.missing) {
+        if(i > 0) printer.info(",");
+        printer.success(result.formatValue(item));
+      }
+    }
+  }
+}
+
+/// Message result data stored as a struct for efficiency
+struct MessageResultData {
+  immutable(Message)[] messages;
+
+  string toString() nothrow {
+    string result;
+    foreach(message; messages) {
+      result ~= message.text;
+    }
+    return result;
   }
 
   void startWith(string message) @safe nothrow {
@@ -205,8 +298,7 @@ class MessageResult : IResult {
     this.messages = Message(Message.Type.value, text) ~ this.messages;
   }
 
-  void print(ResultPrinter printer)
-  {
+  void print(ResultPrinter printer) nothrow {
     foreach(message; messages) {
       if(message.type == Message.Type.value) {
         printer.info(message.text);
@@ -214,6 +306,57 @@ class MessageResult : IResult {
         printer.primary(message.text);
       }
     }
+  }
+}
+
+/// Wrapper class for MessageResultData to implement IResult interface
+class MessageResult : IResult {
+  package MessageResultData data;
+
+  this(string message) nothrow {
+    data.add(false, message);
+  }
+
+  this() nothrow { }
+
+  this(MessageResultData sourceData) nothrow {
+    data = sourceData;
+  }
+
+  override string toString() {
+    return data.toString();
+  }
+
+  void startWith(string message) @safe nothrow {
+    data.startWith(message);
+  }
+
+  void add(bool isValue, string message) nothrow {
+    data.add(isValue, message);
+  }
+
+  void add(Message message) nothrow {
+    data.add(message);
+  }
+
+  void addValue(string text) @safe nothrow {
+    data.addValue(text);
+  }
+
+  void addText(string text) @safe nothrow {
+    data.addText(text);
+  }
+
+  void prependText(string text) @safe nothrow  {
+    data.prependText(text);
+  }
+
+  void prependValue(string text) @safe nothrow {
+    data.prependValue(text);
+  }
+
+  void print(ResultPrinter printer) {
+    data.print(printer);
   }
 }
 
@@ -1204,6 +1347,10 @@ struct SourceResultData {
     }
 
     return result;
+  }
+
+  immutable(Message)[] toMessages() nothrow {
+    return [Message(Message.Type.info, toString())];
   }
 
   void print(ResultPrinter printer) {

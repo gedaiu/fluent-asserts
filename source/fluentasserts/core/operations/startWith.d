@@ -16,7 +16,7 @@ static immutable startWithDescription = "Tests that the tested string starts wit
 
 ///
 IResult[] startWith(ref Evaluation evaluation) @safe nothrow {
-  evaluation.message.addText(".");
+  evaluation.result.addText(".");
 
   IResult[] results = [];
 
@@ -25,27 +25,28 @@ IResult[] startWith(ref Evaluation evaluation) @safe nothrow {
 
   if(evaluation.isNegated) {
     if(doesStartWith) {
-      evaluation.message.addText(" ");
-      evaluation.message.addValue(evaluation.currentValue.strValue);
-      evaluation.message.addText(" starts with ");
-      evaluation.message.addValue(evaluation.expectedValue.strValue);
-      evaluation.message.addText(".");
+      evaluation.result.addText(" ");
+      evaluation.result.addValue(evaluation.currentValue.strValue);
+      evaluation.result.addText(" starts with ");
+      evaluation.result.addValue(evaluation.expectedValue.strValue);
+      evaluation.result.addText(".");
 
-      try results ~= new ExpectedActualResult("to not start with " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
-      catch(Exception e) {}
+      evaluation.result.expected = "to start with " ~ evaluation.expectedValue.strValue;
+      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.negated = true;
     }
   } else {
     if(!doesStartWith) {
-      evaluation.message.addText(" ");
-      evaluation.message.addValue(evaluation.currentValue.strValue);
-      evaluation.message.addText(" does not start with ");
-      evaluation.message.addValue(evaluation.expectedValue.strValue);
-      evaluation.message.addText(".");
+      evaluation.result.addText(" ");
+      evaluation.result.addValue(evaluation.currentValue.strValue);
+      evaluation.result.addText(" does not start with ");
+      evaluation.result.addValue(evaluation.expectedValue.strValue);
+      evaluation.result.addText(".");
 
-      try results ~= new ExpectedActualResult("to start with " ~ evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
-      catch(Exception e) {}
+      evaluation.result.expected = "to start with " ~ evaluation.expectedValue.strValue;
+      evaluation.result.actual = evaluation.currentValue.strValue;
     }
   }
 
-  return results;
+  return [];
 }
