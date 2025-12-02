@@ -494,7 +494,7 @@ version (unittest) {
 @("getScope returns the spec function and scope that contains a lambda")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto result = getScope(tokens, 101);
   auto identifierStart = getPreviousIdentifier(tokens, result.begin);
@@ -509,7 +509,7 @@ unittest {
 @("getScope returns a method scope and signature")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/class.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/class.d"), tokens);
 
   auto result = getScope(tokens, 10);
   auto identifierStart = getPreviousIdentifier(tokens, result.begin);
@@ -522,7 +522,7 @@ unittest {
 @("getScope returns a method scope without assert")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/class.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/class.d"), tokens);
 
   auto result = getScope(tokens, 14);
   auto identifierStart = getPreviousIdentifier(tokens, result.begin);
@@ -535,7 +535,7 @@ unittest {
 @("getFunctionEnd returns the end of a spec function with a lambda")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto result = getScope(tokens, 101);
   auto identifierStart = getPreviousIdentifier(tokens, result.begin);
@@ -551,7 +551,7 @@ unittest {
 @("getFunctionEnd returns the end of an unittest function with a lambda")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto result = getScope(tokens, 81);
   auto identifierStart = getPreviousIdentifier(tokens, result.begin);
@@ -568,7 +568,7 @@ unittest {
 @("getScope returns tokens from a scope that contains a lambda")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto result = getScope(tokens, 81);
 
@@ -583,7 +583,7 @@ unittest {
 @("getPreviousIdentifier returns the previous unittest identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto scopeResult = getScope(tokens, 81);
 
@@ -595,7 +595,7 @@ unittest {
 @("getPreviousIdentifier returns the previous paranthesis identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto scopeResult = getScope(tokens, 63);
 
@@ -609,7 +609,7 @@ unittest {
 @("getPreviousIdentifier returns the previous function call identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto scopeResult = getScope(tokens, 75);
 
@@ -623,7 +623,7 @@ unittest {
 @("getPreviousIdentifier returns the previous map identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto scopeResult = getScope(tokens, 85);
 
@@ -636,7 +636,7 @@ unittest {
 @("getAssertIndex returns the index of the Assert structure identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto result = getAssertIndex(tokens, 55);
 
@@ -646,7 +646,7 @@ unittest {
 @("getParameter returns the first parameter from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto begin = getAssertIndex(tokens, 57) + 4;
   auto end = getParameter(tokens, begin);
@@ -656,7 +656,7 @@ unittest {
 @("getParameter returns the first list parameter from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto begin = getAssertIndex(tokens, 89) + 4;
   auto end = getParameter(tokens, begin);
@@ -666,7 +666,7 @@ unittest {
 @("getPreviousIdentifier returns the previous array identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto scopeResult = getScope(tokens, 4);
   auto end = scopeResult.end - 13;
@@ -679,7 +679,7 @@ unittest {
 @("getPreviousIdentifier returns the previous array of instances identifier from a list of tokens")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto scopeResult = getScope(tokens, 90);
   auto end = scopeResult.end - 16;
@@ -692,7 +692,7 @@ unittest {
 @("getShouldIndex returns the index of the should call")
 unittest {
   const(Token)[] tokens = [];
-  splitMultilinetokens(fileToDTokens("test/values.d"), tokens);
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
 
   auto result = getShouldIndex(tokens, 4);
 

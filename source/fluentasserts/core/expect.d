@@ -20,7 +20,7 @@ import fluentasserts.operations.type.instanceOf : instanceOfOp = instanceOf;
 import fluentasserts.operations.comparison.greaterThan : greaterThanOp = greaterThan, greaterThanDurationOp = greaterThanDuration, greaterThanSysTimeOp = greaterThanSysTime;
 import fluentasserts.operations.comparison.greaterOrEqualTo : greaterOrEqualToOp = greaterOrEqualTo, greaterOrEqualToDurationOp = greaterOrEqualToDuration, greaterOrEqualToSysTimeOp = greaterOrEqualToSysTime;
 import fluentasserts.operations.comparison.lessThan : lessThanOp = lessThan, lessThanDurationOp = lessThanDuration, lessThanSysTimeOp = lessThanSysTime, lessThanGenericOp = lessThanGeneric;
-import fluentasserts.operations.comparison.lessOrEqualTo : lessOrEqualToOp = lessOrEqualTo;
+import fluentasserts.operations.comparison.lessOrEqualTo : lessOrEqualToOp = lessOrEqualTo, lessOrEqualToDurationOp = lessOrEqualToDuration, lessOrEqualToSysTimeOp = lessOrEqualToSysTime;
 import fluentasserts.operations.comparison.between : betweenOp = between, betweenDurationOp = betweenDuration, betweenSysTimeOp = betweenSysTime;
 import fluentasserts.operations.comparison.approximately : approximatelyOp = approximately, approximatelyListOp = approximatelyList;
 import fluentasserts.operations.exception.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage, throwSomethingOp = throwSomething, throwSomethingWithMessageOp = throwSomethingWithMessage;
@@ -303,7 +303,14 @@ import std.conv;
     setExpectedValue(value);
     finalizeMessage();
     inhibit();
-    return Evaluator(*_evaluation, &lessOrEqualToOp!T);
+
+    static if (is(T == Duration)) {
+      return Evaluator(*_evaluation, &lessOrEqualToDurationOp);
+    } else static if (is(T == SysTime)) {
+      return Evaluator(*_evaluation, &lessOrEqualToSysTimeOp);
+    } else {
+      return Evaluator(*_evaluation, &lessOrEqualToOp!T);
+    }
   }
 
   /// Asserts that the actual value is below (less than) the expected value.

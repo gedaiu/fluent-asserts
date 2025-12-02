@@ -12,7 +12,9 @@ import fluentasserts.results.serializers;
 import fluentasserts.core.lifecycle;
 
 version(unittest) {
+  import fluent.asserts;
   import fluentasserts.core.expect;
+  import std.string;
 }
 
 static immutable containDescription = "When the tested value is a string, it asserts that the given string val is a substring of the target. \n\n" ~
@@ -71,6 +73,44 @@ void contain(ref Evaluation evaluation) @safe nothrow {
   }
 }
 
+@("string contains a substring")
+unittest {
+  expect("hello world").to.contain("world");
+}
+
+@("string contains multiple substrings")
+unittest {
+  expect("hello world").to.contain("hello");
+  expect("hello world").to.contain("world");
+}
+
+@("string does not contain a substring")
+unittest {
+  expect("hello world").to.not.contain("foo");
+}
+
+@("string contain throws error when substring is missing")
+unittest {
+  auto msg = ({
+    expect("hello world").to.contain("foo");
+  }).should.throwException!TestException.msg;
+
+  msg.should.contain(`foo is missing from "hello world".`);
+  msg.should.contain(`Expected:to contain "foo"`);
+  msg.should.contain(`Actual:hello world`);
+}
+
+@("string contain throws error when substring is unexpectedly present")
+unittest {
+  auto msg = ({
+    expect("hello world").to.not.contain("world");
+  }).should.throwException!TestException.msg;
+
+  msg.should.contain(`world is present in "hello world".`);
+  msg.should.contain(`Expected:not to contain "world"`);
+  msg.should.contain(`Actual:hello world`);
+}
+
 ///
 void arrayContain(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addText(".");
@@ -96,6 +136,41 @@ void arrayContain(ref Evaluation evaluation) @trusted nothrow {
       evaluation.result.negated = true;
     }
   }
+}
+
+@("array contains a value")
+unittest {
+  expect([1, 2, 3]).to.contain(2);
+}
+
+@("array contains multiple values")
+unittest {
+  expect([1, 2, 3, 4, 5]).to.contain([2, 4]);
+}
+
+@("array does not contain a value")
+unittest {
+  expect([1, 2, 3]).to.not.contain(5);
+}
+
+@("array contain throws error when value is missing")
+unittest {
+  auto msg = ({
+    expect([1, 2, 3]).to.contain(5);
+  }).should.throwException!TestException.msg;
+
+  msg.should.contain(`5 is missing from [1, 2, 3].`);
+  msg.should.contain(`Expected:to contain 5`);
+  msg.should.contain(`Actual:[1, 2, 3]`);
+}
+
+@("array contain throws error when value is unexpectedly present")
+unittest {
+  auto msg = ({
+    expect([1, 2, 3]).to.not.contain(2);
+  }).should.throwException!TestException.msg;
+
+  msg.should.contain(`2 is present in [1, 2, 3].`);
 }
 
 ///
@@ -153,6 +228,39 @@ void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
     }
   }
 }
+
+@("array containOnly passes when elements match exactly")
+unittest {
+  expect([1, 2, 3]).to.containOnly([1, 2, 3]);
+  expect([1, 2, 3]).to.containOnly([3, 2, 1]);
+}
+
+@("array containOnly fails when extra elements exist")
+unittest {
+  auto msg = ({
+    expect([1, 2, 3, 4]).to.containOnly([1, 2, 3]);
+  }).should.throwException!TestException.msg;
+
+  msg.should.contain("Actual:[1, 2, 3, 4]");
+}
+
+@("array containOnly fails when actual is missing expected elements")
+unittest {
+  auto msg = ({
+    expect([1, 2]).to.containOnly([1, 2, 3]);
+  }).should.throwException!TestException.msg;
+
+  msg.should.contain("Extra:3");
+}
+
+@("array containOnly negated passes when elements differ")
+unittest {
+  expect([1, 2, 3, 4]).to.not.containOnly([1, 2, 3]);
+}
+
+// ---------------------------------------------------------------------------
+// Helper functions
+// ---------------------------------------------------------------------------
 
 ///
 void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @safe nothrow {
@@ -270,4 +378,3 @@ string niceJoin(string[] values, string typeName = "") @safe nothrow {
 string niceJoin(EquableValue[] values, string typeName = "") @safe nothrow {
   return values.map!(a => a.getSerialized.cleanString).array.niceJoin(typeName);
 }
-

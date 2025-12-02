@@ -27,3 +27,5 @@ Works with:
   - expect(`double`).[to].[be].lessOrEqualTo(`int`)
   - expect(`real`).[to].[be].lessOrEqualTo(`real`)
   - expect(`real`).[to].[be].lessOrEqualTo(`int`)
+  - expect(`core.time.Duration`).[to].[be].lessOrEqualTo(`core.time.Duration`)
+  - expect(`std.datetime.systime.SysTime`).[to].[be].lessOrEqualTo(`std.datetime.systime.SysTime`)
