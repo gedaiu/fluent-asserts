@@ -1,9 +1,12 @@
+/// Main fluent API for assertions.
+/// Provides the Expect struct and expect() factory functions.
 module fluentasserts.core.expect;
 
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.evaluation;
 import fluentasserts.core.evaluator;
 import fluentasserts.core.results;
+import fluentasserts.core.formatting : toNiceOperation;
 
 import fluentasserts.core.serializers;
 
@@ -29,7 +32,9 @@ import std.string;
 import std.uni;
 import std.conv;
 
-///
+/// The main fluent assertion struct.
+/// Provides a chainable API for building assertions with modifiers like
+/// `not`, `be`, and `to`, and terminal operations like `equal`, `contain`, etc.
 @safe struct Expect {
 
   private {
@@ -37,11 +42,14 @@ import std.conv;
     int refCount;
   }
 
-  /// Getter for evaluation - allows external extensions via UFCS
+  /// Returns a reference to the underlying evaluation.
+  /// Allows external extensions via UFCS.
   ref Evaluation evaluation() {
     return *_evaluation;
   }
 
+  /// Constructs an Expect from a ValueEvaluation.
+  /// Initializes the evaluation state and sets up the initial message.
   this(ValueEvaluation value) @trusted {
     this._evaluation = new Evaluation();
 
@@ -68,11 +76,13 @@ import std.conv;
     }
   }
 
+  /// Copy constructor. Increments reference count.
   this(ref return scope Expect another) {
     this._evaluation = another._evaluation;
     this.refCount = another.refCount + 1;
   }
 
+  /// Destructor. Finalizes the evaluation when reference count reaches zero.
   ~this() {
     refCount--;
 
@@ -92,7 +102,8 @@ import std.conv;
     }
   }
 
-  /// Finalize the message before creating an Evaluator - for external extensions
+  /// Finalizes the assertion message before creating an Evaluator.
+  /// Used by external extensions to complete message formatting.
   void finalizeMessage() {
     _evaluation.result.addText(" ");
     _evaluation.result.addText(_evaluation.operationName.toNiceOperation);
@@ -106,6 +117,8 @@ import std.conv;
     }
   }
 
+  /// Returns the message from the thrown exception.
+  /// Throws if no exception was thrown.
   string msg(const size_t line = __LINE__, const string file = __FILE__) @trusted {
     if(this.thrown is null) {
       throw new Exception("There were no thrown exceptions", file, line);
@@ -114,32 +127,35 @@ import std.conv;
     return this.thrown.message.to!string;
   }
 
+  /// Chains with message expectation (no argument version).
   Expect withMessage(const size_t line = __LINE__, const string file = __FILE__) {
     addOperationName("withMessage");
     return this;
   }
 
+  /// Chains with message expectation for a specific message.
   Expect withMessage(string message, const size_t line = __LINE__, const string file = __FILE__) {
     return opDispatch!"withMessage"(message);
   }
 
+  /// Returns the throwable captured during evaluation.
   Throwable thrown() {
     Lifecycle.instance.endEvaluation(*_evaluation);
     return _evaluation.throwable;
   }
 
-  ///
+  /// Syntactic sugar - returns self for chaining.
   Expect to() {
     return this;
   }
 
-  ///
+  /// Adds "be" to the assertion message for readability.
   Expect be () {
     _evaluation.result.addText(" be");
     return this;
   }
 
-  ///
+  /// Negates the assertion condition.
   Expect not() {
     _evaluation.isNegated = !_evaluation.isNegated;
     _evaluation.result.addText(" not");
@@ -147,7 +163,7 @@ import std.conv;
     return this;
   }
 
-  ///
+  /// Asserts that the callable throws any exception.
   ThrowableEvaluator throwAnyException() @trusted {
     addOperationName("throwAnyException");
     finalizeMessage();
@@ -155,7 +171,7 @@ import std.conv;
     return ThrowableEvaluator(*_evaluation, &throwAnyExceptionOp, &throwAnyExceptionWithMessageOp);
   }
 
-  ///
+  /// Asserts that the callable throws something (exception or error).
   ThrowableEvaluator throwSomething() @trusted {
     addOperationName("throwSomething");
     finalizeMessage();
@@ -163,7 +179,7 @@ import std.conv;
     return ThrowableEvaluator(*_evaluation, &throwSomethingOp, &throwSomethingWithMessageOp);
   }
 
-  ///
+  /// Asserts that the callable throws a specific exception type.
   ThrowableEvaluator throwException(Type)() @trusted {
     this._evaluation.expectedValue.meta["exceptionType"] = fullyQualifiedName!Type;
     this._evaluation.expectedValue.meta["throwableType"] = fullyQualifiedName!Type;
@@ -176,12 +192,14 @@ import std.conv;
     return ThrowableEvaluator(*_evaluation, &throwExceptionOp, &throwExceptionWithMessageOp);
   }
 
+  /// Adds a reason to the assertion message.
+  /// The reason is prepended: "Because <reason>, ..."
   auto because(string reason) {
     _evaluation.result.prependText("Because " ~ reason ~ ", ");
     return this;
   }
 
-  ///
+  /// Asserts that the actual value equals the expected value.
   Evaluator equal(T)(T value) {
     import std.algorithm : endsWith;
 
@@ -197,7 +215,7 @@ import std.conv;
     }
   }
 
-  ///
+  /// Asserts that the actual value contains the expected value.
   TrustedEvaluator contain(T)(T value) {
     import std.algorithm : endsWith;
 
@@ -213,7 +231,7 @@ import std.conv;
     }
   }
 
-  ///
+  /// Asserts that the actual value is greater than the expected value.
   Evaluator greaterThan(T)(T value) {
     addOperationName("greaterThan");
     setExpectedValue(value);
@@ -229,7 +247,7 @@ import std.conv;
     }
   }
 
-  ///
+  /// Asserts that the actual value is greater than or equal to the expected value.
   Evaluator greaterOrEqualTo(T)(T value) {
     addOperationName("greaterOrEqualTo");
     setExpectedValue(value);
@@ -245,7 +263,7 @@ import std.conv;
     }
   }
 
-  ///
+  /// Asserts that the actual value is above (greater than) the expected value.
   Evaluator above(T)(T value) {
     addOperationName("above");
     setExpectedValue(value);
@@ -261,7 +279,7 @@ import std.conv;
     }
   }
 
-  ///
+  /// Asserts that the actual value is less than the expected value.
   Evaluator lessThan(T)(T value) {
     addOperationName("lessThan");
     setExpectedValue(value);
@@ -279,7 +297,7 @@ import std.conv;
     }
   }
 
-  ///
+  /// Asserts that the actual value is less than or equal to the expected value.
   Evaluator lessOrEqualTo(T)(T value) {
     addOperationName("lessOrEqualTo");
     setExpectedValue(value);
@@ -288,7 +306,7 @@ import std.conv;
     return Evaluator(*_evaluation, &lessOrEqualToOp!T);
   }
 
-  ///
+  /// Asserts that the actual value is below (less than) the expected value.
   Evaluator below(T)(T value) {
     addOperationName("below");
     setExpectedValue(value);
@@ -306,7 +324,7 @@ import std.conv;
     }
   }
 
-  ///
+  /// Asserts that the string starts with the expected prefix.
   Evaluator startWith(T)(T value) {
     addOperationName("startWith");
     setExpectedValue(value);
@@ -315,7 +333,7 @@ import std.conv;
     return Evaluator(*_evaluation, &startWithOp);
   }
 
-  ///
+  /// Asserts that the string ends with the expected suffix.
   Evaluator endWith(T)(T value) {
     addOperationName("endWith");
     setExpectedValue(value);
@@ -324,6 +342,7 @@ import std.conv;
     return Evaluator(*_evaluation, &endWithOp);
   }
 
+  /// Asserts that the collection contains only the expected elements.
   Evaluator containOnly(T)(T value) {
     addOperationName("containOnly");
     setExpectedValue(value);
@@ -332,6 +351,7 @@ import std.conv;
     return Evaluator(*_evaluation, &arrayContainOnlyOp);
   }
 
+  /// Asserts that the value is null.
   Evaluator beNull() {
     addOperationName("beNull");
     finalizeMessage();
@@ -339,6 +359,7 @@ import std.conv;
     return Evaluator(*_evaluation, &beNullOp);
   }
 
+  /// Asserts that the value is an instance of the specified type.
   Evaluator instanceOf(Type)() {
     addOperationName("instanceOf");
     this._evaluation.expectedValue.strValue = "\"" ~ fullyQualifiedName!Type ~ "\"";
@@ -347,6 +368,7 @@ import std.conv;
     return Evaluator(*_evaluation, &instanceOfOp);
   }
 
+  /// Asserts that the value is approximately equal to expected within range.
   Evaluator approximately(T, U)(T value, U range) {
     import std.traits : isArray;
 
@@ -363,6 +385,7 @@ import std.conv;
     }
   }
 
+  /// Asserts that the value is between two bounds (exclusive).
   Evaluator between(T, U)(T value, U range) {
     addOperationName("between");
     setExpectedValue(value);
@@ -379,6 +402,7 @@ import std.conv;
     }
   }
 
+  /// Asserts that the value is within two bounds (alias for between).
   Evaluator within(T, U)(T value, U range) {
     addOperationName("within");
     setExpectedValue(value);
@@ -395,10 +419,12 @@ import std.conv;
     }
   }
 
+  /// Prevents the destructor from finalizing the evaluation.
   void inhibit() {
     this.refCount = int.max;
   }
 
+  /// Returns an Expect for the execution time of the current value.
   auto haveExecutionTime() {
     this.inhibit;
 
@@ -407,6 +433,7 @@ import std.conv;
     return result;
   }
 
+  /// Appends an operation name to the current operation chain.
   void addOperationName(string value) {
 
     if(this._evaluation.operationName) {
@@ -416,14 +443,14 @@ import std.conv;
     this._evaluation.operationName ~= value;
   }
 
-  ///
+  /// Dispatches unknown method names as operations (no arguments).
   Expect opDispatch(string methodName)() {
     addOperationName(methodName);
 
     return this;
   }
 
-  ///
+  /// Dispatches unknown method names as operations with arguments.
   Expect opDispatch(string methodName, Params...)(Params params) if(Params.length > 0) {
     addOperationName(methodName);
 
@@ -446,7 +473,8 @@ import std.conv;
     return this;
   }
 
-  /// Set expected value - helper for terminal operations
+  /// Sets the expected value for terminal operations.
+  /// Serializes the value and stores it in the evaluation.
   void setExpectedValue(T)(T value) @trusted {
     auto expectedValue = value.evaluate.evaluation;
 
@@ -459,7 +487,8 @@ import std.conv;
   }
 }
 
-///
+/// Creates an Expect from a callable delegate.
+/// Executes the delegate and captures any thrown exception.
 Expect expect(void delegate() callable, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
   ValueEvaluation value;
   value.typeNames = [ "callable" ];
@@ -485,41 +514,13 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
   return Expect(value);
 }
 
-///
+/// Creates an Expect struct from a lazy value.
+/// Params:
+///   testedValue = The value to test
+///   file = Source file (auto-filled)
+///   line = Source line (auto-filled)
+///   prependText = Optional text to prepend to the value display
+/// Returns: An Expect struct for fluent assertions
 Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
   return Expect(testedValue.evaluate(file, line, prependText).evaluation);
-}
-
-///
-string toNiceOperation(string value) @safe nothrow {
-  string newValue;
-
-  foreach(index, ch; value) {
-    if(index == 0) {
-      newValue ~= ch.toLower;
-      continue;
-    }
-
-    if(ch == '.') {
-      newValue ~= ' ';
-      continue;
-    }
-
-    if(ch.isUpper && value[index - 1].isLower) {
-      newValue ~= ' ';
-      newValue ~= ch.toLower;
-      continue;
-    }
-
-    newValue ~= ch;
-  }
-
-  return newValue;
-}
-
-@("toNiceOperation converts to a nice and readable string")
-unittest {
-  expect("".toNiceOperation).to.equal("");
-  expect("a.b".toNiceOperation).to.equal("a b");
-  expect("aB".toNiceOperation).to.equal("a b");
 }

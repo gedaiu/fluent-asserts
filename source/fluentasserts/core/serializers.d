@@ -1,3 +1,5 @@
+/// Serialization utilities for fluent-asserts.
+/// Provides type-aware serialization of values for assertion output.
 module fluentasserts.core.serializers;
 
 import std.array;
@@ -9,8 +11,12 @@ import std.datetime;
 import std.functional;
 
 version(unittest) import fluent.asserts;
-/// Singleton used to serialize to string the tested values
+
+/// Registry for value serializers.
+/// Converts values to string representations for assertion output.
+/// Custom serializers can be registered for specific types.
 class SerializerRegistry {
+  /// Global singleton instance.
   static SerializerRegistry instance;
 
   private {
@@ -19,7 +25,8 @@ class SerializerRegistry {
     string delegate(immutable void*)[string] immutableSerializers;
   }
 
-  ///
+  /// Registers a custom serializer delegate for an aggregate type.
+  /// The serializer will be used when serializing values of that type.
   void register(T)(string delegate(T) serializer) if(isAggregateType!T) {
     enum key = T.stringof;
 
@@ -47,12 +54,15 @@ class SerializerRegistry {
     }
   }
 
+  /// Registers a custom serializer function for a type.
+  /// Converts the function to a delegate and registers it.
   void register(T)(string function(T) serializer) {
     auto serializerDelegate = serializer.toDelegate;
     this.register(serializerDelegate);
   }
 
-  ///
+  /// Serializes an array to a string representation.
+  /// Each element is serialized and joined with commas.
   string serialize(T)(T[] value) if(!isSomeString!(T[])) {
     static if(is(Unqual!T == void)) {
       return "[]";
@@ -61,14 +71,16 @@ class SerializerRegistry {
     }
   }
 
-  ///
+  /// Serializes an associative array to a string representation.
+  /// Keys are sorted for consistent output.
   string serialize(T: V[K], V, K)(T value) {
     auto keys = value.byKey.array.sort;
 
     return "[" ~ keys.map!(a => serialize(a) ~ ":" ~ serialize(value[a])).joiner(", ").array.to!string ~ "]";
   }
 
-  ///
+  /// Serializes an aggregate type (class, struct, interface) to a string.
+  /// Uses a registered custom serializer if available.
   string serialize(T)(T value) if(isAggregateType!T) {
     auto key = T.stringof;
     auto tmp = &value;
@@ -124,7 +136,8 @@ class SerializerRegistry {
     return result;
   }
 
-  ///
+  /// Serializes a primitive type (string, char, number) to a string.
+  /// Strings are quoted with double quotes, chars with single quotes.
   string serialize(T)(T value) if(!is(T == enum) && (isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T))) {
     static if(isSomeString!T) {
       return `"` ~ value.to!string ~ `"`;
@@ -135,6 +148,7 @@ class SerializerRegistry {
     }
   }
 
+  /// Serializes an enum value to its underlying type representation.
   string serialize(T)(T value) if(is(T == enum)) {
     static foreach(member; EnumMembers!T) {
       if(member == value) {
@@ -145,6 +159,8 @@ class SerializerRegistry {
     throw new Exception("The value can not be serialized.");
   }
 
+  /// Returns a human-readable representation of a value.
+  /// Uses specialized formatting for SysTime and Duration.
   string niceValue(T)(T value) {
     static if(is(Unqual!T == SysTime)) {
       return value.toISOExtString;
@@ -380,14 +396,20 @@ unittest {
   SerializerRegistry.instance.serialize(ivalue).should.equal(`TestStruct(1, "2")`);
 }
 
+/// Returns the unqualified type name for an array type.
+/// Appends "[]" to the element type name.
 string unqualString(T: U[], U)() if(isArray!T && !isSomeString!T) {
   return unqualString!U ~ "[]";
 }
 
+/// Returns the unqualified type name for an associative array type.
+/// Formats as "ValueType[KeyType]".
 string unqualString(T: V[K], V, K)() if(isAssociativeArray!T) {
   return unqualString!V ~ "[" ~ unqualString!K ~ "]";
 }
 
+/// Returns the unqualified type name for a non-array type.
+/// Uses fully qualified names for classes, structs, and interfaces.
 string unqualString(T)() if(isSomeString!T || (!isArray!T && !isAssociativeArray!T)) {
   static if(is(T == class) || is(T == struct) || is(T == interface)) {
     return fullyQualifiedName!(Unqual!(T));
@@ -397,7 +419,8 @@ string unqualString(T)() if(isSomeString!T || (!isArray!T && !isAssociativeArray
 
 }
 
-
+/// Joins the type names of a class hierarchy.
+/// Includes base classes and implemented interfaces.
 string joinClassTypes(T)() {
   string result;
 
@@ -421,7 +444,11 @@ string joinClassTypes(T)() {
   return result;
 }
 
-///
+/// Parses a serialized list string into individual elements.
+/// Handles nested arrays, quoted strings, and char literals.
+/// Params:
+///   value = The serialized list string (e.g., "[1, 2, 3]")
+/// Returns: An array of individual element strings.
 string[] parseList(string value) @safe nothrow {
   if(value.length == 0) {
     return [];
@@ -604,7 +631,11 @@ unittest {
   pieces.should.equal([`["1", "2"]`,`['3', '4']`]);
 }
 
-///
+/// Removes surrounding quotes from a string value.
+/// Handles both double quotes and single quotes.
+/// Params:
+///   value = The potentially quoted string
+/// Returns: The string with surrounding quotes removed.
 string cleanString(string value) @safe nothrow {
   if(value.length <= 1) {
     return value;
@@ -641,7 +672,10 @@ unittest {
   `''`.cleanString.should.equal(``);
 }
 
-///
+/// Removes surrounding quotes from each string in an array.
+/// Params:
+///   pieces = The array of potentially quoted strings
+/// Returns: An array with quotes removed from each element.
 string[] cleanString(string[] pieces) @safe nothrow {
   return pieces.map!(a => a.cleanString).array;
 }

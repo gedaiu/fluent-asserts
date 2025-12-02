@@ -1,3 +1,5 @@
+/// Evaluation structures for fluent-asserts.
+/// Provides the core data types for capturing and comparing values during assertions.
 module fluentasserts.core.evaluation;
 
 import std.datetime;
@@ -14,7 +16,9 @@ import fluentasserts.core.message : Message, ResultGlyphs;
 import fluentasserts.core.asserts : AssertResult;
 import fluentasserts.core.base : TestException;
 
-///
+/// Holds the result of evaluating a single value.
+/// Captures the value itself, any exceptions thrown, timing information,
+/// and serialized representations for display and comparison.
 struct ValueEvaluation {
   /// The exception thrown during evaluation
   Throwable throwable;
@@ -46,6 +50,8 @@ struct ValueEvaluation {
   /// a custom text to be prepended to the value
   string prependText;
 
+  /// Returns the primary type name of the evaluated value.
+  /// Returns: The first type name, or "unknown" if no types are available.
   string typeName() @safe nothrow {
     if(typeNames.length == 0) {
       return "unknown";
@@ -55,7 +61,9 @@ struct ValueEvaluation {
   }
 }
 
-///
+/// Holds the complete state of an assertion evaluation.
+/// Contains both the actual and expected values, operation metadata,
+/// source location, and the assertion result.
 struct Evaluation {
   /// The id of the current evaluation
   size_t id;
@@ -88,18 +96,34 @@ struct Evaluation {
   @property string sourceFile() nothrow @safe { return source.file; }
   @property size_t sourceLine() nothrow @safe { return source.line; }
 
-  /// Check if there is an assertion result
+  /// Checks if there is an assertion result with content.
+  /// Returns: true if the result has expected/actual values, diff, or extra/missing items.
   bool hasResult() nothrow @safe {
     return result.hasContent();
   }
 }
 
-///
+/// Evaluates a lazy input range value and captures the result.
+/// Converts the range to an array and delegates to the primary evaluate function.
+/// Params:
+///   testData = The lazy value to evaluate
+///   file = Source file (auto-captured)
+///   line = Source line (auto-captured)
+///   prependText = Optional text to prepend to the value display
+/// Returns: A tuple containing the evaluated value and its ValueEvaluation.
 auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(isInputRange!T && !isArray!T && !isAssociativeArray!T) {
   return evaluate(testData.array, file, line, prependText);
 }
 
-///
+/// Evaluates a lazy value and captures the result along with timing and exception info.
+/// This is the primary evaluation function that serializes values and wraps them
+/// for comparison operations.
+/// Params:
+///   testData = The lazy value to evaluate
+///   file = Source file (auto-captured)
+///   line = Source line (auto-captured)
+///   prependText = Optional text to prepend to the value display
+/// Returns: A tuple containing the evaluated value and its ValueEvaluation.
 auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(!isInputRange!T || isArray!T || isAssociativeArray!T) {
   auto begin = Clock.currTime;
   alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
@@ -165,6 +189,11 @@ unittest {
   assert(result.evaluation.throwable.msg == "message");
 }
 
+/// Extracts the type names for a non-array, non-associative-array type.
+/// For classes, includes base classes and implemented interfaces.
+/// Params:
+///   T = The type to extract names from
+/// Returns: An array of fully qualified type names.
 string[] extractTypes(T)() if((!isArray!T && !isAssociativeArray!T) || isSomeString!T) {
   string[] types;
 
@@ -185,10 +214,23 @@ string[] extractTypes(T)() if((!isArray!T && !isAssociativeArray!T) || isSomeStr
   return types;
 }
 
+/// Extracts the type names for an array type.
+/// Appends "[]" to each element type name.
+/// Params:
+///   T = The array type
+///   U = The element type
+/// Returns: An array of type names with "[]" suffix.
 string[] extractTypes(T: U[], U)() if(isArray!T && !isSomeString!T) {
   return extractTypes!(U).map!(a => a ~ "[]").array;
 }
 
+/// Extracts the type names for an associative array type.
+/// Formats as "ValueType[KeyType]".
+/// Params:
+///   T = The associative array type
+///   U = The value type
+///   K = The key type
+/// Returns: An array of type names in associative array format.
 string[] extractTypes(T: U[K], U, K)() {
   string k = unqualString!(K);
   return extractTypes!(U).map!(a => a ~ "[" ~ k ~ "]").array;
@@ -224,18 +266,36 @@ unittest {
   assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L216_C1.I[]", `Expected: ` ~ result[2] );
 }
 
-/// A proxy type that allows to compare the native values
+/// A proxy interface for comparing values of different types.
+/// Wraps native values to enable equality and ordering comparisons
+/// without knowing the concrete types at compile time.
 interface EquableValue {
   @safe nothrow:
+    /// Checks if this value equals another EquableValue.
     bool isEqualTo(EquableValue value);
+
+    /// Checks if this value is less than another EquableValue.
     bool isLessThan(EquableValue value);
+
+    /// Converts this value to an array of EquableValues.
     EquableValue[] toArray();
+
+    /// Returns a string representation of this value.
     string toString();
+
+    /// Returns a generalized version of this value for cross-type comparison.
     EquableValue generalize();
+
+    /// Returns the serialized string representation.
     string getSerialized();
 }
 
-/// Wraps a value into equable value
+/// Wraps a value into an EquableValue for comparison operations.
+/// Automatically selects the appropriate wrapper class based on the value type.
+/// Params:
+///   value = The value to wrap
+///   serialized = The serialized string representation of the value
+/// Returns: An EquableValue wrapping the given value.
 EquableValue equableValue(T)(T value, string serialized) {
   static if(isArray!T && !isSomeString!T) {
     return new ArrayEquable!T(value, serialized);
@@ -248,7 +308,8 @@ EquableValue equableValue(T)(T value, string serialized) {
   }
 }
 
-///
+/// An EquableValue wrapper for scalar and object types.
+/// Provides equality and ordering comparisons for non-collection values.
 class ObjectEquable(T) : EquableValue {
   private {
     T value;
@@ -256,11 +317,13 @@ class ObjectEquable(T) : EquableValue {
   }
 
   @trusted nothrow:
+    /// Constructs an ObjectEquable wrapping the given value.
     this(T value, string serialized) {
       this.value = value;
       this.serialized = serialized;
     }
 
+    /// Checks equality with another EquableValue.
     bool isEqualTo(EquableValue otherEquable) {
       try {
         auto other = cast(ObjectEquable) otherEquable;
@@ -285,6 +348,7 @@ class ObjectEquable(T) : EquableValue {
       }
     }
 
+    /// Checks if this value is less than another EquableValue.
     bool isLessThan(EquableValue otherEquable) {
       static if (__traits(compiles, value < value)) {
         try {
@@ -303,10 +367,12 @@ class ObjectEquable(T) : EquableValue {
       }
     }
 
+    /// Returns the serialized string representation.
     string getSerialized() {
       return serialized;
     }
 
+    /// Returns a generalized version for cross-type comparison.
     EquableValue generalize() {
         static if(is(T == class)) {
           auto obj = cast(Object) value;
@@ -319,6 +385,7 @@ class ObjectEquable(T) : EquableValue {
         return new ObjectEquable!string(serialized, serialized);
     }
 
+    /// Converts this value to an array of EquableValues.
     EquableValue[] toArray() {
       static if(__traits(hasMember, T, "byValue") && !__traits(hasMember, T, "byKeyValue")) {
         try {
@@ -329,10 +396,12 @@ class ObjectEquable(T) : EquableValue {
       return [ this ];
     }
 
+    /// Returns a string representation prefixed with "Equable.".
     override string toString() {
       return "Equable." ~ serialized;
     }
 
+    /// Comparison operator override.
     override int opCmp (Object o) {
       return -1;
     }
@@ -387,7 +456,8 @@ unittest {
   assert(value1.isLessThan(value2) == false);
 }
 
-///
+/// An EquableValue wrapper for array types.
+/// Provides element-wise comparison capabilities.
 class ArrayEquable(U: T[], T) : EquableValue {
   private {
     T[] values;
@@ -395,11 +465,13 @@ class ArrayEquable(U: T[], T) : EquableValue {
   }
 
   @safe nothrow:
+    /// Constructs an ArrayEquable wrapping the given array.
     this(T[] values, string serialized) {
       this.values = values;
       this.serialized = serialized;
     }
 
+    /// Checks equality with another EquableValue by comparing serialized forms.
     bool isEqualTo(EquableValue otherEquable) {
       auto other = cast(ArrayEquable!U) otherEquable;
 
@@ -410,14 +482,17 @@ class ArrayEquable(U: T[], T) : EquableValue {
       return serialized == other.serialized;
     }
 
+    /// Arrays do not support less-than comparison, always returns false.
     bool isLessThan(EquableValue otherEquable) {
       return false;
     }
 
+    /// Returns the serialized string representation.
     string getSerialized() {
       return serialized;
     }
 
+    /// Converts each array element to an EquableValue.
     @trusted EquableValue[] toArray() {
       static if(is(T == void)) {
         return [];
@@ -432,17 +507,21 @@ class ArrayEquable(U: T[], T) : EquableValue {
       }
     }
 
+    /// Arrays are already generalized, returns self.
     EquableValue generalize() {
       return this;
     }
 
+    /// Returns the serialized string representation.
     override string toString() {
       return serialized;
     }
 }
 
-///
+/// An EquableValue wrapper for associative array types.
+/// Sorts keys for consistent comparison and inherits from ArrayEquable.
 class AssocArrayEquable(U: T[V], T, V) : ArrayEquable!(string[], string) {
+  /// Constructs an AssocArrayEquable, sorting entries by key.
   this(T[V] values, string serialized) {
     auto sortedKeys = values.keys.sort;
 

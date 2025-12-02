@@ -1,35 +1,34 @@
+/// Message types and display formatting for fluent-asserts.
+/// Provides structures for representing and formatting assertion messages.
 module fluentasserts.core.message;
 
 import std.string;
-import ddmp.diff;
-import fluentasserts.core.results;
-import std.algorithm;
-import std.conv;
 
 @safe:
 
-/// Glyphs used to display special chars in the results
+/// Glyphs used to display special characters in the results.
+/// These can be customized for different terminal environments.
 struct ResultGlyphs {
   static {
-    /// Glyph for the tab char
+    /// Glyph for the tab character
     string tab;
 
-    /// Glyph for the \r char
+    /// Glyph for the carriage return character
     string carriageReturn;
 
-    /// Glyph for the \n char
+    /// Glyph for the newline character
     string newline;
 
-    /// Glyph for the space char
+    /// Glyph for the space character
     string space;
 
-    /// Glyph for the \0 char
+    /// Glyph for the null character
     string nullChar;
 
-    /// Glyph that indicates the error line
+    /// Glyph that indicates the error line in source display
     string sourceIndicator;
 
-    /// Glyph that sepparates the line number
+    /// Glyph that separates the line number from source code
     string sourceLineSeparator;
 
     /// Glyph for the diff begin indicator
@@ -38,16 +37,17 @@ struct ResultGlyphs {
     /// Glyph for the diff end indicator
     string diffEnd;
 
-    /// Glyph that marks an inserted text in diff
+    /// Glyph that marks inserted text in diff
     string diffInsert;
 
     /// Glyph that marks deleted text in diff
     string diffDelete;
   }
 
-  /// Set the default values. The values are
+  /// Resets all glyphs to their default values.
+  /// Windows uses ASCII-compatible glyphs, other platforms use Unicode.
   static resetDefaults() {
-    version(windows) {
+    version (windows) {
       ResultGlyphs.tab = `\t`;
       ResultGlyphs.carriageReturn = `\r`;
       ResultGlyphs.newline = `\n`;
@@ -71,23 +71,37 @@ struct ResultGlyphs {
   }
 }
 
+/// Represents a single message segment with a type and text content.
+/// Messages are used to build up assertion failure descriptions.
 struct Message {
+  /// The type of message content
   enum Type {
+    /// Informational text
     info,
+    /// A value being displayed
     value,
+    /// A section title
     title,
+    /// A category label
     category,
+    /// Inserted text in a diff
     insert,
+    /// Deleted text in a diff
     delete_
   }
 
+  /// The type of this message
   Type type;
+
+  /// The text content of this message
   string text;
 
+  /// Constructs a message with the given type and text.
+  /// For value, insert, and delete types, special characters are replaced with glyphs.
   this(Type type, string text) nothrow {
     this.type = type;
 
-    if(type == Type.value || type == Type.insert || type == Type.delete_) {
+    if (type == Type.value || type == Type.insert || type == Type.delete_) {
       this.text = text
         .replace("\r", ResultGlyphs.carriageReturn)
         .replace("\n", ResultGlyphs.newline)
@@ -98,8 +112,10 @@ struct Message {
     }
   }
 
+  /// Converts the message to a string representation.
+  /// Titles and categories include newlines, inserts/deletes include markers.
   string toString() nothrow inout {
-    switch(type) {
+    switch (type) {
       case Type.title:
         return "\n\n" ~ text ~ "\n";
       case Type.insert:
@@ -111,87 +127,5 @@ struct Message {
       default:
         return text;
     }
-  }
-}
-
-public import fluentasserts.core.asserts : AssertResult, DiffSegment;
-
-immutable(Message)[] toMessages(ref EvaluationResult result) nothrow {
-  return result.messages;
-}
-
-
-struct EvaluationResult {
-  private {
-    immutable(Message)[] messages;
-  }
-
-  void add(immutable(Message) message) nothrow {
-    messages ~= message;
-  }
-
-  string toString() nothrow {
-    string result;
-
-    foreach (message; messages) {
-      result ~= message.toString;
-    }
-
-    return result;
-  }
-
-  void print(ResultPrinter printer) nothrow {
-    foreach (message; messages) {
-      printer.print(message);
-    }
-  }
-}
-
-static immutable actualTitle = Message(Message.Type.category, "Actual:");
-
-void addResult(ref EvaluationResult result, string value) nothrow @trusted {
-  result.add(actualTitle);
-
-  result.add(Message(Message.Type.value, value));
-}
-
-
-static immutable expectedTitle = Message(Message.Type.category, "Expected:");
-static immutable expectedNot = Message(Message.Type.info, "not ");
-
-void addExpected(ref EvaluationResult result, bool isNegated, string value) nothrow @trusted {
-  result.add(expectedTitle);
-
-  if(isNegated) {
-    result.add(expectedNot);
-  }
-
-  result.add(Message(Message.Type.value, value));
-}
-
-
-static immutable diffTitle = Message(Message.Type.title, "Diff:");
-
-void addDiff(ref EvaluationResult result, string actual, string expected) nothrow @trusted {
-  result.add(diffTitle);
-
-  try {
-    auto diffResult = diff_main(expected, actual);
-
-    foreach(diff; diffResult) {
-      if(diff.operation == Operation.EQUAL) {
-        result.add(Message(Message.Type.info, diff.text.to!string));
-      }
-
-      if(diff.operation == Operation.INSERT) {
-        result.add(Message(Message.Type.insert, diff.text.to!string));
-      }
-
-      if(diff.operation == Operation.DELETE) {
-        result.add(Message(Message.Type.delete_, diff.text.to!string));
-      }
-    }
-  } catch(Exception e) {
-    return;
   }
 }

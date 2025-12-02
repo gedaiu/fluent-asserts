@@ -1,3 +1,6 @@
+/// Base module for fluent-asserts.
+/// Re-exports all core assertion modules and provides the Assert struct
+/// for traditional-style assertions.
 module fluentasserts.core.base;
 
 public import fluentasserts.core.array;
@@ -30,15 +33,20 @@ version(Have_unit_threaded) {
   alias ReferenceException = Exception;
 }
 
+/// Exception thrown when an assertion fails.
+/// Contains the failure message and optionally structured message segments
+/// for rich output formatting.
 class TestException : ReferenceException {
   private {
     immutable(Message)[] messages;
   }
 
+  /// Constructs a TestException with a simple string message.
   this(string message, string fileName, size_t line, Throwable next = null) {
     super(message ~ '\n', fileName, line, next);
   }
 
+  /// Constructs a TestException with structured message segments.
   this(immutable(Message)[] messages, string fileName, size_t line, Throwable next = null) {
     string msg;
     foreach(m; messages) {
@@ -50,6 +58,7 @@ class TestException : ReferenceException {
     super(msg, fileName, line, next);
   }
 
+  /// Prints the exception message using a ResultPrinter for formatted output.
   void print(ResultPrinter printer) {
     foreach(message; messages) {
       printer.print(message);
@@ -58,6 +67,14 @@ class TestException : ReferenceException {
   }
 }
 
+/// Creates a fluent assertion using UFCS syntax.
+/// This is an alias for `expect` that reads more naturally with UFCS.
+/// Example: `value.should.equal(42)`
+/// Params:
+///   testData = The value to test
+///   file = Source file (auto-captured)
+///   line = Source line (auto-captured)
+/// Returns: An Expect struct for chaining assertions.
 auto should(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__) @trusted {
   static if(is(T == void)) {
     auto callable = ({ testData; });
@@ -76,7 +93,12 @@ unittest {
   msg.split("\n")[0].should.equal("Because of test reasons, true should equal false. ");
 }
 
+/// Provides a traditional assertion API as an alternative to fluent syntax.
+/// All methods are static and can be called as `Assert.equal(a, b)`.
+/// Supports negation by prefixing with "not": `Assert.notEqual(a, b)`.
 struct Assert {
+  /// Dispatches assertion calls dynamically based on the method name.
+  /// Supports negation with "not" prefix (e.g., notEqual, notContain).
   static void opDispatch(string s, T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto sh = expect(actual);
@@ -105,6 +127,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is between two bounds (exclusive).
   static void between(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).to.be.between(begin, end);
@@ -114,6 +137,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is NOT between two bounds.
   static void notBetween(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).not.to.be.between(begin, end);
@@ -123,6 +147,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is within two bounds (alias for between).
   static void within(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).to.be.between(begin, end);
@@ -132,6 +157,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is NOT within two bounds.
   static void notWithin(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).not.to.be.between(begin, end);
@@ -141,6 +167,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is approximately equal to expected within delta.
   static void approximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).to.be.approximately(expected, delta);
@@ -150,6 +177,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is NOT approximately equal to expected.
   static void notApproximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).not.to.be.approximately(expected, delta);
@@ -159,6 +187,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is null.
   static void beNull(T)(T actual, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).to.beNull;
@@ -168,6 +197,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is NOT null.
   static void notNull(T)(T actual, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).not.to.beNull;
@@ -245,6 +275,8 @@ unittest {
   Assert.notContainOnly([1, 2, 3], [3, 1]);
 }
 
+/// Custom assert handler that provides better error messages.
+/// Replaces the default D runtime assert handler to show fluent-asserts style output.
 void fluentHandler(string file, size_t line, string msg) nothrow {
   import core.exception;
 
@@ -253,6 +285,8 @@ void fluentHandler(string file, size_t line, string msg) nothrow {
   throw new AssertError(errorMsg, file, line);
 }
 
+/// Installs the fluent handler as the global assert handler.
+/// Call this at program startup to enable fluent-asserts style messages for assert().
 void setupFluentHandler() {
   import core.exception;
   core.exception.assertHandler = &fluentHandler;

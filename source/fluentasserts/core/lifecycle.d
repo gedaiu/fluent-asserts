@@ -1,3 +1,6 @@
+/// Lifecycle management for fluent-asserts.
+/// Handles initialization of the assertion framework and manages
+/// the assertion evaluation lifecycle.
 module fluentasserts.core.lifecycle;
 
 import fluentasserts.core.base;
@@ -20,14 +23,22 @@ import fluentasserts.core.operations.throwable;
 import fluentasserts.core.results;
 import fluentasserts.core.serializers;
 
+import core.memory : GC;
 import std.meta;
 import std.conv;
 import std.datetime;
 
+/// Tuple of basic numeric types supported by fluent-asserts.
 alias BasicNumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
+
+/// Tuple of all numeric types for operation registration.
 alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
+
+/// Tuple of string types supported by fluent-asserts.
 alias StringTypes = AliasSeq!(string, wstring, dstring, const(char)[]);
 
+/// Module constructor that initializes all fluent-asserts components.
+/// Registers all built-in operations, serializers, and sets up the lifecycle.
 static this() {
   SerializerRegistry.instance = new SerializerRegistry;
   Lifecycle.instance = new Lifecycle;
@@ -126,29 +137,41 @@ static this() {
   Registry.instance.register("*", "*", "throwSomething.withMessage.equal", &throwAnyExceptionWithMessage);
 }
 
-/// The assert lifecycle
+/// Manages the assertion evaluation lifecycle.
+/// Tracks assertion counts and handles the finalization of evaluations.
 @safe class Lifecycle {
-  /// Global instance for the assert lifecicle
+  /// Global singleton instance.
   static Lifecycle instance;
 
   private {
-    ///
+    /// Counter for total assertions executed.
     int totalAsserts;
   }
 
-  /// Method called when a new value is evaluated
+  /// Called when a new value evaluation begins.
+  /// Increments the assertion counter and returns the current count.
+  /// Params:
+  ///   value = The value evaluation being started
+  /// Returns: The current assertion number.
   int beginEvaluation(ValueEvaluation value) @safe nothrow {
     totalAsserts++;
 
     return totalAsserts;
   }
 
-  ///
+  /// Finalizes an evaluation and throws TestException on failure.
+  /// Delegates to the Registry to handle the evaluation and throws
+  /// if the result contains failure content.
+  /// Does not throw if called from a GC finalizer.
   void endEvaluation(ref Evaluation evaluation) @trusted {
     if(evaluation.isEvaluated) return;
 
     evaluation.isEvaluated = true;
     Registry.instance.handle(evaluation);
+
+    if(GC.inFinalizer) {
+      return;
+    }
 
     if(evaluation.currentValue.throwable !is null) {
       throw evaluation.currentValue.throwable;

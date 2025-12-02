@@ -1,9 +1,12 @@
+/// Evaluator structs for executing assertion operations.
+/// Provides lifetime management and result handling for assertions.
 module fluentasserts.core.evaluator;
 
 import fluentasserts.core.evaluation;
 import fluentasserts.core.results;
 import fluentasserts.core.base : TestException;
 import fluentasserts.core.serializers;
+import fluentasserts.core.formatting : toNiceOperation;
 
 import std.functional : toDelegate;
 import std.conv : to;
@@ -304,32 +307,4 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
 
         throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
     }
-}
-
-private string toNiceOperation(string value) @safe nothrow {
-    import std.uni : toLower, isUpper, isLower;
-
-    string newValue;
-
-    foreach (index, ch; value) {
-        if (index == 0) {
-            newValue ~= ch.toLower;
-            continue;
-        }
-
-        if (ch == '.') {
-            newValue ~= ' ';
-            continue;
-        }
-
-        if (ch.isUpper && value[index - 1].isLower) {
-            newValue ~= ' ';
-            newValue ~= ch.toLower;
-            continue;
-        }
-
-        newValue ~= ch;
-    }
-
-    return newValue;
 }
