@@ -209,6 +209,16 @@ string jsonToString(Json value) {
 }
 ```
 
+# Contributing
+
+Areas for potential improvement:
+
+- **Reduce Evaluator duplication** - `Evaluator`, `TrustedEvaluator`, and `ThrowableEvaluator` share similar code that could be consolidated with templates or mixins.
+- **Simplify the Registry** - The type generalization logic could benefit from clearer naming or documentation.
+- **Remove ddmp dependency** - For simpler diffs or no diffs, removing the ddmp dependency would simplify the build.
+- **Consistent error messages** - Standardize error message patterns across operations for more predictable output.
+- **Make source extraction optional** - Source code tokenization runs on every assertion; making it opt-in could improve performance.
+- **GC allocation optimization** - Several hot paths use string/array concatenation that could be optimized with `Appender` or pre-allocation.
 
 # License
 
