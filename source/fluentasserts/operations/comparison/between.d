@@ -19,7 +19,7 @@ version (unittest) {
 static immutable betweenDescription = "Asserts that the target is a number or a date greater than or equal to the given number or date start, " ~
   "and less than or equal to the given number or date finish respectively. However, it's often best to assert that the target is equal to its expected value.";
 
-///
+/// Asserts that a value is strictly between two bounds (exclusive).
 void between(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(" and ");
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
@@ -43,7 +43,7 @@ void between(T)(ref Evaluation evaluation) @safe nothrow {
 }
 
 
-///
+/// Asserts that a Duration value is strictly between two bounds (exclusive).
 void betweenDuration(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(" and ");
 
@@ -68,7 +68,7 @@ void betweenDuration(ref Evaluation evaluation) @safe nothrow {
   betweenResults(currentValue, limit1, limit2, evaluation);
 }
 
-///
+/// Asserts that a SysTime value is strictly between two bounds (exclusive).
 void betweenSysTime(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(" and ");
 

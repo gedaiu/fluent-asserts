@@ -17,7 +17,7 @@ version(unittest) {
 
 static immutable lessThanDescription = "Asserts that the tested value is less than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
-///
+/// Asserts that a value is strictly less than the expected value.
 void lessThan(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 

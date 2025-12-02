@@ -23,7 +23,7 @@ static immutable isEqualTo = Message(Message.Type.info, " is equal to ");
 static immutable isNotEqualTo = Message(Message.Type.info, " is not equal to ");
 static immutable endSentence = Message(Message.Type.info, ". ");
 
-///
+/// Asserts that the current value is strictly equal to the expected value.
 void equal(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.add(endSentence);
 

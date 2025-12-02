@@ -18,7 +18,7 @@ version (unittest) {
 
 static immutable greaterOrEqualToDescription = "Asserts that the tested value is greater or equal than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
-///
+/// Asserts that a value is greater than or equal to the expected value.
 void greaterOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 

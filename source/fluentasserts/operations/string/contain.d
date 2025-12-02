@@ -21,7 +21,8 @@ version(unittest) {
 static immutable containDescription = "When the tested value is a string, it asserts that the given string val is a substring of the target. \n\n" ~
   "When the tested value is an array, it asserts that the given val is inside the tested value.";
 
-///
+/// Asserts that a string contains specified substrings.
+/// Sets evaluation.result with missing values if the assertion fails.
 void contain(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
@@ -111,7 +112,8 @@ unittest {
   expect(evaluation.result.negated).to.equal(true);
 }
 
-///
+/// Asserts that an array contains specified elements.
+/// Sets evaluation.result with missing values if the assertion fails.
 void arrayContain(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addText(".");
 
@@ -173,7 +175,8 @@ unittest {
   expect(evaluation.result.negated).to.equal(true);
 }
 
-///
+/// Asserts that an array contains only the specified elements (no extras, no missing).
+/// Sets evaluation.result with extra/missing arrays if the assertion fails.
 void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
@@ -263,7 +266,7 @@ unittest {
 // Helper functions
 // ---------------------------------------------------------------------------
 
-///
+/// Adds a failure message to evaluation.result describing missing string values.
 void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @safe nothrow {
   evaluation.result.addText(" ");
 
@@ -287,14 +290,14 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
   evaluation.result.addText(".");
 }
 
-///
+/// Adds a failure message to evaluation.result describing missing EquableValue elements.
 void addLifecycleMessage(ref Evaluation evaluation, EquableValue[] missingValues) @safe nothrow {
   auto missing = missingValues.map!(a => a.getSerialized.cleanString).array;
 
   addLifecycleMessage(evaluation, missing);
 }
 
-///
+/// Adds a negated failure message to evaluation.result describing unexpectedly present string values.
 void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValues) @safe nothrow {
   evaluation.result.addText(" ");
 
@@ -317,7 +320,7 @@ void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValue
   evaluation.result.addText(".");
 }
 
-///
+/// Adds a negated failure message to evaluation.result describing unexpectedly present EquableValue elements.
 void addNegatedLifecycleMessage(ref Evaluation evaluation, EquableValue[] missingValues) @safe nothrow {
   auto missing = missingValues.map!(a => a.getSerialized).array;
 
@@ -336,7 +339,7 @@ string createResultMessage(ValueEvaluation expectedValue, string[] expectedPiece
   return message;
 }
 
-///
+/// Creates an expected result message from EquableValue array.
 string createResultMessage(ValueEvaluation expectedValue, EquableValue[] missingValues) @safe nothrow {
   auto missing = missingValues.map!(a => a.getSerialized).array;
 
@@ -355,7 +358,7 @@ string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expect
   return message;
 }
 
-///
+/// Creates a negated expected result message from EquableValue array.
 string createNegatedResultMessage(ValueEvaluation expectedValue, EquableValue[] missingValues) @safe nothrow {
   auto missing = missingValues.map!(a => a.getSerialized).array;
 

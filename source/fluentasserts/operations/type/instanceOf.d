@@ -19,7 +19,7 @@ version (unittest) {
 
 static immutable instanceOfDescription = "Asserts that the tested value is related to a type.";
 
-///
+/// Asserts that a value is an instance of a specific type or inherits from it.
 void instanceOf(ref Evaluation evaluation) @safe nothrow {
   string expectedType = evaluation.expectedValue.strValue[1 .. $-1];
   string currentType = evaluation.currentValue.typeNames[0];

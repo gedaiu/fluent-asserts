@@ -20,7 +20,8 @@ struct OperationPair {
   string expectedValueType;
 }
 
-///
+/// Central registry for assertion operations.
+/// Maintains a mapping of type pairs to operation handlers.
 class Registry {
   /// Global instance for the assert operations
   static Registry instance;

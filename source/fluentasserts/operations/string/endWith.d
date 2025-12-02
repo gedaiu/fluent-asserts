@@ -18,7 +18,7 @@ version (unittest) {
 
 static immutable endWithDescription = "Tests that the tested string ends with the expected value.";
 
-///
+/// Asserts that a string ends with the expected suffix.
 void endWith(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 

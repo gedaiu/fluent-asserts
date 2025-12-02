@@ -15,7 +15,7 @@ version(unittest) {
 
 static immutable beNullDescription = "Asserts that the value is null.";
 
-///
+/// Asserts that a value is null (for nullable types like pointers, delegates, classes).
 void beNull(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 

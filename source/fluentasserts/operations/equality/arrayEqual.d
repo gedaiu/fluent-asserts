@@ -14,7 +14,7 @@ version(unittest) {
 
 static immutable arrayEqualDescription = "Asserts that the target is strictly == equal to the given val.";
 
-///
+/// Asserts that two arrays are strictly equal element by element.
 void arrayEqual(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
   bool result = true;

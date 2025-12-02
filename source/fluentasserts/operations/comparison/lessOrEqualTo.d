@@ -18,7 +18,7 @@ version (unittest) {
 
 static immutable lessOrEqualToDescription = "Asserts that the tested value is less or equal than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
-///
+/// Asserts that a value is less than or equal to the expected value.
 void lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
@@ -62,7 +62,7 @@ void lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 }
 
-///
+/// Asserts that a Duration value is less than or equal to the expected Duration.
 void lessOrEqualToDuration(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
@@ -88,7 +88,7 @@ void lessOrEqualToDuration(ref Evaluation evaluation) @safe nothrow {
   lessOrEqualToResults(result, niceExpectedValue, niceCurrentValue, evaluation);
 }
 
-///
+/// Asserts that a SysTime value is less than or equal to the expected SysTime.
 void lessOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 

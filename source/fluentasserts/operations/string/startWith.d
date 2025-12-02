@@ -18,7 +18,7 @@ version (unittest) {
 
 static immutable startWithDescription = "Tests that the tested string starts with the expected value.";
 
-///
+/// Asserts that a string starts with the expected prefix.
 void startWith(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 

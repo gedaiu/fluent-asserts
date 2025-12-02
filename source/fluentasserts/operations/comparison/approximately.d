@@ -23,7 +23,7 @@ version (unittest) {
 
 static immutable approximatelyDescription = "Asserts that the target is a number that's within a given +/- `delta` range of the given number expected. However, it's often best to assert that the target is equal to its expected value.";
 
-///
+/// Asserts that a numeric value is within a given delta range of the expected value.
 void approximately(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addValue("±");
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
@@ -75,7 +75,7 @@ void approximately(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.negated = evaluation.isNegated;
 }
 
-///
+/// Asserts that each element in a numeric list is within a given delta range of its expected value.
 void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addValue("±" ~ evaluation.expectedValue.meta["1"]);
   evaluation.result.addText(".");
