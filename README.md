@@ -109,6 +109,38 @@ just add `not` before the assert name:
     Assert.notEqual(testedValue, 42);
 ```
 
+## Recording Evaluations
+
+The `recordEvaluation` function allows you to capture the result of an assertion without throwing an exception on failure. This is useful for testing assertion behavior itself, or for inspecting the evaluation result programmatically.
+
+```D
+import fluentasserts.core.lifecycle : recordEvaluation;
+
+unittest {
+    auto evaluation = ({
+        expect(5).to.equal(10);
+    }).recordEvaluation;
+
+    // Inspect the evaluation result
+    assert(evaluation.result.expected == "10");
+    assert(evaluation.result.actual == "5");
+}
+```
+
+The function:
+1. Takes a delegate containing the assertion to execute
+2. Temporarily disables failure handling so the test doesn't abort
+3. Returns the `Evaluation` struct containing the result
+
+The `Evaluation.result` provides access to:
+- `expected` - the expected value as a string
+- `actual` - the actual value as a string
+- `negated` - whether the assertion was negated with `.not`
+- `missing` - array of missing elements (for collection comparisons)
+- `extra` - array of extra elements (for collection comparisons)
+
+This is particularly useful when writing tests for custom assertion operations or when you need to verify that assertions produce the correct error messages.
+
 ## Built in operations
 
 - [above](api/above.md)
