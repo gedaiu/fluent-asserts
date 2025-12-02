@@ -11,6 +11,7 @@ import fluentasserts.core.lifecycle;
 version (unittest) {
   import fluent.asserts;
   import fluentasserts.core.expect;
+  import fluentasserts.core.lifecycle;
   import std.conv;
   import std.meta;
 }
@@ -81,51 +82,53 @@ static foreach (Type; StringTypes) {
     expect(testValue).to.not.startWith('o');
   }
 
-  @(Type.stringof ~ " throws detailed error when the string does not start with expected substring")
+  @(Type.stringof ~ " test string startWith other reports error with expected and actual")
   unittest {
     Type testValue = "test string".to!Type;
-    auto msg = ({
+
+    auto evaluation = ({
       expect(testValue).to.startWith("other");
-    }).should.throwException!TestException.msg;
+    }).recordEvaluation;
 
-    msg.split("\n")[0].should.contain(`"test string" should start with "other". "test string" does not start with "other".`);
-    msg.split("\n")[1].strip.should.equal(`Expected:to start with "other"`);
-    msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
+    expect(evaluation.result.expected).to.equal(`to start with "other"`);
+    expect(evaluation.result.actual).to.equal(`"test string"`);
   }
 
-  @(Type.stringof ~ " throws detailed error when the string does not start with expected char")
+  @(Type.stringof ~ " test string startWith char o reports error with expected and actual")
   unittest {
     Type testValue = "test string".to!Type;
-    auto msg = ({
+
+    auto evaluation = ({
       expect(testValue).to.startWith('o');
-    }).should.throwException!TestException.msg;
+    }).recordEvaluation;
 
-    msg.split("\n")[0].should.contain(`"test string" should start with 'o'. "test string" does not start with 'o'.`);
-    msg.split("\n")[1].strip.should.equal(`Expected:to start with 'o'`);
-    msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
+    expect(evaluation.result.expected).to.equal(`to start with 'o'`);
+    expect(evaluation.result.actual).to.equal(`"test string"`);
   }
 
-  @(Type.stringof ~ " throws detailed error when the string unexpectedly starts with a substring")
+  @(Type.stringof ~ " test string not startWith test reports error with expected and negated")
   unittest {
     Type testValue = "test string".to!Type;
-    auto msg = ({
+
+    auto evaluation = ({
       expect(testValue).to.not.startWith("test");
-    }).should.throwException!TestException.msg;
+    }).recordEvaluation;
 
-    msg.split("\n")[0].should.contain(`"test string" should not start with "test". "test string" starts with "test".`);
-    msg.split("\n")[1].strip.should.equal(`Expected:not to start with "test"`);
-    msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
+    expect(evaluation.result.expected).to.equal(`to start with "test"`);
+    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.negated).to.equal(true);
   }
 
-  @(Type.stringof ~ " throws detailed error when the string unexpectedly starts with a char")
+  @(Type.stringof ~ " test string not startWith char t reports error with expected and negated")
   unittest {
     Type testValue = "test string".to!Type;
-    auto msg = ({
-      expect(testValue).to.not.startWith('t');
-    }).should.throwException!TestException.msg;
 
-    msg.split("\n")[0].should.contain(`"test string" should not start with 't'. "test string" starts with 't'.`);
-    msg.split("\n")[1].strip.should.equal(`Expected:not to start with 't'`);
-    msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
+    auto evaluation = ({
+      expect(testValue).to.not.startWith('t');
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal(`to start with 't'`);
+    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.negated).to.equal(true);
   }
 }

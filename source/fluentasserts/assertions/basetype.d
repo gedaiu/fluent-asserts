@@ -7,8 +7,13 @@ import std.string;
 import std.conv;
 import std.algorithm;
 
+version(unittest) {
+  import fluentasserts.core.lifecycle;
+}
+
 @("lazy number that throws propagates the exception")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   int someLazyInt() {
     throw new Exception("This is it.");
   }
@@ -36,6 +41,7 @@ unittest {
 
 @("numbers equal")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     5.should.equal(5);
     5.should.not.equal(6);
@@ -56,6 +62,7 @@ unittest {
 
 @("bools equal")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     true.should.equal(true);
     true.should.not.equal(false);
@@ -80,6 +87,7 @@ unittest {
 
 @("numbers greater than")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     5.should.be.greaterThan(4);
     5.should.not.be.greaterThan(6);
@@ -105,6 +113,7 @@ unittest {
 
 @("numbers less than")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     5.should.be.lessThan(6);
     5.should.not.be.lessThan(4);
@@ -132,6 +141,7 @@ unittest {
 
 @("numbers between")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     5.should.be.between(4, 6);
     5.should.be.between(6, 4);
@@ -183,6 +193,7 @@ unittest {
 
 @("numbers approximately")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     (10f/3f).should.be.approximately(3, 0.34);
     (10f/3f).should.not.be.approximately(3, 0.1);
@@ -207,6 +218,7 @@ unittest {
 
 @("delegates returning basic types that throw propagate the exception")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   int value() {
     throw new Exception("not implemented value");
   }
@@ -244,6 +256,7 @@ unittest {
 
 @("compiles const comparison")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   const actual = 42;
   actual.should.equal(42);
 }

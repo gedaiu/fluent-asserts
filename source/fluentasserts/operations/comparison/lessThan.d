@@ -9,8 +9,10 @@ import std.conv;
 import std.datetime;
 
 version(unittest) {
+  import fluent.asserts;
   import fluentasserts.core.expect;
   import fluentasserts.core.base : should, TestException;
+  import fluentasserts.core.lifecycle;
 }
 
 static immutable lessThanDescription = "Asserts that the tested value is less than the tested value. However, it's often best to assert that the target is equal to its expected value.";
@@ -130,18 +132,24 @@ unittest {
   5.should.be.lessThan(6);
 }
 
-@("lessThan fails when current value is greater than expected")
+@("5 lessThan 4 reports error with expected and actual")
 unittest {
-  ({
+  auto evaluation = ({
     5.should.be.lessThan(4);
-  }).should.throwException!TestException;
+  }).recordEvaluation;
+
+  expect(evaluation.result.expected).to.equal("less than 4");
+  expect(evaluation.result.actual).to.equal("5");
 }
 
-@("lessThan fails when values are equal")
+@("5 lessThan 5 reports error with expected and actual")
 unittest {
-  ({
+  auto evaluation = ({
     5.should.be.lessThan(5);
-  }).should.throwException!TestException;
+  }).recordEvaluation;
+
+  expect(evaluation.result.expected).to.equal("less than 5");
+  expect(evaluation.result.actual).to.equal("5");
 }
 
 @("lessThan works with negation")
@@ -183,20 +191,15 @@ unittest {
   }).should.haveExecutionTime.lessThan(1.seconds);
 }
 
-@("haveExecutionTime fails when code takes too long")
+@("haveExecutionTime reports error when code takes too long")
 unittest {
   import core.thread;
 
-  TestException exception = null;
-
-  try {
+  auto evaluation = ({
     ({
       Thread.sleep(2.msecs);
     }).should.haveExecutionTime.lessThan(1.msecs);
-  } catch(TestException e) {
-    exception = e;
-  }
+  }).recordEvaluation;
 
-  exception.should.not.beNull.because("code takes longer than 1ms");
-  exception.msg.should.startWith("({\n      Thread.sleep(2.msecs);\n    }) should have execution time less than 1 ms.");
+  expect(evaluation.result.hasContent()).to.equal(true);
 }

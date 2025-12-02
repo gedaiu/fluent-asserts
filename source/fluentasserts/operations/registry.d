@@ -144,6 +144,7 @@ class Registry {
 
 @("generates a list of md links for docs")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   import std.datetime;
   import fluentasserts.operations.comparison.lessThan;
   import fluentasserts.operations.type.beNull;
@@ -219,34 +220,41 @@ string[] generalizeType(string typeName) @safe nothrow {
 
 version(unittest) {
   import fluentasserts.core.base;
-}
+
+  import fluentasserts.core.lifecycle;}
 
 @("generalizeType returns [*] for int")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   generalizeType("int").should.equal(["*"]);
 }
 
 @("generalizeType returns [*[]] for int[]")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   generalizeType("int[]").should.equal(["*[]"]);
 }
 
 @("generalizeType returns [*[][]] for int[][]")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   generalizeType("int[][]").should.equal(["*[][]"]);
 }
 
 @("generalizeType returns generalized forms for int[int]")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   generalizeType("int[int]").should.equal(["*[int]", "int[*]", "*[*]"]);
 }
 
 @("generalizeType returns generalized forms for int[int][][string][]")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   generalizeType("int[int][][string][]").should.equal(["*[int][][string][]", "int[*][][*][]", "*[*][][*][]"]);
 }
 
 @("generalizeType returns generalized forms for int[int[]]")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   generalizeType("int[int[]]").should.equal(["*[int[]]", "int[*]", "*[*]"]);
 }

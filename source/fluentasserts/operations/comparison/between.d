@@ -11,6 +11,7 @@ import std.datetime;
 version (unittest) {
   import fluent.asserts;
   import fluentasserts.core.expect;
+  import fluentasserts.core.lifecycle;
   import std.meta;
   import std.string;
 }
@@ -173,44 +174,44 @@ static foreach (Type; NumericTypes) {
     expect(largeValue).to.not.be.within(smallValue, largeValue);
   }
 
-  @(Type.stringof ~ " throws error when value equals max of interval")
+  @(Type.stringof ~ " 50 between 40 and 50 reports error with expected and actual")
   unittest {
     Type smallValue = cast(Type) 40;
     Type largeValue = cast(Type) 50;
-    auto msg = ({
+
+    auto evaluation = ({
       expect(largeValue).to.be.between(smallValue, largeValue);
-    }).should.throwException!TestException.msg;
+    }).recordEvaluation;
 
-    msg.split("\n")[0].should.equal(largeValue.to!string ~ " should be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ". " ~ largeValue.to!string ~ " is greater than or equal to " ~ largeValue.to!string ~ ".");
-    msg.split("\n")[1].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-    msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.to!string);
+    expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+    expect(evaluation.result.actual).to.equal(largeValue.to!string);
   }
 
-  @(Type.stringof ~ " throws error when value equals min of interval")
+  @(Type.stringof ~ " 40 between 40 and 50 reports error with expected and actual")
   unittest {
     Type smallValue = cast(Type) 40;
     Type largeValue = cast(Type) 50;
-    auto msg = ({
-      expect(smallValue).to.be.between(smallValue, largeValue);
-    }).should.throwException!TestException.msg;
 
-    msg.split("\n")[0].should.equal(smallValue.to!string ~ " should be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less than or equal to " ~ smallValue.to!string ~ ".");
-    msg.split("\n")[1].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-    msg.split("\n")[2].strip.should.equal("Actual:" ~ smallValue.to!string);
+    auto evaluation = ({
+      expect(smallValue).to.be.between(smallValue, largeValue);
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+    expect(evaluation.result.actual).to.equal(smallValue.to!string);
   }
 
-  @(Type.stringof ~ " throws error when negated assert fails")
+  @(Type.stringof ~ " 45 not between 40 and 50 reports error with expected and actual")
   unittest {
     Type smallValue = cast(Type) 40;
     Type largeValue = cast(Type) 50;
     Type middleValue = cast(Type) 45;
-    auto msg = ({
-      expect(middleValue).to.not.be.between(smallValue, largeValue);
-    }).should.throwException!TestException.msg;
 
-    msg.split("\n")[0].should.startWith(middleValue.to!string ~ " should not be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ".");
-    msg.split("\n")[1].strip.should.equal("Expected:a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-    msg.split("\n")[2].strip.should.equal("Actual:" ~ middleValue.to!string);
+    auto evaluation = ({
+      expect(middleValue).to.not.be.between(smallValue, largeValue);
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal("a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+    expect(evaluation.result.actual).to.equal(middleValue.to!string);
   }
 }
 
@@ -233,44 +234,44 @@ unittest {
   expect(largeValue).to.not.be.within(smallValue, largeValue);
 }
 
-@("Duration throws error when value equals max of interval")
+@("Duration 50s between 40s and 50s reports error with expected and actual")
 unittest {
   Duration smallValue = 40.seconds;
   Duration largeValue = 50.seconds;
-  auto msg = ({
+
+  auto evaluation = ({
     expect(largeValue).to.be.between(smallValue, largeValue);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal(largeValue.to!string ~ " should be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ". " ~ largeValue.to!string ~ " is greater than or equal to " ~ largeValue.to!string ~ ".");
-  msg.split("\n")[1].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-  msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.to!string);
+  expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+  expect(evaluation.result.actual).to.equal(largeValue.to!string);
 }
 
-@("Duration throws error when value equals min of interval")
+@("Duration 40s between 40s and 50s reports error with expected and actual")
 unittest {
   Duration smallValue = 40.seconds;
   Duration largeValue = 50.seconds;
-  auto msg = ({
-    expect(smallValue).to.be.between(smallValue, largeValue);
-  }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal(smallValue.to!string ~ " should be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less than or equal to " ~ smallValue.to!string ~ ".");
-  msg.split("\n")[1].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-  msg.split("\n")[2].strip.should.equal("Actual:" ~ smallValue.to!string);
+  auto evaluation = ({
+    expect(smallValue).to.be.between(smallValue, largeValue);
+  }).recordEvaluation;
+
+  expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+  expect(evaluation.result.actual).to.equal(smallValue.to!string);
 }
 
-@("Duration throws error when negated assert fails")
+@("Duration 45s not between 40s and 50s reports error with expected and actual")
 unittest {
   Duration smallValue = 40.seconds;
   Duration largeValue = 50.seconds;
   Duration middleValue = 45.seconds;
-  auto msg = ({
-    expect(middleValue).to.not.be.between(smallValue, largeValue);
-  }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.startWith(middleValue.to!string ~ " should not be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ".");
-  msg.split("\n")[1].strip.should.equal("Expected:a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-  msg.split("\n")[2].strip.should.equal("Actual:" ~ middleValue.to!string);
+  auto evaluation = ({
+    expect(middleValue).to.not.be.between(smallValue, largeValue);
+  }).recordEvaluation;
+
+  expect(evaluation.result.expected).to.equal("a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+  expect(evaluation.result.actual).to.equal(middleValue.to!string);
 }
 
 @("SysTime value is inside an interval")
@@ -292,36 +293,42 @@ unittest {
   expect(largeValue).to.not.be.within(smallValue, largeValue);
 }
 
-@("SysTime throws error when value equals max of interval")
+@("SysTime larger between smaller and larger reports error with expected and actual")
 unittest {
   SysTime smallValue = Clock.currTime;
   SysTime largeValue = Clock.currTime + 40.seconds;
-  auto msg = ({
+
+  auto evaluation = ({
     expect(largeValue).to.be.between(smallValue, largeValue);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal(largeValue.toISOExtString ~ " should be between " ~ smallValue.toISOExtString ~ " and " ~ largeValue.toISOExtString ~ ". " ~ largeValue.toISOExtString ~ " is greater than or equal to " ~ largeValue.toISOExtString ~ ".");
+  expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
+  expect(evaluation.result.actual).to.equal(largeValue.toISOExtString);
 }
 
-@("SysTime throws error when value equals min of interval")
+@("SysTime smaller between smaller and larger reports error with expected and actual")
 unittest {
   SysTime smallValue = Clock.currTime;
   SysTime largeValue = Clock.currTime + 40.seconds;
-  auto msg = ({
-    expect(smallValue).to.be.between(smallValue, largeValue);
-  }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal(smallValue.toISOExtString ~ " should be between " ~ smallValue.toISOExtString ~ " and " ~ largeValue.toISOExtString ~ ". " ~ smallValue.toISOExtString ~ " is less than or equal to " ~ smallValue.toISOExtString ~ ".");
+  auto evaluation = ({
+    expect(smallValue).to.be.between(smallValue, largeValue);
+  }).recordEvaluation;
+
+  expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
+  expect(evaluation.result.actual).to.equal(smallValue.toISOExtString);
 }
 
-@("SysTime throws error when negated assert fails")
+@("SysTime middle not between smaller and larger reports error with expected and actual")
 unittest {
   SysTime smallValue = Clock.currTime;
   SysTime largeValue = Clock.currTime + 40.seconds;
   SysTime middleValue = Clock.currTime + 35.seconds;
-  auto msg = ({
-    expect(middleValue).to.not.be.between(smallValue, largeValue);
-  }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.startWith(middleValue.toISOExtString ~ " should not be between " ~ smallValue.toISOExtString ~ " and " ~ largeValue.toISOExtString ~ ".");
+  auto evaluation = ({
+    expect(middleValue).to.not.be.between(smallValue, largeValue);
+  }).recordEvaluation;
+
+  expect(evaluation.result.expected).to.equal("a value outside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
+  expect(evaluation.result.actual).to.equal(middleValue.toISOExtString);
 }

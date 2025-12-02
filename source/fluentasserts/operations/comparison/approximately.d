@@ -16,6 +16,7 @@ import std.math;
 version (unittest) {
   import fluent.asserts;
   import fluentasserts.core.expect;
+  import fluentasserts.core.lifecycle;
   import std.meta;
   import std.string;
 }
@@ -198,26 +199,28 @@ static foreach (Type; FPTypes) {
     expect(testValue).to.not.be.approximately(0.35, 0.001);
   }
 
-  @(Type.stringof ~ " values shows detailed error when values are not approximately equal")
+  @(Type.stringof ~ " 0.351 approximately 0.35 with delta 0.0001 reports error with expected and actual")
   unittest {
     Type testValue = cast(Type) 0.351;
-    auto msg = ({
-      expect(testValue).to.be.approximately(0.35, 0.0001);
-    }).should.throwException!TestException.msg;
 
-    msg.should.contain("Expected:0.35±0.0001");
-    msg.should.contain("Actual:0.351");
-    msg.should.not.contain("Missing:");
+    auto evaluation = ({
+      expect(testValue).to.be.approximately(0.35, 0.0001);
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal("0.35±0.0001");
+    expect(evaluation.result.actual).to.equal("0.351");
   }
 
-  @(Type.stringof ~ " values shows detailed error when values are approximately equal but negated")
+  @(Type.stringof ~ " 0.351 not approximately 0.351 with delta 0.0001 reports error with expected and actual")
   unittest {
     Type testValue = cast(Type) 0.351;
-    auto msg = ({
-      expect(testValue).to.not.be.approximately(testValue, 0.0001);
-    }).should.throwException!TestException.msg;
 
-    msg.should.contain("Expected:not " ~ testValue.to!string ~ "±0.0001");
+    auto evaluation = ({
+      expect(testValue).to.not.be.approximately(testValue, 0.0001);
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal(testValue.to!string ~ "±0.0001");
+    expect(evaluation.result.negated).to.equal(true);
   }
 
   @(Type.stringof ~ " lists approximately compares two lists")
@@ -244,24 +247,27 @@ static foreach (Type; FPTypes) {
     expect(testValues).to.not.be.approximately([0.35, 0.50], 0.001);
   }
 
-  @(Type.stringof ~ " lists shows detailed error when lists are not approximately equal")
+  @(Type.stringof ~ " list approximately with delta 0.0001 reports error with expected and missing")
   unittest {
     Type[] testValues = [cast(Type) 0.350, cast(Type) 0.501, cast(Type) 0.341];
-    auto msg = ({
-      expect(testValues).to.be.approximately([0.35, 0.50, 0.34], 0.0001);
-    }).should.throwException!TestException.msg;
 
-    msg.should.contain("Expected:[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
-    msg.should.contain("Missing:0.501±0.0001,0.341±0.0001");
+    auto evaluation = ({
+      expect(testValues).to.be.approximately([0.35, 0.50, 0.34], 0.0001);
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal("[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
+    expect(evaluation.result.missing.length).to.equal(2);
   }
 
-  @(Type.stringof ~ " lists shows detailed error when lists are approximately equal but negated")
+  @(Type.stringof ~ " list not approximately with delta 0.0001 reports error with expected and negated")
   unittest {
     Type[] testValues = [cast(Type) 0.350, cast(Type) 0.501, cast(Type) 0.341];
-    auto msg = ({
-      expect(testValues).to.not.be.approximately(testValues, 0.0001);
-    }).should.throwException!TestException.msg;
 
-    msg.should.contain("Expected:not [0.35±0.0001, 0.501±0.0001, 0.341±0.0001]");
+    auto evaluation = ({
+      expect(testValues).to.not.be.approximately(testValues, 0.0001);
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal("[0.35±0.0001, 0.501±0.0001, 0.341±0.0001]");
+    expect(evaluation.result.negated).to.equal(true);
   }
 }

@@ -6,10 +6,12 @@ version(unittest) {
   import fluentasserts.core.base;
   import std.algorithm : map;
   import std.string : split, strip;
-}
+
+  import fluentasserts.core.lifecycle;}
 
 @("lazy array that throws propagates the exception")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   int[] someLazyArray() {
     throw new Exception("This is it.");
   }
@@ -33,6 +35,7 @@ unittest {
 
 @("range contain")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     [1, 2, 3].map!"a".should.contain([2, 1]);
     [1, 2, 3].map!"a".should.not.contain([4, 5, 6, 7]);
@@ -63,6 +66,7 @@ unittest {
 
 @("const range contain")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
   data.map!"a".should.contain([2, 1]);
   data.map!"a".should.contain(data);
@@ -75,6 +79,7 @@ unittest {
 
 @("immutable range contain")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
   data.map!"a".should.contain([2, 1]);
   data.map!"a".should.contain(data);
@@ -87,6 +92,7 @@ unittest {
 
 @("contain only")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     [1, 2, 3].should.containOnly([3, 2, 1]);
     [1, 2, 3].should.not.containOnly([2, 1]);
@@ -131,6 +137,7 @@ unittest {
 
 @("contain only with void array")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   int[] list;
   list.should.containOnly([]);
 }
@@ -138,6 +145,7 @@ unittest {
 
 @("const range containOnly")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
   data.map!"a".should.containOnly([3, 2, 1]);
   data.map!"a".should.containOnly(data);
@@ -150,6 +158,7 @@ unittest {
 
 @("immutable range containOnly")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
   data.map!"a".should.containOnly([2, 1, 3]);
   data.map!"a".should.containOnly(data);
@@ -162,6 +171,7 @@ unittest {
 
 @("array contain")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     [1, 2, 3].should.contain([2, 1]);
     [1, 2, 3].should.not.contain([4, 5, 6, 7]);
@@ -202,6 +212,7 @@ unittest {
 
 @("array equals")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     [1, 2, 3].should.equal([1, 2, 3]);
   }).should.not.throwAnyException;
@@ -239,6 +250,7 @@ unittest {
 
 @("array equals with structs")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   struct TestStruct {
     int value;
 
@@ -258,6 +270,7 @@ unittest {
 
 @("const array equal")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   const(string)[] constValue = ["test", "string"];
   immutable(string)[] immutableValue = ["test", "string"];
 
@@ -280,6 +293,8 @@ version(unittest) {
 @("array equals with classes")
 unittest {
 
+  Lifecycle.instance.disableFailureHandling = false;
+
   ({
     auto instance = new TestEqualsClass(1);
     [instance].should.equal([instance]);
@@ -292,6 +307,7 @@ unittest {
 
 @("range equals")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     [1, 2, 3].map!"a".should.equal([1, 2, 3]);
   }).should.not.throwAnyException;
@@ -329,6 +345,7 @@ unittest {
 
 @("custom range asserts")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   struct Range {
     int n;
     int front() {
@@ -367,6 +384,7 @@ unittest {
 
 @("custom const range equals")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   struct ConstRange {
     int n;
     const(int) front() {
@@ -388,6 +406,7 @@ unittest {
 
 @("custom immutable range equals")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   struct ImmutableRange {
     int n;
     immutable(int) front() {
@@ -409,6 +428,7 @@ unittest {
 
 @("approximately equals")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.01);
 
   [0.350, 0.501, 0.341].should.not.be.approximately([0.35, 0.50, 0.34], 0.00001);
@@ -426,12 +446,14 @@ unittest {
 
 @("approximately equals with Assert")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Assert.approximately([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.01);
   Assert.notApproximately([0.350, 0.501, 0.341], [0.350, 0.501], 0.0001);
 }
 
 @("immutable string")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   immutable string[] someList;
 
   someList.should.equal([]);
@@ -439,6 +461,7 @@ unittest {
 
 @("compare const objects")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   class A {}
   A a = new A();
   const(A)[] arr = [a];

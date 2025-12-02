@@ -3,6 +3,7 @@
 module fluentasserts.core.evaluator;
 
 import fluentasserts.core.evaluation;
+import fluentasserts.core.lifecycle;
 import fluentasserts.results.printer;
 import fluentasserts.core.base : TestException;
 import fluentasserts.results.serializers;
@@ -82,6 +83,14 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
             return;
         }
 
+        if (Lifecycle.instance.keepLastEvaluation) {
+            Lifecycle.instance.lastEvaluation = *evaluation;
+        }
+
+        if (Lifecycle.instance.disableFailureHandling) {
+            return;
+        }
+
         string msg = evaluation.result.toString();
         msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
 
@@ -148,6 +157,14 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
         }
 
         if (!evaluation.hasResult()) {
+            return;
+        }
+
+        if (Lifecycle.instance.keepLastEvaluation) {
+            Lifecycle.instance.lastEvaluation = *evaluation;
+        }
+
+        if (Lifecycle.instance.disableFailureHandling) {
             return;
         }
 
@@ -299,6 +316,14 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
         }
 
         if (!evaluation.hasResult()) {
+            return;
+        }
+
+        if (Lifecycle.instance.keepLastEvaluation) {
+            Lifecycle.instance.lastEvaluation = *evaluation;
+        }
+
+        if (Lifecycle.instance.disableFailureHandling) {
             return;
         }
 

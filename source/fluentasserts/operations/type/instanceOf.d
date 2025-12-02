@@ -12,6 +12,7 @@ import std.algorithm;
 version (unittest) {
   import fluent.asserts;
   import fluentasserts.core.expect;
+  import fluentasserts.core.lifecycle;
   import std.meta;
   import std.string;
 }
@@ -55,6 +56,7 @@ alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulon
 
 @("does not throw when comparing an object")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto value = new Object();
 
   expect(value).to.be.instanceOf!Object;
@@ -63,6 +65,7 @@ unittest {
 
 @("does not throw when comparing an Exception with an Object")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto value = new Exception("some test");
 
   expect(value).to.be.instanceOf!Exception;
@@ -73,32 +76,34 @@ unittest {
 static foreach (Type; NumericTypes) {
   @(Type.stringof ~ " can compare two types")
   unittest {
+    Lifecycle.instance.disableFailureHandling = false;
     Type value = cast(Type) 40;
     expect(value).to.be.instanceOf!Type;
     expect(value).to.not.be.instanceOf!string;
   }
 
-  @(Type.stringof ~ " throws detailed error when the types do not match")
+  @(Type.stringof ~ " instanceOf string reports error with expected and actual")
   unittest {
     Type value = cast(Type) 40;
-    auto msg = ({
-      expect(value).to.be.instanceOf!string;
-    }).should.throwException!TestException.msg;
 
-    msg.split("\n")[0].should.equal(value.to!string ~ ` should be instance of "string". ` ~ value.to!string ~ " is instance of " ~ Type.stringof ~ ".");
-    msg.split("\n")[1].strip.should.equal("Expected:typeof string");
-    msg.split("\n")[2].strip.should.equal("Actual:typeof " ~ Type.stringof);
+    auto evaluation = ({
+      expect(value).to.be.instanceOf!string;
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal("typeof string");
+    expect(evaluation.result.actual).to.equal("typeof " ~ Type.stringof);
   }
 
-  @(Type.stringof ~ " throws detailed error when the types match but negated")
+  @(Type.stringof ~ " not instanceOf itself reports error with expected and negated")
   unittest {
     Type value = cast(Type) 40;
-    auto msg = ({
-      expect(value).to.not.be.instanceOf!Type;
-    }).should.throwException!TestException.msg;
 
-    msg.split("\n")[0].should.equal(value.to!string ~ ` should not be instance of "` ~ Type.stringof ~ `". ` ~ value.to!string ~ " is instance of " ~ Type.stringof ~ ".");
-    msg.split("\n")[1].strip.should.equal("Expected:not typeof " ~ Type.stringof);
-    msg.split("\n")[2].strip.should.equal("Actual:typeof " ~ Type.stringof);
+    auto evaluation = ({
+      expect(value).to.not.be.instanceOf!Type;
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal("typeof " ~ Type.stringof);
+    expect(evaluation.result.actual).to.equal("typeof " ~ Type.stringof);
+    expect(evaluation.result.negated).to.equal(true);
   }
 }

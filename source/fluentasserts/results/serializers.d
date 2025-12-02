@@ -10,7 +10,10 @@ import std.conv;
 import std.datetime;
 import std.functional;
 
-version(unittest) import fluent.asserts;
+version(unittest) {
+  import fluent.asserts;
+  import fluentasserts.core.lifecycle;
+}
 
 /// Registry for value serializers.
 /// Converts values to string representations for assertion output.
@@ -174,6 +177,7 @@ class SerializerRegistry {
 
 @("overrides the default struct serializer")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   struct A {}
 
   string serializer(A) {
@@ -189,6 +193,7 @@ unittest {
 
 @("overrides the default const struct serializer")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   struct A {}
 
   string serializer(const A) {
@@ -206,6 +211,7 @@ unittest {
 
 @("overrides the default immutable struct serializer")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   struct A {}
 
   string serializer(immutable A) {
@@ -229,6 +235,7 @@ unittest {
 
 @("overrides the default class serializer")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   class A {}
 
   string serializer(A) {
@@ -244,6 +251,7 @@ unittest {
 
 @("overrides the default const class serializer")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   class A {}
 
   string serializer(const A) {
@@ -261,6 +269,7 @@ unittest {
 
 @("overrides the default immutable class serializer")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   class A {}
 
   string serializer(immutable A) {
@@ -283,6 +292,7 @@ unittest {
 
 @("serializes a char")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   char ch = 'a';
   const char cch = 'a';
   immutable char ich = 'a';
@@ -294,6 +304,7 @@ unittest {
 
 @("serializes a SysTime")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   SysTime val = SysTime.fromISOExtString("2010-07-04T07:06:12");
   const SysTime cval = SysTime.fromISOExtString("2010-07-04T07:06:12");
   immutable SysTime ival = SysTime.fromISOExtString("2010-07-04T07:06:12");
@@ -305,6 +316,7 @@ unittest {
 
 @("serializes a string")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   string str = "aaa";
   const string cstr = "aaa";
   immutable string istr = "aaa";
@@ -316,6 +328,7 @@ unittest {
 
 @("serializes an int")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   int value = 23;
   const int cvalue = 23;
   immutable int ivalue = 23;
@@ -327,6 +340,7 @@ unittest {
 
 @("serializes an int list")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   int[] value = [2,3];
   const int[] cvalue = [2,3];
   immutable int[] ivalue = [2,3];
@@ -338,6 +352,7 @@ unittest {
 
 @("serializes a void list")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   void[] value = [];
   const void[] cvalue = [];
   immutable void[] ivalue = [];
@@ -349,6 +364,7 @@ unittest {
 
 @("serializes a nested int list")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   int[][] value = [[0,1],[2,3]];
   const int[][] cvalue = [[0,1],[2,3]];
   immutable int[][] ivalue = [[0,1],[2,3]];
@@ -360,6 +376,7 @@ unittest {
 
 @("serializes an assoc array")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   int[string] value = ["a": 2,"b": 3, "c": 4];
   const int[string] cvalue = ["a": 2,"b": 3, "c": 4];
   immutable int[string] ivalue = ["a": 2,"b": 3, "c": 4];
@@ -371,6 +388,7 @@ unittest {
 
 @("serializes a string enum")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   enum TestType : string {
     a = "a",
     b = "b"
@@ -387,6 +405,7 @@ unittest {
 version(unittest) { struct TestStruct { int a; string b; }; }
 @("serializes a struct")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   TestStruct value = TestStruct(1, "2");
   const TestStruct cvalue = TestStruct(1, "2");
   immutable TestStruct ivalue = TestStruct(1, "2");
@@ -517,6 +536,7 @@ string[] parseList(string value) @safe nothrow {
 
 @("parseList parses an empty string")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "".parseList;
 
   pieces.should.equal([]);
@@ -524,6 +544,7 @@ unittest {
 
 @("parseList does not parse a string that does not contain []")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "test".parseList;
 
   pieces.should.equal([ "test" ]);
@@ -532,6 +553,7 @@ unittest {
 
 @("parseList does not parse a char that does not contain []")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "t".parseList;
 
   pieces.should.equal([ "t" ]);
@@ -539,6 +561,7 @@ unittest {
 
 @("parseList parses an empty array")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "[]".parseList;
 
   pieces.should.equal([]);
@@ -546,6 +569,7 @@ unittest {
 
 @("parseList parses a list of one number")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "[1]".parseList;
 
   pieces.should.equal(["1"]);
@@ -553,6 +577,7 @@ unittest {
 
 @("parseList parses a list of two numbers")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "[1,2]".parseList;
 
   pieces.should.equal(["1","2"]);
@@ -560,6 +585,7 @@ unittest {
 
 @("parseList removes the whitespaces from the parsed values")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "[ 1, 2 ]".parseList;
 
   pieces.should.equal(["1","2"]);
@@ -567,6 +593,7 @@ unittest {
 
 @("parseList parses two string values that contain a comma")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ "a,b", "c,d" ]`.parseList;
 
   pieces.should.equal([`"a,b"`,`"c,d"`]);
@@ -574,6 +601,7 @@ unittest {
 
 @("parseList parses two string values that contain a single quote")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ "a'b", "c'd" ]`.parseList;
 
   pieces.should.equal([`"a'b"`,`"c'd"`]);
@@ -581,6 +609,7 @@ unittest {
 
 @("parseList parses two char values that contain a comma")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ ',' , ',' ]`.parseList;
 
   pieces.should.equal([`','`,`','`]);
@@ -588,6 +617,7 @@ unittest {
 
 @("parseList parses two char values that contain brackets")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ '[' , ']' ]`.parseList;
 
   pieces.should.equal([`'['`,`']'`]);
@@ -595,6 +625,7 @@ unittest {
 
 @("parseList parses two string values that contain brackets")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ "[" , "]" ]`.parseList;
 
   pieces.should.equal([`"["`,`"]"`]);
@@ -602,6 +633,7 @@ unittest {
 
 @("parseList parses two char values that contain a double quote")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ '"' , '"' ]`.parseList;
 
   pieces.should.equal([`'"'`,`'"'`]);
@@ -609,24 +641,28 @@ unittest {
 
 @("parseList parses two empty lists")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ [] , [] ]`.parseList;
   pieces.should.equal([`[]`,`[]`]);
 }
 
 @("parseList parses two nested lists")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ [[],[]] , [[[]],[]] ]`.parseList;
   pieces.should.equal([`[[],[]]`,`[[[]],[]]`]);
 }
 
 @("parseList parses two lists with items")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ [1,2] , [3,4] ]`.parseList;
   pieces.should.equal([`[1,2]`,`[3,4]`]);
 }
 
 @("parseList parses two lists with string and char items")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ ["1", "2"] , ['3', '4'] ]`.parseList;
   pieces.should.equal([`["1", "2"]`,`['3', '4']`]);
 }
@@ -654,21 +690,25 @@ string cleanString(string value) @safe nothrow {
 
 @("cleanString returns an empty string when the input is an empty string")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   "".cleanString.should.equal("");
 }
 
 @("cleanString returns the input value when it has one char")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   "'".cleanString.should.equal("'");
 }
 
 @("cleanString removes the double quote from start and end of the string")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   `""`.cleanString.should.equal(``);
 }
 
 @("cleanString removes the single quote from start and end of the string")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   `''`.cleanString.should.equal(``);
 }
 
@@ -682,6 +722,7 @@ string[] cleanString(string[] pieces) @safe nothrow {
 
 @("cleanString returns an empty array when the input list is empty")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   string[] empty;
 
   empty.cleanString.should.equal(empty);
@@ -689,5 +730,6 @@ unittest {
 
 @("cleanString removes the double quote from the begin and end of the string")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   [`"1"`, `"2"`].cleanString.should.equal([`1`, `2`]);
 }

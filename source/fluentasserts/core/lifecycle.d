@@ -144,6 +144,33 @@ static this() {
 
 alias FailureHandlerDelegate = void delegate(ref Evaluation evaluation) @safe;
 
+/// String mixin for unit tests that need to capture evaluation results.
+/// Enables keepLastEvaluation and disableFailureHandling, then restores
+/// them in scope(exit).
+enum enableEvaluationRecording = q{
+  Lifecycle.instance.keepLastEvaluation = true;
+  Lifecycle.instance.disableFailureHandling = true;
+  scope(exit) {
+    Lifecycle.instance.keepLastEvaluation = false;
+    Lifecycle.instance.disableFailureHandling = false;
+  }
+};
+
+/// Executes an assertion and captures its evaluation result.
+/// Use this to test assertion behavior without throwing on failure.
+Evaluation recordEvaluation(void delegate() assertion) {
+  Lifecycle.instance.keepLastEvaluation = true;
+  Lifecycle.instance.disableFailureHandling = true;
+  scope(exit) {
+    Lifecycle.instance.keepLastEvaluation = false;
+    Lifecycle.instance.disableFailureHandling = false;
+  }
+
+  assertion();
+
+  return Lifecycle.instance.lastEvaluation;
+}
+
 /// Manages the assertion evaluation lifecycle.
 /// Tracks assertion counts and handles the finalization of evaluations.
 @safe class Lifecycle {
@@ -155,6 +182,9 @@ alias FailureHandlerDelegate = void delegate(ref Evaluation evaluation) @safe;
   bool keepLastEvaluation;
 
   Evaluation lastEvaluation;
+
+  bool disableFailureHandling;
+
 
   private {
     /// Counter for total assertions executed.
@@ -188,6 +218,10 @@ alias FailureHandlerDelegate = void delegate(ref Evaluation evaluation) @safe;
   }
 
   void handleFailure(ref Evaluation evaluation) {
+    if(this.disableFailureHandling) {
+      return;
+    }
+
     if(this.failureHandler !is null) {
       this.failureHandler(evaluation);
       return;
@@ -203,6 +237,10 @@ alias FailureHandlerDelegate = void delegate(ref Evaluation evaluation) @safe;
   void endEvaluation(ref Evaluation evaluation) {
     if(evaluation.isEvaluated) {
       return;
+    }
+
+    if(keepLastEvaluation) {
+      lastEvaluation = evaluation;
     }
 
     evaluation.isEvaluated = true;

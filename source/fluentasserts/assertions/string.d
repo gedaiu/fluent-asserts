@@ -8,8 +8,13 @@ import std.conv;
 import std.algorithm;
 import std.array;
 
+version(unittest) {
+  import fluentasserts.core.lifecycle;
+}
+
 @("lazy string that throws propagates the exception")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   string someLazyString() {
     throw new Exception("This is it.");
   }
@@ -41,6 +46,7 @@ unittest {
 
 @("string startWith")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     "test string".should.startWith("test");
   }).should.not.throwAnyException;
@@ -92,6 +98,7 @@ unittest {
 
 @("string endWith")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     "test string".should.endWith("string");
   }).should.not.throwAnyException;
@@ -143,6 +150,7 @@ unittest {
 
 @("string contain")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     "test string".should.contain(["string", "test"]);
     "test string".should.not.contain(["other", "message"]);
@@ -209,6 +217,7 @@ unittest {
 
 @("string equal")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     "test string".should.equal("test string");
   }).should.not.throwAnyException;
@@ -232,6 +241,7 @@ unittest {
 
 @("shows null chars in the diff")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   string msg;
 
   try {
@@ -248,6 +258,7 @@ unittest {
 
 @("throws exceptions for delegates that return basic types")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   string value() {
     throw new Exception("not implemented");
   }
@@ -269,6 +280,7 @@ unittest {
 
 @("const string equal")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   const string constValue = "test string";
   immutable string immutableValue = "test string";
 

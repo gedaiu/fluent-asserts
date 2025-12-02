@@ -165,8 +165,13 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
   }
 }
 
+version(unittest) {
+  import fluentasserts.core.lifecycle;
+}
+
 @("evaluate captures an exception from a lazy value")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   int value() {
     throw new Exception("message");
   }
@@ -179,6 +184,7 @@ unittest {
 
 @("evaluate captures an exception from a callable")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   void value() {
     throw new Exception("message");
   }
@@ -238,32 +244,36 @@ string[] extractTypes(T: U[K], U, K)() {
 
 @("extractTypes returns [string] for string")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto result = extractTypes!string;
   assert(result == ["string"]);
 }
 
 @("extractTypes returns [string[]] for string[]")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto result = extractTypes!(string[]);
   assert(result == ["string[]"]);
 }
 
 @("extractTypes returns [string[string]] for string[string]")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto result = extractTypes!(string[string]);
   assert(result == ["string[string]"]);
 }
 
 @("extractTypes returns all types of a class")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   interface I {}
   class T : I {}
 
   auto result = extractTypes!(T[]);
 
-  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L258_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L258_C1.T[]" got "` ~ result[0] ~ `"`);
+  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L267_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L267_C1.T[]" got "` ~ result[0] ~ `"`);
   assert(result[1] == "object.Object[]", `Expected: ` ~ result[1] );
-  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L258_C1.I[]", `Expected: ` ~ result[2] );
+  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L267_C1.I[]", `Expected: ` ~ result[2] );
 }
 
 /// A proxy interface for comparing values of different types.
@@ -409,6 +419,7 @@ class ObjectEquable(T) : EquableValue {
 
 @("an object with byValue returns an array with all elements")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   class TestObject {
     auto byValue() {
       auto items = [1, 2];
@@ -424,6 +435,7 @@ unittest {
 
 @("isLessThan returns true when value is less than other")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto value1 = equableValue(5, "5");
   auto value2 = equableValue(10, "10");
 
@@ -433,6 +445,7 @@ unittest {
 
 @("isLessThan returns false when values are equal")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto value1 = equableValue(5, "5");
   auto value2 = equableValue(5, "5");
 
@@ -441,6 +454,7 @@ unittest {
 
 @("isLessThan works with floating point numbers")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto value1 = equableValue(3.14, "3.14");
   auto value2 = equableValue(3.15, "3.15");
 
@@ -450,6 +464,7 @@ unittest {
 
 @("isLessThan returns false for arrays")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto value1 = equableValue([1, 2, 3], "[1, 2, 3]");
   auto value2 = equableValue([4, 5, 6], "[4, 5, 6]");
 

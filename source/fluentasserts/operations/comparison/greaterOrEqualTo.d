@@ -11,6 +11,7 @@ import std.datetime;
 version (unittest) {
   import fluent.asserts;
   import fluentasserts.core.expect;
+  import fluentasserts.core.lifecycle;
   import std.meta;
   import std.string;
 }
@@ -134,30 +135,30 @@ static foreach (Type; NumericTypes) {
     expect(smallValue).not.to.be.greaterOrEqualTo(largeValue);
   }
 
-  @(Type.stringof ~ " throws error when comparison fails")
+  @(Type.stringof ~ " 40 greaterOrEqualTo 50 reports error with expected and actual")
   unittest {
     Type smallValue = cast(Type) 40;
     Type largeValue = cast(Type) 50;
-    auto msg = ({
-      expect(smallValue).to.be.greaterOrEqualTo(largeValue);
-    }).should.throwException!TestException.msg;
 
-    msg.split("\n")[0].should.equal(smallValue.to!string ~ " should be greater or equal to " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less than " ~ largeValue.to!string ~ ".");
-    msg.split("\n")[1].strip.should.equal("Expected:greater or equal than " ~ largeValue.to!string);
-    msg.split("\n")[2].strip.should.equal("Actual:" ~ smallValue.to!string);
+    auto evaluation = ({
+      expect(smallValue).to.be.greaterOrEqualTo(largeValue);
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal("greater or equal than " ~ largeValue.to!string);
+    expect(evaluation.result.actual).to.equal(smallValue.to!string);
   }
 
-  @(Type.stringof ~ " throws error when negated comparison fails")
+  @(Type.stringof ~ " 50 not greaterOrEqualTo 40 reports error with expected and actual")
   unittest {
     Type smallValue = cast(Type) 40;
     Type largeValue = cast(Type) 50;
-    auto msg = ({
-      expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
-    }).should.throwException!TestException.msg;
 
-    msg.split("\n")[0].should.equal(largeValue.to!string ~ " should not be greater or equal to " ~ smallValue.to!string ~ ". " ~ largeValue.to!string ~ " is greater or equal than " ~ smallValue.to!string ~ ".");
-    msg.split("\n")[1].strip.should.equal("Expected:not less than " ~ smallValue.to!string);
-    msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.to!string);
+    auto evaluation = ({
+      expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal("less than " ~ smallValue.to!string);
+    expect(evaluation.result.actual).to.equal(largeValue.to!string);
   }
 }
 
@@ -175,24 +176,23 @@ unittest {
   expect(smallValue).not.to.be.greaterOrEqualTo(largeValue);
 }
 
-@("Duration does not throw when compared with itself")
+@("Duration compares equal values")
 unittest {
   Duration smallValue = 40.seconds;
   expect(smallValue).to.be.greaterOrEqualTo(smallValue);
 }
 
-@("Duration throws error when negated comparison fails")
+@("Duration 41s not greaterOrEqualTo 40s reports error with expected and actual")
 unittest {
   Duration smallValue = 40.seconds;
   Duration largeValue = 41.seconds;
-  auto msg = ({
-    expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
-  }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal(largeValue.to!string ~ " should not be greater or equal to " ~ smallValue.to!string ~ ". " ~
-    largeValue.to!string ~ " is greater or equal than " ~ smallValue.to!string ~ ".");
-  msg.split("\n")[1].strip.should.equal("Expected:not less than " ~ smallValue.to!string);
-  msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.to!string);
+  auto evaluation = ({
+    expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
+  }).recordEvaluation;
+
+  expect(evaluation.result.expected).to.equal("less than " ~ smallValue.to!string);
+  expect(evaluation.result.actual).to.equal(largeValue.to!string);
 }
 
 @("SysTime compares two values")
@@ -211,22 +211,21 @@ unittest {
   expect(smallValue).not.to.be.above(largeValue);
 }
 
-@("SysTime does not throw when compared with itself")
+@("SysTime compares equal values")
 unittest {
   SysTime smallValue = Clock.currTime;
   expect(smallValue).to.be.greaterOrEqualTo(smallValue);
 }
 
-@("SysTime throws error when negated comparison fails")
+@("SysTime larger not greaterOrEqualTo smaller reports error with expected and actual")
 unittest {
   SysTime smallValue = Clock.currTime;
   SysTime largeValue = smallValue + 4.seconds;
-  auto msg = ({
-    expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
-  }).should.throwException!TestException.msg;
 
-  msg.split("\n")[0].should.equal(largeValue.toISOExtString ~ " should not be greater or equal to " ~ smallValue.toISOExtString ~ ". " ~
-    largeValue.toISOExtString ~ " is greater or equal than " ~ smallValue.toISOExtString ~ ".");
-  msg.split("\n")[1].strip.should.equal("Expected:not less than " ~ smallValue.toISOExtString);
-  msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.toISOExtString);
+  auto evaluation = ({
+    expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
+  }).recordEvaluation;
+
+  expect(evaluation.result.expected).to.equal("less than " ~ smallValue.toISOExtString);
+  expect(evaluation.result.actual).to.equal(largeValue.toISOExtString);
 }

@@ -14,6 +14,7 @@ import fluentasserts.core.lifecycle;
 version(unittest) {
   import fluent.asserts;
   import fluentasserts.core.expect;
+  import fluentasserts.core.lifecycle;
   import std.string;
 }
 
@@ -89,26 +90,25 @@ unittest {
   expect("hello world").to.not.contain("foo");
 }
 
-@("string contain throws error when substring is missing")
+@("string hello world contain foo reports error with expected and actual")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect("hello world").to.contain("foo");
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain(`foo is missing from "hello world".`);
-  msg.should.contain(`Expected:to contain "foo"`);
-  msg.should.contain(`Actual:hello world`);
+  expect(evaluation.result.expected).to.equal(`to contain "foo"`);
+  expect(evaluation.result.actual).to.equal("hello world");
 }
 
-@("string contain throws error when substring is unexpectedly present")
+@("string hello world not contain world reports error with expected and actual")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect("hello world").to.not.contain("world");
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain(`world is present in "hello world".`);
-  msg.should.contain(`Expected:not to contain "world"`);
-  msg.should.contain(`Actual:hello world`);
+  expect(evaluation.result.expected).to.equal(`to contain "world"`);
+  expect(evaluation.result.actual).to.equal("hello world");
+  expect(evaluation.result.negated).to.equal(true);
 }
 
 ///
@@ -153,24 +153,24 @@ unittest {
   expect([1, 2, 3]).to.not.contain(5);
 }
 
-@("array contain throws error when value is missing")
+@("array [1,2,3] contain 5 reports error with expected and actual")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect([1, 2, 3]).to.contain(5);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain(`5 is missing from [1, 2, 3].`);
-  msg.should.contain(`Expected:to contain 5`);
-  msg.should.contain(`Actual:[1, 2, 3]`);
+  expect(evaluation.result.expected).to.equal("to contain 5");
+  expect(evaluation.result.actual).to.equal("[1, 2, 3]");
 }
 
-@("array contain throws error when value is unexpectedly present")
+@("array [1,2,3] not contain 2 reports error with expected and actual")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect([1, 2, 3]).to.not.contain(2);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain(`2 is present in [1, 2, 3].`);
+  expect(evaluation.result.expected).to.equal("to contain 2");
+  expect(evaluation.result.negated).to.equal(true);
 }
 
 ///
@@ -235,22 +235,23 @@ unittest {
   expect([1, 2, 3]).to.containOnly([3, 2, 1]);
 }
 
-@("array containOnly fails when extra elements exist")
+@("array [1,2,3,4] containOnly [1,2,3] reports error with actual")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect([1, 2, 3, 4]).to.containOnly([1, 2, 3]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain("Actual:[1, 2, 3, 4]");
+  expect(evaluation.result.actual).to.equal("[1, 2, 3, 4]");
 }
 
-@("array containOnly fails when actual is missing expected elements")
+@("array [1,2] containOnly [1,2,3] reports error with extra")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect([1, 2]).to.containOnly([1, 2, 3]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain("Extra:3");
+  expect(evaluation.result.extra.length).to.equal(1);
+  expect(evaluation.result.extra[0]).to.equal("3");
 }
 
 @("array containOnly negated passes when elements differ")

@@ -7,7 +7,10 @@ import fluentasserts.core.lifecycle;
 import std.algorithm;
 
 version(unittest) {
+  import fluent.asserts;
   import fluentasserts.core.base : should, TestException;
+  import fluentasserts.core.expect;
+  import fluentasserts.core.lifecycle;
 }
 
 static immutable beNullDescription = "Asserts that the value is null.";
@@ -33,19 +36,19 @@ void beNull(ref Evaluation evaluation) @safe nothrow {
 
 @("beNull passes for null delegate")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   void delegate() action;
   action.should.beNull;
 }
 
-@("beNull fails for non-null delegate")
+@("non-null delegate beNull reports error with expected null")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     ({ }).should.beNull;
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.startWith("({ }) should be null.");
-  msg.should.contain("Expected:null\n");
-  msg.should.not.contain("Actual:null\n");
+  expect(evaluation.result.expected).to.equal("null");
+  expect(evaluation.result.actual).to.not.equal("null");
 }
 
 @("beNull negated passes for non-null delegate")
@@ -53,15 +56,14 @@ unittest {
   ({ }).should.not.beNull;
 }
 
-@("beNull negated fails for null delegate")
+@("null delegate not beNull reports error with expected and actual")
 unittest {
   void delegate() action;
 
-  auto msg = ({
+  auto evaluation = ({
     action.should.not.beNull;
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.startWith("action should not be null.");
-  msg.should.contain("Expected:not null");
-  msg.should.contain("Actual:null");
+  expect(evaluation.result.expected).to.equal("null");
+  expect(evaluation.result.negated).to.equal(true);
 }

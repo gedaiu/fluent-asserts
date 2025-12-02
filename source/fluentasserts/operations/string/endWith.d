@@ -11,6 +11,7 @@ import fluentasserts.core.lifecycle;
 version (unittest) {
   import fluent.asserts;
   import fluentasserts.core.expect;
+  import fluentasserts.core.lifecycle;
   import std.conv;
   import std.meta;
 }
@@ -94,51 +95,53 @@ static foreach (Type; StringTypes) {
     expect(testValue).to.not.endWith('o');
   }
 
-  @(Type.stringof ~ " throws detailed error when the string does not end with expected substring")
+  @(Type.stringof ~ " test string endWith other reports error with expected and actual")
   unittest {
     Type testValue = "test string".to!Type;
-    auto msg = ({
+
+    auto evaluation = ({
       expect(testValue).to.endWith("other");
-    }).should.throwException!TestException.msg;
+    }).recordEvaluation;
 
-    msg.split("\n")[0].should.contain(`"test string" should end with "other". "test string" does not end with "other".`);
-    msg.split("\n")[1].strip.should.equal(`Expected:to end with "other"`);
-    msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
+    expect(evaluation.result.expected).to.equal(`to end with "other"`);
+    expect(evaluation.result.actual).to.equal(`"test string"`);
   }
 
-  @(Type.stringof ~ " throws detailed error when the string does not end with expected char")
+  @(Type.stringof ~ " test string endWith char o reports error with expected and actual")
   unittest {
     Type testValue = "test string".to!Type;
-    auto msg = ({
+
+    auto evaluation = ({
       expect(testValue).to.endWith('o');
-    }).should.throwException!TestException.msg;
+    }).recordEvaluation;
 
-    msg.split("\n")[0].should.contain(`"test string" should end with 'o'. "test string" does not end with 'o'.`);
-    msg.split("\n")[1].strip.should.equal(`Expected:to end with 'o'`);
-    msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
+    expect(evaluation.result.expected).to.equal(`to end with 'o'`);
+    expect(evaluation.result.actual).to.equal(`"test string"`);
   }
 
-  @(Type.stringof ~ " throws detailed error when the string unexpectedly ends with a substring")
+  @(Type.stringof ~ " test string not endWith string reports error with expected and negated")
   unittest {
     Type testValue = "test string".to!Type;
-    auto msg = ({
+
+    auto evaluation = ({
       expect(testValue).to.not.endWith("string");
-    }).should.throwException!TestException.msg;
+    }).recordEvaluation;
 
-    msg.split("\n")[0].should.contain(`"test string" should not end with "string". "test string" ends with "string".`);
-    msg.split("\n")[1].strip.should.equal(`Expected:not to end with "string"`);
-    msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
+    expect(evaluation.result.expected).to.equal(`to end with "string"`);
+    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.negated).to.equal(true);
   }
 
-  @(Type.stringof ~ " throws detailed error when the string unexpectedly ends with a char")
+  @(Type.stringof ~ " test string not endWith char g reports error with expected and negated")
   unittest {
     Type testValue = "test string".to!Type;
-    auto msg = ({
-      expect(testValue).to.not.endWith('g');
-    }).should.throwException!TestException.msg;
 
-    msg.split("\n")[0].should.contain(`"test string" should not end with 'g'. "test string" ends with 'g'.`);
-    msg.split("\n")[1].strip.should.equal(`Expected:not to end with 'g'`);
-    msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
+    auto evaluation = ({
+      expect(testValue).to.not.endWith('g');
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected).to.equal(`to end with 'g'`);
+    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.negated).to.equal(true);
   }
 }

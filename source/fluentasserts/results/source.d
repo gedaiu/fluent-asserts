@@ -489,6 +489,7 @@ void splitMultilinetokens(const(Token)[] tokens, ref const(Token)[] result) noth
 
 version (unittest) {
   import fluentasserts.core.base;
+  import fluentasserts.core.lifecycle;
 }
 
 @("getScope returns the spec function and scope that contains a lambda")

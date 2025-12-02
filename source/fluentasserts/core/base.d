@@ -89,6 +89,7 @@ auto should(T)(lazy T testData, const string file = __FILE__, const size_t line 
 
 @("because adds a text before the assert message")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto msg = ({
     true.should.equal(false).because("of test reasons");
   }).should.throwException!TestException.msg;
@@ -213,6 +214,7 @@ struct Assert {
 
 @("Assert works for base types")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Assert.equal(1, 1, "they are the same value");
   Assert.notEqual(1, 2, "they are not the same value");
 
@@ -240,6 +242,7 @@ unittest {
 
 @("Assert works for objects")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Object o = null;
   Assert.beNull(o, "it's a null");
   Assert.notNull(new Object, "it's not a null");
@@ -247,6 +250,7 @@ unittest {
 
 @("Assert works for strings")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Assert.equal("abcd", "abcd");
   Assert.notEqual("abcd", "abwcd");
 
@@ -268,6 +272,7 @@ unittest {
 
 @("Assert works for ranges")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Assert.equal([1, 2, 3], [1, 2, 3]);
   Assert.notEqual([1, 2, 3], [1, 1, 3]);
 
@@ -298,6 +303,7 @@ void setupFluentHandler() {
 @("calls the fluent handler")
 @trusted
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   import core.exception;
 
   setupFluentHandler;

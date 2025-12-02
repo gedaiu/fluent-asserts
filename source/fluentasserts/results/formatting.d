@@ -4,6 +4,10 @@ module fluentasserts.results.formatting;
 
 import std.uni : toLower, isUpper, isLower;
 
+version (unittest) {
+  import fluentasserts.core.lifecycle;
+}
+
 @safe:
 
 /// Converts an operation name to a nice, human-readable string.
@@ -43,21 +47,25 @@ version (unittest) {
 
 @("toNiceOperation converts empty string")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   expect("".toNiceOperation).to.equal("");
 }
 
 @("toNiceOperation converts dots to spaces")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   expect("a.b".toNiceOperation).to.equal("a b");
 }
 
 @("toNiceOperation converts camelCase to spaced words")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   expect("aB".toNiceOperation).to.equal("a b");
 }
 
 @("toNiceOperation converts complex operation names")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   expect("throwException".toNiceOperation).to.equal("throw exception");
   expect("throwException.withMessage".toNiceOperation).to.equal("throw exception with message");
 }

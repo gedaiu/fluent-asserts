@@ -8,6 +8,7 @@ import fluentasserts.core.lifecycle;
 version(unittest) {
   import fluent.asserts;
   import fluentasserts.core.expect;
+  import fluentasserts.core.lifecycle;
   import std.string;
 }
 
@@ -63,34 +64,35 @@ unittest {
   expect([1, 2, 3]).to.not.equal([1, 2, 4]);
 }
 
-@("int array throws error when arrays differ")
+@("[1,2,3] equal [1,2,4] reports error with expected and actual")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect([1, 2, 3]).to.equal([1, 2, 4]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain("Expected:[1, 2, 4]");
-  msg.should.contain("Actual:[1, 2, 3]");
+  expect(evaluation.result.expected).to.equal("[1, 2, 4]");
+  expect(evaluation.result.actual).to.equal("[1, 2, 3]");
 }
 
-@("int array throws error when arrays unexpectedly equal")
+@("[1,2,3] not equal [1,2,3] reports error with expected and actual")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect([1, 2, 3]).to.not.equal([1, 2, 3]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain("Expected:not [1, 2, 3]");
-  msg.should.contain("Actual:[1, 2, 3]");
+  expect(evaluation.result.expected).to.equal("[1, 2, 3]");
+  expect(evaluation.result.actual).to.equal("[1, 2, 3]");
+  expect(evaluation.result.negated).to.equal(true);
 }
 
-@("int array fails when lengths differ")
+@("[1,2,3] equal [1,2] reports error with expected and actual")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect([1, 2, 3]).to.equal([1, 2]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain("Expected:[1, 2]");
-  msg.should.contain("Actual:[1, 2, 3]");
+  expect(evaluation.result.expected).to.equal("[1, 2]");
+  expect(evaluation.result.actual).to.equal("[1, 2, 3]");
 }
 
 @("string array compares two equal arrays")
@@ -103,14 +105,14 @@ unittest {
   expect(["a", "b", "c"]).to.not.equal(["a", "b", "d"]);
 }
 
-@("string array throws error when arrays differ")
+@("string array [a,b,c] equal [a,b,d] reports error with expected and actual")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     expect(["a", "b", "c"]).to.equal(["a", "b", "d"]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain(`Expected:["a", "b", "d"]`);
-  msg.should.contain(`Actual:["a", "b", "c"]`);
+  expect(evaluation.result.expected).to.equal(`["a", "b", "d"]`);
+  expect(evaluation.result.actual).to.equal(`["a", "b", "c"]`);
 }
 
 @("empty arrays are equal")

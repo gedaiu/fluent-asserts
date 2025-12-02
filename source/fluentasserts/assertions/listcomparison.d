@@ -128,8 +128,13 @@ struct ListComparison(Type) {
   }
 }
 
+version(unittest) {
+  import fluentasserts.core.lifecycle;
+}
+
 @("ListComparison gets missing elements")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto comparison = ListComparison!int([1, 2, 3], [4]);
 
   auto missing = comparison.missing;
@@ -142,6 +147,7 @@ unittest {
 
 @("ListComparison gets missing elements with duplicates")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto comparison = ListComparison!int([2, 2], [2]);
 
   auto missing = comparison.missing;
@@ -152,6 +158,7 @@ unittest {
 
 @("ListComparison gets extra elements")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto comparison = ListComparison!int([4], [1, 2, 3]);
 
   auto extra = comparison.extra;
@@ -164,6 +171,7 @@ unittest {
 
 @("ListComparison gets extra elements with duplicates")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto comparison = ListComparison!int([2], [2, 2]);
 
   auto extra = comparison.extra;
@@ -174,6 +182,7 @@ unittest {
 
 @("ListComparison gets common elements")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto comparison = ListComparison!int([1, 2, 3, 4], [2, 3]);
 
   auto common = comparison.common;
@@ -185,6 +194,7 @@ unittest {
 
 @("ListComparison gets common elements with duplicates")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto comparison = ListComparison!int([2, 2, 2, 2], [2, 2]);
 
   auto common = comparison.common;

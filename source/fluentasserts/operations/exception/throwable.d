@@ -14,6 +14,8 @@ import std.array;
 static immutable throwAnyDescription = "Tests that the tested callable throws an exception.";
 
 version(unittest) {
+  import fluentasserts.core.lifecycle;
+
   class CustomException : Exception {
     this(string msg, string fileName = "", size_t line = 0, Throwable next = null) {
       super(msg, fileName, line, next);
@@ -63,12 +65,14 @@ void throwAnyException(ref Evaluation evaluation) @trusted nothrow {
 
 @("it is successful when the function does not throw")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   void test() {}
   expect({ test(); }).to.not.throwAnyException();
 }
 
 @("it fails when an exception is thrown and none is expected")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   void test() { throw new Exception("Test exception"); }
 
   bool thrown;
@@ -88,12 +92,14 @@ unittest {
 
 @("it is successful when the function throws an expected exception")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   void test() { throw new Exception("test"); }
   expect({ test(); }).to.throwAnyException;
 }
 
 @("it fails when the function throws a Throwable and an Exception is expected")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   void test() { assert(false); }
 
   bool thrown;
@@ -115,6 +121,7 @@ unittest {
 
 @("it is successful when the function throws any exception")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   void test() { throw new Exception("test"); }
   expect({ test(); }).to.throwAnyException;
 }
@@ -217,6 +224,22 @@ void throwSomethingWithMessage(ref Evaluation evaluation) @trusted nothrow {
   evaluation.currentValue.throwable = null;
 }
 
+@("throwSomething catches assert failures")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  ({
+    assert(false, "test");
+  }).should.throwSomething.withMessage.equal("test");
+}
+
+@("throwSomething works with withMessage directly")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  ({
+    assert(false, "test");
+  }).should.throwSomething.withMessage("test");
+}
+
 ///
 void throwException(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addText(".");
@@ -270,6 +293,7 @@ void throwException(ref Evaluation evaluation) @trusted nothrow {
 
 @("catches a certain exception type")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   expect({
     throw new CustomException("test");
   }).to.throwException!CustomException;
@@ -277,6 +301,7 @@ unittest {
 
 @("fails when no exception is thrown but one is expected")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   bool thrown;
 
   try {
@@ -290,6 +315,7 @@ unittest {
 
 @("fails when an unexpected exception is thrown")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   bool thrown;
 
   try {
@@ -310,6 +336,7 @@ unittest {
 
 @("does not fail when an exception is thrown and it is not expected")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   expect({
     throw new Exception("test");
   }).to.not.throwException!CustomException;
@@ -317,6 +344,7 @@ unittest {
 
 @("fails when the checked exception type is thrown but not expected")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   bool thrown;
 
   try {
@@ -389,6 +417,7 @@ void throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
 
 @("fails when an exception is not caught")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Exception exception;
 
   try {
@@ -405,6 +434,7 @@ unittest {
 
 @("does not fail when an exception is not expected and none is caught")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Exception exception;
 
   try {
@@ -418,6 +448,7 @@ unittest {
 
 @("fails when the caught exception has a different type")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Exception exception;
 
   try {
@@ -436,6 +467,7 @@ unittest {
 
 @("does not fail when a certain exception type is not caught")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Exception exception;
 
   try {
@@ -451,6 +483,7 @@ unittest {
 
 @("fails when the caught exception has a different message")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Exception exception;
 
   try {
@@ -469,6 +502,7 @@ unittest {
 
 @("does not fail when the caught exception is expected to have a different message")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Exception exception;
 
   try {
@@ -482,22 +516,9 @@ unittest {
   assert(exception is null);
 }
 
-@("throwSomething catches assert failures")
-unittest {
-  ({
-    assert(false, "test");
-  }).should.throwSomething.withMessage.equal("test");
-}
-
-@("throwSomething works with withMessage directly")
-unittest {
-  ({
-    assert(false, "test");
-  }).should.throwSomething.withMessage("test");
-}
-
 @("throwException allows access to thrown exception via .thrown")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   class DataException : Exception {
     int data;
     this(int data, string msg, string fileName = "", size_t line = 0, Throwable next = null) {
@@ -517,6 +538,7 @@ unittest {
 
 @("throwAnyException returns message for chaining")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   ({
     throw new Exception("test");
   }).should.throwAnyException.msg.should.equal("test");
