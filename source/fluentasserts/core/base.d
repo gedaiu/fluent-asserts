@@ -3,14 +3,17 @@
 /// for traditional-style assertions.
 module fluentasserts.core.base;
 
-public import fluentasserts.core.array;
-public import fluentasserts.core.string;
-public import fluentasserts.core.objects;
-public import fluentasserts.core.basetype;
-public import fluentasserts.core.results;
 public import fluentasserts.core.lifecycle;
 public import fluentasserts.core.expect;
 public import fluentasserts.core.evaluation;
+
+public import fluentasserts.assertions.array;
+public import fluentasserts.assertions.basetype;
+public import fluentasserts.assertions.objects;
+public import fluentasserts.assertions.string;
+
+public import fluentasserts.results.message;
+public import fluentasserts.results.printer;
 
 import std.traits;
 import std.stdio;

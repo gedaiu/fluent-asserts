@@ -5,25 +5,25 @@ module fluentasserts.core.expect;
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.evaluation;
 import fluentasserts.core.evaluator;
-import fluentasserts.core.results;
-import fluentasserts.core.formatting : toNiceOperation;
 
-import fluentasserts.core.serializers;
+import fluentasserts.results.printer;
+import fluentasserts.results.formatting : toNiceOperation;
+import fluentasserts.results.serializers;
 
-import fluentasserts.core.operations.equal : equalOp = equal;
-import fluentasserts.core.operations.arrayEqual : arrayEqualOp = arrayEqual;
-import fluentasserts.core.operations.contain : containOp = contain, arrayContainOp = arrayContain, arrayContainOnlyOp = arrayContainOnly;
-import fluentasserts.core.operations.startWith : startWithOp = startWith;
-import fluentasserts.core.operations.endWith : endWithOp = endWith;
-import fluentasserts.core.operations.beNull : beNullOp = beNull;
-import fluentasserts.core.operations.instanceOf : instanceOfOp = instanceOf;
-import fluentasserts.core.operations.greaterThan : greaterThanOp = greaterThan, greaterThanDurationOp = greaterThanDuration, greaterThanSysTimeOp = greaterThanSysTime;
-import fluentasserts.core.operations.greaterOrEqualTo : greaterOrEqualToOp = greaterOrEqualTo, greaterOrEqualToDurationOp = greaterOrEqualToDuration, greaterOrEqualToSysTimeOp = greaterOrEqualToSysTime;
-import fluentasserts.core.operations.lessThan : lessThanOp = lessThan, lessThanDurationOp = lessThanDuration, lessThanSysTimeOp = lessThanSysTime, lessThanGenericOp = lessThanGeneric;
-import fluentasserts.core.operations.lessOrEqualTo : lessOrEqualToOp = lessOrEqualTo;
-import fluentasserts.core.operations.between : betweenOp = between, betweenDurationOp = betweenDuration, betweenSysTimeOp = betweenSysTime;
-import fluentasserts.core.operations.approximately : approximatelyOp = approximately, approximatelyListOp = approximatelyList;
-import fluentasserts.core.operations.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage, throwSomethingOp = throwSomething, throwSomethingWithMessageOp = throwSomethingWithMessage;
+import fluentasserts.operations.equality.equal : equalOp = equal;
+import fluentasserts.operations.equality.arrayEqual : arrayEqualOp = arrayEqual;
+import fluentasserts.operations.string.contain : containOp = contain, arrayContainOp = arrayContain, arrayContainOnlyOp = arrayContainOnly;
+import fluentasserts.operations.string.startWith : startWithOp = startWith;
+import fluentasserts.operations.string.endWith : endWithOp = endWith;
+import fluentasserts.operations.type.beNull : beNullOp = beNull;
+import fluentasserts.operations.type.instanceOf : instanceOfOp = instanceOf;
+import fluentasserts.operations.comparison.greaterThan : greaterThanOp = greaterThan, greaterThanDurationOp = greaterThanDuration, greaterThanSysTimeOp = greaterThanSysTime;
+import fluentasserts.operations.comparison.greaterOrEqualTo : greaterOrEqualToOp = greaterOrEqualTo, greaterOrEqualToDurationOp = greaterOrEqualToDuration, greaterOrEqualToSysTimeOp = greaterOrEqualToSysTime;
+import fluentasserts.operations.comparison.lessThan : lessThanOp = lessThan, lessThanDurationOp = lessThanDuration, lessThanSysTimeOp = lessThanSysTime, lessThanGenericOp = lessThanGeneric;
+import fluentasserts.operations.comparison.lessOrEqualTo : lessOrEqualToOp = lessOrEqualTo;
+import fluentasserts.operations.comparison.between : betweenOp = between, betweenDurationOp = betweenDuration, betweenSysTimeOp = betweenSysTime;
+import fluentasserts.operations.comparison.approximately : approximatelyOp = approximately, approximatelyListOp = approximatelyList;
+import fluentasserts.operations.exception.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage, throwSomethingOp = throwSomething, throwSomethingWithMessageOp = throwSomethingWithMessage;
 
 import std.datetime : Duration, SysTime;
 

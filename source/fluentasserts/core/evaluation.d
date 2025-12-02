@@ -10,10 +10,10 @@ import std.range;
 import std.array;
 import std.algorithm : map, sort;
 
-import fluentasserts.core.serializers;
-import fluentasserts.core.results : SourceResult;
-import fluentasserts.core.message : Message, ResultGlyphs;
-import fluentasserts.core.asserts : AssertResult;
+import fluentasserts.results.serializers;
+import fluentasserts.results.source : SourceResult;
+import fluentasserts.results.message : Message, ResultGlyphs;
+import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.base : TestException;
 
 /// Holds the result of evaluating a single value.
@@ -261,9 +261,9 @@ unittest {
 
   auto result = extractTypes!(T[]);
 
-  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L216_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L216_C1.T[]" got "` ~ result[0] ~ `"`);
+  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L258_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L258_C1.T[]" got "` ~ result[0] ~ `"`);
   assert(result[1] == "object.Object[]", `Expected: ` ~ result[1] );
-  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L216_C1.I[]", `Expected: ` ~ result[2] );
+  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L258_C1.I[]", `Expected: ` ~ result[2] );
 }
 
 /// A proxy interface for comparing values of different types.

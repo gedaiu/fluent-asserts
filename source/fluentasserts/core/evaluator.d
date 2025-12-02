@@ -3,10 +3,10 @@
 module fluentasserts.core.evaluator;
 
 import fluentasserts.core.evaluation;
-import fluentasserts.core.results;
+import fluentasserts.results.printer;
 import fluentasserts.core.base : TestException;
-import fluentasserts.core.serializers;
-import fluentasserts.core.formatting : toNiceOperation;
+import fluentasserts.results.serializers;
+import fluentasserts.results.formatting : toNiceOperation;
 
 import std.functional : toDelegate;
 import std.conv : to;

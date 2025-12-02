@@ -1,6 +1,6 @@
 module updateDocs;
 
-import fluentasserts.core.operations.registry;
+import fluentasserts.operations.registry;
 import std.stdio;
 import std.file;
 import std.path;

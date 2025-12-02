@@ -3,30 +3,33 @@
 /// the assertion evaluation lifecycle.
 module fluentasserts.core.lifecycle;
 
-import fluentasserts.core.base;
-import fluentasserts.core.evaluation;
-import fluentasserts.core.operations.approximately;
-import fluentasserts.core.operations.arrayEqual;
-import fluentasserts.core.operations.beNull;
-import fluentasserts.core.operations.between;
-import fluentasserts.core.operations.contain;
-import fluentasserts.core.operations.endWith;
-import fluentasserts.core.operations.equal;
-import fluentasserts.core.operations.greaterThan;
-import fluentasserts.core.operations.greaterOrEqualTo;
-import fluentasserts.core.operations.instanceOf;
-import fluentasserts.core.operations.lessThan;
-import fluentasserts.core.operations.lessOrEqualTo;
-import fluentasserts.core.operations.registry;
-import fluentasserts.core.operations.startWith;
-import fluentasserts.core.operations.throwable;
-import fluentasserts.core.results;
-import fluentasserts.core.serializers;
-
 import core.memory : GC;
-import std.meta;
+
 import std.conv;
 import std.datetime;
+import std.meta;
+
+import fluentasserts.core.base;
+import fluentasserts.core.evaluation;
+
+import fluentasserts.results.message;
+import fluentasserts.results.serializers;
+
+import fluentasserts.operations.registry;
+import fluentasserts.operations.comparison.approximately;
+import fluentasserts.operations.comparison.between;
+import fluentasserts.operations.comparison.greaterOrEqualTo;
+import fluentasserts.operations.comparison.greaterThan;
+import fluentasserts.operations.comparison.lessOrEqualTo;
+import fluentasserts.operations.comparison.lessThan;
+import fluentasserts.operations.equality.arrayEqual;
+import fluentasserts.operations.equality.equal;
+import fluentasserts.operations.exception.throwable;
+import fluentasserts.operations.string.contain;
+import fluentasserts.operations.string.endWith;
+import fluentasserts.operations.string.startWith;
+import fluentasserts.operations.type.beNull;
+import fluentasserts.operations.type.instanceOf;
 
 /// Tuple of basic numeric types supported by fluent-asserts.
 alias BasicNumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
