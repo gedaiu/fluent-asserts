@@ -43,8 +43,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(largeValue.to!string ~ " should be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ". " ~ largeValue.to!string ~ " is greater than or equal to " ~ largeValue.to!string ~ ".");
-        msg.split("\n")[2].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-        msg.split("\n")[3].strip.should.equal("Actual:" ~ largeValue.to!string);
+        msg.split("\n")[1].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+        msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.to!string);
       });
 
       it("should throw a detailed error when the value equal to the min value of the interval", {
@@ -53,8 +53,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(smallValue.to!string ~ " should be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less than or equal to " ~ smallValue.to!string ~ ".");
-        msg.split("\n")[2].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-        msg.split("\n")[3].strip.should.equal("Actual:" ~ smallValue.to!string);
+        msg.split("\n")[1].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+        msg.split("\n")[2].strip.should.equal("Actual:" ~ smallValue.to!string);
       });
 
       it("should throw a detailed error when the negated assert fails", {
@@ -63,8 +63,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.startWith(middleValue.to!string ~ " should not be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ".");
-        msg.split("\n")[2].strip.should.equal("Expected:a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-        msg.split("\n")[3].strip.should.equal("Actual:" ~ middleValue.to!string);
+        msg.split("\n")[1].strip.should.equal("Expected:a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+        msg.split("\n")[2].strip.should.equal("Actual:" ~ middleValue.to!string);
       });
     });
   }
@@ -98,8 +98,8 @@ alias s = Spec!({
       }).should.throwException!TestException.msg;
 
       msg.split("\n")[0].should.equal(largeValue.to!string ~ " should be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ". " ~ largeValue.to!string ~ " is greater than or equal to " ~ largeValue.to!string ~ ".");
-      msg.split("\n")[2].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-      msg.split("\n")[3].strip.should.equal("Actual:" ~ largeValue.to!string);
+      msg.split("\n")[1].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+      msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.to!string);
     });
 
     it("should throw a detailed error when the value equal to the min value of the interval", {
@@ -108,8 +108,8 @@ alias s = Spec!({
       }).should.throwException!TestException.msg;
 
       msg.split("\n")[0].should.equal(smallValue.to!string ~ " should be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less than or equal to " ~ smallValue.to!string ~ ".");
-      msg.split("\n")[2].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-      msg.split("\n")[3].strip.should.equal("Actual:" ~ smallValue.to!string);
+      msg.split("\n")[1].strip.should.equal("Expected:a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+      msg.split("\n")[2].strip.should.equal("Actual:" ~ smallValue.to!string);
     });
 
     it("should throw a detailed error when the negated assert fails", {
@@ -118,8 +118,8 @@ alias s = Spec!({
       }).should.throwException!TestException.msg;
 
       msg.split("\n")[0].should.startWith(middleValue.to!string ~ " should not be between " ~ smallValue.to!string ~ " and " ~ largeValue.to!string ~ ".");
-      msg.split("\n")[2].strip.should.equal("Expected:a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-      msg.split("\n")[3].strip.should.equal("Actual:" ~ middleValue.to!string);
+      msg.split("\n")[1].strip.should.equal("Expected:a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+      msg.split("\n")[2].strip.should.equal("Actual:" ~ middleValue.to!string);
     });
   });
 

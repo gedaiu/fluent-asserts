@@ -15,7 +15,7 @@ version(unittest) {
 static immutable greaterThanDescription = "Asserts that the tested value is greater than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
 ///
-IResult[] greaterThan(T)(ref Evaluation evaluation) @safe nothrow {
+void greaterThan(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   T expectedValue;
@@ -25,16 +25,18 @@ IResult[] greaterThan(T)(ref Evaluation evaluation) @safe nothrow {
     expectedValue = evaluation.expectedValue.strValue.to!T;
     currentValue = evaluation.currentValue.strValue.to!T;
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to " ~ T.stringof) ];
+    evaluation.result.expected = "valid " ~ T.stringof ~ " values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue > expectedValue;
 
-  return greaterThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  greaterThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
 ///
-IResult[] greaterThanDuration(ref Evaluation evaluation) @safe nothrow {
+void greaterThanDuration(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   Duration expectedValue;
@@ -49,16 +51,18 @@ IResult[] greaterThanDuration(ref Evaluation evaluation) @safe nothrow {
     niceExpectedValue = expectedValue.to!string;
     niceCurrentValue = currentValue.to!string;
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to Duration") ];
+    evaluation.result.expected = "valid Duration values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue > expectedValue;
 
-  return greaterThanResults(result, niceExpectedValue, niceCurrentValue, evaluation);
+  greaterThanResults(result, niceExpectedValue, niceCurrentValue, evaluation);
 }
 
 ///
-IResult[] greaterThanSysTime(ref Evaluation evaluation) @safe nothrow {
+void greaterThanSysTime(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   SysTime expectedValue;
@@ -70,21 +74,23 @@ IResult[] greaterThanSysTime(ref Evaluation evaluation) @safe nothrow {
     expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
     currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to SysTime") ];
+    evaluation.result.expected = "valid SysTime values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue > expectedValue;
 
-  return greaterThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  greaterThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
-private IResult[] greaterThanResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
+private void greaterThanResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
   if(evaluation.isNegated) {
     result = !result;
   }
 
   if(result) {
-    return [];
+    return;
   }
 
   evaluation.result.addText(" ");
@@ -103,6 +109,4 @@ private IResult[] greaterThanResults(bool result, string niceExpectedValue, stri
 
   evaluation.result.addValue(niceExpectedValue);
   evaluation.result.addText(".");
-
-  return [];
 }

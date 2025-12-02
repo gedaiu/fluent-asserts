@@ -38,8 +38,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(smallValue.to!string ~ " should be greater or equal to " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less than " ~ largeValue.to!string ~ ".");
-        msg.split("\n")[2].strip.should.equal("Expected:greater or equal than " ~ largeValue.to!string);
-        msg.split("\n")[3].strip.should.equal("Actual:" ~ smallValue.to!string);
+        msg.split("\n")[1].strip.should.equal("Expected:greater or equal than " ~ largeValue.to!string);
+        msg.split("\n")[2].strip.should.equal("Actual:" ~ smallValue.to!string);
       });
 
       it("should throw a detailed error when the negated coparison fails", {
@@ -48,8 +48,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(largeValue.to!string ~ " should not be greater or equal to " ~ smallValue.to!string ~ ". " ~ largeValue.to!string ~ " is greater or equal than " ~ smallValue.to!string ~ ".");
-        msg.split("\n")[2].strip.should.equal("Expected:less than " ~ smallValue.to!string);
-        msg.split("\n")[3].strip.should.equal("Actual:" ~ largeValue.to!string);
+        msg.split("\n")[1].strip.should.equal("Expected:less than " ~ smallValue.to!string);
+        msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.to!string);
       });
     });
   }
@@ -82,8 +82,8 @@ alias s = Spec!({
 
       msg.split("\n")[0].should.equal(largeValue.to!string ~ " should not be greater or equal to " ~ smallValue.to!string ~ ". " ~
         largeValue.to!string ~ " is greater or equal than " ~ smallValue.to!string ~ ".");
-      msg.split("\n")[2].strip.should.equal("Expected:less than " ~ smallValue.to!string);
-      msg.split("\n")[3].strip.should.equal("Actual:" ~ largeValue.to!string);
+      msg.split("\n")[1].strip.should.equal("Expected:less than " ~ smallValue.to!string);
+      msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.to!string);
     });
   });
 
@@ -117,8 +117,8 @@ alias s = Spec!({
 
       msg.split("\n")[0].should.equal(largeValue.toISOExtString ~ " should not be greater or equal to " ~ smallValue.toISOExtString ~ ". " ~
         largeValue.toISOExtString ~ " is greater or equal than " ~ smallValue.toISOExtString ~ ".");
-      msg.split("\n")[2].strip.should.equal("Expected:less than " ~ smallValue.toISOExtString);
-      msg.split("\n")[3].strip.should.equal("Actual:" ~ largeValue.toISOExtString);
+      msg.split("\n")[1].strip.should.equal("Expected:less than " ~ smallValue.toISOExtString);
+      msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.toISOExtString);
     });
   });
 });

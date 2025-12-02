@@ -9,10 +9,10 @@ import std.array;
 import std.algorithm;
 
 /// Delegate type that can handle asserts
-alias Operation     = IResult[] delegate(ref Evaluation) @safe nothrow;
+alias Operation     = void delegate(ref Evaluation) @safe nothrow;
 
 /// ditto
-alias OperationFunc = IResult[] delegate(ref Evaluation) @safe nothrow;
+alias OperationFunc = void delegate(ref Evaluation) @safe nothrow;
 
 
 struct OperationPair {
@@ -43,7 +43,7 @@ class Registry {
   }
 
   /// ditto
-  Registry register(T, U)(string name, IResult[] function(ref Evaluation) @safe nothrow operation) {
+  Registry register(T, U)(string name, void function(ref Evaluation) @safe nothrow operation) {
     const operationDelegate = operation.toDelegate;
     return this.register!(T, U)(name, operationDelegate);
   }
@@ -59,7 +59,7 @@ class Registry {
   }
 
   /// ditto
-  Registry register(string valueType, string expectedValueType, string name, IResult[] function(ref Evaluation) @safe nothrow operation) {
+  Registry register(string valueType, string expectedValueType, string name, void function(ref Evaluation) @safe nothrow operation) {
     return this.register(valueType, expectedValueType, name, operation.toDelegate);
   }
 
@@ -84,9 +84,9 @@ class Registry {
   }
 
   ///
-  IResult[] handle(ref Evaluation evaluation) @safe nothrow {
+  void handle(ref Evaluation evaluation) @safe nothrow {
     if(evaluation.operationName == "" || evaluation.operationName == "to" || evaluation.operationName == "should") {
-      return [];
+      return;
     }
 
     auto operation = this.get(
@@ -94,7 +94,7 @@ class Registry {
       evaluation.expectedValue.typeName,
       evaluation.operationName);
 
-    return operation(evaluation);
+    operation(evaluation);
   }
 
   ///

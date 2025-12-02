@@ -120,13 +120,6 @@ immutable(Message)[] toMessages(ref EvaluationResult result) nothrow {
   return result.messages;
 }
 
-IResult[] toException(ref EvaluationResult result) nothrow {
-  if(result.messages.length == 0) {
-    return [];
-  }
-
-  return [ new EvaluationResultInstance(result) ];
-}
 
 struct EvaluationResult {
   private {

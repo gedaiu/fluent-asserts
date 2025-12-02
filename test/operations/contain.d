@@ -49,8 +49,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(`"test string" should contain ["other", "message"]. ["other", "message"] are missing from "test string".`);
-        msg.split("\n")[2].strip.should.equal("Expected:to contain all [\"other\", \"message\"]");
-        msg.split("\n")[3].strip.should.equal("Actual:test string");
+        msg.split("\n")[1].strip.should.equal("Expected:to contain all [\"other\", \"message\"]");
+        msg.split("\n")[2].strip.should.equal("Actual:test string");
       });
 
       it("should throw an error when the string contains substrings that it should not", {
@@ -59,8 +59,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(`"test string" should not contain ["test", "string"]. ["test", "string"] are present in "test string".`);
-        msg.split("\n")[2].strip.should.equal("Expected:to not contain any [\"test\", \"string\"]");
-        msg.split("\n")[3].strip.should.equal("Actual:test string");
+        msg.split("\n")[1].strip.should.equal("Expected:to not contain any [\"test\", \"string\"]");
+        msg.split("\n")[2].strip.should.equal("Actual:test string");
       });
 
       it("should throw an error when the string does not contains a substring", {
@@ -69,8 +69,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(`"test string" should contain "other". other is missing from "test string".`);
-        msg.split("\n")[2].strip.should.equal("Expected:to contain \"other\"");
-        msg.split("\n")[3].strip.should.equal("Actual:test string");
+        msg.split("\n")[1].strip.should.equal("Expected:to contain \"other\"");
+        msg.split("\n")[2].strip.should.equal("Actual:test string");
       });
 
       it("should throw an error when the string contains a substring that it should not", {
@@ -79,8 +79,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(`"test string" should not contain "test". test is present in "test string".`);
-        msg.split("\n")[2].strip.should.equal("Expected:to not contain \"test\"");
-        msg.split("\n")[3].strip.should.equal("Actual:test string");
+        msg.split("\n")[1].strip.should.equal("Expected:to not contain \"test\"");
+        msg.split("\n")[2].strip.should.equal("Actual:test string");
       });
 
       it("should throw an error when the string does not contains a char", {
@@ -89,8 +89,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(`"test string" should contain 'o'. o is missing from "test string".`);
-        msg.split("\n")[2].strip.should.equal("Expected:to contain 'o'");
-        msg.split("\n")[3].strip.should.equal("Actual:test string");
+        msg.split("\n")[1].strip.should.equal("Expected:to contain 'o'");
+        msg.split("\n")[2].strip.should.equal("Actual:test string");
       });
 
       it("should throw an error when the string contains a char that it should not", {
@@ -99,8 +99,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(`"test string" should not contain 't'. t is present in "test string".`);
-        msg.split("\n")[2].strip.should.equal("Expected:to not contain 't'");
-        msg.split("\n")[3].strip.should.equal("Actual:test string");
+        msg.split("\n")[1].strip.should.equal("Expected:to not contain 't'");
+        msg.split("\n")[2].strip.should.equal("Actual:test string");
       });
     });
 
@@ -128,8 +128,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(`"test string" should contain ["other", "message"]. ["other", "message"] are missing from "test string".`);
-        msg.split("\n")[2].strip.should.equal("Expected:to contain all [\"other\", \"message\"]");
-        msg.split("\n")[3].strip.should.equal("Actual:test string");
+        msg.split("\n")[1].strip.should.equal("Expected:to contain all [\"other\", \"message\"]");
+        msg.split("\n")[2].strip.should.equal("Actual:test string");
       });
 
       it("should throw an error when the string contains substrings that it should not", {
@@ -138,8 +138,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(`"test string" should not contain ["test", "string"]. ["test", "string"] are present in "test string".`);
-        msg.split("\n")[2].strip.should.equal("Expected:to not contain any [\"test\", \"string\"]");
-        msg.split("\n")[3].strip.should.equal("Actual:test string");
+        msg.split("\n")[1].strip.should.equal("Expected:to not contain any [\"test\", \"string\"]");
+        msg.split("\n")[2].strip.should.equal("Actual:test string");
       });
     });
   }

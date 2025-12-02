@@ -15,10 +15,8 @@ version(unittest) {
 static immutable startWithDescription = "Tests that the tested string starts with the expected value.";
 
 ///
-IResult[] startWith(ref Evaluation evaluation) @safe nothrow {
+void startWith(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
-
-  IResult[] results = [];
 
   auto index = evaluation.currentValue.strValue.cleanString.indexOf(evaluation.expectedValue.strValue.cleanString);
   auto doesStartWith = index == 0;
@@ -47,6 +45,4 @@ IResult[] startWith(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.actual = evaluation.currentValue.strValue;
     }
   }
-
-  return [];
 }

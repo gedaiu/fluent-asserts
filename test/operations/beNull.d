@@ -28,8 +28,8 @@ alias s = Spec!({
         }).to.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(" should be null.");
-        msg.split("\n")[2].strip.should.equal("Expected:null");
-        msg.split("\n")[3].strip.should.equal("Actual:callable");
+        msg.split("\n")[1].strip.should.equal("Expected:null");
+        msg.split("\n")[2].strip.should.equal("Actual:callable");
       });
     });
 
@@ -48,8 +48,8 @@ alias s = Spec!({
         }).to.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(" should not be null.");
-        msg.split("\n")[2].strip.should.equal("Expected:not null");
-        msg.split("\n")[3].strip.should.equal("Actual:null");
+        msg.split("\n")[1].strip.should.equal("Expected:not null");
+        msg.split("\n")[2].strip.should.equal("Actual:null");
       });
     });
   });

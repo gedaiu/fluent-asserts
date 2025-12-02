@@ -20,9 +20,7 @@ version(unittest) {
 static immutable approximatelyDescription = "Asserts that the target is a number that's within a given +/- `delta` range of the given number expected. However, it's often best to assert that the target is equal to its expected value.";
 
 ///
-IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
-  IResult[] results = [];
-
+void approximately(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addValue("±");
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
   evaluation.result.addText(".");
@@ -36,9 +34,9 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
     expected = evaluation.expectedValue.strValue.to!real;
     delta = evaluation.expectedValue.meta["1"].to!real;
   } catch(Exception e) {
-    results ~= new MessageResult("Can't parse the provided arguments!");
-
-    return results;
+    evaluation.result.expected = "valid numeric values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   string strExpected = evaluation.expectedValue.strValue ~ "±" ~ evaluation.expectedValue.meta["1"];
@@ -51,7 +49,7 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
   }
 
   if(result) {
-    return [];
+    return;
   }
 
   if(evaluation.currentValue.typeName != "bool") {
@@ -71,12 +69,10 @@ IResult[] approximately(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.expected = strExpected;
   evaluation.result.actual = strCurrent;
   evaluation.result.negated = evaluation.isNegated;
-
-  return [];
 }
 
 ///
-IResult[] approximatelyList(ref Evaluation evaluation) @trusted nothrow {
+void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addValue("±" ~ evaluation.expectedValue.meta["1"]);
   evaluation.result.addText(".");
 
@@ -89,7 +85,9 @@ IResult[] approximatelyList(ref Evaluation evaluation) @trusted nothrow {
     expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString.map!(a => a.to!real).array;
     maxRelDiff = evaluation.expectedValue.meta["1"].to!double;
   } catch(Exception e) {
-    return [ new MessageResult("Can not perform the assert.") ];
+    evaluation.result.expected = "valid numeric list";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto comparison = ListComparison!real(testData, expectedPieces, maxRelDiff);
@@ -97,8 +95,6 @@ IResult[] approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   auto missing = comparison.missing;
   auto extra = comparison.extra;
   auto common = comparison.common;
-
-  IResult[] results = [];
 
   bool allEqual = testData.length == expectedPieces.length;
 
@@ -148,6 +144,4 @@ IResult[] approximatelyList(ref Evaluation evaluation) @trusted nothrow {
       evaluation.result.negated = true;
     }
   }
-
-  return [];
 }

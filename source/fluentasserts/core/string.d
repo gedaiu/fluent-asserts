@@ -50,8 +50,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" does not start with "other"`);
-  msg.split("\n")[2].strip.should.equal(`Expected:to start with "other"`);
-  msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
+  msg.split("\n")[1].strip.should.equal(`Expected:to start with "other"`);
+  msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
 
   ({
     "test string".should.not.startWith("other");
@@ -62,8 +62,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" starts with "test"`);
-  msg.split("\n")[2].strip.should.equal(`Expected:not to start with "test"`);
-  msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
+  msg.split("\n")[1].strip.should.equal(`Expected:not to start with "test"`);
+  msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
 
   ({
     "test string".should.startWith('t');
@@ -74,8 +74,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" does not start with 'o'`);
-  msg.split("\n")[2].strip.should.equal("Expected:to start with 'o'");
-  msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
+  msg.split("\n")[1].strip.should.equal("Expected:to start with 'o'");
+  msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
 
   ({
     "test string".should.not.startWith('o');
@@ -86,8 +86,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" starts with 't'`);
-  msg.split("\n")[2].strip.should.equal(`Expected:not to start with 't'`);
-  msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
+  msg.split("\n")[1].strip.should.equal(`Expected:not to start with 't'`);
+  msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
 }
 
 @("string endWith")
@@ -101,8 +101,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" does not end with "other"`);
-  msg.split("\n")[2].strip.should.equal(`Expected:to end with "other"`);
-  msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
+  msg.split("\n")[1].strip.should.equal(`Expected:to end with "other"`);
+  msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
 
   ({
     "test string".should.not.endWith("other");
@@ -113,8 +113,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should not end with "string". "test string" ends with "string".`);
-  msg.split("\n")[2].strip.should.equal(`Expected:not to end with "string"`);
-  msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
+  msg.split("\n")[1].strip.should.equal(`Expected:not to end with "string"`);
+  msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
 
   ({
     "test string".should.endWith('g');
@@ -125,8 +125,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" does not end with 't'`);
-  msg.split("\n")[2].strip.should.equal("Expected:to end with 't'");
-  msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
+  msg.split("\n")[1].strip.should.equal("Expected:to end with 't'");
+  msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
 
   ({
     "test string".should.not.endWith('w');
@@ -137,8 +137,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`"test string" ends with 'g'`);
-  msg.split("\n")[2].strip.should.equal("Expected:not to end with 'g'");
-  msg.split("\n")[3].strip.should.equal(`Actual:"test string"`);
+  msg.split("\n")[1].strip.should.equal("Expected:not to end with 'g'");
+  msg.split("\n")[2].strip.should.equal(`Actual:"test string"`);
 }
 
 @("string contain")
@@ -163,48 +163,48 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should contain ["other", "message"]. ["other", "message"] are missing from "test string".`);
-  msg.split("\n")[2].strip.should.equal(`Expected:to contain all ["other", "message"]`);
-  msg.split("\n")[3].strip.should.equal("Actual:test string");
+  msg.split("\n")[1].strip.should.equal(`Expected:to contain all ["other", "message"]`);
+  msg.split("\n")[2].strip.should.equal("Actual:test string");
 
   msg = ({
     "test string".should.not.contain(["test", "string"]);
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should not contain ["test", "string"]. ["test", "string"] are present in "test string".`);
-  msg.split("\n")[2].strip.should.equal(`Expected:not to contain any ["test", "string"]`);
-  msg.split("\n")[3].strip.should.equal("Actual:test string");
+  msg.split("\n")[1].strip.should.equal(`Expected:not to contain any ["test", "string"]`);
+  msg.split("\n")[2].strip.should.equal("Actual:test string");
 
   msg = ({
     "test string".should.contain("other");
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should contain "other". other is missing from "test string".`);
-  msg.split("\n")[2].strip.should.equal(`Expected:to contain "other"`);
-  msg.split("\n")[3].strip.should.equal("Actual:test string");
+  msg.split("\n")[1].strip.should.equal(`Expected:to contain "other"`);
+  msg.split("\n")[2].strip.should.equal("Actual:test string");
 
   msg = ({
     "test string".should.not.contain("test");
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should not contain "test". test is present in "test string".`);
-  msg.split("\n")[2].strip.should.equal(`Expected:not to contain "test"`);
-  msg.split("\n")[3].strip.should.equal("Actual:test string");
+  msg.split("\n")[1].strip.should.equal(`Expected:not to contain "test"`);
+  msg.split("\n")[2].strip.should.equal("Actual:test string");
 
   msg = ({
     "test string".should.contain('o');
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`o is missing from "test string"`);
-  msg.split("\n")[2].strip.should.equal("Expected:to contain 'o'");
-  msg.split("\n")[3].strip.should.equal("Actual:test string");
+  msg.split("\n")[1].strip.should.equal("Expected:to contain 'o'");
+  msg.split("\n")[2].strip.should.equal("Actual:test string");
 
   msg = ({
     "test string".should.not.contain('t');
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal(`"test string" should not contain 't'. t is present in "test string".`);
-  msg.split("\n")[2].strip.should.equal("Expected:not to contain 't'");
-  msg.split("\n")[3].strip.should.equal("Actual:test string");
+  msg.split("\n")[1].strip.should.equal("Expected:not to contain 't'");
+  msg.split("\n")[2].strip.should.equal("Actual:test string");
 }
 
 @("string equal")

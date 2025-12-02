@@ -148,7 +148,7 @@ static this() {
     if(evaluation.isEvaluated) return;
 
     evaluation.isEvaluated = true;
-    auto results = Registry.instance.handle(evaluation);
+    Registry.instance.handle(evaluation);
 
     if(evaluation.currentValue.throwable !is null) {
       throw evaluation.currentValue.throwable;
@@ -158,29 +158,13 @@ static this() {
       throw evaluation.currentValue.throwable;
     }
 
-    if(results.length == 0 && !evaluation.result.hasContent()) {
+    if(!evaluation.result.hasContent()) {
       return;
     }
 
-    IResult[] allResults;
+    string msg = evaluation.result.toString();
+    msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
 
-    if(evaluation.result.message.length > 0) {
-      auto chainMessage = new MessageResult();
-      chainMessage.data.messages = evaluation.result.message;
-      allResults ~= chainMessage;
-    }
-
-    allResults ~= results;
-
-    if(evaluation.result.hasContent()) {
-      auto assertResult = new AssertResultInstance(evaluation.result);
-      allResults ~= assertResult;
-    }
-
-    version(DisableSourceResult) {} else {
-      allResults ~= evaluation.getSourceResult();
-    }
-
-    throw new TestException(allResults, evaluation.sourceFile, evaluation.sourceLine);
+    throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
   }
 }

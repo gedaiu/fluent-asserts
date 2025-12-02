@@ -38,8 +38,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(largeValue.to!string ~ " should be less or equal to " ~ smallValue.to!string ~ ". " ~ largeValue.to!string ~ " is greater than " ~ smallValue.to!string ~ ".");
-        msg.split("\n")[2].strip.should.equal("Expected:less or equal to " ~ smallValue.to!string);
-        msg.split("\n")[3].strip.should.equal("Actual:" ~ largeValue.to!string);
+        msg.split("\n")[1].strip.should.equal("Expected:less or equal to " ~ smallValue.to!string);
+        msg.split("\n")[2].strip.should.equal("Actual:" ~ largeValue.to!string);
       });
 
       it("should throw a detailed error when the negated comparison fails", {
@@ -48,8 +48,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(smallValue.to!string ~ " should not be less or equal to " ~ largeValue.to!string ~ ". " ~ smallValue.to!string ~ " is less or equal to " ~ largeValue.to!string ~ ".");
-        msg.split("\n")[2].strip.should.equal("Expected:greater than " ~ largeValue.to!string);
-        msg.split("\n")[3].strip.should.equal("Actual:" ~ smallValue.to!string);
+        msg.split("\n")[1].strip.should.equal("Expected:greater than " ~ largeValue.to!string);
+        msg.split("\n")[2].strip.should.equal("Actual:" ~ smallValue.to!string);
       });
     });
   }

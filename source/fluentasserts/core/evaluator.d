@@ -2,60 +2,31 @@ module fluentasserts.core.evaluator;
 
 import fluentasserts.core.evaluation;
 import fluentasserts.core.results;
-import fluentasserts.core.message : Message;
-import fluentasserts.core.asserts : AssertResult;
 import fluentasserts.core.base : TestException;
 import fluentasserts.core.serializers;
 
 import std.functional : toDelegate;
 import std.conv : to;
 
-alias OperationFunc = IResult[] function(ref Evaluation) @safe nothrow;
-alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow;
-
-alias MessageOperationFunc = immutable(Message)[] function(ref Evaluation) @safe nothrow;
-alias MessageOperationFuncTrusted = immutable(Message)[] function(ref Evaluation) @trusted nothrow;
-
-alias VoidOperationFunc = void function(ref Evaluation) @safe nothrow;
-alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
+alias OperationFunc = void function(ref Evaluation) @safe nothrow;
+alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
 
 @safe struct Evaluator {
     private {
         Evaluation* evaluation;
-        IResult[] delegate(ref Evaluation) @safe nothrow operation;
-        immutable(Message)[] delegate(ref Evaluation) @safe nothrow messageOperation;
-        void delegate(ref Evaluation) @safe nothrow voidOperation;
-        int operationType; // 0 = IResult[], 1 = Message[], 2 = void
+        void delegate(ref Evaluation) @safe nothrow operation;
         int refCount;
     }
 
     this(ref Evaluation eval, OperationFunc op) @trusted {
         this.evaluation = &eval;
         this.operation = op.toDelegate;
-        this.operationType = 0;
-        this.refCount = 0;
-    }
-
-    this(ref Evaluation eval, MessageOperationFunc op) @trusted {
-        this.evaluation = &eval;
-        this.messageOperation = op.toDelegate;
-        this.operationType = 1;
-        this.refCount = 0;
-    }
-
-    this(ref Evaluation eval, VoidOperationFunc op) @trusted {
-        this.evaluation = &eval;
-        this.voidOperation = op.toDelegate;
-        this.operationType = 2;
         this.refCount = 0;
     }
 
     this(ref return scope Evaluator other) {
         this.evaluation = other.evaluation;
         this.operation = other.operation;
-        this.messageOperation = other.messageOperation;
-        this.voidOperation = other.voidOperation;
-        this.operationType = other.operationType;
         this.refCount = other.refCount + 1;
     }
 
@@ -102,64 +73,16 @@ alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
             throw evaluation.expectedValue.throwable;
         }
 
-        if (operationType == 2) {
-            // Void operation - uses evaluation.result for assertion data
-            voidOperation(*evaluation);
+        operation(*evaluation);
 
-            if (!evaluation.hasResult()) {
-                return;
-            }
-
-            string errorMessage = evaluation.result.toString();
-
-            version (DisableSourceResult) {
-            } else {
-                errorMessage ~= evaluation.source.toString();
-            }
-
-            throw new TestException(errorMessage, evaluation.sourceFile, evaluation.sourceLine);
-        } else if (operationType == 1) {
-            // Message operation - returns messages
-            auto messages = messageOperation(*evaluation);
-            if (messages.length == 0) {
-                return;
-            }
-
-            version (DisableSourceResult) {
-            } else {
-                messages ~= evaluation.source.toMessages();
-            }
-
-            throw new TestException(messages, evaluation.sourceFile, evaluation.sourceLine);
-        } else {
-            // IResult operation - returns IResult[]
-            auto results = operation(*evaluation);
-
-            if (results.length == 0 && !evaluation.hasResult()) {
-                return;
-            }
-
-            IResult[] allResults;
-
-            if (evaluation.result.message.length > 0) {
-                auto chainMessage = new MessageResult();
-                chainMessage.data.messages = evaluation.result.message;
-                allResults ~= chainMessage;
-            }
-
-            allResults ~= results;
-
-            if (evaluation.hasResult()) {
-                allResults ~= new AssertResultInstance(evaluation.result);
-            }
-
-            version (DisableSourceResult) {
-            } else {
-                allResults ~= evaluation.getSourceResult();
-            }
-
-            throw new TestException(allResults, evaluation.sourceFile, evaluation.sourceLine);
+        if (!evaluation.hasResult()) {
+            return;
         }
+
+        string msg = evaluation.result.toString();
+        msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
+
+        throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
     }
 }
 
@@ -167,7 +90,7 @@ alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
 @safe struct TrustedEvaluator {
     private {
         Evaluation* evaluation;
-        IResult[] delegate(ref Evaluation) @trusted nothrow operation;
+        void delegate(ref Evaluation) @trusted nothrow operation;
         int refCount;
     }
 
@@ -179,7 +102,7 @@ alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
 
     this(ref Evaluation eval, OperationFunc op) @trusted {
         this.evaluation = &eval;
-        this.operation = cast(IResult[] delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
+        this.operation = cast(void delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
         this.refCount = 0;
     }
 
@@ -211,7 +134,7 @@ alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
         }
         evaluation.isEvaluated = true;
 
-        auto results = operation(*evaluation);
+        operation(*evaluation);
 
         if (evaluation.currentValue.throwable !is null) {
             throw evaluation.currentValue.throwable;
@@ -221,30 +144,14 @@ alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
             throw evaluation.expectedValue.throwable;
         }
 
-        if (results.length == 0 && !evaluation.hasResult()) {
+        if (!evaluation.hasResult()) {
             return;
         }
 
-        IResult[] allResults;
+        string msg = evaluation.result.toString();
+        msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
 
-        if (evaluation.result.message.length > 0) {
-            auto chainMessage = new MessageResult();
-            chainMessage.data.messages = evaluation.result.message;
-            allResults ~= chainMessage;
-        }
-
-        allResults ~= results;
-
-        if (evaluation.hasResult()) {
-            allResults ~= new AssertResultInstance(evaluation.result);
-        }
-
-        version (DisableSourceResult) {
-        } else {
-            allResults ~= evaluation.getSourceResult();
-        }
-
-        throw new TestException(allResults, evaluation.sourceFile, evaluation.sourceLine);
+        throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
     }
 }
 
@@ -252,8 +159,8 @@ alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
 @safe struct ThrowableEvaluator {
     private {
         Evaluation* evaluation;
-        IResult[] delegate(ref Evaluation) @trusted nothrow standaloneOp;
-        IResult[] delegate(ref Evaluation) @trusted nothrow withMessageOp;
+        void delegate(ref Evaluation) @trusted nothrow standaloneOp;
+        void delegate(ref Evaluation) @trusted nothrow withMessageOp;
         int refCount;
         bool chainedWithMessage;
     }
@@ -372,13 +279,13 @@ alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
         }
     }
 
-    private void executeOperation(IResult[] delegate(ref Evaluation) @trusted nothrow op) @trusted {
+    private void executeOperation(void delegate(ref Evaluation) @trusted nothrow op) @trusted {
         if (evaluation.isEvaluated) {
             return;
         }
         evaluation.isEvaluated = true;
 
-        auto results = op(*evaluation);
+        op(*evaluation);
 
         if (evaluation.currentValue.throwable !is null) {
             throw evaluation.currentValue.throwable;
@@ -388,30 +295,14 @@ alias VoidOperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
             throw evaluation.expectedValue.throwable;
         }
 
-        if (results.length == 0 && !evaluation.hasResult()) {
+        if (!evaluation.hasResult()) {
             return;
         }
 
-        IResult[] allResults;
+        string msg = evaluation.result.toString();
+        msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
 
-        if (evaluation.result.message.length > 0) {
-            auto chainMessage = new MessageResult();
-            chainMessage.data.messages = evaluation.result.message;
-            allResults ~= chainMessage;
-        }
-
-        allResults ~= results;
-
-        if (evaluation.hasResult()) {
-            allResults ~= new AssertResultInstance(evaluation.result);
-        }
-
-        version (DisableSourceResult) {
-        } else {
-            allResults ~= evaluation.getSourceResult();
-        }
-
-        throw new TestException(allResults, evaluation.sourceFile, evaluation.sourceLine);
+        throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
     }
 }
 

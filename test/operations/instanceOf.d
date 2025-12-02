@@ -47,8 +47,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(value.to!string ~ ` should be instance of "string". ` ~ value.to!string ~ " is instance of " ~ Type.stringof ~ ".");
-        msg.split("\n")[2].strip.should.equal("Expected:typeof string");
-        msg.split("\n")[3].strip.should.equal("Actual:typeof " ~ Type.stringof);
+        msg.split("\n")[1].strip.should.equal("Expected:typeof string");
+        msg.split("\n")[2].strip.should.equal("Actual:typeof " ~ Type.stringof);
       });
 
       it("should throw a detailed error when the types match and they should not", {
@@ -57,8 +57,8 @@ alias s = Spec!({
         }).should.throwException!TestException.msg;
 
         msg.split("\n")[0].should.equal(value.to!string ~ ` should not be instance of "` ~ Type.stringof ~ `". ` ~ value.to!string ~ " is instance of " ~ Type.stringof ~ ".");
-        msg.split("\n")[2].strip.should.equal("Expected:not typeof " ~ Type.stringof);
-        msg.split("\n")[3].strip.should.equal("Actual:typeof " ~ Type.stringof);
+        msg.split("\n")[1].strip.should.equal("Expected:not typeof " ~ Type.stringof);
+        msg.split("\n")[2].strip.should.equal("Actual:typeof " ~ Type.stringof);
       });
     });
   }

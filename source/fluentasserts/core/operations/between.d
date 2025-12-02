@@ -16,7 +16,7 @@ static immutable betweenDescription = "Asserts that the target is a number or a 
   "and less than or equal to the given number or date finish respectively. However, it's often best to assert that the target is equal to its expected value.";
 
 ///
-IResult[] between(T)(ref Evaluation evaluation) @safe nothrow {
+void between(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(" and ");
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
   evaluation.result.addText(". ");
@@ -30,15 +30,17 @@ IResult[] between(T)(ref Evaluation evaluation) @safe nothrow {
     limit1 = evaluation.expectedValue.strValue.to!T;
     limit2 = evaluation.expectedValue.meta["1"].to!T;
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to " ~ T.stringof) ];
+    evaluation.result.expected = "valid " ~ T.stringof ~ " values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
-  return betweenResults(currentValue, limit1, limit2, evaluation);
+  betweenResults(currentValue, limit1, limit2, evaluation);
 }
 
 
 ///
-IResult[] betweenDuration(ref Evaluation evaluation) @safe nothrow {
+void betweenDuration(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(" and ");
 
   Duration currentValue;
@@ -52,16 +54,18 @@ IResult[] betweenDuration(ref Evaluation evaluation) @safe nothrow {
 
     evaluation.result.addValue(limit2.to!string);
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to Duration") ];
+    evaluation.result.expected = "valid Duration values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   evaluation.result.addText(". ");
 
-  return betweenResults(currentValue, limit1, limit2, evaluation);
+  betweenResults(currentValue, limit1, limit2, evaluation);
 }
 
 ///
-IResult[] betweenSysTime(ref Evaluation evaluation) @safe nothrow {
+void betweenSysTime(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(" and ");
 
   SysTime currentValue;
@@ -75,15 +79,17 @@ IResult[] betweenSysTime(ref Evaluation evaluation) @safe nothrow {
 
     evaluation.result.addValue(limit2.toISOExtString);
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to Duration") ];
+    evaluation.result.expected = "valid SysTime values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   evaluation.result.addText(". ");
 
-  return betweenResults(currentValue, limit1, limit2, evaluation);
+  betweenResults(currentValue, limit1, limit2, evaluation);
 }
 
-private IResult[] betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluation evaluation) {
+private void betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluation evaluation) {
   T min = limit1 < limit2 ? limit1 : limit2;
   T max = limit1 > limit2 ? limit1 : limit2;
 
@@ -128,6 +134,4 @@ private IResult[] betweenResults(T)(T currentValue, T limit1, T limit2, ref Eval
     evaluation.result.expected = interval;
     evaluation.result.actual = evaluation.currentValue.niceValue;
   }
-
-  return [];
 }

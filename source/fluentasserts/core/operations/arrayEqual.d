@@ -12,7 +12,7 @@ version(unittest) {
 static immutable arrayEqualDescription = "Asserts that the target is strictly == equal to the given val.";
 
 ///
-IResult[] arrayEqual(ref Evaluation evaluation) @safe nothrow {
+void arrayEqual(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
   bool result = true;
 
@@ -35,7 +35,7 @@ IResult[] arrayEqual(ref Evaluation evaluation) @safe nothrow {
   }
 
   if(result) {
-    return [];
+    return;
   }
 
   if(evaluation.isNegated) {
@@ -46,6 +46,4 @@ IResult[] arrayEqual(ref Evaluation evaluation) @safe nothrow {
     evaluation.result.computeDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
   }
   evaluation.result.actual = evaluation.currentValue.strValue;
-
-  return [];
 }

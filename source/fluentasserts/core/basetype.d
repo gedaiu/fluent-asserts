@@ -119,8 +119,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("5 should be less than 4. 5 is greater than or equal to 4.");
-  msg.split("\n")[2].strip.should.equal("Expected:less than 4");
-  msg.split("\n")[3].strip.should.equal("Actual:5");
+  msg.split("\n")[1].strip.should.equal("Expected:less than 4");
+  msg.split("\n")[2].strip.should.equal("Actual:5");
 
   msg = ({
     5.should.not.be.lessThan(6);
@@ -150,8 +150,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("5 should be between 5 and 6. 5 is less than or equal to 5.");
-  msg.split("\n")[2].strip.should.equal("Expected:a value inside (5, 6) interval");
-  msg.split("\n")[3].strip.should.equal("Actual:5");
+  msg.split("\n")[1].strip.should.equal("Expected:a value inside (5, 6) interval");
+  msg.split("\n")[2].strip.should.equal("Actual:5");
 
   msg = ({
     5.should.be.between(4, 5);
@@ -159,8 +159,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("5 should be between 4 and 5. 5 is greater than or equal to 5.");
-  msg.split("\n")[2].strip.should.equal("Expected:a value inside (4, 5) interval");
-  msg.split("\n")[3].strip.should.equal("Actual:5");
+  msg.split("\n")[1].strip.should.equal("Expected:a value inside (4, 5) interval");
+  msg.split("\n")[2].strip.should.equal("Actual:5");
 
   msg = ({
     5.should.not.be.between(4, 6);
@@ -168,8 +168,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].strip.should.equal("5 should not be between 4 and 6.");
-  msg.split("\n")[2].strip.should.equal("Expected:a value outside (4, 6) interval");
-  msg.split("\n")[3].strip.should.equal("Actual:5");
+  msg.split("\n")[1].strip.should.equal("Expected:a value outside (4, 6) interval");
+  msg.split("\n")[2].strip.should.equal("Actual:5");
 
   msg = ({
     5.should.not.be.between(6, 4);
@@ -177,8 +177,8 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].strip.should.equal("5 should not be between 6 and 4.");
-  msg.split("\n")[2].strip.should.equal("Expected:a value outside (4, 6) interval");
-  msg.split("\n")[3].strip.should.equal("Actual:5");
+  msg.split("\n")[1].strip.should.equal("Expected:a value outside (4, 6) interval");
+  msg.split("\n")[2].strip.should.equal("Actual:5");
 }
 
 @("numbers approximately")
@@ -193,16 +193,16 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].strip.should.contain("(10f/3f) should be approximately 3±0.1.");
-  msg.split("\n")[2].strip.should.contain("Expected:3±0.1");
-  msg.split("\n")[3].strip.should.contain("Actual:3.33333");
+  msg.split("\n")[1].strip.should.contain("Expected:3±0.1");
+  msg.split("\n")[2].strip.should.contain("Actual:3.33333");
 
   msg = ({
     (10f/3f).should.not.be.approximately(3, 0.34);
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].strip.should.contain("(10f/3f) should not be approximately 3±0.34.");
-  msg.split("\n")[2].strip.should.contain("Expected:not 3±0.34");
-  msg.split("\n")[3].strip.should.contain("Actual:3.33333");
+  msg.split("\n")[1].strip.should.contain("Expected:not 3±0.34");
+  msg.split("\n")[2].strip.should.contain("Actual:3.33333");
 }
 
 @("delegates returning basic types that throw propagate the exception")

@@ -136,11 +136,17 @@ just add `not` before the assert name:
 
 ## Registering new operations
 
-Even though this library has an extensive set of operations, sometimes a new operation might be needed to test your code. Operations are functions that recieve an `Evaluation` and returns an `IResult` list in case there was a failure. You can check any of the built in operations for a refference implementation.
+Even though this library has an extensive set of operations, sometimes a new operation might be needed to test your code. Operations are functions that receive an `Evaluation` and modify it to indicate success or failure. The operation sets the `expected` and `actual` fields on `evaluation.result` when there is a failure. You can check any of the built in operations for a reference implementation.
 
 ```d
-IResult[] customOperation(ref Evaluation evaluation) @safe nothrow {
-    ...
+void customOperation(ref Evaluation evaluation) @safe nothrow {
+    // Perform your check
+    bool success = /* your logic */;
+
+    if (!success) {
+        evaluation.result.expected = "expected value description";
+        evaluation.result.actual = "actual value description";
+    }
 }
 ```
 
@@ -148,14 +154,13 @@ Once the operation is ready to use, it has to be registered with the global regi
 
 ```d
 static this() {
-    /// bind the type to different matchers
+    // bind the type to different matchers
     Registry.instance.register!(SysTime, SysTime)("between", &customOperation);
     Registry.instance.register!(SysTime, SysTime)("within", &customOperation);
 
-    /// or use * to match any type
+    // or use * to match any type
     Registry.instance.register("*", "*", "customOperation", &customOperation);
 }
-
 ```
 
 ## Registering new serializers

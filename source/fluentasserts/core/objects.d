@@ -41,16 +41,16 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("o should not be null.");
-  msg.split("\n")[2].strip.should.equal("Expected:not null");
-  msg.split("\n")[3].strip.should.equal("Actual:object.Object");
+  msg.split("\n")[1].strip.should.equal("Expected:not null");
+  msg.split("\n")[2].strip.should.equal("Actual:object.Object");
 
   msg = ({
     (new Object).should.beNull;
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.equal("(new Object) should be null.");
-  msg.split("\n")[2].strip.should.equal("Expected:null");
-  msg.split("\n")[3].strip.strip.should.equal("Actual:object.Object");
+  msg.split("\n")[1].strip.should.equal("Expected:null");
+  msg.split("\n")[2].strip.strip.should.equal("Actual:object.Object");
 }
 
 @("object instanceOf")
@@ -75,16 +75,16 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.startWith(`otherObject should be instance of "fluentasserts.core.objects.__unittest_L57_C1.SomeClass".`);
-  msg.split("\n")[2].strip.should.equal("Expected:typeof fluentasserts.core.objects.__unittest_L57_C1.SomeClass");
-  msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
+  msg.split("\n")[1].strip.should.equal("Expected:typeof fluentasserts.core.objects.__unittest_L57_C1.SomeClass");
+  msg.split("\n")[2].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
 
   msg = ({
     otherObject.should.not.be.instanceOf!OtherClass;
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.startWith(`otherObject should not be instance of "fluentasserts.core.objects.__unittest_L57_C1.OtherClass"`);
-  msg.split("\n")[2].strip.should.equal("Expected:not typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
-  msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
+  msg.split("\n")[1].strip.should.equal("Expected:not typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
+  msg.split("\n")[2].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L57_C1.OtherClass");
 }
 
 @("object instanceOf interface")
@@ -107,16 +107,16 @@ unittest {
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.startWith(`otherObject should be instance of "fluentasserts.core.objects.__unittest_L91_C1.MyInterface".`);
-  msg.split("\n")[2].strip.should.equal("Expected:typeof fluentasserts.core.objects.__unittest_L91_C1.MyInterface");
-  msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L91_C1.OtherClass");
+  msg.split("\n")[1].strip.should.equal("Expected:typeof fluentasserts.core.objects.__unittest_L91_C1.MyInterface");
+  msg.split("\n")[2].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L91_C1.OtherClass");
 
   msg = ({
     someObject.should.not.be.instanceOf!MyInterface;
   }).should.throwException!TestException.msg;
 
   msg.split("\n")[0].should.contain(`someObject should not be instance of "fluentasserts.core.objects.__unittest_L91_C1.MyInterface".`);
-  msg.split("\n")[2].strip.should.equal("Expected:not typeof fluentasserts.core.objects.__unittest_L91_C1.MyInterface");
-  msg.split("\n")[3].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L91_C1.BaseClass");
+  msg.split("\n")[1].strip.should.equal("Expected:not typeof fluentasserts.core.objects.__unittest_L91_C1.MyInterface");
+  msg.split("\n")[2].strip.should.equal("Actual:typeof fluentasserts.core.objects.__unittest_L91_C1.BaseClass");
 }
 
 @("delegates returning objects that throw propagate the exception")

@@ -15,7 +15,7 @@ version(unittest) {
 static immutable lessOrEqualToDescription = "Asserts that the tested value is less or equal than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
 ///
-IResult[] lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
+void lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   T expectedValue;
@@ -25,7 +25,9 @@ IResult[] lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
     expectedValue = evaluation.expectedValue.strValue.to!T;
     currentValue = evaluation.currentValue.strValue.to!T;
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to " ~ T.stringof) ];
+    evaluation.result.expected = "valid " ~ T.stringof ~ " values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue <= expectedValue;
@@ -35,7 +37,7 @@ IResult[] lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
   }
 
   if(result) {
-    return [];
+    return;
   }
 
   evaluation.result.addText(" ");
@@ -54,6 +56,4 @@ IResult[] lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
 
   evaluation.result.addValue(evaluation.expectedValue.niceValue);
   evaluation.result.addText(".");
-
-  return [];
 }

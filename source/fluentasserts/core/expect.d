@@ -47,7 +47,7 @@ import std.conv;
 
     _evaluation.id = Lifecycle.instance.beginEvaluation(value);
     _evaluation.currentValue = value;
-    _evaluation.source = SourceResultData.create(value.fileName, value.line);
+    _evaluation.source = SourceResult.create(value.fileName, value.line);
 
     try {
       auto sourceValue = _evaluation.source.getValue;

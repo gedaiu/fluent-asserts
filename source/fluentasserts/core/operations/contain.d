@@ -19,7 +19,7 @@ static immutable containDescription = "When the tested value is a string, it ass
   "When the tested value is an array, it asserts that the given val is inside the tested value.";
 
 ///
-IResult[] contain(ref Evaluation evaluation) @safe nothrow {
+void contain(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   auto expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString;
@@ -69,12 +69,10 @@ IResult[] contain(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.negated = true;
     }
   }
-
-  return [];
 }
 
 ///
-IResult[] arrayContain(ref Evaluation evaluation) @trusted nothrow {
+void arrayContain(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addText(".");
 
   auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
@@ -98,12 +96,10 @@ IResult[] arrayContain(ref Evaluation evaluation) @trusted nothrow {
       evaluation.result.negated = true;
     }
   }
-
-  return [];
 }
 
 ///
-IResult[] arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
+void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
@@ -122,7 +118,7 @@ IResult[] arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
   } catch(Exception e) {
     evaluation.result.expected = "valid comparison";
     evaluation.result.actual = "exception during comparison";
-    return [];
+    return;
   }
 
   if(!evaluation.isNegated) {
@@ -156,8 +152,6 @@ IResult[] arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.negated = true;
     }
   }
-
-  return [];
 }
 
 ///

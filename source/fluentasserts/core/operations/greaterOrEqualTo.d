@@ -15,7 +15,7 @@ version(unittest) {
 static immutable greaterOrEqualToDescription = "Asserts that the tested value is greater or equal than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
 ///
-IResult[] greaterOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
+void greaterOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   T expectedValue;
@@ -25,15 +25,17 @@ IResult[] greaterOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
     expectedValue = evaluation.expectedValue.strValue.to!T;
     currentValue = evaluation.currentValue.strValue.to!T;
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to " ~ T.stringof) ];
+    evaluation.result.expected = "valid " ~ T.stringof ~ " values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue >= expectedValue;
 
-  return greaterOrEqualToResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  greaterOrEqualToResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
-IResult[] greaterOrEqualToDuration(ref Evaluation evaluation) @safe nothrow {
+void greaterOrEqualToDuration(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   Duration expectedValue;
@@ -48,15 +50,17 @@ IResult[] greaterOrEqualToDuration(ref Evaluation evaluation) @safe nothrow {
     niceExpectedValue = expectedValue.to!string;
     niceCurrentValue = currentValue.to!string;
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to Duration") ];
+    evaluation.result.expected = "valid Duration values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue >= expectedValue;
 
-  return greaterOrEqualToResults(result, niceExpectedValue, niceCurrentValue, evaluation);
+  greaterOrEqualToResults(result, niceExpectedValue, niceCurrentValue, evaluation);
 }
 
-IResult[] greaterOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
+void greaterOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   SysTime expectedValue;
@@ -68,21 +72,23 @@ IResult[] greaterOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
     expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
     currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to SysTime") ];
+    evaluation.result.expected = "valid SysTime values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue >= expectedValue;
 
-  return greaterOrEqualToResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  greaterOrEqualToResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
-private IResult[] greaterOrEqualToResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
+private void greaterOrEqualToResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
   if(evaluation.isNegated) {
     result = !result;
   }
 
   if(result) {
-    return [];
+    return;
   }
 
   evaluation.result.addText(" ");
@@ -101,6 +107,4 @@ private IResult[] greaterOrEqualToResults(bool result, string niceExpectedValue,
 
   evaluation.result.addValue(niceExpectedValue);
   evaluation.result.addText(".");
-
-  return [];
 }

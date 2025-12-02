@@ -16,7 +16,7 @@ version(unittest) {
 static immutable lessThanDescription = "Asserts that the tested value is less than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
 ///
-IResult[] lessThan(T)(ref Evaluation evaluation) @safe nothrow {
+void lessThan(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   T expectedValue;
@@ -26,16 +26,18 @@ IResult[] lessThan(T)(ref Evaluation evaluation) @safe nothrow {
     expectedValue = evaluation.expectedValue.strValue.to!T;
     currentValue = evaluation.currentValue.strValue.to!T;
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to " ~ T.stringof) ];
+    evaluation.result.expected = "valid " ~ T.stringof ~ " values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue < expectedValue;
 
-  return lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
 ///
-IResult[] lessThanDuration(ref Evaluation evaluation) @safe nothrow {
+void lessThanDuration(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   Duration expectedValue;
@@ -50,16 +52,18 @@ IResult[] lessThanDuration(ref Evaluation evaluation) @safe nothrow {
     niceExpectedValue = expectedValue.to!string;
     niceCurrentValue = currentValue.to!string;
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to Duration") ];
+    evaluation.result.expected = "valid Duration values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue < expectedValue;
 
-  return lessThanResults(result, niceExpectedValue, niceCurrentValue, evaluation);
+  lessThanResults(result, niceExpectedValue, niceCurrentValue, evaluation);
 }
 
 ///
-IResult[] lessThanSysTime(ref Evaluation evaluation) @safe nothrow {
+void lessThanSysTime(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   SysTime expectedValue;
@@ -71,16 +75,18 @@ IResult[] lessThanSysTime(ref Evaluation evaluation) @safe nothrow {
     expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
     currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
   } catch(Exception e) {
-    return [ new MessageResult("Can't convert the values to SysTime") ];
+    evaluation.result.expected = "valid SysTime values";
+    evaluation.result.actual = "conversion error";
+    return;
   }
 
   auto result = currentValue < expectedValue;
 
-  return lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
 /// Generic lessThan using proxy values - works for any comparable type
-IResult[] lessThanGeneric(ref Evaluation evaluation) @safe nothrow {
+void lessThanGeneric(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   bool result = false;
@@ -89,16 +95,16 @@ IResult[] lessThanGeneric(ref Evaluation evaluation) @safe nothrow {
     result = evaluation.currentValue.proxyValue.isLessThan(evaluation.expectedValue.proxyValue);
   }
 
-  return lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
-private IResult[] lessThanResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
+private void lessThanResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
   if(evaluation.isNegated) {
     result = !result;
   }
 
   if(result) {
-    return [];
+    return;
   }
 
   evaluation.result.addText(" ");
@@ -117,8 +123,6 @@ private IResult[] lessThanResults(bool result, string niceExpectedValue, string 
 
   evaluation.result.addValue(niceExpectedValue);
   evaluation.result.addText(".");
-
-  return [];
 }
 
 @("lessThan passes when current value is less than expected")
@@ -172,3 +176,27 @@ unittest {
   5.should.not.be.below(4);
 }
 
+@("haveExecutionTime passes for fast code")
+unittest {
+  ({
+
+  }).should.haveExecutionTime.lessThan(1.seconds);
+}
+
+@("haveExecutionTime fails when code takes too long")
+unittest {
+  import core.thread;
+
+  TestException exception = null;
+
+  try {
+    ({
+      Thread.sleep(2.msecs);
+    }).should.haveExecutionTime.lessThan(1.msecs);
+  } catch(TestException e) {
+    exception = e;
+  }
+
+  exception.should.not.beNull.because("code takes longer than 1ms");
+  exception.msg.should.startWith("({\n      Thread.sleep(2.msecs);\n    }) should have execution time less than 1 ms.");
+}

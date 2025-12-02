@@ -15,10 +15,9 @@ version(unittest) {
 static immutable endWithDescription = "Tests that the tested string ends with the expected value.";
 
 ///
-IResult[] endWith(ref Evaluation evaluation) @safe nothrow {
+void endWith(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
-  IResult[] results = [];
   auto current = evaluation.currentValue.strValue.cleanString;
   auto expected = evaluation.expectedValue.strValue.cleanString;
 
@@ -54,6 +53,4 @@ IResult[] endWith(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.actual = evaluation.currentValue.strValue;
     }
   }
-
-  return [];
 }
