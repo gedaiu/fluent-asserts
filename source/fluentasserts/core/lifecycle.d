@@ -142,11 +142,19 @@ static this() {
   Registry.instance.register("*", "*", "throwSomething.withMessage.equal", &throwAnyExceptionWithMessage);
 }
 
+alias FailureHandlerDelegate = void delegate(ref Evaluation evaluation) @safe;
+
 /// Manages the assertion evaluation lifecycle.
 /// Tracks assertion counts and handles the finalization of evaluations.
 @safe class Lifecycle {
   /// Global singleton instance.
   static Lifecycle instance;
+
+  FailureHandlerDelegate failureHandler;
+
+  bool keepLastEvaluation;
+
+  Evaluation lastEvaluation;
 
   private {
     /// Counter for total assertions executed.
@@ -158,41 +166,62 @@ static this() {
   /// Params:
   ///   value = The value evaluation being started
   /// Returns: The current assertion number.
-  int beginEvaluation(ValueEvaluation value) @safe nothrow {
+  int beginEvaluation(ValueEvaluation value) nothrow {
     totalAsserts++;
 
     return totalAsserts;
   }
 
-  /// Finalizes an evaluation and throws TestException on failure.
-  /// Delegates to the Registry to handle the evaluation and throws
-  /// if the result contains failure content.
-  /// Does not throw if called from a GC finalizer.
-  void endEvaluation(ref Evaluation evaluation) @trusted {
-    if(evaluation.isEvaluated) return;
-
-    evaluation.isEvaluated = true;
-    Registry.instance.handle(evaluation);
-
-    if(GC.inFinalizer) {
-      return;
-    }
-
+  void defaultFailureHandler(ref Evaluation evaluation) {
     if(evaluation.currentValue.throwable !is null) {
       throw evaluation.currentValue.throwable;
     }
 
     if(evaluation.expectedValue.throwable !is null) {
-      throw evaluation.currentValue.throwable;
-    }
-
-    if(!evaluation.result.hasContent()) {
-      return;
+      throw evaluation.expectedValue.throwable;
     }
 
     string msg = evaluation.result.toString();
     msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
 
     throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
+  }
+
+  void handleFailure(ref Evaluation evaluation) {
+    if(this.failureHandler !is null) {
+      this.failureHandler(evaluation);
+      return;
+    }
+
+    this.defaultFailureHandler(evaluation);
+  }
+
+  /// Finalizes an evaluation and throws TestException on failure.
+  /// Delegates to the Registry to handle the evaluation and throws
+  /// if the result contains failure content.
+  /// Does not throw if called from a GC finalizer.
+  void endEvaluation(ref Evaluation evaluation) {
+    if(evaluation.isEvaluated) {
+      return;
+    }
+
+    evaluation.isEvaluated = true;
+
+    if(GC.inFinalizer) {
+      return;
+    }
+
+    Registry.instance.handle(evaluation);
+
+    if(evaluation.currentValue.throwable !is null || evaluation.expectedValue.throwable !is null) {
+      this.handleFailure(evaluation);
+      return;
+    }
+
+    if(!evaluation.result.hasContent()) {
+      return;
+    }
+
+    this.handleFailure(evaluation);
   }
 }

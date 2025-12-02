@@ -92,6 +92,14 @@ void betweenSysTime(ref Evaluation evaluation) @safe nothrow {
   betweenResults(currentValue, limit1, limit2, evaluation);
 }
 
+private string valueToString(T)(T value) {
+  static if (is(T == SysTime)) {
+    return value.toISOExtString;
+  } else {
+    return value.to!string;
+  }
+}
+
 private void betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluation evaluation) {
   T min = limit1 < limit2 ? limit1 : limit2;
   T max = limit1 > limit2 ? limit1 : limit2;
@@ -104,9 +112,9 @@ private void betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluatio
 
   try {
     if (evaluation.isNegated) {
-      interval = "a value outside (" ~ min.to!string ~ ", " ~ max.to!string ~ ") interval";
+      interval = "a value outside (" ~ valueToString(min) ~ ", " ~ valueToString(max) ~ ") interval";
     } else {
-      interval = "a value inside (" ~ min.to!string ~ ", " ~ max.to!string ~ ") interval";
+      interval = "a value inside (" ~ valueToString(min) ~ ", " ~ valueToString(max) ~ ") interval";
     }
   } catch(Exception) {
     interval = evaluation.isNegated ? "a value outside the interval" : "a value inside the interval";
@@ -118,13 +126,13 @@ private void betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluatio
 
       if(isGreater) {
         evaluation.result.addText(" is greater than or equal to ");
-        try evaluation.result.addValue(max.to!string);
+        try evaluation.result.addValue(valueToString(max));
         catch(Exception) {}
       }
 
       if(isLess) {
         evaluation.result.addText(" is less than or equal to ");
-        try evaluation.result.addValue(min.to!string);
+        try evaluation.result.addValue(valueToString(min));
         catch(Exception) {}
       }
 
