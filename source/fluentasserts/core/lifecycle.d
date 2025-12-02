@@ -142,6 +142,8 @@ static this() {
   Registry.instance.register("*", "*", "throwSomething.withMessage.equal", &throwAnyExceptionWithMessage);
 }
 
+/// Delegate type for custom failure handlers.
+/// Receives the evaluation that failed and can handle it as needed.
 alias FailureHandlerDelegate = void delegate(ref Evaluation evaluation) @safe;
 
 /// String mixin for unit tests that need to capture evaluation results.
@@ -177,12 +179,20 @@ Evaluation recordEvaluation(void delegate() assertion) {
   /// Global singleton instance.
   static Lifecycle instance;
 
+  /// Custom failure handler delegate. When set, this is called instead of
+  /// defaultFailureHandler when an assertion fails.
   FailureHandlerDelegate failureHandler;
 
+  /// When true, stores the most recent evaluation in lastEvaluation.
+  /// Used by recordEvaluation to capture assertion results.
   bool keepLastEvaluation;
 
+  /// Stores the most recent evaluation when keepLastEvaluation is true.
+  /// Access this after running an assertion to inspect its result.
   Evaluation lastEvaluation;
 
+  /// When true, assertion failures are silently ignored instead of throwing.
+  /// Used by recordEvaluation to prevent test abortion during evaluation capture.
   bool disableFailureHandling;
 
 
@@ -202,6 +212,12 @@ Evaluation recordEvaluation(void delegate() assertion) {
     return totalAsserts;
   }
 
+  /// Default handler for assertion failures.
+  /// Throws any captured throwable from value evaluation, or constructs
+  /// a TestException with the formatted failure message.
+  /// Params:
+  ///   evaluation = The evaluation containing the failure details
+  /// Throws: TestException or the original throwable from evaluation
   void defaultFailureHandler(ref Evaluation evaluation) {
     if(evaluation.currentValue.throwable !is null) {
       throw evaluation.currentValue.throwable;
@@ -217,6 +233,12 @@ Evaluation recordEvaluation(void delegate() assertion) {
     throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
   }
 
+  /// Processes an assertion failure by delegating to the appropriate handler.
+  /// If disableFailureHandling is true, does nothing.
+  /// If a custom failureHandler is set, calls it.
+  /// Otherwise, calls defaultFailureHandler.
+  /// Params:
+  ///   evaluation = The evaluation containing the failure details
   void handleFailure(ref Evaluation evaluation) {
     if(this.disableFailureHandling) {
       return;
