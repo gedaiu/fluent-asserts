@@ -141,6 +141,32 @@ The `Evaluation.result` provides access to:
 
 This is particularly useful when writing tests for custom assertion operations or when you need to verify that assertions produce the correct error messages.
 
+## Custom Assert Handler
+
+During unittest builds, the library automatically installs a custom handler for D's built-in `assert` statements. This provides fluent-asserts style error messages even when using standard `assert`:
+
+```D
+unittest {
+    assert(1 == 2, "math is broken");
+    // Output includes ACTUAL/EXPECTED formatting and source location
+}
+```
+
+The handler is only active during `version(unittest)` builds, so it won't affect release builds. It is installed using `pragma(crt_constructor)`, which runs before druntime initialization. This approach avoids cyclic module dependency issues that would occur with `static this()`.
+
+If you need to temporarily disable this handler during tests:
+
+```D
+import core.exception;
+
+// Save and restore the handler
+auto savedHandler = core.exception.assertHandler;
+scope(exit) core.exception.assertHandler = savedHandler;
+
+// Disable fluent handler
+core.exception.assertHandler = null;
+```
+
 ## Built in operations
 
 - [above](api/above.md)

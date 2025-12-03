@@ -82,9 +82,9 @@ unittest {
   } catch(TestException e) {
     thrown = true;
 
-    assert(e.message.indexOf("should not throw any exception. `object.Exception` saying `Test exception` was thrown.") != -1);
-    assert(e.message.indexOf("\n Expected:No exception to be thrown\n") != -1);
-    assert(e.message.indexOf("\n   Actual:`object.Exception` saying `Test exception`\n") != -1);
+    assert(e.message.indexOf("should not throw any exception. `object.Exception` saying `Test exception` was thrown.") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("\n Expected:No exception to be thrown\n") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("\n   Actual:`object.Exception` saying `Test exception`\n") != -1, "Message was: " ~ e.message);
   }
 
   assert(thrown, "The exception was not thrown");
@@ -113,7 +113,7 @@ unittest {
     assert(e.message.indexOf("A `Throwable` saying `Assertion failure` was thrown.") != -1, "Message was: " ~ e.message);
     assert(e.message.indexOf("\n Expected:Any exception to be thrown\n") != -1, "Message was: " ~ e.message);
     assert(e.message.indexOf("\n   Actual:A `Throwable` with message `Assertion failure` was thrown\n") != -1, "Message was: " ~ e.message);
-    assert(e.file == "source/fluentasserts/operations/exception/throwable.d");
+    assert(e.file == "source/fluentasserts/operations/exception/throwable.d", "File was: " ~ e.file);
   }
 
   assert(thrown, "The exception was not thrown");
@@ -325,10 +325,12 @@ unittest {
   } catch(TestException e) {
     thrown = true;
 
-    assert(e.message.indexOf("should throw exception \"fluentasserts.operations.exception.throwable.CustomException\".`object.Exception` saying `test` was thrown.") != -1);
-    assert(e.message.indexOf("\n Expected:fluentasserts.operations.exception.throwable.CustomException\n") != -1);
-    assert(e.message.indexOf("\n   Actual:`object.Exception` saying `test`\n") != -1);
-    assert(e.file == "source/fluentasserts/operations/exception/throwable.d");
+    assert(e.message.indexOf("should throw exception \"fluentasserts.operations.exception.throwable.CustomException\".`object.Exception` saying `test` was thrown.") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("EXPECTED:") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("fluentasserts.operations.exception.throwable.CustomException") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("ACTUAL:") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("`object.Exception` saying `test`") != -1, "Message was: " ~ e.message);
+    assert(e.file == "source/fluentasserts/operations/exception/throwable.d", "File was: " ~ e.file);
   }
 
   assert(thrown, "The exception was not thrown");
@@ -353,10 +355,13 @@ unittest {
     }).to.not.throwException!CustomException;
   } catch(TestException e) {
     thrown = true;
-    assert(e.message.indexOf("should not throw exception \"fluentasserts.operations.exception.throwable.CustomException\".`fluentasserts.operations.exception.throwable.CustomException` saying `test` was thrown.") != -1);
-    assert(e.message.indexOf("\n Expected:no `fluentasserts.operations.exception.throwable.CustomException` to be thrown\n") != -1);
-    assert(e.message.indexOf("\n   Actual:`fluentasserts.operations.exception.throwable.CustomException` saying `test`\n") != -1);
-    assert(e.file == "source/fluentasserts/operations/exception/throwable.d");
+    assert(e.message.indexOf("should not throw exception \"fluentasserts.operations.exception.throwable.CustomException\"") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `test` was thrown.") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("EXPECTED:") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("no `fluentasserts.operations.exception.throwable.CustomException` to be thrown") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("ACTUAL:") != -1, "Message was: " ~ e.message);
+    assert(e.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `test`") != -1, "Message was: " ~ e.message);
+    assert(e.file == "source/fluentasserts/operations/exception/throwable.d", "File was: " ~ e.file);
   }
 
   assert(thrown, "The exception was not thrown");
@@ -426,10 +431,10 @@ unittest {
     exception = e;
   }
 
-  assert(exception !is null);
-  assert(exception.message.indexOf("should throw exception") != -1);
-  assert(exception.message.indexOf("with message equal \"test\"") != -1);
-  assert(exception.message.indexOf("No exception was thrown.") != -1);
+  assert(exception !is null, "Expected an exception to be thrown");
+  assert(exception.message.indexOf("should throw exception") != -1, "Message was: " ~ exception.message);
+  assert(exception.message.indexOf("with message equal \"test\"") != -1, "Message was: " ~ exception.message);
+  assert(exception.message.indexOf("No exception was thrown.") != -1, "Message was: " ~ exception.message);
 }
 
 @("does not fail when an exception is not expected and none is caught")
@@ -443,7 +448,7 @@ unittest {
     exception = e;
   }
 
-  assert(exception is null);
+  assert(exception is null, "Expected no exception but got: " ~ (exception !is null ? exception.message : ""));
 }
 
 @("fails when the caught exception has a different type")
@@ -459,10 +464,10 @@ unittest {
     exception = e;
   }
 
-  assert(exception !is null);
-  assert(exception.message.indexOf("should throw exception") != -1);
-  assert(exception.message.indexOf("with message equal \"test\"") != -1);
-  assert(exception.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `hello` was thrown.") != -1);
+  assert(exception !is null, "Expected an exception to be thrown");
+  assert(exception.message.indexOf("should throw exception") != -1, "Message was: " ~ exception.message);
+  assert(exception.message.indexOf("with message equal \"test\"") != -1, "Message was: " ~ exception.message);
+  assert(exception.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `hello` was thrown.") != -1, "Message was: " ~ exception.message);
 }
 
 @("does not fail when a certain exception type is not caught")
@@ -478,7 +483,7 @@ unittest {
     exception = e;
   }
 
-  assert(exception is null);
+  assert(exception is null, "Expected no exception but got: " ~ (exception !is null ? exception.message : ""));
 }
 
 @("fails when the caught exception has a different message")
@@ -494,10 +499,10 @@ unittest {
     exception = e;
   }
 
-  assert(exception !is null);
-  assert(exception.message.indexOf("should throw exception") != -1);
-  assert(exception.message.indexOf("with message equal \"test\"") != -1);
-  assert(exception.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `hello` was thrown.") != -1);
+  assert(exception !is null, "Expected an exception to be thrown");
+  assert(exception.message.indexOf("should throw exception") != -1, "Message was: " ~ exception.message);
+  assert(exception.message.indexOf("with message equal \"test\"") != -1, "Message was: " ~ exception.message);
+  assert(exception.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `hello` was thrown.") != -1, "Message was: " ~ exception.message);
 }
 
 @("does not fail when the caught exception is expected to have a different message")
@@ -513,7 +518,7 @@ unittest {
     exception = e;
   }
 
-  assert(exception is null);
+  assert(exception is null, "Expected no exception but got: " ~ (exception !is null ? exception.message : ""));
 }
 
 @("throwException allows access to thrown exception via .thrown")

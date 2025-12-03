@@ -14,6 +14,7 @@ public import fluentasserts.assertions.string;
 
 public import fluentasserts.results.message;
 public import fluentasserts.results.printer;
+public import fluentasserts.results.asserts : AssertResult;
 
 import std.traits;
 import std.stdio;
@@ -40,33 +41,11 @@ version(Have_unit_threaded) {
 /// Contains the failure message and optionally structured message segments
 /// for rich output formatting.
 class TestException : ReferenceException {
-  private {
-    immutable(Message)[] messages;
-  }
 
-  /// Constructs a TestException with a simple string message.
-  this(string message, string fileName, size_t line, Throwable next = null) {
-    super(message ~ '\n', fileName, line, next);
-  }
-
-  /// Constructs a TestException with structured message segments.
-  this(immutable(Message)[] messages, string fileName, size_t line, Throwable next = null) {
-    string msg;
-    foreach(m; messages) {
-      msg ~= m.toString;
-    }
-    msg ~= '\n';
-    this.messages = messages;
-
-    super(msg, fileName, line, next);
-  }
-
-  /// Prints the exception message using a ResultPrinter for formatted output.
-  void print(ResultPrinter printer) {
-    foreach(message; messages) {
-      printer.print(message);
-    }
-    printer.primary("\n");
+  /// Constructs a TestException from an Evaluation.
+  /// The message is formatted from the evaluation's content.
+  this(Evaluation evaluation, Throwable next = null) @safe nothrow {
+    super(evaluation.toString(), evaluation.sourceFile, evaluation.sourceLine, next);
   }
 }
 
@@ -89,12 +68,11 @@ auto should(T)(lazy T testData, const string file = __FILE__, const size_t line 
 
 @("because adds a text before the assert message")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  auto msg = ({
+  auto evaluation = ({
     true.should.equal(false).because("of test reasons");
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("Because of test reasons, true should equal false. ");
+  evaluation.result.messageString.should.startWith("Because of test reasons, true should equal false.");
 }
 
 /// Provides a traditional assertion API as an alternative to fluent syntax.
@@ -285,25 +263,42 @@ unittest {
 
 /// Custom assert handler that provides better error messages.
 /// Replaces the default D runtime assert handler to show fluent-asserts style output.
-void fluentHandler(string file, size_t line, string msg) nothrow {
+void fluentHandler(string file, size_t line, string msg) @system nothrow {
   import core.exception;
+  import fluentasserts.core.evaluation : Evaluation;
+  import fluentasserts.results.asserts : AssertResult;
+  import fluentasserts.results.source : SourceResult;
+  import fluentasserts.results.message : Message;
 
-  string errorMsg = "Assert failed. " ~ msg ~ "\n\n" ~ file ~ ":" ~ line.to!string ~ "\n";
+  Evaluation evaluation;
+  evaluation.source = SourceResult.create(file, line);
+  evaluation.operationName = "assert";
+  evaluation.currentValue.typeNames = ["assert state"];
+  evaluation.expectedValue.typeNames = ["assert state"];
+  evaluation.isEvaluated = true;
+  evaluation.result = AssertResult(
+    [Message(Message.Type.info, "Assert failed: " ~ msg)],
+    "true",
+    "false"
+  );
 
-  throw new AssertError(errorMsg, file, line);
+  throw new AssertError(evaluation.toString(), file, line);
 }
 
 /// Installs the fluent handler as the global assert handler.
-/// Call this at program startup to enable fluent-asserts style messages for assert().
-void setupFluentHandler() {
-  import core.exception;
-  core.exception.assertHandler = &fluentHandler;
+/// Uses pragma(crt_constructor) to run before druntime initialization,
+/// avoiding cyclic module dependency issues.
+pragma(crt_constructor)
+extern(C) void setupFluentHandler() {
+  version (unittest) {
+    import core.exception;
+    core.exception.assertHandler = &fluentHandler;
+  }
 }
 
 @("calls the fluent handler")
 @trusted
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   import core.exception;
 
   setupFluentHandler;
@@ -315,7 +310,9 @@ unittest {
     assert(false, "What?");
   } catch(Throwable t) {
     thrown = true;
-    t.msg.should.startWith("Assert failed. What?\n");
+    t.msg.should.contain("Assert failed: What?");
+    t.msg.should.contain("ACTUAL:");
+    t.msg.should.contain("EXPECTED:");
   }
 
   thrown.should.equal(true);

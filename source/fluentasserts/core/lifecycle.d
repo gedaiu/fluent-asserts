@@ -160,7 +160,7 @@ enum enableEvaluationRecording = q{
 
 /// Executes an assertion and captures its evaluation result.
 /// Use this to test assertion behavior without throwing on failure.
-Evaluation recordEvaluation(void delegate() assertion) {
+Evaluation recordEvaluation(void delegate() assertion) @trusted {
   Lifecycle.instance.keepLastEvaluation = true;
   Lifecycle.instance.disableFailureHandling = true;
   scope(exit) {
@@ -227,10 +227,7 @@ Evaluation recordEvaluation(void delegate() assertion) {
       throw evaluation.expectedValue.throwable;
     }
 
-    string msg = evaluation.result.toString();
-    msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
-
-    throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
+    throw new TestException(evaluation);
   }
 
   /// Processes an assertion failure by delegating to the appropriate handler.

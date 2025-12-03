@@ -15,6 +15,8 @@ import fluentasserts.results.source : SourceResult;
 import fluentasserts.results.message : Message, ResultGlyphs;
 import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.base : TestException;
+import fluentasserts.results.printer : ResultPrinter, StringResultPrinter;
+import fluentasserts.results.serializers : SerializerRegistry;
 
 /// Holds the result of evaluating a single value.
 /// Captures the value itself, any exceptions thrown, timing information,
@@ -93,13 +95,71 @@ struct Evaluation {
   AssertResult result;
 
   /// Convenience accessors for backwards compatibility
-  @property string sourceFile() nothrow @safe { return source.file; }
-  @property size_t sourceLine() nothrow @safe { return source.line; }
+  string sourceFile() nothrow @safe { return source.file; }
+  size_t sourceLine() nothrow @safe { return source.line; }
 
   /// Checks if there is an assertion result with content.
   /// Returns: true if the result has expected/actual values, diff, or extra/missing items.
   bool hasResult() nothrow @safe {
     return result.hasContent();
+  }
+
+  /// Prints the assertion result using the provided printer.
+  /// Params:
+  ///   printer = The ResultPrinter to use for output formatting
+  void printResult(ResultPrinter printer) @safe nothrow {
+    if(!isEvaluated) {
+      printer.primary("Evaluation not completed.");
+      return;
+    }
+
+    if(!result.hasContent()) {
+      printer.primary("Successful result.");
+      return;
+    }
+
+    printer.info("ASSERTION FAILED: ");
+
+    foreach(message; result.message) {
+      printer.print(message);
+    }
+
+    printer.newLine;
+    printer.info("OPERATION: ");
+
+    if(isNegated) {
+      printer.primary("not ");
+    }
+
+    printer.primary(operationName);
+    printer.newLine;
+    printer.newLine;
+
+    printer.info("ACTUAL: ");
+    printer.primary("<");
+    printer.primary(currentValue.typeName);
+    printer.primary("> ");
+    printer.primary(result.actual);
+    printer.newLine;
+
+    printer.info("EXPECTED: ");
+    printer.primary("<");
+    printer.primary(expectedValue.typeName);
+    printer.primary("> ");
+    printer.primary(result.expected);
+    printer.newLine;
+
+    source.print(printer);
+  }
+
+  /// Converts the evaluation to a formatted string for display.
+  /// Returns: A string representation of the evaluation result.
+  string toString() @safe nothrow {
+    import std.string : format;
+
+    auto printer = new StringResultPrinter();
+    printResult(printer);
+    return printer.toString();
   }
 }
 
@@ -178,8 +238,8 @@ unittest {
 
   auto result = evaluate(value);
 
-  assert(result.evaluation.throwable !is null);
-  assert(result.evaluation.throwable.msg == "message");
+  assert(result.evaluation.throwable !is null, "Expected throwable to be captured");
+  assert(result.evaluation.throwable.msg == "message", "Expected msg 'message', got '" ~ result.evaluation.throwable.msg ~ "'");
 }
 
 @("evaluate captures an exception from a callable")
@@ -191,8 +251,8 @@ unittest {
 
   auto result = evaluate(&value);
 
-  assert(result.evaluation.throwable !is null);
-  assert(result.evaluation.throwable.msg == "message");
+  assert(result.evaluation.throwable !is null, "Expected throwable to be captured");
+  assert(result.evaluation.throwable.msg == "message", "Expected msg 'message', got '" ~ result.evaluation.throwable.msg ~ "'");
 }
 
 /// Extracts the type names for a non-array, non-associative-array type.
@@ -246,21 +306,24 @@ string[] extractTypes(T: U[K], U, K)() {
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = extractTypes!string;
-  assert(result == ["string"]);
+  import std.conv : to;
+  assert(result == ["string"], "Expected [\"string\"], got " ~ result.to!string);
 }
 
 @("extractTypes returns [string[]] for string[]")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = extractTypes!(string[]);
-  assert(result == ["string[]"]);
+  import std.conv : to;
+  assert(result == ["string[]"], "Expected [\"string[]\"], got " ~ result.to!string);
 }
 
 @("extractTypes returns [string[string]] for string[string]")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = extractTypes!(string[string]);
-  assert(result == ["string[string]"]);
+  import std.conv : to;
+  assert(result == ["string[string]"], "Expected [\"string[string]\"], got " ~ result.to!string);
 }
 
 @("extractTypes returns all types of a class")

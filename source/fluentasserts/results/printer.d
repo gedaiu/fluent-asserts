@@ -37,6 +37,8 @@ interface ResultPrinter {
 
     /// Prints success text with reversed colors
     void successReverse(string);
+
+    void newLine();
 }
 
 version (unittest) {
@@ -76,6 +78,10 @@ version (unittest) {
 
     void successReverse(string val) {
       buffer ~= "[successReverse:" ~ val ~ "]";
+    }
+
+    void newLine() {
+      buffer ~= "\n";
     }
   }
 }
@@ -142,5 +148,54 @@ class DefaultResultPrinter : ResultPrinter {
 
     void successReverse(string text) {
       writeNoThrow(text);
+    }
+
+    void newLine() {
+      writeNoThrow("\n");
+    }
+}
+
+/// ResultPrinter that stores output in memory using Appender.
+class StringResultPrinter : ResultPrinter {
+  import std.array : Appender;
+
+  private Appender!string buffer;
+
+  nothrow:
+
+    void print(Message message) {
+      buffer.put(message.text);
+    }
+
+    void primary(string text) {
+      buffer.put(text);
+    }
+
+    void info(string text) {
+      buffer.put(text);
+    }
+
+    void danger(string text) {
+      buffer.put(text);
+    }
+
+    void success(string text) {
+      buffer.put(text);
+    }
+
+    void dangerReverse(string text) {
+      buffer.put(text);
+    }
+
+    void successReverse(string text) {
+      buffer.put(text);
+    }
+
+    void newLine() {
+      buffer.put("\n");
+    }
+
+    override string toString() {
+      return buffer.data;
     }
 }

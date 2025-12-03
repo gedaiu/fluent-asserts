@@ -139,10 +139,11 @@ unittest {
 
   auto missing = comparison.missing;
 
-  assert(missing.length == 3);
-  assert(missing[0] == 1);
-  assert(missing[1] == 2);
-  assert(missing[2] == 3);
+  import std.conv : to;
+  assert(missing.length == 3, "Expected 3 missing elements, got " ~ missing.length.to!string);
+  assert(missing[0] == 1, "Expected missing[0] == 1, got " ~ missing[0].to!string);
+  assert(missing[1] == 2, "Expected missing[1] == 2, got " ~ missing[1].to!string);
+  assert(missing[2] == 3, "Expected missing[2] == 3, got " ~ missing[2].to!string);
 }
 
 @("ListComparison gets missing elements with duplicates")
@@ -152,8 +153,9 @@ unittest {
 
   auto missing = comparison.missing;
 
-  assert(missing.length == 1);
-  assert(missing[0] == 2);
+  import std.conv : to;
+  assert(missing.length == 1, "Expected 1 missing element, got " ~ missing.length.to!string);
+  assert(missing[0] == 2, "Expected missing[0] == 2, got " ~ missing[0].to!string);
 }
 
 @("ListComparison gets extra elements")
@@ -163,10 +165,11 @@ unittest {
 
   auto extra = comparison.extra;
 
-  assert(extra.length == 3);
-  assert(extra[0] == 1);
-  assert(extra[1] == 2);
-  assert(extra[2] == 3);
+  import std.conv : to;
+  assert(extra.length == 3, "Expected 3 extra elements, got " ~ extra.length.to!string);
+  assert(extra[0] == 1, "Expected extra[0] == 1, got " ~ extra[0].to!string);
+  assert(extra[1] == 2, "Expected extra[1] == 2, got " ~ extra[1].to!string);
+  assert(extra[2] == 3, "Expected extra[2] == 3, got " ~ extra[2].to!string);
 }
 
 @("ListComparison gets extra elements with duplicates")
@@ -176,8 +179,9 @@ unittest {
 
   auto extra = comparison.extra;
 
-  assert(extra.length == 1);
-  assert(extra[0] == 2);
+  import std.conv : to;
+  assert(extra.length == 1, "Expected 1 extra element, got " ~ extra.length.to!string);
+  assert(extra[0] == 2, "Expected extra[0] == 2, got " ~ extra[0].to!string);
 }
 
 @("ListComparison gets common elements")
@@ -187,9 +191,10 @@ unittest {
 
   auto common = comparison.common;
 
-  assert(common.length == 2);
-  assert(common[0] == 2);
-  assert(common[1] == 3);
+  import std.conv : to;
+  assert(common.length == 2, "Expected 2 common elements, got " ~ common.length.to!string);
+  assert(common[0] == 2, "Expected common[0] == 2, got " ~ common[0].to!string);
+  assert(common[1] == 3, "Expected common[1] == 3, got " ~ common[1].to!string);
 }
 
 @("ListComparison gets common elements with duplicates")
@@ -199,7 +204,8 @@ unittest {
 
   auto common = comparison.common;
 
-  assert(common.length == 2);
-  assert(common[0] == 2);
-  assert(common[1] == 2);
+  import std.conv : to;
+  assert(common.length == 2, "Expected 2 common elements, got " ~ common.length.to!string);
+  assert(common[0] == 2, "Expected common[0] == 2, got " ~ common[0].to!string);
+  assert(common[1] == 2, "Expected common[1] == 2, got " ~ common[1].to!string);
 }

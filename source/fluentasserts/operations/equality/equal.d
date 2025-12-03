@@ -29,7 +29,10 @@ void equal(ref Evaluation evaluation) @safe nothrow {
 
   bool isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
 
-  if(!isEqual && evaluation.currentValue.proxyValue !is null && evaluation.expectedValue.proxyValue !is null) {
+  auto hasCurrentProxy = evaluation.currentValue.proxyValue !is null;
+  auto hasExpectedProxy = evaluation.expectedValue.proxyValue !is null;
+
+  if(!isEqual && hasCurrentProxy && hasExpectedProxy) {
     isEqual = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
   }
 
@@ -45,18 +48,11 @@ void equal(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.actual = evaluation.currentValue.strValue;
   evaluation.result.negated = evaluation.isNegated;
 
+  if(evaluation.isNegated) {
+    evaluation.result.expected = "not " ~ evaluation.expectedValue.strValue;
+  }
+
   if(evaluation.currentValue.typeName != "bool") {
-    evaluation.result.add(Message(Message.Type.value, evaluation.currentValue.strValue));
-
-    if(evaluation.isNegated) {
-      evaluation.result.add(isEqualTo);
-    } else {
-      evaluation.result.add(isNotEqualTo);
-    }
-
-    evaluation.result.add(Message(Message.Type.value, evaluation.expectedValue.strValue));
-    evaluation.result.add(endSentence);
-
     evaluation.result.computeDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
   }
 }
@@ -94,7 +90,7 @@ static foreach (Type; StringTypes) {
       expect("test string").to.not.equal("test string");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`"test string"`);
+    expect(evaluation.result.expected).to.equal(`not "test string"`);
     expect(evaluation.result.actual).to.equal(`"test string"`);
     expect(evaluation.result.negated).to.equal(true);
   }
@@ -149,7 +145,7 @@ static foreach (Type; NumericTypes) {
       expect(testValue).to.not.equal(testValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(testValue.to!string);
+    expect(evaluation.result.expected).to.equal("not " ~ testValue.to!string);
     expect(evaluation.result.actual).to.equal(testValue.to!string);
     expect(evaluation.result.negated).to.equal(true);
   }
@@ -254,7 +250,7 @@ unittest {
 
   auto evaluation = Lifecycle.instance.lastEvaluation;
   Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal(niceTestValue);
+  expect(evaluation.result.expected).to.equal("not " ~ niceTestValue);
   expect(evaluation.result.actual).to.equal(niceTestValue);
   expect(evaluation.result.negated).to.equal(true);
 }
@@ -311,7 +307,7 @@ unittest {
 
   auto evaluation = Lifecycle.instance.lastEvaluation;
   Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal(niceTestValue);
+  expect(evaluation.result.expected).to.equal("not " ~ niceTestValue);
   expect(evaluation.result.actual).to.equal(niceTestValue);
   expect(evaluation.result.negated).to.equal(true);
 }
@@ -367,7 +363,7 @@ unittest {
 
   auto evaluation = Lifecycle.instance.lastEvaluation;
   Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal(niceTestValue);
+  expect(evaluation.result.expected).to.equal("not " ~ niceTestValue);
   expect(evaluation.result.actual).to.equal(niceTestValue);
   expect(evaluation.result.negated).to.equal(true);
 }

@@ -41,184 +41,157 @@ unittest {
 
 @("numbers equal")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    5.should.equal(5);
-    5.should.not.equal(6);
-  }).should.not.throwAnyException;
+  5.should.equal(5);
+  5.should.not.equal(6);
 
-  auto msg = ({
+  auto evaluation = ({
     5.should.equal(6);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("5 should equal 6. 5 is not equal to 6. ");
+  evaluation.result.messageString.should.contain("5 is not equal to 6");
 
-  msg = ({
+  evaluation = ({
     5.should.not.equal(5);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("5 should not equal 5. 5 is equal to 5. ");
+  evaluation.result.messageString.should.contain("5 is equal to 5");
 }
 
 @("bools equal")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    true.should.equal(true);
-    true.should.not.equal(false);
-  }).should.not.throwAnyException;
+  true.should.equal(true);
+  true.should.not.equal(false);
 
-  auto msg = ({
+  auto evaluation = ({
     true.should.equal(false);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("true should equal false. ");
-  msg.split("\n")[1].strip.should.equal("Expected:false");
-  msg.split("\n")[2].strip.should.equal("Actual:true");
+  evaluation.result.messageString.should.startWith("true should equal false.");
+  evaluation.result.expected.should.equal("false");
+  evaluation.result.actual.should.equal("true");
 
-  msg = ({
+  evaluation = ({
     true.should.not.equal(true);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("true should not equal true. ");
-  msg.split("\n")[1].strip.should.equal("Expected:not true");
-  msg.split("\n")[2].strip.should.equal("Actual:true");
+  evaluation.result.messageString.should.startWith("true should not equal true.");
+  evaluation.result.expected.should.equal("not true");
+  evaluation.result.actual.should.equal("true");
 }
 
 @("numbers greater than")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    5.should.be.greaterThan(4);
-    5.should.not.be.greaterThan(6);
+  5.should.be.greaterThan(4);
+  5.should.not.be.greaterThan(6);
 
-    5.should.be.above(4);
-    5.should.not.be.above(6);
-  }).should.not.throwAnyException;
+  5.should.be.above(4);
+  5.should.not.be.above(6);
 
-  auto msg = ({
+  auto evaluation = ({
     5.should.be.greaterThan(5);
-    5.should.be.above(5);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("5 should be greater than 5. 5 is less than or equal to 5.");
+  evaluation.result.messageString.should.contain("5 is less than or equal to 5");
 
-  msg = ({
+  evaluation = ({
     5.should.not.be.greaterThan(4);
-    5.should.not.be.above(4);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("5 should not be greater than 4. 5 is greater than 4.");
+  evaluation.result.messageString.should.contain("5 is greater than 4");
 }
 
 @("numbers less than")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    5.should.be.lessThan(6);
-    5.should.not.be.lessThan(4);
+  5.should.be.lessThan(6);
+  5.should.not.be.lessThan(4);
 
-    5.should.be.below(6);
-    5.should.not.be.below(4);
-  }).should.not.throwAnyException;
+  5.should.be.below(6);
+  5.should.not.be.below(4);
 
-  auto msg = ({
+  auto evaluation = ({
     5.should.be.lessThan(4);
-    5.should.be.below(4);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("5 should be less than 4. 5 is greater than or equal to 4.");
-  msg.split("\n")[1].strip.should.equal("Expected:less than 4");
-  msg.split("\n")[2].strip.should.equal("Actual:5");
+  evaluation.result.messageString.should.contain("5 is greater than or equal to 4");
+  evaluation.result.expected.should.equal("less than 4");
+  evaluation.result.actual.should.equal("5");
 
-  msg = ({
+  evaluation = ({
     5.should.not.be.lessThan(6);
-    5.should.not.be.below(6);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("5 should not be less than 6. 5 is less than 6.");
+  evaluation.result.messageString.should.contain("5 is less than 6");
 }
 
 @("numbers between")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    5.should.be.between(4, 6);
-    5.should.be.between(6, 4);
-    5.should.not.be.between(5, 6);
-    5.should.not.be.between(4, 5);
+  5.should.be.between(4, 6);
+  5.should.be.between(6, 4);
+  5.should.not.be.between(5, 6);
+  5.should.not.be.between(4, 5);
 
-    5.should.be.within(4, 6);
-    5.should.be.within(6, 4);
-    5.should.not.be.within(5, 6);
-    5.should.not.be.within(4, 5);
-  }).should.not.throwAnyException;
+  5.should.be.within(4, 6);
+  5.should.be.within(6, 4);
+  5.should.not.be.within(5, 6);
+  5.should.not.be.within(4, 5);
 
-  auto msg = ({
+  auto evaluation = ({
     5.should.be.between(5, 6);
-    5.should.be.within(5, 6);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("5 should be between 5 and 6. 5 is less than or equal to 5.");
-  msg.split("\n")[1].strip.should.equal("Expected:a value inside (5, 6) interval");
-  msg.split("\n")[2].strip.should.equal("Actual:5");
+  evaluation.result.messageString.should.contain("5 is less than or equal to 5");
+  evaluation.result.expected.should.equal("a value inside (5, 6) interval");
+  evaluation.result.actual.should.equal("5");
 
-  msg = ({
+  evaluation = ({
     5.should.be.between(4, 5);
-    5.should.be.within(4, 5);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("5 should be between 4 and 5. 5 is greater than or equal to 5.");
-  msg.split("\n")[1].strip.should.equal("Expected:a value inside (4, 5) interval");
-  msg.split("\n")[2].strip.should.equal("Actual:5");
+  evaluation.result.messageString.should.contain("5 is greater than or equal to 5");
+  evaluation.result.expected.should.equal("a value inside (4, 5) interval");
+  evaluation.result.actual.should.equal("5");
 
-  msg = ({
+  evaluation = ({
     5.should.not.be.between(4, 6);
-    5.should.not.be.within(4, 6);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.equal("5 should not be between 4 and 6.");
-  msg.split("\n")[1].strip.should.equal("Expected:a value outside (4, 6) interval");
-  msg.split("\n")[2].strip.should.equal("Actual:5");
+  evaluation.result.messageString.should.contain("5 should not be between 4 and 6");
+  evaluation.result.expected.should.equal("a value outside (4, 6) interval");
+  evaluation.result.actual.should.equal("5");
 
-  msg = ({
+  evaluation = ({
     5.should.not.be.between(6, 4);
-    5.should.not.be.within(6, 4);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.equal("5 should not be between 6 and 4.");
-  msg.split("\n")[1].strip.should.equal("Expected:a value outside (4, 6) interval");
-  msg.split("\n")[2].strip.should.equal("Actual:5");
+  evaluation.result.messageString.should.contain("5 should not be between 6 and 4");
+  evaluation.result.expected.should.equal("a value outside (4, 6) interval");
+  evaluation.result.actual.should.equal("5");
 }
 
 @("numbers approximately")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    (10f/3f).should.be.approximately(3, 0.34);
-    (10f/3f).should.not.be.approximately(3, 0.1);
-  }).should.not.throwAnyException;
+  (10f/3f).should.be.approximately(3, 0.34);
+  (10f/3f).should.not.be.approximately(3, 0.1);
 
-  auto msg = ({
+  auto evaluation = ({
     (10f/3f).should.be.approximately(3, 0.1);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.contain("(10f/3f) should be approximately 3±0.1.");
-  msg.split("\n")[1].strip.should.contain("Expected:3±0.1");
-  msg.split("\n")[2].strip.should.contain("Actual:3.33333");
+  evaluation.result.messageString.should.contain("(10f/3f) should be approximately 3");
+  evaluation.result.expected.should.contain("3");
+  evaluation.result.actual.should.contain("3.33333");
 
-  msg = ({
+  evaluation = ({
     (10f/3f).should.not.be.approximately(3, 0.34);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.contain("(10f/3f) should not be approximately 3±0.34.");
-  msg.split("\n")[1].strip.should.contain("Expected:not 3±0.34");
-  msg.split("\n")[2].strip.should.contain("Actual:3.33333");
+  evaluation.result.messageString.should.contain("(10f/3f) should not be approximately 3");
+  evaluation.result.expected.should.contain("not 3");
+  evaluation.result.actual.should.contain("3.33333");
 }
 
 @("delegates returning basic types that throw propagate the exception")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   int value() {
     throw new Exception("not implemented value");
   }
@@ -232,31 +205,22 @@ unittest {
   value().should.throwAnyException.withMessage.equal("not implemented value");
   voidValue().should.throwAnyException.withMessage.equal("nothing here");
 
-  bool thrown;
-
-  try {
+  auto evaluation = ({
     noException.should.throwAnyException;
-  } catch (TestException e) {
-    e.msg.should.startWith("noException should throw any exception. No exception was thrown.");
-    thrown = true;
-  }
-  thrown.should.equal(true);
+  }).recordEvaluation;
 
-  thrown = false;
+  evaluation.result.messageString.should.startWith("noException should throw any exception. No exception was thrown.");
 
-  try {
+  evaluation = ({
     voidValue().should.not.throwAnyException;
-  } catch(TestException e) {
-    thrown = true;
-    e.msg.split("\n")[0].should.equal("voidValue() should not throw any exception. `object.Exception` saying `nothing here` was thrown.");
-  }
+  }).recordEvaluation;
 
-  thrown.should.equal(true);
+  evaluation.result.messageString.should.contain("voidValue() should not throw any exception");
+  evaluation.result.messageString.should.contain("`nothing here` was thrown");
 }
 
 @("compiles const comparison")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   const actual = 42;
   actual.should.equal(42);
 }

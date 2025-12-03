@@ -96,44 +96,7 @@ struct AssertResult {
 
   /// Converts the entire result to a displayable string.
   string toString() nothrow @trusted inout {
-    string result = messageString();
-
-    if (diff.length > 0) {
-      result ~= "\n\nDiff:\n";
-      foreach (segment; diff) {
-        result ~= segment.toString();
-      }
-    }
-
-    if (expected.length > 0) {
-      result ~= "\n Expected:";
-      if (negated) {
-        result ~= "not ";
-      }
-      result ~= formatValue(expected);
-    }
-
-    if (actual.length > 0) {
-      result ~= "\n   Actual:" ~ formatValue(actual);
-    }
-
-    if (extra.length > 0) {
-      result ~= "\n    Extra:";
-      foreach (i, item; extra) {
-        if (i > 0) result ~= ",";
-        result ~= formatValue(item);
-      }
-    }
-
-    if (missing.length > 0) {
-      result ~= "\n  Missing:";
-      foreach (i, item; missing) {
-        if (i > 0) result ~= ",";
-        result ~= formatValue(item);
-      }
-    }
-
-    return result;
+    return messageString();
   }
 
   /// Adds a message to the result.

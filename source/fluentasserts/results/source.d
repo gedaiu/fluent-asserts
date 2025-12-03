@@ -146,7 +146,7 @@ struct SourceResult {
   }
 
   /// Prints the source result using the provided printer.
-  void print(ResultPrinter printer) {
+  void print(ResultPrinter printer) @safe nothrow {
     if (tokens.length == 0) {
       return;
     }

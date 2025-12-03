@@ -34,34 +34,30 @@ unittest {
 
 @("object beNull")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   Object o = null;
 
-  ({
-    o.should.beNull;
-    (new Object).should.not.beNull;
-  }).should.not.throwAnyException;
+  o.should.beNull;
+  (new Object).should.not.beNull;
 
-  auto msg = ({
+  auto evaluation = ({
     o.should.not.beNull;
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("o should not be null.");
-  msg.split("\n")[1].strip.should.equal("Expected:not null");
-  msg.split("\n")[2].strip.should.equal("Actual:object.Object");
+  evaluation.result.messageString.should.startWith("o should not be null.");
+  evaluation.result.expected.should.equal("not null");
+  evaluation.result.actual.should.equal("object.Object");
 
-  msg = ({
+  evaluation = ({
     (new Object).should.beNull;
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("(new Object) should be null.");
-  msg.split("\n")[1].strip.should.equal("Expected:null");
-  msg.split("\n")[2].strip.strip.should.equal("Actual:object.Object");
+  evaluation.result.messageString.should.startWith("(new Object) should be null.");
+  evaluation.result.expected.should.equal("null");
+  evaluation.result.actual.should.equal("object.Object");
 }
 
 @("object instanceOf")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   class BaseClass { }
   class ExtendedClass : BaseClass { }
   class SomeClass { }
@@ -77,26 +73,27 @@ unittest {
   someObject.should.not.be.instanceOf!OtherClass;
   someObject.should.not.be.instanceOf!BaseClass;
 
-  auto msg = ({
+  auto evaluation = ({
     otherObject.should.be.instanceOf!SomeClass;
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.startWith(`otherObject should be instance of "fluentasserts.assertions.objects.__unittest_L63_C1.SomeClass".`);
-  msg.split("\n")[1].strip.should.equal("Expected:typeof fluentasserts.assertions.objects.__unittest_L63_C1.SomeClass");
-  msg.split("\n")[2].strip.should.equal("Actual:typeof fluentasserts.assertions.objects.__unittest_L63_C1.OtherClass");
+  evaluation.result.messageString.should.contain(`otherObject should be instance of`);
+  evaluation.result.messageString.should.contain(`SomeClass`);
+  evaluation.result.expected.should.contain("SomeClass");
+  evaluation.result.actual.should.contain("OtherClass");
 
-  msg = ({
+  evaluation = ({
     otherObject.should.not.be.instanceOf!OtherClass;
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.startWith(`otherObject should not be instance of "fluentasserts.assertions.objects.__unittest_L63_C1.OtherClass"`);
-  msg.split("\n")[1].strip.should.equal("Expected:not typeof fluentasserts.assertions.objects.__unittest_L63_C1.OtherClass");
-  msg.split("\n")[2].strip.should.equal("Actual:typeof fluentasserts.assertions.objects.__unittest_L63_C1.OtherClass");
+  evaluation.result.messageString.should.contain(`otherObject should not be instance of`);
+  evaluation.result.messageString.should.contain(`OtherClass`);
+  evaluation.result.expected.should.contain("not typeof");
+  evaluation.result.actual.should.contain("OtherClass");
 }
 
 @("object instanceOf interface")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   interface MyInterface { }
   class BaseClass : MyInterface { }
   class OtherClass { }
@@ -110,26 +107,27 @@ unittest {
 
   someObject.should.be.instanceOf!MyInterface;
 
-  auto msg = ({
+  auto evaluation = ({
     otherObject.should.be.instanceOf!MyInterface;
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.startWith(`otherObject should be instance of "fluentasserts.assertions.objects.__unittest_L98_C1.MyInterface".`);
-  msg.split("\n")[1].strip.should.equal("Expected:typeof fluentasserts.assertions.objects.__unittest_L98_C1.MyInterface");
-  msg.split("\n")[2].strip.should.equal("Actual:typeof fluentasserts.assertions.objects.__unittest_L98_C1.OtherClass");
+  evaluation.result.messageString.should.contain(`otherObject should be instance of`);
+  evaluation.result.messageString.should.contain(`MyInterface`);
+  evaluation.result.expected.should.contain("MyInterface");
+  evaluation.result.actual.should.contain("OtherClass");
 
-  msg = ({
+  evaluation = ({
     someObject.should.not.be.instanceOf!MyInterface;
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.contain(`someObject should not be instance of "fluentasserts.assertions.objects.__unittest_L98_C1.MyInterface".`);
-  msg.split("\n")[1].strip.should.equal("Expected:not typeof fluentasserts.assertions.objects.__unittest_L98_C1.MyInterface");
-  msg.split("\n")[2].strip.should.equal("Actual:typeof fluentasserts.assertions.objects.__unittest_L98_C1.BaseClass");
+  evaluation.result.messageString.should.contain(`someObject should not be instance of`);
+  evaluation.result.messageString.should.contain(`MyInterface`);
+  evaluation.result.expected.should.contain("not typeof");
+  evaluation.result.actual.should.contain("BaseClass");
 }
 
 @("delegates returning objects that throw propagate the exception")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   class SomeClass { }
 
   SomeClass value() {
@@ -140,21 +138,15 @@ unittest {
 
   value().should.throwAnyException.withMessage.equal("not implemented");
 
-  bool thrown;
-
-  try {
+  auto evaluation = ({
     noException.should.throwAnyException;
-  } catch (TestException e) {
-    e.msg.should.startWith("noException should throw any exception. No exception was thrown.");
-    thrown = true;
-  }
+  }).recordEvaluation;
 
-  thrown.should.equal(true);
+  evaluation.result.messageString.should.startWith("noException should throw any exception. No exception was thrown.");
 }
 
 @("object equal")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   class TestEqual {
     private int value;
 
@@ -168,34 +160,32 @@ unittest {
   instance.should.equal(instance);
   instance.should.not.equal(new TestEqual(1));
 
-  auto msg = ({
+  auto evaluation = ({
     instance.should.not.equal(instance);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.startWith("instance should not equal TestEqual");
+  evaluation.result.messageString.should.startWith("instance should not equal TestEqual");
 
-  msg = ({
+  evaluation = ({
     instance.should.equal(new TestEqual(1));
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.startWith("instance should equal TestEqual");
+  evaluation.result.messageString.should.startWith("instance should equal TestEqual");
 }
 
 @("null object comparison")
-unittest
-{
-  Lifecycle.instance.disableFailureHandling = false;
+unittest {
   Object nullObject;
 
-  auto msg = ({
+  auto evaluation = ({
     nullObject.should.equal(new Object);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.startWith("nullObject should equal Object(");
+  evaluation.result.messageString.should.startWith("nullObject should equal Object(");
 
-  msg = ({
+  evaluation = ({
     (new Object).should.equal(null);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.startWith("(new Object) should equal null.");
+  evaluation.result.messageString.should.startWith("(new Object) should equal null.");
 }

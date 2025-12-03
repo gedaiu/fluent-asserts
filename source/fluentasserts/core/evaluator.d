@@ -91,10 +91,7 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
             return;
         }
 
-        string msg = evaluation.result.toString();
-        msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
-
-        throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
+        throw new TestException(*evaluation);
     }
 }
 
@@ -168,10 +165,7 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
             return;
         }
 
-        string msg = evaluation.result.toString();
-        msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
-
-        throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
+        throw new TestException(*evaluation);
     }
 }
 
@@ -327,9 +321,6 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
             return;
         }
 
-        string msg = evaluation.result.toString();
-        msg ~= "\n" ~ evaluation.sourceFile ~ ":" ~ evaluation.sourceLine.to!string ~ "\n";
-
-        throw new TestException(msg, evaluation.sourceFile, evaluation.sourceLine);
+        throw new TestException(*evaluation);
     }
 }

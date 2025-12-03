@@ -35,33 +35,27 @@ unittest {
 
 @("range contain")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    [1, 2, 3].map!"a".should.contain([2, 1]);
-    [1, 2, 3].map!"a".should.not.contain([4, 5, 6, 7]);
-  }).should.not.throwException!TestException;
+  [1, 2, 3].map!"a".should.contain([2, 1]);
+  [1, 2, 3].map!"a".should.not.contain([4, 5, 6, 7]);
+  [1, 2, 3].map!"a".should.contain(1);
 
-  ({
-    [1, 2, 3].map!"a".should.contain(1);
-  }).should.not.throwException!TestException;
-
-  auto msg = ({
+  auto evaluation = ({
     [1, 2, 3].map!"a".should.contain([4, 5]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split('\n')[0].should.equal("[1, 2, 3].map!\"a\" should contain [4, 5]. [4, 5] are missing from [1, 2, 3].");
+  evaluation.result.messageString.should.contain("[4, 5] are missing from [1, 2, 3].");
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].map!"a".should.not.contain([1, 2]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split('\n')[0].should.equal("[1, 2, 3].map!\"a\" should not contain [1, 2]. [1, 2] are present in [1, 2, 3].");
+  evaluation.result.messageString.should.contain("[1, 2] are present in [1, 2, 3].");
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].map!"a".should.contain(4);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split('\n')[0].should.contain("4 is missing from [1, 2, 3]");
+  evaluation.result.messageString.should.contain("4 is missing from [1, 2, 3]");
 }
 
 @("const range contain")
@@ -92,47 +86,44 @@ unittest {
 
 @("contain only")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    [1, 2, 3].should.containOnly([3, 2, 1]);
-    [1, 2, 3].should.not.containOnly([2, 1]);
+  [1, 2, 3].should.containOnly([3, 2, 1]);
+  [1, 2, 3].should.not.containOnly([2, 1]);
 
-    [1, 2, 2].should.not.containOnly([2, 1]);
-    [1, 2, 2].should.containOnly([2, 1, 2]);
+  [1, 2, 2].should.not.containOnly([2, 1]);
+  [1, 2, 2].should.containOnly([2, 1, 2]);
 
-    [2, 2].should.containOnly([2, 2]);
-    [2, 2, 2].should.not.containOnly([2, 2]);
-  }).should.not.throwException!TestException;
+  [2, 2].should.containOnly([2, 2]);
+  [2, 2, 2].should.not.containOnly([2, 2]);
 
-  auto msg = ({
+  auto evaluation = ({
     [1, 2, 3].should.containOnly([2, 1]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split('\n')[0].should.equal("[1, 2, 3] should contain only [2, 1].");
+  evaluation.result.messageString.should.startWith("[1, 2, 3] should contain only [2, 1].");
 
-  msg = ({
+  evaluation = ({
     [1, 2].should.not.containOnly([2, 1]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split('\n')[0].strip.should.equal("[1, 2] should not contain only [2, 1].");
+  evaluation.result.messageString.should.startWith("[1, 2] should not contain only [2, 1].");
 
-  msg = ({
+  evaluation = ({
     [2, 2].should.containOnly([2]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split('\n')[0].should.equal("[2, 2] should contain only [2].");
+  evaluation.result.messageString.should.startWith("[2, 2] should contain only [2].");
 
-  msg = ({
+  evaluation = ({
     [3, 3].should.containOnly([2]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split('\n')[0].should.equal("[3, 3] should contain only [2].");
+  evaluation.result.messageString.should.startWith("[3, 3] should contain only [2].");
 
-  msg = ({
+  evaluation = ({
     [2, 2].should.not.containOnly([2, 2]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split('\n')[0].should.equal("[2, 2] should not contain only [2, 2].");
+  evaluation.result.messageString.should.startWith("[2, 2] should not contain only [2, 2].");
 }
 
 @("contain only with void array")
@@ -171,101 +162,89 @@ unittest {
 
 @("array contain")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    [1, 2, 3].should.contain([2, 1]);
-    [1, 2, 3].should.not.contain([4, 5, 6, 7]);
+  [1, 2, 3].should.contain([2, 1]);
+  [1, 2, 3].should.not.contain([4, 5, 6, 7]);
+  [1, 2, 3].should.contain(1);
 
-    [1, 2, 3].should.contain(1);
-  }).should.not.throwException!TestException;
-
-  auto msg = ({
+  auto evaluation = ({
     [1, 2, 3].should.contain([4, 5]);
-  }).should.throwException!TestException.msg.split('\n');
+  }).recordEvaluation;
 
-  msg[0].should.equal("[1, 2, 3] should contain [4, 5]. [4, 5] are missing from [1, 2, 3].");
+  evaluation.result.messageString.should.startWith("[1, 2, 3] should contain [4, 5]. [4, 5] are missing from [1, 2, 3].");
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].should.not.contain([2, 3]);
-  }).should.throwException!TestException.msg.split('\n');
+  }).recordEvaluation;
 
-  msg[0].should.equal("[1, 2, 3] should not contain [2, 3]. [2, 3] are present in [1, 2, 3].");
+  evaluation.result.messageString.should.startWith("[1, 2, 3] should not contain [2, 3]. [2, 3] are present in [1, 2, 3].");
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].should.not.contain([4, 3]);
-  }).should.throwException!TestException.msg.split('\n');
+  }).recordEvaluation;
 
-  msg[0].should.equal("[1, 2, 3] should not contain [4, 3]. 3 is present in [1, 2, 3].");
+  evaluation.result.messageString.should.startWith("[1, 2, 3] should not contain [4, 3]. 3 is present in [1, 2, 3].");
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].should.contain(4);
-  }).should.throwException!TestException.msg.split('\n');
+  }).recordEvaluation;
 
-  msg[0].should.equal("[1, 2, 3] should contain 4. 4 is missing from [1, 2, 3].");
+  evaluation.result.messageString.should.startWith("[1, 2, 3] should contain 4. 4 is missing from [1, 2, 3].");
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].should.not.contain(2);
-  }).should.throwException!TestException.msg.split('\n');
+  }).recordEvaluation;
 
-  msg[0].should.equal("[1, 2, 3] should not contain 2. 2 is present in [1, 2, 3].");
+  evaluation.result.messageString.should.startWith("[1, 2, 3] should not contain 2. 2 is present in [1, 2, 3].");
 }
 
 @("array equals")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    [1, 2, 3].should.equal([1, 2, 3]);
-  }).should.not.throwAnyException;
+  [1, 2, 3].should.equal([1, 2, 3]);
 
-  ({
-    [1, 2, 3].should.not.equal([2, 1, 3]);
-    [1, 2, 3].should.not.equal([2, 3]);
-    [2, 3].should.not.equal([1, 2, 3]);
-  }).should.not.throwAnyException;
+  [1, 2, 3].should.not.equal([2, 1, 3]);
+  [1, 2, 3].should.not.equal([2, 3]);
+  [2, 3].should.not.equal([1, 2, 3]);
 
-  auto msg = ({
+  auto evaluation = ({
     [1, 2, 3].should.equal([4, 5]);
-  }).should.throwException!TestException.msg.split("\n");
+  }).recordEvaluation;
 
-  msg[0].strip.should.startWith("[1, 2, 3] should equal [4, 5].");
+  evaluation.result.messageString.should.startWith("[1, 2, 3] should equal [4, 5].");
 
-  msg = ({
+  evaluation = ({
     [1, 2].should.equal([4, 5]);
-  }).should.throwException!TestException.msg.split("\n");
+  }).recordEvaluation;
 
-  msg[0].strip.should.startWith("[1, 2] should equal [4, 5].");
+  evaluation.result.messageString.should.startWith("[1, 2] should equal [4, 5].");
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].should.equal([2, 3, 1]);
-  }).should.throwException!TestException.msg.split("\n");
+  }).recordEvaluation;
 
-  msg[0].strip.should.startWith("[1, 2, 3] should equal [2, 3, 1].");
+  evaluation.result.messageString.should.startWith("[1, 2, 3] should equal [2, 3, 1].");
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].should.not.equal([1, 2, 3]);
-  }).should.throwException!TestException.msg.split("\n");
+  }).recordEvaluation;
 
-  msg[0].strip.should.startWith("[1, 2, 3] should not equal [1, 2, 3]");
+  evaluation.result.messageString.should.startWith("[1, 2, 3] should not equal [1, 2, 3]");
 }
 
 @("array equals with structs")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   struct TestStruct {
     int value;
 
     void f() {}
   }
 
-  ({
-    [TestStruct(1)].should.equal([TestStruct(1)]);
-  }).should.not.throwAnyException;
+  [TestStruct(1)].should.equal([TestStruct(1)]);
 
-  auto msg = ({
+  auto evaluation = ({
     [TestStruct(2)].should.equal([TestStruct(1)]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.startWith("[TestStruct(2)] should equal [TestStruct(1)].");
+  evaluation.result.messageString.should.startWith("[TestStruct(2)] should equal [TestStruct(1)].");
 }
 
 @("const array equal")
@@ -292,60 +271,51 @@ version(unittest) {
 
 @("array equals with classes")
 unittest {
+  auto instance = new TestEqualsClass(1);
+  [instance].should.equal([instance]);
 
-  Lifecycle.instance.disableFailureHandling = false;
-
-  ({
-    auto instance = new TestEqualsClass(1);
-    [instance].should.equal([instance]);
-  }).should.not.throwAnyException;
-
-  ({
+  auto evaluation = ({
     [new TestEqualsClass(2)].should.equal([new TestEqualsClass(1)]);
-  }).should.throwException!TestException;
+  }).recordEvaluation;
+
+  evaluation.result.hasContent.should.equal(true);
 }
 
 @("range equals")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  ({
-    [1, 2, 3].map!"a".should.equal([1, 2, 3]);
-  }).should.not.throwAnyException;
+  [1, 2, 3].map!"a".should.equal([1, 2, 3]);
 
-  ({
-    [1, 2, 3].map!"a".should.not.equal([2, 1, 3]);
-    [1, 2, 3].map!"a".should.not.equal([2, 3]);
-    [2, 3].map!"a".should.not.equal([1, 2, 3]);
-  }).should.not.throwAnyException;
+  [1, 2, 3].map!"a".should.not.equal([2, 1, 3]);
+  [1, 2, 3].map!"a".should.not.equal([2, 3]);
+  [2, 3].map!"a".should.not.equal([1, 2, 3]);
 
-  auto msg = ({
+  auto evaluation = ({
     [1, 2, 3].map!"a".should.equal([4, 5]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.startWith(`[1, 2, 3].map!"a" should equal [4, 5].`);
+  evaluation.result.messageString.should.startWith(`[1, 2, 3].map!"a" should equal [4, 5].`);
 
-  msg = ({
+  evaluation = ({
     [1, 2].map!"a".should.equal([4, 5]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.startWith(`[1, 2].map!"a" should equal [4, 5].`);
+  evaluation.result.messageString.should.startWith(`[1, 2].map!"a" should equal [4, 5].`);
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].map!"a".should.equal([2, 3, 1]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.startWith(`[1, 2, 3].map!"a" should equal [2, 3, 1].`);
+  evaluation.result.messageString.should.startWith(`[1, 2, 3].map!"a" should equal [2, 3, 1].`);
 
-  msg = ({
+  evaluation = ({
     [1, 2, 3].map!"a".should.not.equal([1, 2, 3]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.startWith(`[1, 2, 3].map!"a" should not equal [1, 2, 3]`);
+  evaluation.result.messageString.should.startWith(`[1, 2, 3].map!"a" should not equal [1, 2, 3]`);
 }
 
 @("custom range asserts")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   struct Range {
     int n;
     int front() {
@@ -363,23 +333,23 @@ unittest {
   Range().should.contain([0,1]);
   Range().should.contain(0);
 
-  auto msg = ({
+  auto evaluation = ({
     Range().should.equal([0,1]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.startWith("Range() should equal [0, 1]");
+  evaluation.result.messageString.should.startWith("Range() should equal [0, 1]");
 
-  msg = ({
+  evaluation = ({
     Range().should.contain([2, 3]);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.startWith("Range() should contain [2, 3]. 3 is missing from [0, 1, 2].");
+  evaluation.result.messageString.should.startWith("Range() should contain [2, 3]. 3 is missing from [0, 1, 2].");
 
-  msg = ({
+  evaluation = ({
     Range().should.contain(3);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].strip.should.startWith("Range() should contain 3. 3 is missing from [0, 1, 2].");
+  evaluation.result.messageString.should.startWith("Range() should contain 3. 3 is missing from [0, 1, 2].");
 }
 
 @("custom const range equals")
@@ -428,7 +398,6 @@ unittest {
 
 @("approximately equals")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.01);
 
   [0.350, 0.501, 0.341].should.not.be.approximately([0.35, 0.50, 0.34], 0.00001);
@@ -436,12 +405,12 @@ unittest {
   [0.350, 0.501, 0.341].should.not.be.approximately([0.350, 0.501], 0.001);
   [0.350, 0.501].should.not.be.approximately([0.350, 0.501, 0.341], 0.001);
 
-  auto msg = ({
+  auto evaluation = ({
     [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.0001);
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.should.contain("Expected:[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
-  msg.should.contain("Missing:0.501±0.0001,0.341±0.0001");
+  evaluation.result.expected.should.equal("[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
+  evaluation.result.missing.length.should.equal(2);
 }
 
 @("approximately equals with Assert")
