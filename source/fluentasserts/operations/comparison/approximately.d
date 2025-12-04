@@ -2,7 +2,7 @@ module fluentasserts.operations.comparison.approximately;
 
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation;
-import fluentasserts.assertions.array;
+import fluentasserts.core.listcomparison;
 import fluentasserts.results.serializers;
 import fluentasserts.operations.string.contain;
 
@@ -15,6 +15,7 @@ import std.math;
 
 version (unittest) {
   import fluent.asserts;
+  import fluentasserts.core.base;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
   import std.meta;
@@ -108,37 +109,30 @@ void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
     }
   }
 
+  import std.exception : assumeWontThrow;
+
   string strExpected;
   string strMissing;
 
   if(maxRelDiff == 0) {
     strExpected = evaluation.expectedValue.strValue;
-    try strMissing = missing.length == 0 ? "" : missing.to!string;
-    catch(Exception) {}
-  } else try {
-    strMissing = "[" ~ missing.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ") ~ "]";
-    strExpected = "[" ~ expectedPieces.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ") ~ "]";
-  } catch(Exception) {}
+    strMissing = missing.length == 0 ? "" : assumeWontThrow(missing.to!string);
+  } else {
+    strMissing = "[" ~ assumeWontThrow(missing.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ")) ~ "]";
+    strExpected = "[" ~ assumeWontThrow(expectedPieces.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ")) ~ "]";
+  }
 
   if(!evaluation.isNegated) {
     if(!allEqual) {
       evaluation.result.expected = strExpected;
       evaluation.result.actual = evaluation.currentValue.strValue;
 
-      if(extra.length > 0) {
-        try {
-          foreach(e; extra) {
-            evaluation.result.extra ~= e.to!string ~ "±" ~ maxRelDiff.to!string;
-          }
-        } catch(Exception) {}
+      foreach(e; extra) {
+        evaluation.result.extra ~= assumeWontThrow(e.to!string ~ "±" ~ maxRelDiff.to!string);
       }
 
-      if(missing.length > 0) {
-        try {
-          foreach(m; missing) {
-            evaluation.result.missing ~= m.to!string ~ "±" ~ maxRelDiff.to!string;
-          }
-        } catch(Exception) {}
+      foreach(m; missing) {
+        evaluation.result.missing ~= assumeWontThrow(m.to!string ~ "±" ~ maxRelDiff.to!string);
       }
     }
   } else {
@@ -171,14 +165,14 @@ static foreach (Type; FPTypes) {
     [testValue].should.not.be.approximately([3], 0.24);
   }
 
-  @("floats casted to " ~ Type.stringof ~ " returns conversion error when comparing a string with a number")
+  @("floats casted to " ~ Type.stringof ~ " empty string approximately 3 reports error with expected and actual")
   unittest {
-    auto msg = ({
+    auto evaluation = ({
       "".should.be.approximately(3, 0.34);
-    }).should.throwSomething.msg;
+    }).recordEvaluation;
 
-    msg.should.contain("Expected:valid numeric values");
-    msg.should.contain("Actual:conversion error");
+    expect(evaluation.result.expected).to.equal("valid numeric values");
+    expect(evaluation.result.actual).to.equal("conversion error");
   }
 
   @(Type.stringof ~ " values approximately compares two numbers")
@@ -270,4 +264,63 @@ static foreach (Type; FPTypes) {
     expect(evaluation.result.expected).to.equal("[0.35±0.0001, 0.501±0.0001, 0.341±0.0001]");
     expect(evaluation.result.negated).to.equal(true);
   }
+}
+
+@("lazy array throwing in approximately propagates the exception")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  int[] someLazyArray() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyArray.should.approximately([], 3);
+  }).should.throwAnyException.withMessage("This is it.");
+}
+
+@("float array approximately equal within tolerance succeeds")
+unittest {
+  [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.01);
+}
+
+@("float array not approximately equal outside tolerance succeeds")
+unittest {
+  [0.350, 0.501, 0.341].should.not.be.approximately([0.35, 0.50, 0.34], 0.00001);
+}
+
+@("float array not approximately equal reordered succeeds")
+unittest {
+  [0.350, 0.501, 0.341].should.not.be.approximately([0.501, 0.350, 0.341], 0.001);
+}
+
+@("float array not approximately equal shorter expected succeeds")
+unittest {
+  [0.350, 0.501, 0.341].should.not.be.approximately([0.350, 0.501], 0.001);
+}
+
+@("float array not approximately equal longer expected succeeds")
+unittest {
+  [0.350, 0.501].should.not.be.approximately([0.350, 0.501, 0.341], 0.001);
+}
+
+@("float array approximately equal outside tolerance reports expected with tolerance")
+unittest {
+  auto evaluation = ({
+    [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.0001);
+  }).recordEvaluation;
+
+  evaluation.result.expected.should.equal("[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
+  evaluation.result.missing.length.should.equal(2);
+}
+
+@("Assert.approximately array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  Assert.approximately([0.350, 0.501, 0.341], [0.35, 0.50, 0.34], 0.01);
+}
+
+@("Assert.notApproximately array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  Assert.notApproximately([0.350, 0.501, 0.341], [0.350, 0.501], 0.0001);
 }

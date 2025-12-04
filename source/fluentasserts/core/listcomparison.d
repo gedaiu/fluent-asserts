@@ -1,4 +1,4 @@
-module fluentasserts.assertions.listcomparison;
+module fluentasserts.core.listcomparison;
 
 import std.algorithm;
 import std.array;
@@ -54,7 +54,7 @@ struct ListComparison(Type) {
     this.maxRelDiff = maxRelDiff;
   }
 
-  private long findIndex(T[] list, T element) {
+  private long findIndex(T[] list, T element) nothrow {
     static if(std.traits.isNumeric!(T)) {
         return list.countUntil!(a => approxEqual(element, a, maxRelDiff));
       } else static if(is(T == EquableValue)) {
@@ -70,7 +70,7 @@ struct ListComparison(Type) {
       }
   }
 
-  T[] missing() @trusted {
+  T[] missing() @trusted nothrow {
     T[] result;
 
     auto tmpList = list.dup;
@@ -88,7 +88,7 @@ struct ListComparison(Type) {
     return result;
   }
 
-  T[] extra() @trusted {
+  T[] extra() @trusted nothrow {
     T[] result;
 
     auto tmpReferenceList = referenceList.dup;
@@ -106,7 +106,7 @@ struct ListComparison(Type) {
     return result;
   }
 
-  T[] common() @trusted {
+  T[] common() @trusted nothrow {
     T[] result;
 
     auto tmpList = list.dup;

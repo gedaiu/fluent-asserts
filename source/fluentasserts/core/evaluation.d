@@ -135,7 +135,7 @@ struct Evaluation {
     printer.newLine;
     printer.newLine;
 
-    printer.info("ACTUAL: ");
+    printer.info("  ACTUAL: ");
     printer.primary("<");
     printer.primary(currentValue.typeName);
     printer.primary("> ");
@@ -334,9 +334,9 @@ unittest {
 
   auto result = extractTypes!(T[]);
 
-  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L267_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L267_C1.T[]" got "` ~ result[0] ~ `"`);
+  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L330_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L330_C1.T[]" got "` ~ result[0] ~ `"`);
   assert(result[1] == "object.Object[]", `Expected: ` ~ result[1] );
-  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L267_C1.I[]", `Expected: ` ~ result[2] );
+  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L330_C1.I[]", `Expected: ` ~ result[2] );
 }
 
 /// A proxy interface for comparing values of different types.

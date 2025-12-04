@@ -79,19 +79,15 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
 
         operation(*evaluation);
 
-        if (!evaluation.hasResult()) {
-            return;
-        }
-
         if (Lifecycle.instance.keepLastEvaluation) {
             Lifecycle.instance.lastEvaluation = *evaluation;
         }
 
-        if (Lifecycle.instance.disableFailureHandling) {
+        if (!evaluation.hasResult()) {
             return;
         }
 
-        throw new TestException(*evaluation);
+        Lifecycle.instance.handleFailure(*evaluation);
     }
 }
 
@@ -153,19 +149,15 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
             throw evaluation.expectedValue.throwable;
         }
 
-        if (!evaluation.hasResult()) {
-            return;
-        }
-
         if (Lifecycle.instance.keepLastEvaluation) {
             Lifecycle.instance.lastEvaluation = *evaluation;
         }
 
-        if (Lifecycle.instance.disableFailureHandling) {
+        if (!evaluation.hasResult()) {
             return;
         }
 
-        throw new TestException(*evaluation);
+        Lifecycle.instance.handleFailure(*evaluation);
     }
 }
 
@@ -309,18 +301,14 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
             throw evaluation.expectedValue.throwable;
         }
 
-        if (!evaluation.hasResult()) {
-            return;
-        }
-
         if (Lifecycle.instance.keepLastEvaluation) {
             Lifecycle.instance.lastEvaluation = *evaluation;
         }
 
-        if (Lifecycle.instance.disableFailureHandling) {
+        if (!evaluation.hasResult()) {
             return;
         }
 
-        throw new TestException(*evaluation);
+        Lifecycle.instance.handleFailure(*evaluation);
     }
 }

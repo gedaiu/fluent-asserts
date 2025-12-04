@@ -25,6 +25,21 @@ struct ResultGlyphs {
     /// Glyph for the null character
     string nullChar;
 
+    /// Glyph for the bell character
+    string bell;
+
+    /// Glyph for the backspace character
+    string backspace;
+
+    /// Glyph for the vertical tab character
+    string verticalTab;
+
+    /// Glyph for the form feed character
+    string formFeed;
+
+    /// Glyph for the escape character
+    string escape;
+
     /// Glyph that indicates the error line in source display
     string sourceIndicator;
 
@@ -53,12 +68,22 @@ struct ResultGlyphs {
       ResultGlyphs.newline = `\n`;
       ResultGlyphs.space = ` `;
       ResultGlyphs.nullChar = `␀`;
+      ResultGlyphs.bell = `\a`;
+      ResultGlyphs.backspace = `\b`;
+      ResultGlyphs.verticalTab = `\v`;
+      ResultGlyphs.formFeed = `\f`;
+      ResultGlyphs.escape = `\e`;
     } else {
-      ResultGlyphs.tab = `¤`;
-      ResultGlyphs.carriageReturn = `←`;
-      ResultGlyphs.newline = `↲`;
-      ResultGlyphs.space = `᛫`;
+      ResultGlyphs.tab = `\t`;
+      ResultGlyphs.carriageReturn = `\r`;
+      ResultGlyphs.newline = `\n`;
+      ResultGlyphs.space = ` `;
       ResultGlyphs.nullChar = `\0`;
+      ResultGlyphs.bell = `\a`;
+      ResultGlyphs.backspace = `\b`;
+      ResultGlyphs.verticalTab = `\v`;
+      ResultGlyphs.formFeed = `\f`;
+      ResultGlyphs.escape = `\e`;
     }
 
     ResultGlyphs.sourceIndicator = ">";

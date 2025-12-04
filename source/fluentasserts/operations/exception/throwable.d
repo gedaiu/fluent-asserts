@@ -63,63 +63,48 @@ void throwAnyException(ref Evaluation evaluation) @trusted nothrow {
   evaluation.currentValue.throwable = null;
 }
 
-@("it is successful when the function does not throw")
+@("non-throwing function not throwAnyException succeeds")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   void test() {}
   expect({ test(); }).to.not.throwAnyException();
 }
 
-@("it fails when an exception is thrown and none is expected")
+@("throwing function not throwAnyException reports error with expected and actual")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   void test() { throw new Exception("Test exception"); }
 
-  bool thrown;
-
-  try {
+  auto evaluation = ({
     expect({ test(); }).to.not.throwAnyException();
-  } catch(TestException e) {
-    thrown = true;
+  }).recordEvaluation;
 
-    assert(e.message.indexOf("should not throw any exception. `object.Exception` saying `Test exception` was thrown.") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("\n Expected:No exception to be thrown\n") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("\n   Actual:`object.Exception` saying `Test exception`\n") != -1, "Message was: " ~ e.message);
-  }
-
-  assert(thrown, "The exception was not thrown");
+  expect(evaluation.result.messageString).to.contain("should not throw any exception. `object.Exception` saying `Test exception` was thrown.");
+  expect(evaluation.result.expected).to.equal("No exception to be thrown");
+  expect(evaluation.result.actual).to.equal("`object.Exception` saying `Test exception`");
 }
 
-@("it is successful when the function throws an expected exception")
+@("throwing function throwAnyException succeeds")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   void test() { throw new Exception("test"); }
   expect({ test(); }).to.throwAnyException;
 }
 
-@("it fails when the function throws a Throwable and an Exception is expected")
+@("function throwing Throwable throwAnyException reports error with expected and actual")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   void test() { assert(false); }
 
-  bool thrown;
-
-  try {
+  auto evaluation = ({
     expect({ test(); }).to.throwAnyException;
-  } catch(TestException e) {
-    thrown = true;
+  }).recordEvaluation;
 
-    assert(e.message.indexOf("should throw any exception.") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("A `Throwable` saying `Assertion failure` was thrown.") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("\n Expected:Any exception to be thrown\n") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("\n   Actual:A `Throwable` with message `Assertion failure` was thrown\n") != -1, "Message was: " ~ e.message);
-    assert(e.file == "source/fluentasserts/operations/exception/throwable.d", "File was: " ~ e.file);
-  }
-
-  assert(thrown, "The exception was not thrown");
+  expect(evaluation.result.messageString).to.contain("should throw any exception.");
+  expect(evaluation.result.messageString).to.contain("A `Throwable` saying `Assertion failure` was thrown.");
+  expect(evaluation.result.expected).to.equal("Any exception to be thrown");
+  expect(evaluation.result.actual).to.equal("A `Throwable` with message `Assertion failure` was thrown");
 }
 
-@("it is successful when the function throws any exception")
+@("function throwing any exception throwAnyException succeeds")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   void test() { throw new Exception("test"); }
@@ -291,7 +276,7 @@ void throwException(ref Evaluation evaluation) @trusted nothrow {
   evaluation.currentValue.throwable = null;
 }
 
-@("catches a certain exception type")
+@("CustomException throwException CustomException succeeds")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   expect({
@@ -299,44 +284,33 @@ unittest {
   }).to.throwException!CustomException;
 }
 
-@("fails when no exception is thrown but one is expected")
+@("non-throwing throwException Exception reports error with expected and actual")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  bool thrown;
-
-  try {
+  auto evaluation = ({
     ({}).should.throwException!Exception;
-  } catch (TestException e) {
-    thrown = true;
-  }
+  }).recordEvaluation;
 
-  assert(thrown, "The test should have failed because no exception was thrown");
+  expect(evaluation.result.messageString).to.contain("should throw exception");
+  expect(evaluation.result.messageString).to.contain("No exception was thrown.");
+  expect(evaluation.result.expected).to.equal("`object.Exception` to be thrown");
+  expect(evaluation.result.actual).to.equal("Nothing was thrown");
 }
 
-@("fails when an unexpected exception is thrown")
+@("Exception throwException CustomException reports error with expected and actual")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  bool thrown;
-
-  try {
+  auto evaluation = ({
     expect({
       throw new Exception("test");
     }).to.throwException!CustomException;
-  } catch(TestException e) {
-    thrown = true;
+  }).recordEvaluation;
 
-    assert(e.message.indexOf("should throw exception \"fluentasserts.operations.exception.throwable.CustomException\".`object.Exception` saying `test` was thrown.") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("EXPECTED:") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("fluentasserts.operations.exception.throwable.CustomException") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("ACTUAL:") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("`object.Exception` saying `test`") != -1, "Message was: " ~ e.message);
-    assert(e.file == "source/fluentasserts/operations/exception/throwable.d", "File was: " ~ e.file);
-  }
-
-  assert(thrown, "The exception was not thrown");
+  expect(evaluation.result.messageString).to.contain("should throw exception");
+  expect(evaluation.result.messageString).to.contain("`object.Exception` saying `test` was thrown.");
+  expect(evaluation.result.expected).to.equal("fluentasserts.operations.exception.throwable.CustomException");
+  expect(evaluation.result.actual).to.equal("`object.Exception` saying `test`");
 }
 
-@("does not fail when an exception is thrown and it is not expected")
+@("Exception not throwException CustomException succeeds")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   expect({
@@ -344,27 +318,18 @@ unittest {
   }).to.not.throwException!CustomException;
 }
 
-@("fails when the checked exception type is thrown but not expected")
+@("CustomException not throwException CustomException reports error with expected and actual")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  bool thrown;
-
-  try {
+  auto evaluation = ({
     expect({
       throw new CustomException("test");
     }).to.not.throwException!CustomException;
-  } catch(TestException e) {
-    thrown = true;
-    assert(e.message.indexOf("should not throw exception \"fluentasserts.operations.exception.throwable.CustomException\"") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `test` was thrown.") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("EXPECTED:") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("no `fluentasserts.operations.exception.throwable.CustomException` to be thrown") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("ACTUAL:") != -1, "Message was: " ~ e.message);
-    assert(e.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `test`") != -1, "Message was: " ~ e.message);
-    assert(e.file == "source/fluentasserts/operations/exception/throwable.d", "File was: " ~ e.file);
-  }
+  }).recordEvaluation;
 
-  assert(thrown, "The exception was not thrown");
+  expect(evaluation.result.messageString).to.contain("should not throw exception");
+  expect(evaluation.result.messageString).to.contain("`fluentasserts.operations.exception.throwable.CustomException` saying `test` was thrown.");
+  expect(evaluation.result.expected).to.equal("no `fluentasserts.operations.exception.throwable.CustomException` to be thrown");
+  expect(evaluation.result.actual).to.equal("`fluentasserts.operations.exception.throwable.CustomException` saying `test`");
 }
 
 void throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
@@ -420,105 +385,63 @@ void throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
   }
 }
 
-@("fails when an exception is not caught")
+@("non-throwing throwException Exception withMessage reports error with expected and actual")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  Exception exception;
-
-  try {
+  auto evaluation = ({
     expect({}).to.throwException!Exception.withMessage.equal("test");
-  } catch(Exception e) {
-    exception = e;
-  }
+  }).recordEvaluation;
 
-  assert(exception !is null, "Expected an exception to be thrown");
-  assert(exception.message.indexOf("should throw exception") != -1, "Message was: " ~ exception.message);
-  assert(exception.message.indexOf("with message equal \"test\"") != -1, "Message was: " ~ exception.message);
-  assert(exception.message.indexOf("No exception was thrown.") != -1, "Message was: " ~ exception.message);
+  expect(evaluation.result.messageString).to.contain("should throw exception");
+  expect(evaluation.result.messageString).to.contain("with message equal test");
+  expect(evaluation.result.messageString).to.contain("No exception was thrown.");
 }
 
-@("does not fail when an exception is not expected and none is caught")
+@("non-throwing not throwException Exception withMessage succeeds")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
-  Exception exception;
-
-  try {
-    expect({}).not.to.throwException!Exception.withMessage.equal("test");
-  } catch(Exception e) {
-    exception = e;
-  }
-
-  assert(exception is null, "Expected no exception but got: " ~ (exception !is null ? exception.message : ""));
+  expect({}).not.to.throwException!Exception.withMessage.equal("test");
 }
 
-@("fails when the caught exception has a different type")
+@("CustomException throwException Exception withMessage reports error with expected and actual")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  Exception exception;
-
-  try {
+  auto evaluation = ({
     expect({
       throw new CustomException("hello");
     }).to.throwException!Exception.withMessage.equal("test");
-  } catch(Exception e) {
-    exception = e;
-  }
+  }).recordEvaluation;
 
-  assert(exception !is null, "Expected an exception to be thrown");
-  assert(exception.message.indexOf("should throw exception") != -1, "Message was: " ~ exception.message);
-  assert(exception.message.indexOf("with message equal \"test\"") != -1, "Message was: " ~ exception.message);
-  assert(exception.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `hello` was thrown.") != -1, "Message was: " ~ exception.message);
+  expect(evaluation.result.messageString).to.contain("should throw exception");
+  expect(evaluation.result.messageString).to.contain("with message equal test");
+  expect(evaluation.result.messageString).to.contain("`fluentasserts.operations.exception.throwable.CustomException` saying `hello` was thrown.");
 }
 
-@("does not fail when a certain exception type is not caught")
+@("CustomException not throwException Exception withMessage succeeds")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
-  Exception exception;
-
-  try {
-    expect({
-      throw new CustomException("hello");
-    }).not.to.throwException!Exception.withMessage.equal("test");
-  } catch(Exception e) {
-    exception = e;
-  }
-
-  assert(exception is null, "Expected no exception but got: " ~ (exception !is null ? exception.message : ""));
+  expect({
+    throw new CustomException("hello");
+  }).not.to.throwException!Exception.withMessage.equal("test");
 }
 
-@("fails when the caught exception has a different message")
+@("CustomException hello throwException CustomException withMessage test reports error with expected and actual")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  Exception exception;
-
-  try {
+  auto evaluation = ({
     expect({
       throw new CustomException("hello");
     }).to.throwException!CustomException.withMessage.equal("test");
-  } catch(Exception e) {
-    exception = e;
-  }
+  }).recordEvaluation;
 
-  assert(exception !is null, "Expected an exception to be thrown");
-  assert(exception.message.indexOf("should throw exception") != -1, "Message was: " ~ exception.message);
-  assert(exception.message.indexOf("with message equal \"test\"") != -1, "Message was: " ~ exception.message);
-  assert(exception.message.indexOf("`fluentasserts.operations.exception.throwable.CustomException` saying `hello` was thrown.") != -1, "Message was: " ~ exception.message);
+  expect(evaluation.result.messageString).to.contain("should throw exception");
+  expect(evaluation.result.messageString).to.contain("with message equal test");
+  expect(evaluation.result.messageString).to.contain("`fluentasserts.operations.exception.throwable.CustomException` saying `hello` was thrown.");
 }
 
-@("does not fail when the caught exception is expected to have a different message")
+@("CustomException hello not throwException CustomException withMessage test succeeds")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
-  Exception exception;
-
-  try {
-    expect({
-      throw new CustomException("hello");
-    }).not.to.throwException!CustomException.withMessage.equal("test");
-  } catch(Exception e) {
-    exception = e;
-  }
-
-  assert(exception is null, "Expected no exception but got: " ~ (exception !is null ? exception.message : ""));
+  expect({
+    throw new CustomException("hello");
+  }).not.to.throwException!CustomException.withMessage.equal("test");
 }
 
 @("throwException allows access to thrown exception via .thrown")

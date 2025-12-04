@@ -106,11 +106,7 @@ struct AssertResult {
 
   /// Adds text to the result, optionally as a value type.
   void add(bool isValue, string text) nothrow {
-    message ~= Message(isValue ? Message.Type.value : Message.Type.info, text
-      .replace("\r", ResultGlyphs.carriageReturn)
-      .replace("\n", ResultGlyphs.newline)
-      .replace("\0", ResultGlyphs.nullChar)
-      .replace("\t", ResultGlyphs.tab));
+    message ~= Message(isValue ? Message.Type.value : Message.Type.info, text);
   }
 
   /// Adds a value to the result.

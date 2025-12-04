@@ -10,6 +10,7 @@ import fluentasserts.core.lifecycle;
 
 version (unittest) {
   import fluent.asserts;
+  import fluentasserts.core.base;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
   import std.conv;
@@ -90,8 +91,8 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.startWith("other");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to start with "other"`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.expected).to.equal(`to start with other`);
+    expect(evaluation.result.actual).to.equal(`test string`);
   }
 
   @(Type.stringof ~ " test string startWith char o reports error with expected and actual")
@@ -102,8 +103,8 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.startWith('o');
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to start with 'o'`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.expected).to.equal(`to start with o`);
+    expect(evaluation.result.actual).to.equal(`test string`);
   }
 
   @(Type.stringof ~ " test string not startWith test reports error with expected and negated")
@@ -114,8 +115,8 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.not.startWith("test");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to start with "test"`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.expected).to.equal(`to start with test`);
+    expect(evaluation.result.actual).to.equal(`test string`);
     expect(evaluation.result.negated).to.equal(true);
   }
 
@@ -127,8 +128,20 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.not.startWith('t');
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to start with 't'`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.expected).to.equal(`to start with t`);
+    expect(evaluation.result.actual).to.equal(`test string`);
     expect(evaluation.result.negated).to.equal(true);
   }
+}
+
+@("lazy string throwing in startWith propagates the exception")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  string someLazyString() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyString.should.startWith(" ");
+  }).should.throwAnyException.withMessage("This is it.");
 }

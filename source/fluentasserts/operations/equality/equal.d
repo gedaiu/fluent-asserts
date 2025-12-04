@@ -8,6 +8,7 @@ import fluentasserts.results.message;
 
 version (unittest) {
   import fluent.asserts;
+  import fluentasserts.core.base;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
   import fluentasserts.results.serializers;
@@ -21,7 +22,7 @@ static immutable equalDescription = "Asserts that the target is strictly == equa
 
 static immutable isEqualTo = Message(Message.Type.info, " is equal to ");
 static immutable isNotEqualTo = Message(Message.Type.info, " is not equal to ");
-static immutable endSentence = Message(Message.Type.info, ". ");
+static immutable endSentence = Message(Message.Type.info, ".");
 
 /// Asserts that the current value is strictly equal to the expected value.
 void equal(ref Evaluation evaluation) @safe nothrow {
@@ -66,12 +67,20 @@ alias StringTypes = AliasSeq!(string, wstring, dstring);
 static foreach (Type; StringTypes) {
   @(Type.stringof ~ " compares two exact strings")
   unittest {
-    expect("test string").to.equal("test string");
+    auto evaluation = ({
+      expect("test string").to.equal("test string");
+    }).recordEvaluation;
+
+    assert(evaluation.result.expected.length == 0, "equal operation should pass for identical strings");
   }
 
   @(Type.stringof ~ " checks if two strings are not equal")
   unittest {
-    expect("test string").to.not.equal("test");
+    auto evaluation = ({
+      expect("test string").to.not.equal("test");
+    }).recordEvaluation;
+
+    assert(evaluation.result.expected.length == 0, "not equal operation should pass for different strings");
   }
 
   @(Type.stringof ~ " test string equal test reports error with expected and actual")
@@ -80,8 +89,8 @@ static foreach (Type; StringTypes) {
       expect("test string").to.equal("test");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`"test"`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
+    assert(evaluation.result.expected == `test`, "expected 'test' but got: " ~ evaluation.result.expected);
+    assert(evaluation.result.actual == `test string`, "expected 'test string' but got: " ~ evaluation.result.actual);
   }
 
   @(Type.stringof ~ " test string not equal test string reports error with expected and negated")
@@ -90,9 +99,9 @@ static foreach (Type; StringTypes) {
       expect("test string").to.not.equal("test string");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`not "test string"`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
-    expect(evaluation.result.negated).to.equal(true);
+    assert(evaluation.result.expected == `not test string`, "expected 'not test string' but got: " ~ evaluation.result.expected);
+    assert(evaluation.result.actual == `test string`, "expected 'test string' but got: " ~ evaluation.result.actual);
+    assert(evaluation.result.negated == true, "expected negated to be true");
   }
 
   @(Type.stringof ~ " string with null chars equal string without null chars reports error with actual containing null chars")
@@ -103,8 +112,8 @@ static foreach (Type; StringTypes) {
       expect(data.assumeUTF.to!Type).to.equal("some data");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`"some data"`);
-    expect(evaluation.result.actual).to.equal("\"some data\0\0\"");
+    assert(evaluation.result.expected == `some data`, "expected 'some data' but got: " ~ evaluation.result.expected);
+    assert(evaluation.result.actual == `some data\0\0`, "expected 'some data\\0\\0' but got: " ~ evaluation.result.actual);
   }
 }
 
@@ -114,14 +123,24 @@ static foreach (Type; NumericTypes) {
   @(Type.stringof ~ " compares two exact values")
   unittest {
     Type testValue = cast(Type) 40;
-    expect(testValue).to.equal(testValue);
+
+    auto evaluation = ({
+      expect(testValue).to.equal(testValue);
+    }).recordEvaluation;
+
+    assert(evaluation.result.expected.length == 0, "equal operation should pass for identical values");
   }
 
   @(Type.stringof ~ " checks if two values are not equal")
   unittest {
     Type testValue = cast(Type) 40;
     Type otherTestValue = cast(Type) 50;
-    expect(testValue).to.not.equal(otherTestValue);
+
+    auto evaluation = ({
+      expect(testValue).to.not.equal(otherTestValue);
+    }).recordEvaluation;
+
+    assert(evaluation.result.expected.length == 0, "not equal operation should pass for different values");
   }
 
   @(Type.stringof ~ " 40 equal 50 reports error with expected and actual")
@@ -133,8 +152,8 @@ static foreach (Type; NumericTypes) {
       expect(testValue).to.equal(otherTestValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(otherTestValue.to!string);
-    expect(evaluation.result.actual).to.equal(testValue.to!string);
+    assert(evaluation.result.expected == otherTestValue.to!string, "expected '" ~ otherTestValue.to!string ~ "' but got: " ~ evaluation.result.expected);
+    assert(evaluation.result.actual == testValue.to!string, "expected '" ~ testValue.to!string ~ "' but got: " ~ evaluation.result.actual);
   }
 
   @(Type.stringof ~ " 40 not equal 40 reports error with expected and negated")
@@ -145,227 +164,375 @@ static foreach (Type; NumericTypes) {
       expect(testValue).to.not.equal(testValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("not " ~ testValue.to!string);
-    expect(evaluation.result.actual).to.equal(testValue.to!string);
-    expect(evaluation.result.negated).to.equal(true);
+    assert(evaluation.result.expected == "not " ~ testValue.to!string, "expected 'not " ~ testValue.to!string ~ "' but got: " ~ evaluation.result.expected);
+    assert(evaluation.result.actual == testValue.to!string, "expected '" ~ testValue.to!string ~ "' but got: " ~ evaluation.result.actual);
+    assert(evaluation.result.negated == true, "expected negated to be true");
   }
 }
 
 @("booleans compares two true values")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(true).to.equal(true);
+  auto evaluation = ({
+    expect(true).to.equal(true);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "equal operation should pass for true == true");
 }
 
 @("booleans compares two false values")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(false).to.equal(false);
+  auto evaluation = ({
+    expect(false).to.equal(false);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "equal operation should pass for false == false");
 }
 
-@("booleans compares that two bools are not equal")
+@("booleans true not equal false passes")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(true).to.not.equal(false);
-  expect(false).to.not.equal(true);
+  auto evaluation = ({
+    expect(true).to.not.equal(false);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "not equal operation should pass for true != false");
+}
+
+@("booleans false not equal true passes")
+unittest {
+  auto evaluation = ({
+    expect(false).to.not.equal(true);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "not equal operation should pass for false != true");
 }
 
 @("true equal false reports error with expected false and actual true")
 unittest {
-  mixin(enableEvaluationRecording);
+  auto evaluation = ({
+    expect(true).to.equal(false);
+  }).recordEvaluation;
 
-  expect(true).to.equal(false);
-
-  auto evaluation = Lifecycle.instance.lastEvaluation;
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal("false");
-  expect(evaluation.result.actual).to.equal("true");
+  assert(evaluation.result.expected == "false", "expected 'false' but got: " ~ evaluation.result.expected);
+  assert(evaluation.result.actual == "true", "expected 'true' but got: " ~ evaluation.result.actual);
 }
 
 @("durations compares two equal values")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(2.seconds).to.equal(2.seconds);
+  auto evaluation = ({
+    expect(2.seconds).to.equal(2.seconds);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "equal operation should pass for identical durations");
 }
 
-@("durations compares that two durations are not equal")
+@("durations 2 seconds not equal 3 seconds passes")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(2.seconds).to.not.equal(3.seconds);
-  expect(3.seconds).to.not.equal(2.seconds);
+  auto evaluation = ({
+    expect(2.seconds).to.not.equal(3.seconds);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "not equal operation should pass for 2s != 3s");
+}
+
+@("durations 3 seconds not equal 2 seconds passes")
+unittest {
+  auto evaluation = ({
+    expect(3.seconds).to.not.equal(2.seconds);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "not equal operation should pass for 3s != 2s");
 }
 
 @("3 seconds equal 2 seconds reports error with expected and actual")
 unittest {
-  mixin(enableEvaluationRecording);
+  auto evaluation = ({
+    expect(3.seconds).to.equal(2.seconds);
+  }).recordEvaluation;
 
-  expect(3.seconds).to.equal(2.seconds);
-
-  auto evaluation = Lifecycle.instance.lastEvaluation;
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal("2000000000");
-  expect(evaluation.result.actual).to.equal("3000000000");
+  assert(evaluation.result.expected == "2000000000", "expected '2000000000' but got: " ~ evaluation.result.expected);
+  assert(evaluation.result.actual == "3000000000", "expected '3000000000' but got: " ~ evaluation.result.actual);
 }
 
 @("objects without custom opEquals compares two exact values")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   Object testValue = new Object();
-  expect(testValue).to.equal(testValue);
+
+  auto evaluation = ({
+    expect(testValue).to.equal(testValue);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "equal operation should pass for same object reference");
 }
 
 @("objects without custom opEquals checks if two values are not equal")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   Object testValue = new Object();
   Object otherTestValue = new Object();
-  expect(testValue).to.not.equal(otherTestValue);
+
+  auto evaluation = ({
+    expect(testValue).to.not.equal(otherTestValue);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "not equal operation should pass for different objects");
 }
 
 @("object equal different object reports error with expected and actual")
 unittest {
-  mixin(enableEvaluationRecording);
-
   Object testValue = new Object();
   Object otherTestValue = new Object();
   string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
   string niceOtherTestValue = SerializerRegistry.instance.niceValue(otherTestValue);
 
-  expect(testValue).to.equal(otherTestValue);
+  auto evaluation = ({
+    expect(testValue).to.equal(otherTestValue);
+  }).recordEvaluation;
 
-  auto evaluation = Lifecycle.instance.lastEvaluation;
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal(niceOtherTestValue);
-  expect(evaluation.result.actual).to.equal(niceTestValue);
+  assert(evaluation.result.expected == niceOtherTestValue, "expected '" ~ niceOtherTestValue ~ "' but got: " ~ evaluation.result.expected);
+  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
 }
 
 @("object not equal itself reports error with expected and negated")
 unittest {
-  mixin(enableEvaluationRecording);
-
   Object testValue = new Object();
   string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
 
-  expect(testValue).to.not.equal(testValue);
+  auto evaluation = ({
+    expect(testValue).to.not.equal(testValue);
+  }).recordEvaluation;
 
-  auto evaluation = Lifecycle.instance.lastEvaluation;
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal("not " ~ niceTestValue);
-  expect(evaluation.result.actual).to.equal(niceTestValue);
-  expect(evaluation.result.negated).to.equal(true);
+  assert(evaluation.result.expected == "not " ~ niceTestValue, "expected 'not " ~ niceTestValue ~ "' but got: " ~ evaluation.result.expected);
+  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.negated == true, "expected negated to be true");
 }
 
 @("objects with custom opEquals compares two exact values")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   auto testValue = new EqualThing(1);
-  expect(testValue).to.equal(testValue);
+
+  auto evaluation = ({
+    expect(testValue).to.equal(testValue);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "equal operation should pass for same object reference");
 }
 
 @("objects with custom opEquals compares two objects with same fields")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   auto testValue = new EqualThing(1);
   auto sameTestValue = new EqualThing(1);
-  expect(testValue).to.equal(sameTestValue);
-  expect(testValue).to.equal(cast(Object) sameTestValue);
+
+  auto evaluation = ({
+    expect(testValue).to.equal(sameTestValue);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "equal operation should pass for objects with same fields");
+}
+
+@("objects with custom opEquals compares object cast to Object with same fields")
+unittest {
+  auto testValue = new EqualThing(1);
+  auto sameTestValue = new EqualThing(1);
+
+  auto evaluation = ({
+    expect(testValue).to.equal(cast(Object) sameTestValue);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "equal operation should pass for objects with same fields cast to Object");
 }
 
 @("objects with custom opEquals checks if two values are not equal")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   auto testValue = new EqualThing(1);
   auto otherTestValue = new EqualThing(2);
-  expect(testValue).to.not.equal(otherTestValue);
+
+  auto evaluation = ({
+    expect(testValue).to.not.equal(otherTestValue);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "not equal operation should pass for objects with different fields");
 }
 
 @("EqualThing(1) equal EqualThing(2) reports error with expected and actual")
 unittest {
-  mixin(enableEvaluationRecording);
-
   auto testValue = new EqualThing(1);
   auto otherTestValue = new EqualThing(2);
   string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
   string niceOtherTestValue = SerializerRegistry.instance.niceValue(otherTestValue);
 
-  expect(testValue).to.equal(otherTestValue);
+  auto evaluation = ({
+    expect(testValue).to.equal(otherTestValue);
+  }).recordEvaluation;
 
-  auto evaluation = Lifecycle.instance.lastEvaluation;
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal(niceOtherTestValue);
-  expect(evaluation.result.actual).to.equal(niceTestValue);
+  assert(evaluation.result.expected == niceOtherTestValue, "expected '" ~ niceOtherTestValue ~ "' but got: " ~ evaluation.result.expected);
+  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
 }
 
 @("EqualThing(1) not equal itself reports error with expected and negated")
 unittest {
-  mixin(enableEvaluationRecording);
-
   auto testValue = new EqualThing(1);
   string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
 
-  expect(testValue).to.not.equal(testValue);
+  auto evaluation = ({
+    expect(testValue).to.not.equal(testValue);
+  }).recordEvaluation;
 
-  auto evaluation = Lifecycle.instance.lastEvaluation;
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal("not " ~ niceTestValue);
-  expect(evaluation.result.actual).to.equal(niceTestValue);
-  expect(evaluation.result.negated).to.equal(true);
+  assert(evaluation.result.expected == "not " ~ niceTestValue, "expected 'not " ~ niceTestValue ~ "' but got: " ~ evaluation.result.expected);
+  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.negated == true, "expected negated to be true");
 }
 
 @("assoc arrays compares two exact values")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   string[string] testValue = ["b": "2", "a": "1", "c": "3"];
-  expect(testValue).to.equal(testValue);
+
+  auto evaluation = ({
+    expect(testValue).to.equal(testValue);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "equal operation should pass for same assoc array reference");
 }
 
 @("assoc arrays compares two objects with same fields")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   string[string] testValue = ["b": "2", "a": "1", "c": "3"];
   string[string] sameTestValue = ["a": "1", "b": "2", "c": "3"];
-  expect(testValue).to.equal(sameTestValue);
+
+  auto evaluation = ({
+    expect(testValue).to.equal(sameTestValue);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "equal operation should pass for assoc arrays with same content");
 }
 
 @("assoc arrays checks if two values are not equal")
 unittest {
-  Lifecycle.instance.disableFailureHandling = false;
   string[string] testValue = ["b": "2", "a": "1", "c": "3"];
   string[string] otherTestValue = ["a": "3", "b": "2", "c": "1"];
-  expect(testValue).to.not.equal(otherTestValue);
+
+  auto evaluation = ({
+    expect(testValue).to.not.equal(otherTestValue);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "not equal operation should pass for assoc arrays with different content");
 }
 
 @("assoc array equal different assoc array reports error with expected and actual")
 unittest {
-  mixin(enableEvaluationRecording);
-
   string[string] testValue = ["b": "2", "a": "1", "c": "3"];
   string[string] otherTestValue = ["a": "3", "b": "2", "c": "1"];
   string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
   string niceOtherTestValue = SerializerRegistry.instance.niceValue(otherTestValue);
 
-  expect(testValue).to.equal(otherTestValue);
+  auto evaluation = ({
+    expect(testValue).to.equal(otherTestValue);
+  }).recordEvaluation;
 
-  auto evaluation = Lifecycle.instance.lastEvaluation;
-  Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal(niceOtherTestValue);
-  expect(evaluation.result.actual).to.equal(niceTestValue);
+  assert(evaluation.result.expected == niceOtherTestValue, "expected '" ~ niceOtherTestValue ~ "' but got: " ~ evaluation.result.expected);
+  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
 }
 
 @("assoc array not equal itself reports error with expected and negated")
 unittest {
-  mixin(enableEvaluationRecording);
-
   string[string] testValue = ["b": "2", "a": "1", "c": "3"];
   string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
 
-  expect(testValue).to.not.equal(testValue);
+  auto evaluation = ({
+    expect(testValue).to.not.equal(testValue);
+  }).recordEvaluation;
 
-  auto evaluation = Lifecycle.instance.lastEvaluation;
+  assert(evaluation.result.expected == "not " ~ niceTestValue, "expected 'not " ~ niceTestValue ~ "' but got: " ~ evaluation.result.expected);
+  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.negated == true, "expected negated to be true");
+}
+
+@("lazy number throwing in equal propagates the exception")
+unittest {
   Lifecycle.instance.disableFailureHandling = false;
-  expect(evaluation.result.expected).to.equal("not " ~ niceTestValue);
-  expect(evaluation.result.actual).to.equal(niceTestValue);
-  expect(evaluation.result.negated).to.equal(true);
+  int someLazyInt() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyInt.should.equal(3);
+  }).should.throwAnyException.withMessage("This is it.");
+}
+
+@("const int equal int succeeds")
+unittest {
+  const actual = 42;
+  actual.should.equal(42);
+}
+
+@("lazy string throwing in equal propagates the exception")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  string someLazyString() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyString.should.equal("");
+  }).should.throwAnyException.withMessage("This is it.");
+}
+
+@("const string equal string succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const string constValue = "test string";
+  constValue.should.equal("test string");
+}
+
+@("immutable string equal string succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable string immutableValue = "test string";
+  immutableValue.should.equal("test string");
+}
+
+@("string equal const string succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const string constValue = "test string";
+  "test string".should.equal(constValue);
+}
+
+@("string equal immutable string succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable string immutableValue = "test string";
+  "test string".should.equal(immutableValue);
+}
+
+@("lazy object throwing in equal propagates the exception")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  Object someLazyObject() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyObject.should.equal(new Object);
+  }).should.throwAnyException.withMessage("This is it.");
+}
+
+@("null object equals new object reports message starts with equal")
+unittest {
+  Object nullObject;
+
+  auto evaluation = ({
+    nullObject.should.equal(new Object);
+  }).recordEvaluation;
+
+  evaluation.result.messageString.should.startWith("nullObject should equal Object(");
+}
+
+@("new object equals null reports message starts with equal null")
+unittest {
+  auto evaluation = ({
+    (new Object).should.equal(null);
+  }).recordEvaluation;
+
+  evaluation.result.messageString.should.equal("(new Object) should equal null.");
 }
 
 version (unittest):

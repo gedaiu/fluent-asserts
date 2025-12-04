@@ -7,11 +7,6 @@ public import fluentasserts.core.lifecycle;
 public import fluentasserts.core.expect;
 public import fluentasserts.core.evaluation;
 
-public import fluentasserts.assertions.array;
-public import fluentasserts.assertions.basetype;
-public import fluentasserts.assertions.objects;
-public import fluentasserts.assertions.string;
-
 public import fluentasserts.results.message;
 public import fluentasserts.results.printer;
 public import fluentasserts.results.asserts : AssertResult;
@@ -72,7 +67,7 @@ unittest {
     true.should.equal(false).because("of test reasons");
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.startWith("Because of test reasons, true should equal false.");
+  evaluation.result.messageString.should.equal("Because of test reasons, true should equal false.");
 }
 
 /// Provides a traditional assertion API as an alternative to fluent syntax.

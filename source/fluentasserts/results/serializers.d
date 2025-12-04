@@ -79,7 +79,7 @@ class SerializerRegistry {
   string serialize(T: V[K], V, K)(T value) {
     auto keys = value.byKey.array.sort;
 
-    return "[" ~ keys.map!(a => serialize(a) ~ ":" ~ serialize(value[a])).joiner(", ").array.to!string ~ "]";
+    return "[" ~ keys.map!(a => `"` ~ serialize(a) ~ `":` ~ serialize(value[a])).joiner(", ").array.to!string ~ "]";
   }
 
   /// Serializes an aggregate type (class, struct, interface) to a string.
@@ -141,11 +141,12 @@ class SerializerRegistry {
 
   /// Serializes a primitive type (string, char, number) to a string.
   /// Strings are quoted with double quotes, chars with single quotes.
+  /// Special characters are replaced with their visual representations.
   string serialize(T)(T value) if(!is(T == enum) && (isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T))) {
     static if(isSomeString!T) {
-      return `"` ~ value.to!string ~ `"`;
+      return replaceSpecialChars(value.to!string);
     } else static if(isSomeChar!T) {
-      return `'` ~ value.to!string ~ `'`;
+      return replaceSpecialChars(value.to!string);
     } else {
       return value.to!string;
     }
@@ -173,6 +174,146 @@ class SerializerRegistry {
       return serialize(value);
     }
   }
+}
+
+/// Replaces ASCII control characters and trailing spaces with visual representations from ResultGlyphs.
+/// Params:
+///   value = The string to process
+/// Returns: A new string with control characters and trailing spaces replaced by glyphs.
+string replaceSpecialChars(string value) @safe nothrow {
+  import fluentasserts.results.message : ResultGlyphs;
+
+  size_t trailingSpaceStart = value.length;
+  foreach_reverse (i, c; value) {
+    if (c != ' ') {
+      trailingSpaceStart = i + 1;
+      break;
+    }
+  }
+  if (value.length > 0 && value[0] == ' ' && trailingSpaceStart == value.length) {
+    trailingSpaceStart = 0;
+  }
+
+  auto result = appender!string;
+  result.reserve(value.length);
+
+  foreach (i, c; value) {
+    if (c < 32 || c == 127) {
+      switch (c) {
+        case '\0': result ~= ResultGlyphs.nullChar; break;
+        case '\a': result ~= ResultGlyphs.bell; break;
+        case '\b': result ~= ResultGlyphs.backspace; break;
+        case '\t': result ~= ResultGlyphs.tab; break;
+        case '\n': result ~= ResultGlyphs.newline; break;
+        case '\v': result ~= ResultGlyphs.verticalTab; break;
+        case '\f': result ~= ResultGlyphs.formFeed; break;
+        case '\r': result ~= ResultGlyphs.carriageReturn; break;
+        case 27:   result ~= ResultGlyphs.escape; break;
+        default:   result ~= toHex(cast(ubyte) c); break;
+      }
+    } else if (c == ' ' && i >= trailingSpaceStart) {
+      result ~= ResultGlyphs.space;
+    } else {
+      result ~= c;
+    }
+  }
+
+  return result.data;
+}
+
+/// Converts a byte to a hex escape sequence like `\x1F`.
+private string toHex(ubyte b) pure @safe nothrow {
+  immutable hexDigits = "0123456789ABCDEF";
+  char[4] buf = ['\\', 'x', hexDigits[b >> 4], hexDigits[b & 0xF]];
+  return buf[].idup;
+}
+
+@("replaceSpecialChars replaces null character")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  auto result = replaceSpecialChars("hello\0world");
+  result.should.equal("hello\\0world");
+}
+
+@("replaceSpecialChars replaces tab character")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  auto result = replaceSpecialChars("hello\tworld");
+  result.should.equal("hello\\tworld");
+}
+
+@("replaceSpecialChars replaces newline character")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  auto result = replaceSpecialChars("hello\nworld");
+  result.should.equal("hello\\nworld");
+}
+
+@("replaceSpecialChars replaces carriage return character")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  auto result = replaceSpecialChars("hello\rworld");
+  result.should.equal("hello\\rworld");
+}
+
+@("replaceSpecialChars replaces trailing spaces")
+unittest {
+  import fluentasserts.results.message : ResultGlyphs;
+
+  Lifecycle.instance.disableFailureHandling = false;
+  auto savedSpace = ResultGlyphs.space;
+  scope(exit) ResultGlyphs.space = savedSpace;
+  ResultGlyphs.space = "\u00B7";
+
+  auto result = replaceSpecialChars("hello   ");
+  result.should.equal("hello\u00B7\u00B7\u00B7");
+}
+
+@("replaceSpecialChars preserves internal spaces")
+unittest {
+  import fluentasserts.results.message : ResultGlyphs;
+
+  Lifecycle.instance.disableFailureHandling = false;
+  auto savedSpace = ResultGlyphs.space;
+  scope(exit) ResultGlyphs.space = savedSpace;
+  ResultGlyphs.space = "\u00B7";
+
+  auto result = replaceSpecialChars("hello world");
+  result.should.equal("hello world");
+}
+
+@("replaceSpecialChars replaces all spaces when string is only spaces")
+unittest {
+  import fluentasserts.results.message : ResultGlyphs;
+
+  Lifecycle.instance.disableFailureHandling = false;
+  auto savedSpace = ResultGlyphs.space;
+  scope(exit) ResultGlyphs.space = savedSpace;
+  ResultGlyphs.space = "\u00B7";
+
+  auto result = replaceSpecialChars("   ");
+  result.should.equal("\u00B7\u00B7\u00B7");
+}
+
+@("replaceSpecialChars handles empty string")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  auto result = replaceSpecialChars("");
+  result.should.equal("");
+}
+
+@("replaceSpecialChars replaces unknown control character with hex")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  auto result = replaceSpecialChars("hello\x01world");
+  result.should.equal("hello\\x01world");
+}
+
+@("replaceSpecialChars replaces DEL character with hex")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  auto result = replaceSpecialChars("hello\x7Fworld");
+  result.should.equal("hello\\x7Fworld");
 }
 
 @("overrides the default struct serializer")
@@ -297,9 +438,9 @@ unittest {
   const char cch = 'a';
   immutable char ich = 'a';
 
-  SerializerRegistry.instance.serialize(ch).should.equal("'a'");
-  SerializerRegistry.instance.serialize(cch).should.equal("'a'");
-  SerializerRegistry.instance.serialize(ich).should.equal("'a'");
+  SerializerRegistry.instance.serialize(ch).should.equal("a");
+  SerializerRegistry.instance.serialize(cch).should.equal("a");
+  SerializerRegistry.instance.serialize(ich).should.equal("a");
 }
 
 @("serializes a SysTime")
@@ -321,9 +462,9 @@ unittest {
   const string cstr = "aaa";
   immutable string istr = "aaa";
 
-  SerializerRegistry.instance.serialize(str).should.equal(`"aaa"`);
-  SerializerRegistry.instance.serialize(cstr).should.equal(`"aaa"`);
-  SerializerRegistry.instance.serialize(istr).should.equal(`"aaa"`);
+  SerializerRegistry.instance.serialize(str).should.equal(`aaa`);
+  SerializerRegistry.instance.serialize(cstr).should.equal(`aaa`);
+  SerializerRegistry.instance.serialize(istr).should.equal(`aaa`);
 }
 
 @("serializes an int")
@@ -397,9 +538,9 @@ unittest {
   const TestType cvalue = TestType.a;
   immutable TestType ivalue = TestType.a;
 
-  SerializerRegistry.instance.serialize(value).should.equal(`"a"`);
-  SerializerRegistry.instance.serialize(cvalue).should.equal(`"a"`);
-  SerializerRegistry.instance.serialize(ivalue).should.equal(`"a"`);
+  SerializerRegistry.instance.serialize(value).should.equal(`a`);
+  SerializerRegistry.instance.serialize(cvalue).should.equal(`a`);
+  SerializerRegistry.instance.serialize(ivalue).should.equal(`a`);
 }
 
 version(unittest) { struct TestStruct { int a; string b; }; }

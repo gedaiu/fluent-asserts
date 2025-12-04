@@ -8,7 +8,7 @@ import std.algorithm;
 
 version(unittest) {
   import fluent.asserts;
-  import fluentasserts.core.base : should, TestException;
+  import fluentasserts.core.base;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
 }
@@ -29,7 +29,7 @@ void beNull(ref Evaluation evaluation) @safe nothrow {
     return;
   }
 
-  evaluation.result.expected = "null";
+  evaluation.result.expected = evaluation.isNegated ? "not null" : "null";
   evaluation.result.actual = evaluation.currentValue.typeNames.length ? evaluation.currentValue.typeNames[0] : "unknown";
   evaluation.result.negated = evaluation.isNegated;
 }
@@ -64,6 +64,53 @@ unittest {
     action.should.not.beNull;
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("null");
+  expect(evaluation.result.expected).to.equal("not null");
   expect(evaluation.result.negated).to.equal(true);
+}
+
+@("lazy object throwing in beNull propagates the exception")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  Object someLazyObject() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyObject.should.not.beNull;
+  }).should.throwAnyException.withMessage("This is it.");
+}
+
+@("null object beNull succeeds")
+unittest {
+  Object o = null;
+  o.should.beNull;
+}
+
+@("new object not beNull succeeds")
+unittest {
+  (new Object).should.not.beNull;
+}
+
+@("null object not beNull reports expected not null")
+unittest {
+  Object o = null;
+
+  auto evaluation = ({
+    o.should.not.beNull;
+  }).recordEvaluation;
+
+  evaluation.result.messageString.should.equal("o should not be null.");
+  evaluation.result.expected.should.equal("not null");
+  evaluation.result.actual.should.equal("object.Object");
+}
+
+@("new object beNull reports expected null")
+unittest {
+  auto evaluation = ({
+    (new Object).should.beNull;
+  }).recordEvaluation;
+
+  evaluation.result.messageString.should.equal("(new Object) should be null.");
+  evaluation.result.expected.should.equal("null");
+  evaluation.result.actual.should.equal("object.Object");
 }

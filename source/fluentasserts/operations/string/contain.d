@@ -2,9 +2,10 @@ module fluentasserts.operations.string.contain;
 
 import std.algorithm;
 import std.array;
+import std.exception : assumeWontThrow;
 import std.conv;
 
-import fluentasserts.assertions.array;
+import fluentasserts.core.listcomparison;
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation;
 import fluentasserts.results.serializers;
@@ -13,8 +14,10 @@ import fluentasserts.core.lifecycle;
 
 version(unittest) {
   import fluent.asserts;
+  import fluentasserts.core.base;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
+  import std.algorithm : map;
   import std.string;
 }
 
@@ -37,41 +40,37 @@ void contain(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.expected = createResultMessage(evaluation.expectedValue, expectedPieces);
       evaluation.result.actual = testData;
     }
-  } else {
-    auto presentValues = expectedPieces.filter!(a => testData.canFind(a)).array;
 
-    if(presentValues.length > 0) {
-      string message = "to contain ";
+    return;
+  }
 
-      if(presentValues.length > 1) {
-        message ~= "any ";
-      }
+  auto presentValues = expectedPieces.filter!(a => testData.canFind(a)).array;
 
-      message ~= evaluation.expectedValue.strValue;
+  if(presentValues.length > 0) {
+    string message = "to contain ";
 
-      evaluation.result.addText(" ");
-
-      if(presentValues.length == 1) {
-        try evaluation.result.addValue(presentValues[0]); catch(Exception e) {
-          evaluation.result.addText(" some value ");
-        }
-
-        evaluation.result.addText(" is present in ");
-      } else {
-        try evaluation.result.addValue(presentValues.to!string); catch(Exception e) {
-          evaluation.result.addText(" some values ");
-        }
-
-        evaluation.result.addText(" are present in ");
-      }
-
-      evaluation.result.addValue(evaluation.currentValue.strValue);
-      evaluation.result.addText(".");
-
-      evaluation.result.expected = message;
-      evaluation.result.actual = testData;
-      evaluation.result.negated = true;
+    if(presentValues.length > 1) {
+      message ~= "any ";
     }
+
+    message ~= evaluation.expectedValue.strValue;
+
+    evaluation.result.addText(" ");
+
+    if(presentValues.length == 1) {
+      evaluation.result.addValue(presentValues[0]);
+      evaluation.result.addText(" is present in ");
+    } else {
+      evaluation.result.addValue(presentValues.to!string.assumeWontThrow);
+      evaluation.result.addText(" are present in ");
+    }
+
+    evaluation.result.addValue(evaluation.currentValue.strValue);
+    evaluation.result.addText(".");
+
+    evaluation.result.expected = "not " ~ message;
+    evaluation.result.actual = testData;
+    evaluation.result.negated = true;
   }
 }
 
@@ -97,7 +96,7 @@ unittest {
     expect("hello world").to.contain("foo");
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal(`to contain "foo"`);
+  expect(evaluation.result.expected).to.equal(`to contain foo`);
   expect(evaluation.result.actual).to.equal("hello world");
 }
 
@@ -107,7 +106,7 @@ unittest {
     expect("hello world").to.not.contain("world");
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal(`to contain "world"`);
+  expect(evaluation.result.expected).to.equal(`not to contain world`);
   expect(evaluation.result.actual).to.equal("hello world");
   expect(evaluation.result.negated).to.equal(true);
 }
@@ -185,19 +184,9 @@ void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
 
   auto comparison = ListComparison!EquableValue(testData, expectedPieces);
 
-  EquableValue[] missing;
-  EquableValue[] extra;
-  EquableValue[] common;
-
-  try {
-    missing = comparison.missing;
-    extra = comparison.extra;
-    common = comparison.common;
-  } catch(Exception e) {
-    evaluation.result.expected = "valid comparison";
-    evaluation.result.actual = "exception during comparison";
-    return;
-  }
+  auto missing = comparison.missing;
+  auto extra = comparison.extra;
+  auto common = comparison.common;
 
   if(!evaluation.isNegated) {
     auto isSuccess = missing.length == 0 && extra.length == 0 && common.length == testData.length;
@@ -205,20 +194,12 @@ void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
     if(!isSuccess) {
       evaluation.result.actual = testData.niceJoin(evaluation.currentValue.typeName);
 
-      if(extra.length > 0) {
-        try {
-          foreach(e; extra) {
-            evaluation.result.extra ~= e.getSerialized.cleanString;
-          }
-        } catch(Exception) {}
+      foreach(e; extra) {
+        evaluation.result.extra ~= e.getSerialized.cleanString;
       }
 
-      if(missing.length > 0) {
-        try {
-          foreach(m; missing) {
-            evaluation.result.missing ~= m.getSerialized.cleanString;
-          }
-        } catch(Exception) {}
+      foreach(m; missing) {
+        evaluation.result.missing ~= m.getSerialized.cleanString;
       }
     }
   } else {
@@ -271,18 +252,10 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
   evaluation.result.addText(" ");
 
   if(missingValues.length == 1) {
-    try evaluation.result.addValue(missingValues[0]); catch(Exception) {
-      evaluation.result.addText(" some value ");
-    }
-
+    evaluation.result.addValue(missingValues[0]);
     evaluation.result.addText(" is missing from ");
   } else {
-    try {
-      evaluation.result.addValue(missingValues.niceJoin(evaluation.currentValue.typeName));
-    } catch(Exception) {
-      evaluation.result.addText(" some values ");
-    }
-
+    evaluation.result.addValue(missingValues.niceJoin(evaluation.currentValue.typeName));
     evaluation.result.addText(" are missing from ");
   }
 
@@ -302,17 +275,10 @@ void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValue
   evaluation.result.addText(" ");
 
   if(presentValues.length == 1) {
-    try evaluation.result.addValue(presentValues[0]); catch(Exception e) {
-      evaluation.result.addText(" some value ");
-    }
-
+    evaluation.result.addValue(presentValues[0]);
     evaluation.result.addText(" is present in ");
   } else {
-    try evaluation.result.addValue(presentValues.niceJoin(evaluation.currentValue.typeName));
-    catch(Exception e) {
-      evaluation.result.addText(" some values ");
-    }
-
+    evaluation.result.addValue(presentValues.niceJoin(evaluation.currentValue.typeName));
     evaluation.result.addText(" are present in ");
   }
 
@@ -365,20 +331,269 @@ string createNegatedResultMessage(ValueEvaluation expectedValue, EquableValue[] 
   return createNegatedResultMessage(expectedValue, missing);
 }
 
-string niceJoin(string[] values, string typeName = "") @safe nothrow {
-  string result = "";
+string niceJoin(string[] values, string typeName = "") @trusted nothrow {
+  string result = values.to!string.assumeWontThrow;
 
-  try {
-    result = values.to!string;
-
-    if(!typeName.canFind("string")) {
-      result = result.replace(`"`, "");
-    }
-  } catch(Exception) {}
+  if(!typeName.canFind("string")) {
+    result = result.replace(`"`, "");
+  }
 
   return result;
 }
 
 string niceJoin(EquableValue[] values, string typeName = "") @safe nothrow {
   return values.map!(a => a.getSerialized.cleanString).array.niceJoin(typeName);
+}
+
+@("range contain array succeeds")
+unittest {
+  [1, 2, 3].map!"a".should.contain([2, 1]);
+}
+
+@("range not contain missing array succeeds")
+unittest {
+  [1, 2, 3].map!"a".should.not.contain([4, 5, 6, 7]);
+}
+
+@("range contain element succeeds")
+unittest {
+  [1, 2, 3].map!"a".should.contain(1);
+}
+
+@("range contain missing array reports missing elements")
+unittest {
+  auto evaluation = ({
+    [1, 2, 3].map!"a".should.contain([4, 5]);
+  }).recordEvaluation;
+
+  evaluation.result.messageString.should.equal(`[1, 2, 3].map!"a" should contain [4, 5]. [4, 5] are missing from [1, 2, 3].`);
+}
+
+@("range not contain present array reports present elements")
+unittest {
+  auto evaluation = ({
+    [1, 2, 3].map!"a".should.not.contain([1, 2]);
+  }).recordEvaluation;
+
+  evaluation.result.messageString.should.equal(`[1, 2, 3].map!"a" should not contain [1, 2]. [1, 2] are present in [1, 2, 3].`);
+}
+
+@("range contain missing element reports missing element")
+unittest {
+  auto evaluation = ({
+    [1, 2, 3].map!"a".should.contain(4);
+  }).recordEvaluation;
+
+  evaluation.result.messageString.should.equal(`[1, 2, 3].map!"a" should contain 4. 4 is missing from [1, 2, 3].`);
+}
+
+@("const range contain array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const(int)[] data = [1, 2, 3];
+  data.map!"a".should.contain([2, 1]);
+}
+
+@("const range contain const range succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const(int)[] data = [1, 2, 3];
+  data.map!"a".should.contain(data);
+}
+
+@("array contain const array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const(int)[] data = [1, 2, 3];
+  [1, 2, 3].should.contain(data);
+}
+
+@("const range not contain transformed data succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const(int)[] data = [1, 2, 3];
+
+  ({
+    data.map!"a * 4".should.not.contain(data);
+  }).should.not.throwAnyException;
+}
+
+@("immutable range contain array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable(int)[] data = [1, 2, 3];
+  data.map!"a".should.contain([2, 1]);
+}
+
+@("immutable range contain immutable range succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable(int)[] data = [1, 2, 3];
+  data.map!"a".should.contain(data);
+}
+
+@("array contain immutable array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable(int)[] data = [1, 2, 3];
+  [1, 2, 3].should.contain(data);
+}
+
+@("immutable range not contain transformed data succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable(int)[] data = [1, 2, 3];
+
+  ({
+    data.map!"a * 4".should.not.contain(data);
+  }).should.not.throwAnyException;
+}
+
+@("empty array containOnly empty array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  int[] list;
+  list.should.containOnly([]);
+}
+
+@("const range containOnly reordered array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const(int)[] data = [1, 2, 3];
+  data.map!"a".should.containOnly([3, 2, 1]);
+}
+
+@("const range containOnly const range succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const(int)[] data = [1, 2, 3];
+  data.map!"a".should.containOnly(data);
+}
+
+@("array containOnly const array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const(int)[] data = [1, 2, 3];
+  [1, 2, 3].should.containOnly(data);
+}
+
+@("const range not containOnly transformed data succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  const(int)[] data = [1, 2, 3];
+
+  ({
+    data.map!"a * 4".should.not.containOnly(data);
+  }).should.not.throwAnyException;
+}
+
+@("immutable range containOnly reordered array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable(int)[] data = [1, 2, 3];
+  data.map!"a".should.containOnly([2, 1, 3]);
+}
+
+@("immutable range containOnly immutable range succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable(int)[] data = [1, 2, 3];
+  data.map!"a".should.containOnly(data);
+}
+
+@("array containOnly immutable array succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable(int)[] data = [1, 2, 3];
+  [1, 2, 3].should.containOnly(data);
+}
+
+@("immutable range not containOnly transformed data succeeds")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  immutable(int)[] data = [1, 2, 3];
+
+  ({
+    data.map!"a * 4".should.not.containOnly(data);
+  }).should.not.throwAnyException;
+}
+
+@("custom range contain array succeeds")
+unittest {
+  struct Range {
+    int n;
+    int front() {
+      return n;
+    }
+    void popFront() {
+      ++n;
+    }
+    bool empty() {
+      return n == 3;
+    }
+  }
+
+  Range().should.contain([0,1]);
+}
+
+@("custom range contain element succeeds")
+unittest {
+  struct Range {
+    int n;
+    int front() {
+      return n;
+    }
+    void popFront() {
+      ++n;
+    }
+    bool empty() {
+      return n == 3;
+    }
+  }
+
+  Range().should.contain(0);
+}
+
+@("custom range contain missing element reports missing")
+unittest {
+  struct Range {
+    int n;
+    int front() {
+      return n;
+    }
+    void popFront() {
+      ++n;
+    }
+    bool empty() {
+      return n == 3;
+    }
+  }
+
+  auto evaluation = ({
+    Range().should.contain([2, 3]);
+  }).recordEvaluation;
+
+  evaluation.result.messageString.should.equal("Range() should contain [2, 3]. 3 is missing from [0, 1, 2].");
+}
+
+@("custom range contain missing single element reports missing")
+unittest {
+  struct Range {
+    int n;
+    int front() {
+      return n;
+    }
+    void popFront() {
+      ++n;
+    }
+    bool empty() {
+      return n == 3;
+    }
+  }
+
+  auto evaluation = ({
+    Range().should.contain(3);
+  }).recordEvaluation;
+
+  evaluation.result.messageString.should.equal("Range() should contain 3. 3 is missing from [0, 1, 2].");
 }

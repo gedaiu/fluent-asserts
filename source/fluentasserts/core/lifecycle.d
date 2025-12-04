@@ -258,10 +258,6 @@ Evaluation recordEvaluation(void delegate() assertion) @trusted {
       return;
     }
 
-    if(keepLastEvaluation) {
-      lastEvaluation = evaluation;
-    }
-
     evaluation.isEvaluated = true;
 
     if(GC.inFinalizer) {
@@ -269,6 +265,10 @@ Evaluation recordEvaluation(void delegate() assertion) @trusted {
     }
 
     Registry.instance.handle(evaluation);
+
+    if(keepLastEvaluation) {
+      lastEvaluation = evaluation;
+    }
 
     if(evaluation.currentValue.throwable !is null || evaluation.expectedValue.throwable !is null) {
       this.handleFailure(evaluation);

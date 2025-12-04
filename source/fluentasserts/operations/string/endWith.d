@@ -10,6 +10,7 @@ import fluentasserts.core.lifecycle;
 
 version (unittest) {
   import fluent.asserts;
+  import fluentasserts.core.base;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
   import std.conv;
@@ -103,8 +104,8 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.endWith("other");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to end with "other"`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.expected).to.equal(`to end with other`);
+    expect(evaluation.result.actual).to.equal(`test string`);
   }
 
   @(Type.stringof ~ " test string endWith char o reports error with expected and actual")
@@ -115,8 +116,8 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.endWith('o');
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to end with 'o'`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.expected).to.equal(`to end with o`);
+    expect(evaluation.result.actual).to.equal(`test string`);
   }
 
   @(Type.stringof ~ " test string not endWith string reports error with expected and negated")
@@ -127,8 +128,8 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.not.endWith("string");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to end with "string"`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.expected).to.equal(`to end with string`);
+    expect(evaluation.result.actual).to.equal(`test string`);
     expect(evaluation.result.negated).to.equal(true);
   }
 
@@ -140,8 +141,20 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.not.endWith('g');
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to end with 'g'`);
-    expect(evaluation.result.actual).to.equal(`"test string"`);
+    expect(evaluation.result.expected).to.equal(`to end with g`);
+    expect(evaluation.result.actual).to.equal(`test string`);
     expect(evaluation.result.negated).to.equal(true);
   }
+}
+
+@("lazy string throwing in endWith propagates the exception")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  string someLazyString() {
+    throw new Exception("This is it.");
+  }
+
+  ({
+    someLazyString.should.endWith(" ");
+  }).should.throwAnyException.withMessage("This is it.");
 }
