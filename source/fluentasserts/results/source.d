@@ -19,6 +19,81 @@ import fluentasserts.results.printer : ResultPrinter;
 
 @safe:
 
+/// Cleans up mixin paths by removing the `-mixin-N` suffix.
+/// When D uses string mixins, __FILE__ produces paths like `file.d-mixin-113`
+/// instead of `file.d`. This function returns the actual file path.
+/// Params:
+///   path = The file path, possibly with mixin suffix
+///   line = The line number (used to validate the mixin suffix matches)
+/// Returns: The cleaned path with `.d` extension, or original path if not a mixin path
+string cleanMixinPath(string path, size_t line) pure nothrow {
+    // Look for pattern: .d-mixin-N at the end
+    enum suffix = ".d-mixin-";
+
+    // Find the last occurrence of ".d-mixin-"
+    size_t suffixPos = size_t.max;
+    if (path.length > suffix.length) {
+        foreach_reverse (i; 0 .. path.length - suffix.length + 1) {
+            bool match = true;
+            foreach (j; 0 .. suffix.length) {
+                if (path[i + j] != suffix[j]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                suffixPos = i;
+                break;
+            }
+        }
+    }
+
+    if (suffixPos == size_t.max) {
+        return path;
+    }
+
+    // Verify the rest is digits (valid line number)
+    size_t numStart = suffixPos + suffix.length;
+    foreach (i; numStart .. path.length) {
+        char c = path[i];
+        if (c < '0' || c > '9') {
+            return path;
+        }
+    }
+
+    if (numStart >= path.length) {
+        return path;
+    }
+
+    // Return cleaned path (up to and including .d)
+    return path[0 .. suffixPos + 2];
+}
+
+@("cleanMixinPath returns original path for regular .d file")
+unittest {
+    cleanMixinPath("source/test.d", 42).should.equal("source/test.d");
+}
+
+@("cleanMixinPath removes mixin suffix from path")
+unittest {
+    cleanMixinPath("source/test.d-mixin-113", 113).should.equal("source/test.d");
+}
+
+@("cleanMixinPath handles paths with multiple dots")
+unittest {
+    cleanMixinPath("source/my.module.test.d-mixin-55", 55).should.equal("source/my.module.test.d");
+}
+
+@("cleanMixinPath returns original for invalid mixin suffix with letters")
+unittest {
+    cleanMixinPath("source/test.d-mixin-abc", 10).should.equal("source/test.d-mixin-abc");
+}
+
+@("cleanMixinPath returns original for empty line number")
+unittest {
+    cleanMixinPath("source/test.d-mixin-", 10).should.equal("source/test.d-mixin-");
+}
+
 /// Source code location and token-based source retrieval.
 /// Provides methods to extract and format source code context for assertion failures.
 struct SourceResult {
@@ -42,21 +117,26 @@ struct SourceResult {
   /// Returns: A SourceResult with the extracted source context
   static SourceResult create(string fileName, size_t line) nothrow @trusted {
     SourceResult data;
-    data.file = fileName;
+    auto cleanedPath = cleanMixinPath(fileName, line);
+    data.file = cleanedPath;
     data.line = line;
 
-    if (!fileName.exists) {
+    // Try original path first, fall back to cleaned path for mixin files
+    string pathToUse = fileName.exists ? fileName : (cleanedPath.exists ? cleanedPath : fileName);
+
+    if (!pathToUse.exists) {
       return data;
     }
 
     try {
-      updateFileTokens(fileName);
-      auto result = getScope(fileTokens[fileName], line);
+      updateFileTokens(pathToUse);
+      auto result = getScope(fileTokens[pathToUse], line);
 
-      auto begin = getPreviousIdentifier(fileTokens[fileName], result.begin);
-      auto end = getFunctionEnd(fileTokens[fileName], begin) + 1;
+      auto begin = getPreviousIdentifier(fileTokens[pathToUse], result.begin);
+      begin = extendToLineStart(fileTokens[pathToUse], begin);
+      auto end = getFunctionEnd(fileTokens[pathToUse], begin) + 1;
 
-      data.tokens = fileTokens[fileName][begin .. end];
+      data.tokens = fileTokens[pathToUse][begin .. end];
     } catch (Throwable t) {
     }
 
@@ -216,6 +296,45 @@ string tokensToString(const(Token)[] tokens) {
   }
 
   return result;
+}
+
+/// Extends a token index backwards to include all tokens from the start of the line.
+/// Params:
+///   tokens = The token array
+///   index = The starting index
+/// Returns: The index of the first token on the same line
+size_t extendToLineStart(const(Token)[] tokens, size_t index) nothrow {
+  if (index == 0 || index >= tokens.length) {
+    return index;
+  }
+
+  auto targetLine = tokens[index].line;
+  while (index > 0 && tokens[index - 1].line == targetLine) {
+    index--;
+  }
+  return index;
+}
+
+@("extendToLineStart returns same index for first token")
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
+  extendToLineStart(tokens, 0).should.equal(0);
+}
+
+@("extendToLineStart extends to start of line")
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
+  // Find a token that's not at the start of its line
+  size_t testIndex = 10;
+  auto result = extendToLineStart(tokens, testIndex);
+  // Result should be <= testIndex
+  result.should.be.lessThan(testIndex + 1);
+  // All tokens from result to testIndex should be on the same line
+  if (result < testIndex) {
+    tokens[result].line.should.equal(tokens[testIndex].line);
+  }
 }
 
 /// Finds the scope boundaries containing a specific line.

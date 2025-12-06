@@ -145,6 +145,7 @@ private void betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluatio
   } else if(isBetween) {
     evaluation.result.expected = interval;
     evaluation.result.actual = evaluation.currentValue.niceValue;
+    evaluation.result.negated = true;
   }
 }
 
@@ -212,6 +213,7 @@ static foreach (Type; NumericTypes) {
 
     expect(evaluation.result.expected).to.equal("a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
     expect(evaluation.result.actual).to.equal(middleValue.to!string);
+    expect(evaluation.result.negated).to.equal(true);
   }
 }
 
@@ -272,6 +274,7 @@ unittest {
 
   expect(evaluation.result.expected).to.equal("a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
   expect(evaluation.result.actual).to.equal(middleValue.to!string);
+  expect(evaluation.result.negated).to.equal(true);
 }
 
 @("SysTime value is inside an interval")
@@ -331,4 +334,5 @@ unittest {
 
   expect(evaluation.result.expected).to.equal("a value outside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
   expect(evaluation.result.actual).to.equal(middleValue.toISOExtString);
+  expect(evaluation.result.negated).to.equal(true);
 }

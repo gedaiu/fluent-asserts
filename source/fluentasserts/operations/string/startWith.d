@@ -34,7 +34,7 @@ void startWith(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.addValue(evaluation.expectedValue.strValue);
       evaluation.result.addText(".");
 
-      evaluation.result.expected = "to start with " ~ evaluation.expectedValue.strValue;
+      evaluation.result.expected = "not to start with " ~ evaluation.expectedValue.strValue;
       evaluation.result.actual = evaluation.currentValue.strValue;
       evaluation.result.negated = true;
     }
@@ -115,7 +115,7 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.not.startWith("test");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to start with test`);
+    expect(evaluation.result.expected).to.equal(`not to start with test`);
     expect(evaluation.result.actual).to.equal(`test string`);
     expect(evaluation.result.negated).to.equal(true);
   }
@@ -128,7 +128,7 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.not.startWith('t');
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to start with t`);
+    expect(evaluation.result.expected).to.equal(`not to start with t`);
     expect(evaluation.result.actual).to.equal(`test string`);
     expect(evaluation.result.negated).to.equal(true);
   }

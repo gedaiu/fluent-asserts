@@ -42,7 +42,7 @@ void endWith(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.addValue(evaluation.expectedValue.strValue);
       evaluation.result.addText(".");
 
-      evaluation.result.expected = "to end with " ~ evaluation.expectedValue.strValue;
+      evaluation.result.expected = "not to end with " ~ evaluation.expectedValue.strValue;
       evaluation.result.actual = evaluation.currentValue.strValue;
       evaluation.result.negated = true;
     }
@@ -128,7 +128,7 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.not.endWith("string");
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to end with string`);
+    expect(evaluation.result.expected).to.equal(`not to end with string`);
     expect(evaluation.result.actual).to.equal(`test string`);
     expect(evaluation.result.negated).to.equal(true);
   }
@@ -141,7 +141,7 @@ static foreach (Type; StringTypes) {
       expect(testValue).to.not.endWith('g');
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to end with g`);
+    expect(evaluation.result.expected).to.equal(`not to end with g`);
     expect(evaluation.result.actual).to.equal(`test string`);
     expect(evaluation.result.negated).to.equal(true);
   }

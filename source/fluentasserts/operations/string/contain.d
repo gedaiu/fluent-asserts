@@ -170,7 +170,7 @@ unittest {
     expect([1, 2, 3]).to.not.contain(2);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("to contain 2");
+  expect(evaluation.result.expected).to.equal("not to contain 2");
   expect(evaluation.result.negated).to.equal(true);
 }
 
@@ -192,6 +192,7 @@ void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
     auto isSuccess = missing.length == 0 && extra.length == 0 && common.length == testData.length;
 
     if(!isSuccess) {
+      evaluation.result.expected = "to contain only " ~ expectedPieces.niceJoin(evaluation.currentValue.typeName);
       evaluation.result.actual = testData.niceJoin(evaluation.currentValue.typeName);
 
       foreach(e; extra) {
@@ -206,7 +207,7 @@ void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
     auto isSuccess = (missing.length != 0 || extra.length != 0) || common.length != testData.length;
 
     if(!isSuccess) {
-      evaluation.result.expected = "to contain " ~ expectedPieces.niceJoin(evaluation.currentValue.typeName);
+      evaluation.result.expected = "not to contain only " ~ expectedPieces.niceJoin(evaluation.currentValue.typeName);
       evaluation.result.actual = testData.niceJoin(evaluation.currentValue.typeName);
       evaluation.result.negated = true;
     }
@@ -313,7 +314,7 @@ string createResultMessage(ValueEvaluation expectedValue, EquableValue[] missing
 }
 
 string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expectedPieces) @safe nothrow {
-  string message = "to contain ";
+  string message = "not to contain ";
 
   if(expectedPieces.length > 1) {
     message ~= "any ";
