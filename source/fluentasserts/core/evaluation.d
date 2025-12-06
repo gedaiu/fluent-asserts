@@ -10,6 +10,9 @@ import std.range;
 import std.array;
 import std.algorithm : map, sort;
 
+import core.memory : GC;
+
+import fluentasserts.core.memory : getNonGCMemory;
 import fluentasserts.results.serializers;
 import fluentasserts.results.source : SourceResult;
 import fluentasserts.results.message : Message, ResultGlyphs;
@@ -27,6 +30,12 @@ struct ValueEvaluation {
 
   /// Time needed to evaluate the value
   Duration duration;
+
+  /// Garbage Collector memory used during evaluation (in bytes)
+  size_t gcMemoryUsed;
+
+  /// Non Garbage Collector memory used during evaluation (in bytes)
+  size_t nonGCMemoryUsed;
 
   /// Serialized value as string
   string strValue;
@@ -185,8 +194,13 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 ///   prependText = Optional text to prepend to the value display
 /// Returns: A tuple containing the evaluated value and its ValueEvaluation.
 auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(!isInputRange!T || isArray!T || isAssociativeArray!T) {
+  GC.disable();
+  scope(exit) GC.enable();
+
   auto begin = Clock.currTime;
   alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
+  size_t gcMemoryUsed = 0;
+  size_t nonGCMemoryUsed = 0;
 
   try {
     auto value = testData;
@@ -194,8 +208,12 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 
     static if(isCallable!T) {
       if(value !is null) {
+        gcMemoryUsed = GC.stats().usedSize;
+        nonGCMemoryUsed = getNonGCMemory();
         begin = Clock.currTime;
         value();
+        nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryUsed;
+        gcMemoryUsed = GC.stats().usedSize - gcMemoryUsed;
       }
     }
 
@@ -203,10 +221,13 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
     auto serializedValue = SerializerRegistry.instance.serialize(value);
     auto niceValue = SerializerRegistry.instance.niceValue(value);
 
-    auto valueEvaluation = ValueEvaluation(null, duration, serializedValue, equableValue(value, niceValue), niceValue, extractTypes!TT);
+    auto valueEvaluation = ValueEvaluation(null, duration, 0, 0, serializedValue, equableValue(value, niceValue), niceValue, extractTypes!TT);
     valueEvaluation.fileName = file;
     valueEvaluation.line = line;
     valueEvaluation.prependText = prependText;
+    valueEvaluation.gcMemoryUsed = gcMemoryUsed;
+    valueEvaluation.nonGCMemoryUsed = nonGCMemoryUsed;
+
 
     return Result(value, valueEvaluation);
   } catch(Throwable t) {
@@ -216,7 +237,7 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
       result = testData;
     }
 
-    auto valueEvaluation = ValueEvaluation(t, Clock.currTime - begin, result.to!string, equableValue(result, result.to!string), result.to!string, extractTypes!T);
+    auto valueEvaluation = ValueEvaluation(t, Clock.currTime - begin, 0, 0, result.to!string, equableValue(result, result.to!string), result.to!string, extractTypes!T);
     valueEvaluation.fileName = file;
     valueEvaluation.line = line;
     valueEvaluation.prependText = prependText;
@@ -326,17 +347,20 @@ unittest {
   assert(result == ["string[string]"], "Expected [\"string[string]\"], got " ~ result.to!string);
 }
 
+version(unittest) {
+  interface ExtractTypesTestInterface {}
+  class ExtractTypesTestClass : ExtractTypesTestInterface {}
+}
+
 @("extractTypes returns all types of a class")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
-  interface I {}
-  class T : I {}
 
-  auto result = extractTypes!(T[]);
+  auto result = extractTypes!(ExtractTypesTestClass[]);
 
-  assert(result[0] == "fluentasserts.core.evaluation.__unittest_L330_C1.T[]", `Expected: "fluentasserts.core.evaluation.__unittest_L330_C1.T[]" got "` ~ result[0] ~ `"`);
-  assert(result[1] == "object.Object[]", `Expected: ` ~ result[1] );
-  assert(result[2] ==  "fluentasserts.core.evaluation.__unittest_L330_C1.I[]", `Expected: ` ~ result[2] );
+  assert(result[0] == "fluentasserts.core.evaluation.ExtractTypesTestClass[]", `Expected: "fluentasserts.core.evaluation.ExtractTypesTestClass[]" got "` ~ result[0] ~ `"`);
+  assert(result[1] == "object.Object[]", `Expected: ` ~ result[1]);
+  assert(result[2] == "fluentasserts.core.evaluation.ExtractTypesTestInterface[]", `Expected: ` ~ result[2]);
 }
 
 /// A proxy interface for comparing values of different types.

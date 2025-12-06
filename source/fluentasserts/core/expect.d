@@ -369,6 +369,7 @@ import std.conv;
   /// Asserts that the value is an instance of the specified type.
   Evaluator instanceOf(Type)() {
     addOperationName("instanceOf");
+    this._evaluation.expectedValue.typeNames = [fullyQualifiedName!Type];
     this._evaluation.expectedValue.strValue = "\"" ~ fullyQualifiedName!Type ~ "\"";
     finalizeMessage();
     inhibit();

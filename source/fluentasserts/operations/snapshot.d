@@ -87,6 +87,18 @@ unittest {
             "a value inside (1, 5) interval", "10", false,
             "expect(3).to.not.be.between(1, 5)",
             "a value outside (1, 5) interval", "3", true),
+        SnapshotCase("greaterOrEqualTo", "expect(3).to.be.greaterOrEqualTo(5)",
+            "greater or equal than 5", "3", false,
+            "expect(5).to.not.be.greaterOrEqualTo(3)",
+            "less than 3", "5", true),
+        SnapshotCase("lessOrEqualTo", "expect(5).to.be.lessOrEqualTo(3)",
+            "less or equal to 3", "5", false,
+            "expect(3).to.not.be.lessOrEqualTo(5)",
+            "greater than 5", "3", true),
+        SnapshotCase("instanceOf", "expect(new Object()).to.be.instanceOf!Exception",
+            "typeof object.Exception", "typeof object.Object", false,
+            "expect(new Exception(\"test\")).to.not.be.instanceOf!Object",
+            "not typeof object.Object", "typeof object.Exception", true),
     ]) {{
         output.put("## " ~ c.name ~ "\n\n");
 
