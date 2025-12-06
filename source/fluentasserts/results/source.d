@@ -24,9 +24,8 @@ import fluentasserts.results.printer : ResultPrinter;
 /// instead of `file.d`. This function returns the actual file path.
 /// Params:
 ///   path = The file path, possibly with mixin suffix
-///   line = The line number (used to validate the mixin suffix matches)
 /// Returns: The cleaned path with `.d` extension, or original path if not a mixin path
-string cleanMixinPath(string path, size_t line) pure nothrow {
+string cleanMixinPath(string path) pure nothrow {
     // Look for pattern: .d-mixin-N at the end
     enum suffix = ".d-mixin-";
 
@@ -71,27 +70,27 @@ string cleanMixinPath(string path, size_t line) pure nothrow {
 
 @("cleanMixinPath returns original path for regular .d file")
 unittest {
-    cleanMixinPath("source/test.d", 42).should.equal("source/test.d");
+  cleanMixinPath("source/test.d").should.equal("source/test.d");
 }
 
 @("cleanMixinPath removes mixin suffix from path")
 unittest {
-    cleanMixinPath("source/test.d-mixin-113", 113).should.equal("source/test.d");
+  cleanMixinPath("source/test.d-mixin-113").should.equal("source/test.d");
 }
 
 @("cleanMixinPath handles paths with multiple dots")
 unittest {
-    cleanMixinPath("source/my.module.test.d-mixin-55", 55).should.equal("source/my.module.test.d");
+  cleanMixinPath("source/my.module.test.d-mixin-55").should.equal("source/my.module.test.d");
 }
 
 @("cleanMixinPath returns original for invalid mixin suffix with letters")
 unittest {
-    cleanMixinPath("source/test.d-mixin-abc", 10).should.equal("source/test.d-mixin-abc");
+  cleanMixinPath("source/test.d-mixin-abc").should.equal("source/test.d-mixin-abc");
 }
 
 @("cleanMixinPath returns original for empty line number")
 unittest {
-    cleanMixinPath("source/test.d-mixin-", 10).should.equal("source/test.d-mixin-");
+  cleanMixinPath("source/test.d-mixin-").should.equal("source/test.d-mixin-");
 }
 
 /// Source code location and token-based source retrieval.
@@ -117,7 +116,7 @@ struct SourceResult {
   /// Returns: A SourceResult with the extracted source context
   static SourceResult create(string fileName, size_t line) nothrow @trusted {
     SourceResult data;
-    auto cleanedPath = cleanMixinPath(fileName, line);
+    auto cleanedPath = fileName.cleanMixinPath;
     data.file = cleanedPath;
     data.line = line;
 
