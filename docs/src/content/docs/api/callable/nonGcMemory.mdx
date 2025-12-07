@@ -5,13 +5,18 @@ description: Asserts that a callable allocates non-GC memory (malloc, etc.)
 
 Asserts that a callable allocates memory outside of the garbage collector during its execution. This includes manual memory allocation via `malloc`, `core.stdc.stdlib`, or similar mechanisms.
 
+:::note[Detection Threshold]
+Non-GC memory detection uses a 4KB threshold to filter out runtime noise. Allocations smaller than 4KB may not be detected reliably. For best results, test with allocations larger than 4KB.
+:::
+
 ## Examples
 
 ```d
 import core.stdc.stdlib : malloc, free;
 
 expect({
-    auto ptr = malloc(1024);
+    // Allocate more than 4KB to ensure detection
+    auto ptr = malloc(8 * 1024);
     free(ptr);
 }).to.allocateNonGCMemory();
 ```

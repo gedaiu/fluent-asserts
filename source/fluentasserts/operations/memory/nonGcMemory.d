@@ -13,7 +13,10 @@ void allocateNonGCMemory(ref Evaluation evaluation) @safe nothrow {
   evaluation.currentValue.typeNames = ["event"];
   evaluation.expectedValue.typeNames = ["event"];
 
-  auto isSuccess = evaluation.currentValue.nonGCMemoryUsed > 0;
+  // Use a threshold to filter out small runtime noise from mallinfo() on Linux.
+  // Small allocations (< 4KB) are often from the D runtime, not the tested code.
+  enum threshold = 4 * 1024;
+  auto isSuccess = evaluation.currentValue.nonGCMemoryUsed > threshold;
 
   if(evaluation.isNegated) {
     isSuccess = !isSuccess;
