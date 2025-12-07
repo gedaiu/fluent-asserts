@@ -21,7 +21,11 @@ expect({
 }).to.allocateNonGCMemory();
 ```
 
-### With Negation
+### With Negation (macOS/Windows only)
+
+:::note
+Negation (`not.allocateNonGCMemory()`) is unreliable on Linux because `mallinfo()` may detect runtime allocations even when the tested code doesn't allocate.
+:::
 
 ```d
 expect({

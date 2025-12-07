@@ -3,7 +3,7 @@ title: allocateGCMemory
 description: Asserts that a callable allocates GC-managed memory
 ---
 
-Asserts that a callable allocates memory managed by the garbage collector during its execution. Uses `GC.profileStats()` for accurate per-thread allocation tracking.
+Asserts that a callable allocates memory managed by the garbage collector during its execution. Uses `GC.allocatedInCurrentThread()` for accurate per-thread allocation tracking.
 
 ## Examples
 
