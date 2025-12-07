@@ -25,6 +25,7 @@ import fluentasserts.operations.comparison.between : betweenOp = between, betwee
 import fluentasserts.operations.comparison.approximately : approximatelyOp = approximately, approximatelyListOp = approximatelyList;
 import fluentasserts.operations.exception.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage, throwSomethingOp = throwSomething, throwSomethingWithMessageOp = throwSomethingWithMessage;
 import fluentasserts.operations.memory.gcMemory : allocateGCMemoryOp = allocateGCMemory;
+import fluentasserts.operations.memory.nonGcMemory : allocateNonGCMemoryOp = allocateNonGCMemory;
 
 import std.datetime : Duration, SysTime;
 
@@ -448,6 +449,14 @@ import std.conv;
     inhibit();
 
     return Evaluator(*_evaluation, &allocateGCMemoryOp);
+  }
+
+  auto allocateNonGCMemory() {
+    addOperationName("allocateNonGCMemory");
+    finalizeMessage();
+    inhibit();
+
+    return Evaluator(*_evaluation, &allocateNonGCMemoryOp);
   }
 
   /// Appends an operation name to the current operation chain.

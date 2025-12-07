@@ -299,7 +299,7 @@ Object obj = new Object(); expect(obj).to.beNull;
 ```
 
 ```
-ASSERTION FAILED: Object(4736678927) should be null.
+ASSERTION FAILED: Object(4711621108) should be null.
 OPERATION: beNull
 
   ACTUAL: <object.Object> object.Object
@@ -587,7 +587,7 @@ expect(new Object()).to.be.instanceOf!Exception;
 ```
 
 ```
-ASSERTION FAILED: Object(4736529783) should be instance of "object.Exception". Object(4736529783) is instance of object.Object.
+ASSERTION FAILED: Object(4711916808) should be instance of "object.Exception". Object(4711916808) is instance of object.Object.
 OPERATION: instanceOf
 
   ACTUAL: <object.Object> typeof object.Object
@@ -604,7 +604,7 @@ expect(new Exception("test")).to.not.be.instanceOf!Object;
 ```
 
 ```
-ASSERTION FAILED: Exception(4736846670) should not be instance of "object.Object". Exception(4736846670) is instance of object.Exception.
+ASSERTION FAILED: Exception(4711866014) should not be instance of "object.Object". Exception(4711866014) is instance of object.Exception.
 OPERATION: not instanceOf
 
   ACTUAL: <object.Exception> typeof object.Exception

@@ -103,10 +103,14 @@ unittest {
   expect(evaluation.result.actual).to.contain("KB");
 }
 
-@("it does not fail when a callable allocates memory and it is expected to")
+@("it does not fail when a callable does not allocate memory and it is not expected to")
 unittest {
-  ({
-    int[4] stackArray = [1,2,3,4];
-    return stackArray.length;
-  }).should.not.allocateGCMemory();
+  auto evaluation = ({
+    ({
+      int[4] stackArray = [1,2,3,4];
+      return stackArray.length;
+    }).should.not.allocateGCMemory();
+  }).recordEvaluation;
+
+  expect(evaluation.result.hasContent()).to.equal(false);
 }

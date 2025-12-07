@@ -210,8 +210,8 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 
     static if(isCallable!T) {
       if(value !is null) {
-        nonGCMemoryUsed = getNonGCMemory();
         begin = Clock.currTime;
+        nonGCMemoryUsed = getNonGCMemory();
         gcMemoryUsed = GC.stats().usedSize;
         value();
         gcMemoryUsed = GC.stats().usedSize - gcMemoryUsed;
