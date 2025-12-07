@@ -1,0 +1,44 @@
+---
+title: arrayEqual
+description: Asserts that the target is strictly == equal to the given val.
+---
+
+# .arrayEqual()
+
+Asserts that the target is strictly == equal to the given val.
+
+Asserts that two arrays are strictly equal element by element.
+
+## Examples
+
+### Basic Usage
+
+```d
+expect([1, 2, 3]).to.equal([1, 2, 3]);
+expect(["a", "b", "c"]).to.equal(["a", "b", "c"]);
+expect(empty1).to.equal(empty2);
+```
+
+### With Negation
+
+```d
+expect([1, 2, 3]).to.not.equal([1, 2, 4]);
+expect(["a", "b", "c"]).to.not.equal(["a", "b", "d"]);
+```
+
+### What Failures Look Like
+
+When the assertion fails, you'll see a clear error message:
+
+```d
+// This would fail:
+expect([1, 2, 3]).to.equal([1, 2, 4]);
+```
+
+## Modifiers
+
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

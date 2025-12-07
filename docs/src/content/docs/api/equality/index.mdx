@@ -1,0 +1,31 @@
+---
+title: Equality Operations
+description: Assertions for testing value equality
+---
+
+Test for value equality with these assertions.
+
+## equal
+
+Asserts that the target is strictly (`==`) equal to the given value.
+
+```d
+expect("hello").to.equal("hello");
+expect(42).to.equal(42);
+```
+
+### With Negation
+
+```d
+expect("hello").to.not.equal("world");
+```
+
+## approximately
+
+Asserts that a numeric value is within a tolerance of the expected value.
+
+```d
+expect(3.14159).to.be.approximately(3.14, 0.01);
+```
+
+Useful for floating-point comparisons where exact equality isn't possible.

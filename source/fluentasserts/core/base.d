@@ -183,6 +183,152 @@ struct Assert {
       s.because(reason);
     }
   }
+
+  /// Asserts that a callable throws a specific exception type.
+  static void throwException(E : Throwable = Exception, T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(callable, file, line).to.throwException!E;
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable does NOT throw a specific exception type.
+  static void notThrowException(E : Throwable = Exception, T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(callable, file, line).not.to.throwException!E;
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable throws any exception.
+  static void throwAnyException(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(callable, file, line).to.throwAnyException;
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable does NOT throw any exception.
+  static void notThrowAnyException(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(callable, file, line).not.to.throwAnyException;
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable allocates GC memory.
+  static void allocateGCMemory(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto ex = expect(callable, file, line);
+    auto s = ex.allocateGCMemory();
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable does NOT allocate GC memory.
+  static void notAllocateGCMemory(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto ex = expect(callable, file, line);
+    ex.not();
+    auto s = ex.allocateGCMemory();
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable allocates non-GC memory.
+  static void allocateNonGCMemory(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto ex = expect(callable, file, line);
+    auto s = ex.allocateNonGCMemory();
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable does NOT allocate non-GC memory.
+  static void notAllocateNonGCMemory(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto ex = expect(callable, file, line);
+    ex.not();
+    auto s = ex.allocateNonGCMemory();
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a string starts with the expected prefix.
+  static void startWith(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).to.startWith(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a string does NOT start with the expected prefix.
+  static void notStartWith(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).not.to.startWith(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a string ends with the expected suffix.
+  static void endWith(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).to.endWith(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a string does NOT end with the expected suffix.
+  static void notEndWith(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).not.to.endWith(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a value contains the expected element.
+  static void contain(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).to.contain(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a value does NOT contain the expected element.
+  static void notContain(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).not.to.contain(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
 }
 
 @("Assert works for base types")
@@ -254,6 +400,28 @@ unittest {
 
   Assert.containOnly([1, 2, 3], [3, 2, 1]);
   Assert.notContainOnly([1, 2, 3], [3, 1]);
+}
+
+@("Assert works for callables - exceptions")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+
+  Assert.throwException({ throw new Exception("test"); });
+  Assert.notThrowException({ });
+
+  Assert.throwAnyException({ throw new Exception("test"); });
+  Assert.notThrowAnyException({ });
+}
+
+@("Assert works for callables - GC memory")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+
+  ulong delegate() allocates = { auto arr = new int[100]; return arr.length; };
+  ulong delegate() noAlloc = { int x = 42; return x; };
+
+  Assert.allocateGCMemory(allocates);
+  Assert.notAllocateGCMemory(noAlloc);
 }
 
 /// Custom assert handler that provides better error messages.

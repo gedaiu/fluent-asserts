@@ -1,0 +1,37 @@
+---
+title: lessThan
+description: Asserts that a value is strictly less than the expected value
+---
+
+Asserts that a value is strictly less than the expected value.
+
+## Examples
+
+```d
+expect(5).to.be.lessThan(10);
+expect(10).to.be.below(42);  // alias
+```
+
+### With Negation
+
+```d
+expect(10).to.not.be.lessThan(5);
+```
+
+### What Failures Look Like
+
+```d
+expect(5).to.be.lessThan(3);
+```
+
+```
+ASSERTION FAILED: 5 should be less than 3. 5 is greater than or equal to 3.
+OPERATION: lessThan
+
+  ACTUAL: <int> 5
+EXPECTED: <int> less than 3
+```
+
+## Aliases
+
+- `.below()` - Same behavior as `.lessThan()`

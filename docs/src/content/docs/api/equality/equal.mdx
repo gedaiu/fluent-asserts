@@ -1,0 +1,44 @@
+---
+title: equal
+description: Asserts that the target is strictly == equal to the given val.
+---
+
+# .equal()
+
+Asserts that the target is strictly == equal to the given val.
+
+Asserts that the current value is strictly equal to the expected value.
+
+## Examples
+
+### Basic Usage
+
+```d
+expect(true).to.equal(true);
+expect(false).to.equal(false);
+expect(2.seconds).to.equal(2.seconds);
+```
+
+### With Negation
+
+```d
+expect(true).to.not.equal(false);
+expect(false).to.not.equal(true);
+```
+
+### What Failures Look Like
+
+When the assertion fails, you'll see a clear error message:
+
+```d
+// This would fail:
+expect(true).to.equal(false);
+```
+
+## Modifiers
+
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

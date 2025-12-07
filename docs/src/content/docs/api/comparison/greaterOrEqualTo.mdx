@@ -1,0 +1,33 @@
+---
+title: greaterOrEqualTo
+description: Asserts that a value is greater than or equal to the expected value
+---
+
+Asserts that a value is greater than or equal to the expected value.
+
+## Examples
+
+```d
+expect(10).to.be.greaterOrEqualTo(5);
+expect(5).to.be.greaterOrEqualTo(5);  // equal values pass
+```
+
+### With Negation
+
+```d
+expect(3).to.not.be.greaterOrEqualTo(5);
+```
+
+### What Failures Look Like
+
+```d
+expect(3).to.be.greaterOrEqualTo(5);
+```
+
+```
+ASSERTION FAILED: 3 should be greater or equal to 5. 3 is less than 5.
+OPERATION: greaterOrEqualTo
+
+  ACTUAL: <int> 3
+EXPECTED: <int> greater or equal than 5
+```

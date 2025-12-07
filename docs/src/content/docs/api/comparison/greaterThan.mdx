@@ -1,0 +1,37 @@
+---
+title: greaterThan
+description: Asserts that a value is strictly greater than the expected value
+---
+
+Asserts that a value is strictly greater than the expected value.
+
+## Examples
+
+```d
+expect(10).to.be.greaterThan(5);
+expect(42).to.be.above(10);  // alias
+```
+
+### With Negation
+
+```d
+expect(5).to.not.be.greaterThan(10);
+```
+
+### What Failures Look Like
+
+```d
+expect(3).to.be.greaterThan(5);
+```
+
+```
+ASSERTION FAILED: 3 should be greater than 5. 3 is less than or equal to 5.
+OPERATION: greaterThan
+
+  ACTUAL: <int> 3
+EXPECTED: <int> greater than 5
+```
+
+## Aliases
+
+- `.above()` - Same behavior as `.greaterThan()`

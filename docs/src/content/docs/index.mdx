@@ -1,0 +1,88 @@
+---
+title: fluent-asserts
+description: Fluent assertion framework for the D programming language
+template: splash
+hero:
+  tagline: Write readable, expressive tests in D with a fluent API. Current version v1.0.1
+  image:
+    light: ../../assets/logo-icon.svg
+    dark: ../../assets/logo-icon-light.svg
+  actions:
+    - text: Get Started
+      link: /guide/introduction/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/gedaiu/fluent-asserts
+      icon: external
+---
+
+## From This
+
+```d
+assert(user.age > 18);
+// Assertion failure: false is not true
+```
+
+## To This
+
+```d
+expect(user.age).to.be.greaterThan(18);
+// ASSERTION FAILED: expect(user.age) should be greater than 18
+//   ACTUAL: 16
+//   EXPECTED: greater than 18
+```
+
+The difference is clarity. When tests fail at 2am, you need to understand why immediately. fluent-asserts gives you assertions that read like sentences and error messages that tell you exactly what went wrong.
+
+---
+
+## The Fluent Chain
+
+Every assertion flows naturally from value to expectation:
+
+```d
+expect(response.status)    // what you're testing
+    .to.be                 // optional readability
+    .greaterOrEqualTo(200) // the assertion
+    .and.lessThan(300);    // chain more
+```
+
+The language chains (`.to`, `.be`, `.and`) do nothing—they exist purely so your tests read like documentation.
+
+---
+
+## Beyond Values
+
+Test behavior, not just data:
+
+```d
+// Memory allocation
+expect({ auto arr = new int[1000]; })
+    .to.allocateGCMemory();
+
+// Exceptions
+expect({ parseConfig("invalid"); })
+    .to.throwException!ConfigError
+    .withMessage("Invalid syntax");
+
+// Execution time
+expect({ complexCalculation(); })
+    .to.haveExecutionTime
+    .lessThan(100.msecs);
+```
+
+---
+
+## Quick Example
+
+```d
+import fluent.asserts;
+
+unittest {
+    expect("hello").to.equal("hello");
+    expect(42).to.be.greaterThan(10);
+    expect([1, 2, 3]).to.contain(2);
+    expect(10).to.not.equal(20);
+}
+```

@@ -1,0 +1,47 @@
+---
+title: allocateNonGCMemory
+description: Asserts that a callable allocates non-GC memory (malloc, etc.)
+---
+
+Asserts that a callable allocates memory outside of the garbage collector during its execution. This includes manual memory allocation via `malloc`, `core.stdc.stdlib`, or similar mechanisms.
+
+## Examples
+
+```d
+import core.stdc.stdlib : malloc, free;
+
+expect({
+    auto ptr = malloc(1024);
+    free(ptr);
+}).to.allocateNonGCMemory();
+```
+
+### With Negation
+
+```d
+expect({
+    int x = 42;  // no allocation
+    return x;
+}).to.not.allocateNonGCMemory();
+```
+
+### What Failures Look Like
+
+```d
+expect({
+    int x = 42;
+    return x;
+}).to.allocateNonGCMemory();
+```
+
+```
+ASSERTION FAILED: delegate should allocate non-GC memory.
+OPERATION: allocateNonGCMemory
+
+  ACTUAL: no non-GC allocations
+EXPECTED: non-GC allocations
+```
+
+## See Also
+
+- [allocateGCMemory](/api/callable/gcMemory/) - Assert GC memory allocation

@@ -1,0 +1,69 @@
+---
+title: throwException
+description: Asserts that a callable throws a specific exception type
+---
+
+Asserts that a callable throws an exception of a specific type during execution.
+
+## throwException
+
+Assert that a specific exception type is thrown:
+
+```d
+expect({
+    throw new CustomException("error");
+}).to.throwException!CustomException;
+```
+
+### With Message Checking
+
+Chain `.withMessage` to also verify the exception message:
+
+```d
+expect({
+    throw new Exception("specific error");
+}).to.throwException!Exception.withMessage.equal("specific error");
+```
+
+### With Negation
+
+```d
+expect({
+    // code that doesn't throw
+}).to.not.throwException!Exception;
+```
+
+## throwAnyException
+
+Assert that any exception is thrown (regardless of type):
+
+```d
+expect({
+    throw new Exception("error");
+}).to.throwAnyException();
+```
+
+### With Negation
+
+```d
+expect({
+    // safe code
+    int x = 42;
+}).to.not.throwAnyException();
+```
+
+## What Failures Look Like
+
+```d
+expect({
+    // doesn't throw
+}).to.throwException!Exception;
+```
+
+```
+ASSERTION FAILED: delegate should throw Exception.
+OPERATION: throwException
+
+  ACTUAL: no exception thrown
+EXPECTED: Exception
+```

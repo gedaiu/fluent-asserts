@@ -1,0 +1,182 @@
+---
+title: Core Concepts
+description: Understanding how fluent-asserts works internally
+---
+
+This guide explains the internal architecture of fluent-asserts, which is helpful for understanding advanced usage and extending the library.
+
+## The Evaluation Pipeline
+
+When you write an assertion like:
+
+```d
+expect(42).to.be.greaterThan(10);
+```
+
+Here's what happens internally:
+
+1. **Value Capture**: `expect(42)` creates an `Expect` struct holding the value
+2. **Chain Building**: `.to.be` are language chains (no-ops for readability)
+3. **Operation Execution**: `.greaterThan(10)` triggers the actual comparison
+4. **Result Reporting**: Success or failure is reported with detailed messages
+
+## The Expect Struct
+
+The `Expect` struct is the main API entry point:
+
+```d
+struct Expect {
+    Evaluation* evaluation;
+
+    // Language chains (return self)
+    ref Expect to() { return this; }
+    ref Expect be() { return this; }
+    ref Expect not() {
+        evaluation.isNegated = !evaluation.isNegated;
+        return this;
+    }
+
+    // Terminal operations
+    void equal(T)(T expected) { /* ... */ }
+    void greaterThan(T)(T value) { /* ... */ }
+    // ...
+}
+```
+
+## The Evaluation Struct
+
+The `Evaluation` struct holds all state for an assertion:
+
+```d
+struct Evaluation {
+    ValueEvaluation currentValue;    // The actual value
+    ValueEvaluation expectedValue;   // The expected value
+    string operationName;            // e.g., "equal", "greaterThan"
+    bool isNegated;                  // true if .not was used
+    AssertResult result;             // Contains failure details
+    Throwable throwable;             // Captured exception, if any
+}
+```
+
+## Value Evaluation
+
+For each value (actual and expected), fluent-asserts captures:
+
+```d
+struct ValueEvaluation {
+    string strValue;         // String representation
+    string[] typeNames;      // Type information
+    size_t gcMemoryUsed;     // Memory tracking
+    size_t nonGCMemoryUsed;  // Non-GC memory tracking
+    Duration duration;       // Execution time
+}
+```
+
+## Callable Handling
+
+When you pass a callable (delegate/lambda) to `expect`, fluent-asserts has special handling:
+
+```d
+expect({
+    auto arr = new int[1000];
+    return arr.length;
+}).to.allocateGCMemory();
+```
+
+The callable is:
+1. **Wrapped** in an evaluation context
+2. **Executed** with memory and timing measurement
+3. **Results captured** for the assertion
+
+This enables testing:
+- Exception throwing behavior
+- Memory allocation
+- Execution time
+
+## Memory Tracking
+
+For memory assertions, fluent-asserts measures:
+
+```d
+// Before callable execution
+gcMemoryUsed = GC.stats().usedSize;
+nonGCMemoryUsed = getNonGCMemory();
+
+// Execute callable
+value();
+
+// Calculate delta
+gcMemoryUsed = GC.stats().usedSize - gcMemoryUsed;
+nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryUsed;
+```
+
+## Operations
+
+Each assertion type (equal, greaterThan, contain, etc.) is implemented as an **operation**:
+
+```d
+void equal(ref Evaluation evaluation) @safe nothrow {
+    auto isSuccess = evaluation.currentValue.strValue ==
+                     evaluation.expectedValue.strValue;
+
+    if (evaluation.isNegated) {
+        isSuccess = !isSuccess;
+    }
+
+    if (!isSuccess) {
+        evaluation.result.expected = evaluation.expectedValue.strValue;
+        evaluation.result.actual = evaluation.currentValue.strValue;
+    }
+}
+```
+
+Operations:
+- Receive the `Evaluation` struct by reference
+- Check if the assertion passes
+- Handle negation (`.not`)
+- Set error messages on failure
+
+## Error Reporting
+
+When an assertion fails, fluent-asserts builds a detailed error message:
+
+```d
+struct AssertResult {
+    Message[] message;    // Descriptive parts
+    string expected;      // Expected value
+    string actual;        // Actual value
+    bool negated;         // Was .not used?
+    DiffSegment[] diff;   // For string/array diffs
+    string[] extra;       // Extra items found
+    string[] missing;     // Missing items
+}
+```
+
+This produces output like:
+
+```
+ASSERTION FAILED: expect(value) should equal "hello"
+  ACTUAL: "world"
+  EXPECTED: "hello"
+```
+
+## Type Serialization
+
+Values are converted to strings for display using serializers:
+
+```d
+// Built-in serializers handle common types
+string serialize(T)(T value) {
+    static if (is(T == string)) return `"` ~ value ~ `"`;
+    else static if (isNumeric!T) return value.to!string;
+    else static if (isArray!T) return "[" ~ /* ... */ ~ "]";
+    // ...
+}
+```
+
+Custom serializers can be registered for domain types.
+
+## Next Steps
+
+- Learn how to [Extend](/guide/extending/) fluent-asserts with custom operations
+- Browse the [API Reference](/api/) for all built-in operations

@@ -1,0 +1,34 @@
+---
+title: endWith
+description: Asserts that a string ends with the expected suffix
+---
+
+Asserts that a string ends with the expected suffix.
+
+## Examples
+
+```d
+expect("hello").to.endWith("llo");
+expect("file.txt").to.endWith(".txt");
+expect("str\ning").to.endWith("ing");
+```
+
+### With Negation
+
+```d
+expect("hello").to.not.endWith("xyz");
+```
+
+### What Failures Look Like
+
+```d
+expect("hello").to.endWith("xyz");
+```
+
+```
+ASSERTION FAILED: hello should end with xyz. hello does not end with xyz.
+OPERATION: endWith
+
+  ACTUAL: <string> hello
+EXPECTED: <string> to end with xyz
+```

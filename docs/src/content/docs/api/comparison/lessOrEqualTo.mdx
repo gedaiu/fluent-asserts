@@ -1,0 +1,33 @@
+---
+title: lessOrEqualTo
+description: Asserts that a value is less than or equal to the expected value
+---
+
+Asserts that a value is less than or equal to the expected value.
+
+## Examples
+
+```d
+expect(5).to.be.lessOrEqualTo(10);
+expect(5).to.be.lessOrEqualTo(5);  // equal values pass
+```
+
+### With Negation
+
+```d
+expect(10).to.not.be.lessOrEqualTo(5);
+```
+
+### What Failures Look Like
+
+```d
+expect(5).to.be.lessOrEqualTo(3);
+```
+
+```
+ASSERTION FAILED: 5 should be less or equal to 3. 5 is greater than 3.
+OPERATION: lessOrEqualTo
+
+  ACTUAL: <int> 5
+EXPECTED: <int> less or equal to 3
+```

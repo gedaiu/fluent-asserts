@@ -1,0 +1,79 @@
+---
+title: Philosophy
+description: The 4 Rules of Simple Design and why fluent-asserts exists
+---
+
+**fluent-asserts** is designed to help you follow the **4 Rules of Simple Design**, a set of principles from Kent Beck that guide us toward clean, maintainable code.
+
+## The 4 Rules of Simple Design
+
+### 1. Passes All Tests
+
+> The code must work correctly
+
+Good tests are the foundation of reliable software. When a test fails, you need to understand why immediately. fluent-asserts provides clear, detailed failure messages that show exactly what was expected versus what was received, making debugging fast and straightforward.
+
+```d
+// When this fails, you see:
+//   Expected: "hello"
+//     Actual: "world"
+expect("world").to.equal("hello");
+```
+
+### 2. Reveals Intention
+
+> Code clearly expresses what it does
+
+This is where fluent-asserts truly shines. Compare these two approaches:
+
+```d
+// Traditional D assert - what does this actually test?
+assert(user.age > 18);
+
+// fluent-asserts - reads like English
+expect(user.age).to.be.greaterThan(18);
+```
+
+The fluent style makes tests self-documenting. New team members can understand what's being tested without additional comments. Your tests become living documentation of your system's expected behavior.
+
+### 3. No Duplication (DRY)
+
+> Don't Repeat Yourself
+
+fluent-asserts gives you reusable assertion operations that work consistently across all types. Instead of writing custom comparison logic for each situation, you use the same expressive API everywhere. You can also create custom operations for domain-specific checks, keeping your test code consistent across the entire codebase.
+
+```d
+// One assertion style for everything
+expect(user.name).to.equal("Alice");
+expect(user.age).to.be.greaterThan(18);
+expect(user.roles).to.contain("admin");
+expect(user.save()).to.not.throwException;
+```
+
+### 4. Fewest Elements
+
+> Minimal code, no unnecessary complexity
+
+fluent-asserts requires no setup or configuration. A single import gives you access to the entire API, and you can start writing assertions immediately without any boilerplate.
+
+```d
+import fluent.asserts;
+
+unittest {
+    // That's it. Start asserting.
+    expect(42).to.equal(42);
+}
+```
+
+## Why Not Built-in Assert?
+
+D's built-in `assert` is useful but limited:
+
+| Feature | `assert` | fluent-asserts |
+|---------|----------|----------------|
+| Readable syntax | No | Yes |
+| Detailed failure messages | No | Yes |
+| Type-specific comparisons | No | Yes |
+| Exception testing | Manual | Built-in |
+| Collection operations | Manual | Built-in |
+| Extensible | No | Yes |

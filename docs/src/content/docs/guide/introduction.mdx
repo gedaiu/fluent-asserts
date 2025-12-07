@@ -1,0 +1,130 @@
+---
+title: Introduction
+description: Fluent assertions for the D programming language
+---
+
+[Writing unit tests is easy with D](https://dlang.org/spec/unittest.html). The `unittest` block allows you to start writing tests and be productive with no special setup.
+
+Unfortunately the [assert expression](https://dlang.org/spec/expression.html#AssertExpression) does not help you write expressive asserts, and when a failure occurs it's hard to understand why. **fluent-asserts** allows you to more naturally specify the expected outcome of a TDD or BDD-style test.
+
+## Quick Start
+
+Add the dependency:
+
+```bash
+dub add fluent-asserts
+```
+
+Write your first test:
+
+```d
+unittest {
+    true.should.equal(false).because("this is a failing assert");
+}
+
+unittest {
+    Assert.equal(true, false, "this is a failing assert");
+}
+```
+
+Run the tests:
+
+```bash
+dub test
+```
+
+## The API
+
+The library provides three ways to write assertions: `expect`, `should`, and `Assert`.
+
+### expect
+
+`expect` is the main assertion function. It takes a value to test and returns a chainable assertion object.
+
+```d
+expect(testedValue).to.equal(42);
+```
+
+Use `not` to negate and `because` to add context:
+
+```d
+expect(testedValue).to.not.equal(42);
+expect(true).to.equal(false).because("of test reasons");
+// Output: Because of test reasons, true should equal `false`.
+```
+
+### should
+
+`should` works with [UFCS](https://dlang.org/spec/function.html#pseudo-member) for a more natural reading style. It's an alias for `expect`:
+
+```d
+// These are equivalent
+testedValue.should.equal(42);
+expect(testedValue).to.equal(42);
+```
+
+### Assert
+
+`Assert` provides a traditional assertion syntax:
+
+```d
+// These are equivalent
+expect(testedValue).to.equal(42);
+Assert.equal(testedValue, 42);
+
+// Negate with "not" prefix
+Assert.notEqual(testedValue, 42);
+```
+
+## Recording Evaluations
+
+The `recordEvaluation` function captures assertion results without throwing on failure. This is useful for testing assertion behavior or inspecting results programmatically.
+
+```d
+import fluentasserts.core.lifecycle : recordEvaluation;
+
+unittest {
+    auto evaluation = ({
+        expect(5).to.equal(10);
+    }).recordEvaluation;
+
+    // Inspect the evaluation result
+    assert(evaluation.result.expected == "10");
+    assert(evaluation.result.actual == "5");
+}
+```
+
+The `Evaluation.result` provides access to:
+- `expected` - the expected value as a string
+- `actual` - the actual value as a string
+- `negated` - whether the assertion was negated with `.not`
+- `missing` - array of missing elements (for collection comparisons)
+- `extra` - array of extra elements (for collection comparisons)
+
+## Custom Assert Handler
+
+During unittest builds, the library automatically installs a custom handler for D's built-in `assert` statements. This provides fluent-asserts style error messages even when using standard `assert`:
+
+```d
+unittest {
+    assert(1 == 2, "math is broken");
+    // Output includes ACTUAL/EXPECTED formatting and source location
+}
+```
+
+The handler is only active during `version(unittest)` builds. To temporarily disable it:
+
+```d
+import core.exception;
+
+auto savedHandler = core.exception.assertHandler;
+scope(exit) core.exception.assertHandler = savedHandler;
+core.exception.assertHandler = null;
+```
+
+## Next Steps
+
+- See the [Installation](/guide/installation/) guide for detailed setup
+- Learn about [Assertion Styles](/guide/assertion-styles/) in depth
+- Explore the [API Reference](/api/) for all available operations
+- Understand the [Philosophy](/guide/philosophy/) behind fluent-asserts

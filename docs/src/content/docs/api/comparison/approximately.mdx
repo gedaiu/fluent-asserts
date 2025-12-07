@@ -1,0 +1,39 @@
+---
+title: approximately
+description: Asserts that a numeric value is within a tolerance range of the expected value
+---
+
+Asserts that a numeric value is within a given delta (tolerance) range of the expected value. Useful for floating-point comparisons where exact equality is unreliable.
+
+## Examples
+
+```d
+expect(0.1 + 0.2).to.be.approximately(0.3, 0.0001);
+expect(3.14159).to.be.approximately(3.14, 0.01);
+```
+
+### With Arrays
+
+```d
+expect([0.1, 0.2, 0.3]).to.be.approximately([0.1, 0.2, 0.3], 0.001);
+```
+
+### With Negation
+
+```d
+expect(1.0).to.not.be.approximately(2.0, 0.1);
+```
+
+### What Failures Look Like
+
+```d
+expect(0.5).to.be.approximately(0.3, 0.1);
+```
+
+```
+ASSERTION FAILED: 0.5 should be approximately 0.3±0.1. 0.5 is not approximately 0.3±0.1.
+OPERATION: approximately
+
+  ACTUAL: <double> 0.5
+EXPECTED: <double> 0.3±0.1
+```

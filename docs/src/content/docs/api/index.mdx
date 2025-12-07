@@ -1,0 +1,143 @@
+---
+title: API Reference
+description: Complete reference for all fluent-asserts operations
+---
+
+This is the complete API reference for fluent-asserts. All assertions follow the BDD-style pattern:
+
+```d
+expect(actualValue).to.operation(expectedValue);
+```
+
+## Quick Reference
+
+| Category | Operations |
+|----------|-----------|
+| [Equality](/api/equality/) | `equal`, `approximately` |
+| [Comparison](/api/comparison/) | `greaterThan`, `lessThan`, `between`, `within` |
+| [Strings](/api/strings/) | `contain`, `startWith`, `endWith` |
+| [Ranges & Arrays](/api/ranges/) | `contain`, `containOnly`, `beEmpty`, `beSorted` |
+| [Callables](/api/callable/) | `throwException`, `haveExecutionTime`, `allocateGCMemory` |
+| [Types](/api/types/) | `beNull`, `instanceOf` |
+
+## The `expect` Function
+
+All assertions begin with `expect`:
+
+```d
+import fluent.asserts;
+
+// With a value
+expect(42).to.equal(42);
+
+// With a callable (for exception/memory testing)
+expect({
+    riskyOperation();
+}).to.throwException!RuntimeException;
+```
+
+## Language Chains
+
+These improve readability but don't affect the assertion:
+
+- `.to` / `.be` / `.been` / `.is` / `.that` / `.which`
+- `.and` / `.has` / `.have` / `.with` / `.at` / `.of` / `.same`
+
+```d
+// All equivalent:
+expect(value).equal(42);
+expect(value).to.equal(42);
+expect(value).to.be.equal(42);
+```
+
+## Negation
+
+Use `.not` to negate any assertion:
+
+```d
+expect(42).to.not.equal(0);
+expect("hello").to.not.beEmpty();
+```
+
+## Categories
+
+### Equality
+
+Test for value equality.
+
+```d
+expect("hello").to.equal("hello");
+expect(3.14).to.be.approximately(3.1, 0.1);
+```
+
+[View all Equality operations](/api/equality/)
+
+### Comparison
+
+Compare numeric values.
+
+```d
+expect(42).to.be.greaterThan(10);
+expect(42).to.be.lessThan(100);
+expect(42).to.be.between(10, 100);
+```
+
+[View all Comparison operations](/api/comparison/)
+
+### Strings
+
+Test string content.
+
+```d
+expect("hello world").to.contain("world");
+expect("hello").to.startWith("hel");
+expect("hello").to.endWith("llo");
+```
+
+[View all String operations](/api/strings/)
+
+### Ranges & Arrays
+
+Test collections.
+
+```d
+expect([1, 2, 3]).to.contain(2);
+expect([1, 2, 3]).to.containOnly([1, 2, 3]);
+expect([]).to.beEmpty();
+expect([1, 2, 3]).to.beSorted();
+```
+
+[View all Range operations](/api/ranges/)
+
+### Callables & Exceptions
+
+Test function behavior.
+
+```d
+expect({
+    throw new Exception("error");
+}).to.throwException!Exception;
+
+expect({
+    safeOperation();
+}).to.not.throwAnyException();
+
+expect({
+    auto arr = new int[1000];
+}).to.allocateGCMemory();
+```
+
+[View all Callable operations](/api/callable/)
+
+### Types
+
+Test type properties.
+
+```d
+void delegate() action = null;
+expect(action).to.beNull();
+
+expect(myObject).to.be.instanceOf!MyClass;
+```
+
+[View all Type operations](/api/types/)

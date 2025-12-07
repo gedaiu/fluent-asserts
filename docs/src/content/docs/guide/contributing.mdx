@@ -1,0 +1,134 @@
+---
+title: Contributing
+description: How to contribute to fluent-asserts
+---
+
+Thank you for your interest in contributing to fluent-asserts! This guide will help you get started.
+
+## Getting Started
+
+### Prerequisites
+
+- D compiler (DMD, LDC, or GDC)
+- DUB package manager
+- Git
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/gedaiu/fluent-asserts.git
+cd fluent-asserts
+```
+
+### Build and Test
+
+```bash
+# Build the library
+dub build
+
+# Run tests
+dub test
+```
+
+## Project Structure
+
+```
+fluent-asserts/
+  source/
+    fluentasserts/
+      core/           # Core functionality
+        expect.d      # Main Expect struct
+        evaluation.d  # Evaluation pipeline
+        memory.d      # Memory tracking
+      operations/     # Assertion operations
+        equality/     # equal, arrayEqual
+        comparison/   # greaterThan, lessThan, etc.
+        string/       # contain, startWith, endWith
+        type/         # beNull, instanceOf
+        exception/    # throwException
+        memory/       # allocateGCMemory
+      results/        # Result formatting
+  docs/               # Documentation (Starlight)
+  api/                # Legacy API docs (deprecated)
+```
+
+## Adding a New Operation
+
+1. **Create the operation file** in the appropriate `operations/` subdirectory
+2. **Implement the operation function** following the pattern:
+
+```d
+void myOperation(ref Evaluation evaluation) @safe nothrow {
+    // 1. Extract values
+    auto actual = evaluation.currentValue.strValue;
+    auto expected = evaluation.expectedValue.strValue;
+
+    // 2. Check success
+    auto isSuccess = /* your logic */;
+
+    // 3. Handle negation
+    if (evaluation.isNegated) {
+        isSuccess = !isSuccess;
+    }
+
+    // 4. Set error messages
+    if (!isSuccess) {
+        evaluation.result.expected = /* expected description */;
+        evaluation.result.actual = /* actual value */;
+    }
+}
+```
+
+3. **Add the operation to `expect.d`** as a method on the `Expect` struct
+4. **Write unit tests** with `@("description")` annotations
+
+## Writing Tests
+
+Follow these conventions:
+
+```d
+@("describes what is being tested")
+unittest {
+    // Use recordEvaluation for testing assertion behavior
+    auto evaluation = ({
+        expect(actualValue).to.myOperation(expectedValue);
+    }).recordEvaluation;
+
+    // Check the results
+    expect(evaluation.result.expected).to.equal("...");
+    expect(evaluation.result.actual).to.equal("...");
+}
+```
+
+## Documentation
+
+Documentation is built with [Starlight](https://starlight.astro.build/). To work on docs:
+
+```bash
+cd docs
+npm install
+npm run dev
+```
+
+The site will be available at `http://localhost:4321`.
+
+## Code Style
+
+- Use `@safe nothrow` where possible
+- Follow D naming conventions (camelCase for functions, PascalCase for types)
+- Include ddoc comments (`///`) for public APIs
+- Keep operations focused and single-purpose
+
+## Submitting Changes
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes
+4. Run tests: `dub test`
+5. Commit with a clear message
+6. Push and create a Pull Request
+
+## Questions?
+
+- Open an issue on [GitHub](https://github.com/gedaiu/fluent-asserts/issues)
+- Check existing issues for similar questions

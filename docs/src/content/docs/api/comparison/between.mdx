@@ -1,0 +1,38 @@
+---
+title: between
+description: Asserts that a value is strictly between two bounds (exclusive)
+---
+
+Asserts that a value is strictly between two bounds (exclusive). The value must be greater than the lower bound and less than the upper bound.
+
+## Examples
+
+```d
+expect(5).to.be.between(1, 10);
+expect(50).to.be.between(0, 100);
+```
+
+### With Negation
+
+```d
+expect(10).to.not.be.between(1, 5);
+expect(0).to.not.be.between(1, 10);
+```
+
+### What Failures Look Like
+
+```d
+expect(10).to.be.between(1, 5);
+```
+
+```
+ASSERTION FAILED: 10 should be between 1 and 5. 10 is greater than or equal to 5.
+OPERATION: between
+
+  ACTUAL: <int> 10
+EXPECTED: <int> a value inside (1, 5) interval
+```
+
+## See Also
+
+- [within](/api/comparison/within/) - Similar but with inclusive bounds

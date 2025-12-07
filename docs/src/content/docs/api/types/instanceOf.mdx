@@ -1,0 +1,30 @@
+---
+title: instanceOf
+description: Asserts that the tested value is related to a type.
+---
+
+# .instanceOf()
+
+Asserts that the tested value is related to a type.
+
+Asserts that a value is an instance of a specific type or inherits from it.
+
+## Examples
+
+### With Negation
+
+```d
+expect(value).to.be.instanceOf!Object;
+expect(value).to.not.be.instanceOf!string;
+expect(value).to.be.instanceOf!Exception;
+expect(value).to.be.instanceOf!Object;
+expect(value).to.not.be.instanceOf!string;
+```
+
+## Modifiers
+
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)
