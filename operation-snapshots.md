@@ -17,8 +17,8 @@ OPERATION: equal
   ACTUAL: <int> 5
 EXPECTED: <int> 3
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -34,8 +34,8 @@ OPERATION: not equal
   ACTUAL: <int> 5
 EXPECTED: <int> not 5
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## equal (string)
@@ -53,8 +53,8 @@ OPERATION: equal
   ACTUAL: <string> hello
 EXPECTED: <string> world
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -70,8 +70,8 @@ OPERATION: not equal
   ACTUAL: <string> hello
 EXPECTED: <string> not hello
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## equal (array)
@@ -89,8 +89,8 @@ OPERATION: equal
   ACTUAL: <int[]> [1, 2, 3]
 EXPECTED: <int[]> [1, 2, 4]
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -106,8 +106,8 @@ OPERATION: not equal
   ACTUAL: <int[]> [1, 2, 3]
 EXPECTED: <int[]> not [1, 2, 3]
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## contain (string)
@@ -125,8 +125,8 @@ OPERATION: contain
   ACTUAL: <string> hello
 EXPECTED: <string> to contain xyz
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -142,8 +142,8 @@ OPERATION: not contain
   ACTUAL: <string> hello
 EXPECTED: <string> not to contain ell
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## contain (array)
@@ -161,8 +161,8 @@ OPERATION: contain
   ACTUAL: <int[]> [1, 2, 3]
 EXPECTED: <int> to contain 5
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -178,8 +178,8 @@ OPERATION: not contain
   ACTUAL: <int[]> [1, 2, 3]
 EXPECTED: <int> not to contain 2
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## containOnly
@@ -197,8 +197,8 @@ OPERATION: containOnly
   ACTUAL: <int[]> [1, 2, 3]
 EXPECTED: <int[]> to contain only [1, 2]
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -214,8 +214,8 @@ OPERATION: not containOnly
   ACTUAL: <int[]> [1, 2, 3]
 EXPECTED: <int[]> not to contain only [1, 2, 3]
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## startWith
@@ -233,8 +233,8 @@ OPERATION: startWith
   ACTUAL: <string> hello
 EXPECTED: <string> to start with xyz
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -250,8 +250,8 @@ OPERATION: not startWith
   ACTUAL: <string> hello
 EXPECTED: <string> not to start with hel
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## endWith
@@ -269,8 +269,8 @@ OPERATION: endWith
   ACTUAL: <string> hello
 EXPECTED: <string> to end with xyz
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -286,8 +286,8 @@ OPERATION: not endWith
   ACTUAL: <string> hello
 EXPECTED: <string> not to end with llo
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## beNull
@@ -299,14 +299,14 @@ Object obj = new Object(); expect(obj).to.beNull;
 ```
 
 ```
-ASSERTION FAILED: Object(4731945922) should be null.
+ASSERTION FAILED: Object(4736678927) should be null.
 OPERATION: beNull
 
   ACTUAL: <object.Object> object.Object
 EXPECTED: <unknown> null
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -322,8 +322,8 @@ OPERATION: not beNull
   ACTUAL: <object.Object> object.Object
 EXPECTED: <unknown> not null
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## approximately (scalar)
@@ -341,8 +341,8 @@ OPERATION: approximately
   ACTUAL: <double> 0.5
 EXPECTED: <double> 0.3±0.1
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -358,8 +358,8 @@ OPERATION: not approximately
   ACTUAL: <double> 0.351
 EXPECTED: <double> 0.35±0.01
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## approximately (array)
@@ -377,8 +377,8 @@ OPERATION: approximately
   ACTUAL: <double[]> [0.5]
 EXPECTED: <double[]> [0.3±0.1]
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -394,8 +394,8 @@ OPERATION: not approximately
   ACTUAL: <double[]> [0.35]
 EXPECTED: <double[]> [0.35±0.01]
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## greaterThan
@@ -413,8 +413,8 @@ OPERATION: greaterThan
   ACTUAL: <int> 3
 EXPECTED: <int> greater than 5
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -430,8 +430,8 @@ OPERATION: not greaterThan
   ACTUAL: <int> 5
 EXPECTED: <int> less than or equal to 3
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## lessThan
@@ -449,8 +449,8 @@ OPERATION: lessThan
   ACTUAL: <int> 5
 EXPECTED: <int> less than 3
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -466,8 +466,8 @@ OPERATION: not lessThan
   ACTUAL: <int> 3
 EXPECTED: <int> greater than or equal to 5
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 
 ## between
@@ -485,8 +485,8 @@ OPERATION: between
   ACTUAL: <int> 10
 EXPECTED: <int> a value inside (1, 5) interval
 
-source/fluentasserts/operations/snapshot.d:95
->   95:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
 ```
 
 ### Negated fail
@@ -502,7 +502,115 @@ OPERATION: not between
   ACTUAL: <int> 3
 EXPECTED: <int> a value outside (1, 5) interval
 
-source/fluentasserts/operations/snapshot.d:110
->  110:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+```
+
+## greaterOrEqualTo
+
+### Positive fail
+
+```d
+expect(3).to.be.greaterOrEqualTo(5);
+```
+
+```
+ASSERTION FAILED: 3 should be greater or equal to 5. 3 is less than 5.
+OPERATION: greaterOrEqualTo
+
+  ACTUAL: <int> 3
+EXPECTED: <int> greater or equal than 5
+
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+```
+
+### Negated fail
+
+```d
+expect(5).to.not.be.greaterOrEqualTo(3);
+```
+
+```
+ASSERTION FAILED: 5 should not be greater or equal to 3. 5 is greater or equal than 3.
+OPERATION: not greaterOrEqualTo
+
+  ACTUAL: <int> 5
+EXPECTED: <int> less than 3
+
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+```
+
+## lessOrEqualTo
+
+### Positive fail
+
+```d
+expect(5).to.be.lessOrEqualTo(3);
+```
+
+```
+ASSERTION FAILED: 5 should be less or equal to 3. 5 is greater than 3.
+OPERATION: lessOrEqualTo
+
+  ACTUAL: <int> 5
+EXPECTED: <int> less or equal to 3
+
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+```
+
+### Negated fail
+
+```d
+expect(3).to.not.be.lessOrEqualTo(5);
+```
+
+```
+ASSERTION FAILED: 3 should not be less or equal to 5. 3 is less or equal to 5.
+OPERATION: not lessOrEqualTo
+
+  ACTUAL: <int> 3
+EXPECTED: <int> greater than 5
+
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
+```
+
+## instanceOf
+
+### Positive fail
+
+```d
+expect(new Object()).to.be.instanceOf!Exception;
+```
+
+```
+ASSERTION FAILED: Object(4736529783) should be instance of "object.Exception". Object(4736529783) is instance of object.Object.
+OPERATION: instanceOf
+
+  ACTUAL: <object.Object> typeof object.Object
+EXPECTED: <object.Exception> typeof object.Exception
+
+source/fluentasserts/operations/snapshot.d:107
+>  107:        auto posEval = ({ mixin(c.code ~ ";"); }).recordEvaluation;
+```
+
+### Negated fail
+
+```d
+expect(new Exception("test")).to.not.be.instanceOf!Object;
+```
+
+```
+ASSERTION FAILED: Exception(4736846670) should not be instance of "object.Object". Exception(4736846670) is instance of object.Exception.
+OPERATION: not instanceOf
+
+  ACTUAL: <object.Exception> typeof object.Exception
+EXPECTED: <object.Object> not typeof object.Object
+
+source/fluentasserts/operations/snapshot.d:122
+>  122:        auto negEval = ({ mixin(c.negCode ~ ";"); }).recordEvaluation;
 ```
 

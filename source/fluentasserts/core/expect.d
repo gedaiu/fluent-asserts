@@ -24,6 +24,7 @@ import fluentasserts.operations.comparison.lessOrEqualTo : lessOrEqualToOp = les
 import fluentasserts.operations.comparison.between : betweenOp = between, betweenDurationOp = betweenDuration, betweenSysTimeOp = betweenSysTime;
 import fluentasserts.operations.comparison.approximately : approximatelyOp = approximately, approximatelyListOp = approximatelyList;
 import fluentasserts.operations.exception.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage, throwSomethingOp = throwSomething, throwSomethingWithMessageOp = throwSomethingWithMessage;
+import fluentasserts.operations.memory.gcMemory : allocateGCMemoryOp = allocateGCMemory;
 
 import std.datetime : Duration, SysTime;
 
@@ -439,6 +440,14 @@ import std.conv;
     auto result = expect(_evaluation.currentValue.duration, _evaluation.sourceFile, _evaluation.sourceLine, " have execution time");
 
     return result;
+  }
+
+  auto allocateGCMemory() {
+    addOperationName("allocateGCMemory");
+    finalizeMessage();
+    inhibit();
+
+    return Evaluator(*_evaluation, &allocateGCMemoryOp);
   }
 
   /// Appends an operation name to the current operation chain.

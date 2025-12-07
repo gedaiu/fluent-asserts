@@ -194,6 +194,8 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 ///   prependText = Optional text to prepend to the value display
 /// Returns: A tuple containing the evaluated value and its ValueEvaluation.
 auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(!isInputRange!T || isArray!T || isAssociativeArray!T) {
+  GC.collect();
+  GC.minimize();
   GC.disable();
   scope(exit) GC.enable();
 
@@ -208,12 +210,12 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 
     static if(isCallable!T) {
       if(value !is null) {
-        gcMemoryUsed = GC.stats().usedSize;
         nonGCMemoryUsed = getNonGCMemory();
         begin = Clock.currTime;
+        gcMemoryUsed = GC.stats().usedSize;
         value();
-        nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryUsed;
         gcMemoryUsed = GC.stats().usedSize - gcMemoryUsed;
+        nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryUsed;
       }
     }
 
