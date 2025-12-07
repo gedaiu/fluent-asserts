@@ -6,7 +6,7 @@ import core.memory : GC;
 
 version (linux) {
     private extern (C) nothrow @nogc {
-        struct mallinfo {
+        struct mallinfo_t {
             int arena;     // Non-mmapped space allocated (bytes)
             int ordblks;   // Number of free chunks
             int smblks;    // Number of free fastbin blocks
@@ -19,7 +19,7 @@ version (linux) {
             int keepcost;  // Top-most, releasable space (bytes)
         }
 
-        mallinfo mallinfo();
+        mallinfo_t mallinfo();
     }
 }
 
