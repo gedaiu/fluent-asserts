@@ -213,7 +213,7 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
         begin = Clock.currTime;
         nonGCMemoryUsed = getNonGCMemory();
         gcMemoryUsed = GC.stats().usedSize;
-        value();
+        cast(void) value();
         gcMemoryUsed = GC.stats().usedSize - gcMemoryUsed;
         nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryUsed;
       }
