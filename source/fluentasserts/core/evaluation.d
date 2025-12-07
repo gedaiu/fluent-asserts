@@ -212,9 +212,10 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
       if(value !is null) {
         begin = Clock.currTime;
         nonGCMemoryUsed = getNonGCMemory();
-        gcMemoryUsed = GC.stats().usedSize;
+        // Use allocatedInCurrentThread for accurate per-thread allocation tracking
+        auto gcBefore = GC.allocatedInCurrentThread();
         cast(void) value();
-        gcMemoryUsed = GC.stats().usedSize - gcMemoryUsed;
+        gcMemoryUsed = GC.allocatedInCurrentThread() - gcBefore;
         nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryUsed;
       }
     }
