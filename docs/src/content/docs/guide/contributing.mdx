@@ -35,21 +35,32 @@ dub test
 ```
 fluent-asserts/
   source/
+    fluent/
+      asserts.d         # Public import module
     fluentasserts/
-      core/           # Core functionality
-        expect.d      # Main Expect struct
-        evaluation.d  # Evaluation pipeline
-        memory.d      # Memory tracking
-      operations/     # Assertion operations
-        equality/     # equal, arrayEqual
-        comparison/   # greaterThan, lessThan, etc.
-        string/       # contain, startWith, endWith
-        type/         # beNull, instanceOf
-        exception/    # throwException
-        memory/       # allocateGCMemory
-      results/        # Result formatting
-  docs/               # Documentation (Starlight)
-  api/                # Legacy API docs (deprecated)
+      core/             # Core functionality
+        base.d          # Base assertion infrastructure
+        expect.d        # Main Expect struct
+        evaluation.d    # Evaluation data structures
+        evaluator.d     # Evaluation execution
+        lifecycle.d     # Assertion lifecycle management
+        memory.d        # Memory tracking utilities
+        listcomparison.d # List comparison helpers
+      operations/       # Assertion operations
+        registry.d      # Operation registry
+        snapshot.d      # Snapshot testing
+        comparison/     # greaterThan, lessThan, between, approximately
+        equality/       # equal, arrayEqual
+        exception/      # throwException
+        memory/         # allocateGCMemory, allocateNonGCMemory
+        string/         # contain, startWith, endWith
+        type/           # beNull, instanceOf
+      results/          # Result formatting and output
+        formatting.d    # Value formatting
+        message.d       # Error message building
+        printer.d       # Output printing
+        serializers.d   # Type serialization
+  docs/                 # Documentation (Starlight)
 ```
 
 ## Adding a New Operation

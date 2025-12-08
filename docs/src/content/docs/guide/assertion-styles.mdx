@@ -13,7 +13,7 @@ All assertions start with the `expect` function:
 expect(actualValue).to.equal(expectedValue);
 ```
 
-The `expect` function accepts any value and returns an `Expect` struct that provides chainable assertion methods.
+The `expect` function accepts any value and returns an `Expect` struct that provides fluent assertion methods.
 
 ## The `Assert` Struct
 
@@ -58,7 +58,6 @@ fluent-asserts provides several language chains that have no effect on the asser
 - `.is`
 - `.that`
 - `.which`
-- `.and`
 - `.has`
 - `.have`
 - `.with`
@@ -163,17 +162,6 @@ expect({
 expect({
     fastOperation();
 }).to.haveExecutionTime.lessThan(100.msecs);
-```
-
-## Chaining Assertions
-
-You can chain multiple assertions together:
-
-```d
-expect(user.name)
-    .to.startWith("J")
-    .and.endWith("n")
-    .and.have.length.greaterThan(3);
 ```
 
 ## Custom Error Messages

@@ -44,11 +44,10 @@ Every assertion flows naturally from value to expectation:
 ```d
 expect(response.status)    // what you're testing
     .to.be                 // optional readability
-    .greaterOrEqualTo(200) // the assertion
-    .and.lessThan(300);    // chain more
+    .greaterOrEqualTo(200);// the assertion
 ```
 
-The language chains (`.to`, `.be`, `.and`) do nothing—they exist purely so your tests read like documentation.
+The language chains (`.to`, `.be`) improve readability—they exist purely so your tests read like documentation.
 
 ---
 

@@ -1,12 +1,15 @@
 ---
-title: allocateNonGCMemory
+title: .allocateNonGCMemory()
 description: Asserts that a callable allocates non-GC memory (malloc, etc.)
 ---
 
 Asserts that a callable allocates memory outside of the garbage collector during its execution. This includes manual memory allocation via `malloc`, `core.stdc.stdlib`, or similar mechanisms.
 
 :::caution[Platform Limitations]
-Non-GC memory tracking only works reliably on Linux using `mallinfo()`. On Linux, small runtime allocations may be detected even when the tested code doesn't allocate - use this assertion primarily to detect intentional large allocations (e.g., > 1MB). macOS and Windows don't have reliable non-GC memory delta tracking.
+Non-GC memory tracking uses platform-specific APIs:
+- **Linux**: `mallinfo()` reports global heap state. Small runtime allocations may be detected even when the tested code doesn't allocate. Use this assertion primarily to detect large allocations (> 1MB).
+- **macOS**: Uses `phys_footprint` from TASK_VM_INFO, which tracks dirty memory including malloc allocations.
+- **Windows**: Falls back to process memory estimation (less accurate).
 :::
 
 ## Examples
@@ -21,10 +24,10 @@ expect({
 }).to.allocateNonGCMemory();
 ```
 
-### With Negation (macOS/Windows only)
+### With Negation
 
 :::note
-Negation (`not.allocateNonGCMemory()`) is unreliable on Linux because `mallinfo()` may detect runtime allocations even when the tested code doesn't allocate.
+Negation (`not.allocateNonGCMemory()`) is unreliable on Linux because `mallinfo()` may detect runtime allocations even when the tested code doesn't allocate. Works reliably on macOS.
 :::
 
 ```d
