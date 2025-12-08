@@ -63,7 +63,7 @@ struct ValueEvaluation {
 
   /// Returns the primary type name of the evaluated value.
   /// Returns: The first type name, or "unknown" if no types are available.
-  string typeName() @safe nothrow {
+  string typeName() @safe nothrow @nogc {
     if(typeNames.length == 0) {
       return "unknown";
     }
@@ -104,12 +104,12 @@ struct Evaluation {
   AssertResult result;
 
   /// Convenience accessors for backwards compatibility
-  string sourceFile() nothrow @safe { return source.file; }
-  size_t sourceLine() nothrow @safe { return source.line; }
+  string sourceFile() nothrow @safe @nogc { return source.file; }
+  size_t sourceLine() nothrow @safe @nogc { return source.line; }
 
   /// Checks if there is an assertion result with content.
   /// Returns: true if the result has expected/actual values, diff, or extra/missing items.
-  bool hasResult() nothrow @safe {
+  bool hasResult() nothrow @safe @nogc {
     return result.hasContent();
   }
 

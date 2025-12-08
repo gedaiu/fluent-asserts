@@ -206,7 +206,7 @@ Evaluation recordEvaluation(void delegate() assertion) @trusted {
   /// Params:
   ///   value = The value evaluation being started
   /// Returns: The current assertion number.
-  int beginEvaluation(ValueEvaluation value) nothrow {
+  int beginEvaluation(ValueEvaluation value) nothrow @nogc {
     totalAsserts++;
 
     return totalAsserts;

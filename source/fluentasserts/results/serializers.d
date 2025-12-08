@@ -813,7 +813,7 @@ unittest {
 /// Params:
 ///   value = The potentially quoted string
 /// Returns: The string with surrounding quotes removed.
-string cleanString(string value) @safe nothrow {
+string cleanString(string value) @safe nothrow @nogc {
   if(value.length <= 1) {
     return value;
   }

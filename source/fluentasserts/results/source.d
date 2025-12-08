@@ -25,7 +25,7 @@ import fluentasserts.results.printer : ResultPrinter;
 /// Params:
 ///   path = The file path, possibly with mixin suffix
 /// Returns: The cleaned path with `.d` extension, or original path if not a mixin path
-string cleanMixinPath(string path) pure nothrow {
+string cleanMixinPath(string path) pure nothrow @nogc {
     // Look for pattern: .d-mixin-N at the end
     enum suffix = ".d-mixin-";
 
@@ -302,7 +302,7 @@ string tokensToString(const(Token)[] tokens) {
 ///   tokens = The token array
 ///   index = The starting index
 /// Returns: The index of the first token on the same line
-size_t extendToLineStart(const(Token)[] tokens, size_t index) nothrow {
+size_t extendToLineStart(const(Token)[] tokens, size_t index) nothrow @nogc {
   if (index == 0 || index >= tokens.length) {
     return index;
   }

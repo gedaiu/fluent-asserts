@@ -184,6 +184,6 @@ size_t getNonGCMemory() @trusted nothrow {
 
 /// Returns the current GC heap usage.
 /// Returns: GC used memory in bytes.
-size_t getGCMemory() @trusted nothrow {
+size_t getGCMemory() @trusted nothrow @nogc {
     return GC.stats().usedSize;
 }

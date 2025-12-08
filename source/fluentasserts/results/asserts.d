@@ -71,7 +71,7 @@ struct AssertResult {
   string[] missing;
 
   /// Returns true if the result has any content indicating a failure.
-  bool hasContent() nothrow @safe inout {
+  bool hasContent() nothrow @safe @nogc inout {
     return expected.length > 0 || actual.length > 0
       || diff.length > 0 || extra.length > 0 || missing.length > 0;
   }
