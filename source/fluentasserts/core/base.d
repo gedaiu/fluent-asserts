@@ -435,15 +435,13 @@ void fluentHandler(string file, size_t line, string msg) @system nothrow {
 
   Evaluation evaluation;
   evaluation.source = SourceResult.create(file, line);
-  evaluation.operationName = "assert";
+  evaluation.addOperationName("assert");
   evaluation.currentValue.typeNames = ["assert state"];
   evaluation.expectedValue.typeNames = ["assert state"];
   evaluation.isEvaluated = true;
-  evaluation.result = AssertResult(
-    [Message(Message.Type.info, "Assert failed: " ~ msg)],
-    "true",
-    "false"
-  );
+  evaluation.result.expected = "true";
+  evaluation.result.actual = "false";
+  evaluation.result.addText("Assert failed: " ~ msg);
 
   throw new AssertError(evaluation.toString(), file, line);
 }

@@ -49,8 +49,16 @@ struct DiffSegment {
 
 /// Holds the result of an assertion including expected/actual values and diff.
 struct AssertResult {
-  /// The message segments describing the assertion
-  immutable(Message)[] message;
+  /// The message segments (stored as fixed array, accessed via messages())
+  private {
+    Message[32] _messages;
+    size_t _messageCount;
+  }
+
+  /// Returns the active message segments as a slice
+  inout(Message)[] messages() return inout nothrow @safe @nogc {
+    return _messages[0 .. _messageCount];
+  }
 
   /// The expected value as a string
   string expected;
@@ -88,7 +96,7 @@ struct AssertResult {
   /// Returns the message as a plain string.
   string messageString() nothrow @trusted inout {
     string result;
-    foreach (m; message) {
+    foreach (m; messages) {
       result ~= m.text;
     }
     return result;
@@ -100,18 +108,20 @@ struct AssertResult {
   }
 
   /// Adds a message to the result.
-  void add(immutable(Message) msg) nothrow @safe {
-    message ~= msg;
+  void add(Message msg) nothrow @safe {
+    if (_messageCount < _messages.length) {
+      _messages[_messageCount++] = msg;
+    }
   }
 
   /// Adds text to the result, optionally as a value type.
   void add(bool isValue, string text) nothrow {
-    message ~= Message(isValue ? Message.Type.value : Message.Type.info, text);
+    add(Message(isValue ? Message.Type.value : Message.Type.info, text));
   }
 
   /// Adds a value to the result.
   void addValue(string text) nothrow @safe {
-    add(true, text);
+    add(Message(Message.Type.value, text));
   }
 
   /// Adds informational text to the result.
@@ -119,22 +129,34 @@ struct AssertResult {
     if (text == "throwAnyException") {
       text = "throw any exception";
     }
-    message ~= Message(Message.Type.info, text);
+    add(Message(Message.Type.info, text));
+  }
+
+  /// Prepends a message to the result (shifts existing messages).
+  private void prepend(Message msg) nothrow @safe @nogc {
+    if (_messageCount < _messages.length) {
+      // Shift all existing messages to the right
+      for (size_t i = _messageCount; i > 0; i--) {
+        _messages[i] = _messages[i - 1];
+      }
+      _messages[0] = msg;
+      _messageCount++;
+    }
   }
 
   /// Prepends informational text to the result.
   void prependText(string text) nothrow @safe {
-    message = Message(Message.Type.info, text) ~ message;
+    prepend(Message(Message.Type.info, text));
   }
 
   /// Prepends a value to the result.
   void prependValue(string text) nothrow @safe {
-    message = Message(Message.Type.value, text) ~ message;
+    prepend(Message(Message.Type.value, text));
   }
 
   /// Starts the message with the given text.
   void startWith(string text) nothrow @safe {
-    message = Message(Message.Type.info, text) ~ message;
+    prepend(Message(Message.Type.info, text));
   }
 
   /// Computes the diff between expected and actual values.

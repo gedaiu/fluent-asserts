@@ -195,13 +195,13 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
     }
 
     ThrowableEvaluator withMessage() {
-        evaluation.operationName ~= ".withMessage";
+        evaluation.addOperationName("withMessage");
         evaluation.result.addText(" with message");
         return this;
     }
 
     ThrowableEvaluator withMessage(T)(T message) {
-        evaluation.operationName ~= ".withMessage";
+        evaluation.addOperationName("withMessage");
         evaluation.result.addText(" with message");
 
         auto expectedValue = message.evaluate.evaluation;
@@ -226,7 +226,7 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
     }
 
     ThrowableEvaluator equal(T)(T value) {
-        evaluation.operationName ~= ".equal";
+        evaluation.addOperationName("equal");
 
         auto expectedValue = value.evaluate.evaluation;
         foreach (key, v; evaluation.expectedValue.meta) {

@@ -455,17 +455,12 @@ import std.conv;
   }
 
   /// Appends an operation name to the current operation chain.
-  void addOperationName(string value) {
-
-    if(this._evaluation.operationName) {
-      this._evaluation.operationName ~= ".";
-    }
-
-    this._evaluation.operationName ~= value;
+  void addOperationName(string value) nothrow @safe @nogc {
+    this._evaluation.addOperationName(value);
   }
 
   /// Dispatches unknown method names as operations (no arguments).
-  ref Expect opDispatch(string methodName)() return {
+  ref Expect opDispatch(string methodName)() return nothrow @nogc {
     addOperationName(methodName);
 
     return this;

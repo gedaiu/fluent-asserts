@@ -85,8 +85,37 @@ struct Evaluation {
   /// The expected value that we will use to perform the comparison
   ValueEvaluation expectedValue;
 
-  /// The operation name
-  string operationName;
+  /// The operation names (stored as array, joined on access)
+  private {
+    string[8] _operationNames;
+    size_t _operationCount;
+  }
+
+  /// Returns the operation name by joining stored parts with "."
+  string operationName() nothrow @safe {
+    if (_operationCount == 0) {
+      return "";
+    }
+
+    if (_operationCount == 1) {
+      return _operationNames[0];
+    }
+
+    Appender!string result;
+    foreach (i; 0 .. _operationCount) {
+      if (i > 0) result.put(".");
+      result.put(_operationNames[i]);
+    }
+
+    return result[];
+  }
+
+  /// Adds an operation name to the chain
+  void addOperationName(string name) nothrow @safe @nogc {
+    if (_operationCount < _operationNames.length) {
+      _operationNames[_operationCount++] = name;
+    }
+  }
 
   /// True if the operation result needs to be negated to have a successful result
   bool isNegated;
@@ -129,7 +158,7 @@ struct Evaluation {
 
     printer.info("ASSERTION FAILED: ");
 
-    foreach(message; result.message) {
+    foreach(message; result.messages) {
       printer.print(message);
     }
 
