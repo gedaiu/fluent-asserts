@@ -168,7 +168,7 @@ unittest {
 unittest {
   static struct Money {
     int cents;
-    int opCmp(Money other) const @safe nothrow {
+    int opCmp(Money other) const @safe nothrow @nogc {
       return cents - other.cents;
     }
   }

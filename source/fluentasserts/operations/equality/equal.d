@@ -542,11 +542,9 @@ class EqualThing {
     this.x = x;
   }
 
-  override bool opEquals(Object o) {
-    if (typeid(this) != typeid(o))
-      return false;
-    alias a = this;
+  override bool opEquals(Object o) @trusted nothrow @nogc {
     auto b = cast(typeof(this)) o;
-    return a.x == b.x;
+    if (b is null) return false;
+    return this.x == b.x;
   }
 }

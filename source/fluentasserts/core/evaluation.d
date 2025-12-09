@@ -399,24 +399,26 @@ unittest {
 /// Wraps native values to enable equality and ordering comparisons
 /// without knowing the concrete types at compile time.
 interface EquableValue {
-  @safe nothrow:
     /// Checks if this value equals another EquableValue.
-    bool isEqualTo(EquableValue value);
+    bool isEqualTo(EquableValue value) @safe nothrow @nogc;
 
     /// Checks if this value is less than another EquableValue.
-    bool isLessThan(EquableValue value);
+    bool isLessThan(EquableValue value) @safe nothrow @nogc;
 
     /// Converts this value to an array of EquableValues.
-    EquableValue[] toArray();
+    EquableValue[] toArray() @safe nothrow;
 
     /// Returns a string representation of this value.
-    string toString();
+    string toString() @safe nothrow @nogc;
 
     /// Returns a generalized version of this value for cross-type comparison.
-    EquableValue generalize();
+    EquableValue generalize() @safe nothrow @nogc;
 
     /// Returns the serialized string representation.
-    string getSerialized();
+    string getSerialized() @safe nothrow @nogc;
+
+    /// Returns the underlying value as Object if it's a class, null otherwise.
+    Object getObjectValue() @trusted nothrow @nogc;
 }
 
 /// Wraps a value into an EquableValue for comparison operations.
@@ -445,95 +447,111 @@ class ObjectEquable(T) : EquableValue {
     string serialized;
   }
 
-  @trusted nothrow:
-    /// Constructs an ObjectEquable wrapping the given value.
-    this(T value, string serialized) {
-      this.value = value;
-      this.serialized = serialized;
-    }
+  /// Constructs an ObjectEquable wrapping the given value.
+  this(T value, string serialized) @trusted nothrow {
+    this.value = value;
+    this.serialized = serialized;
+  }
 
-    /// Checks equality with another EquableValue.
-    bool isEqualTo(EquableValue otherEquable) {
-      try {
-        auto other = cast(ObjectEquable) otherEquable;
+  /// Checks equality with another EquableValue.
+  bool isEqualTo(EquableValue otherEquable) @trusted nothrow @nogc {
+    auto other = cast(ObjectEquable) otherEquable;
 
-        if(other !is null) {
-          return value == other.value;
-        }
-
-        auto generalized = otherEquable.generalize;
-
-        static if(is(T == class)) {
-          auto otherGeneralized = cast(ObjectEquable!Object) generalized;
-
-          if(otherGeneralized !is null) {
-            return value == otherGeneralized.value;
+    if(other !is null) {
+      static if (is(T == class)) {
+        // For classes, call opEquals directly to avoid non-@nogc runtime dispatch
+        static if (__traits(compiles, () nothrow @nogc { T a; if (a !is null) a.opEquals(a); })) {
+          if (value is null) {
+            return other.value is null;
           }
-        }
-
-        return serialized == otherEquable.getSerialized;
-      } catch(Exception) {
-        return false;
-      }
-    }
-
-    /// Checks if this value is less than another EquableValue.
-    bool isLessThan(EquableValue otherEquable) {
-      static if (__traits(compiles, value < value)) {
-        try {
-          auto other = cast(ObjectEquable) otherEquable;
-
-          if(other !is null) {
-            return value < other.value;
+          if (other.value is null) {
+            return false;
           }
-
-          return false;
-        } catch(Exception) {
-          return false;
+          return value.opEquals(other.value);
+        } else {
+          return serialized == otherEquable.getSerialized;
         }
       } else {
-        return false;
-      }
-    }
-
-    /// Returns the serialized string representation.
-    string getSerialized() nothrow @safe @nogc {
-      return serialized;
-    }
-
-    /// Returns a generalized version for cross-type comparison.
-    EquableValue generalize() {
-        static if(is(T == class)) {
-          auto obj = cast(Object) value;
-
-          if(obj !is null) {
-            return new ObjectEquable!Object(obj, serialized);
-          }
+        static if (__traits(compiles, value == other.value)) {
+          return value == other.value;
+        } else {
+          return serialized == otherEquable.getSerialized;
         }
-
-        return new ObjectEquable!string(serialized, serialized);
+      }
     }
 
-    /// Converts this value to an array of EquableValues.
-    EquableValue[] toArray() {
-      static if(__traits(hasMember, T, "byValue") && !__traits(hasMember, T, "byKeyValue")) {
-        try {
-          return value.byValue.map!(a => a.equableValue(SerializerRegistry.instance.serialize(a))).array;
-        } catch(Exception) {}
+    // Cast failed - for class types with @nogc opEquals, try comparing via Object
+    static if (is(T == class)) {
+      static if (__traits(compiles, () nothrow @nogc { T a; if (a !is null) a.opEquals(cast(Object) null); })) {
+        auto otherObj = otherEquable.getObjectValue();
+        if (value is null && otherObj is null) {
+          return true;
+        }
+        if (value is null || otherObj is null) {
+          return false;
+        }
+        return value.opEquals(otherObj);
+      }
+    }
+
+    return serialized == otherEquable.getSerialized;
+  }
+
+  /// Checks if this value is less than another EquableValue.
+  bool isLessThan(EquableValue otherEquable) @trusted nothrow @nogc {
+    static if (__traits(compiles, value < value)) {
+      auto other = cast(ObjectEquable) otherEquable;
+
+      if(other !is null) {
+        return value < other.value;
       }
 
-      return [ this ];
+      return false;
+    } else {
+      return false;
+    }
+  }
+
+  /// Returns the serialized string representation.
+  string getSerialized() @safe nothrow @nogc {
+    return serialized;
+  }
+
+  /// Returns a generalized version for cross-type comparison.
+  /// Returns self - cross-type comparison uses getSerialized().
+  EquableValue generalize() @safe nothrow @nogc {
+    return this;
+  }
+
+  /// Returns the underlying value as Object if T is a class, null otherwise.
+  Object getObjectValue() @trusted nothrow @nogc {
+    static if (is(T == class)) {
+      return cast(Object) value;
+    } else {
+      return null;
+    }
+  }
+
+  /// Converts this value to an array of EquableValues.
+  EquableValue[] toArray() @trusted nothrow {
+    static if(__traits(hasMember, T, "byValue") && !__traits(hasMember, T, "byKeyValue")) {
+      try {
+        return value.byValue.map!(a => a.equableValue(SerializerRegistry.instance.serialize(a))).array;
+      } catch(Exception) {}
     }
 
-    /// Returns a string representation prefixed with "Equable.".
-    override string toString() {
-      return "Equable." ~ serialized;
-    }
+    return [ this ];
+  }
 
-    /// Comparison operator override.
-    override int opCmp (Object o) {
-      return -1;
-    }
+  /// Returns the serialized string representation.
+  override string toString() @safe nothrow @nogc {
+    return serialized;
+  }
+
+  /// Comparison operator override.
+  override int opCmp(Object o) @trusted nothrow @nogc {
+    return -1;
+  }
 }
 
 @("an object with byValue returns an array with all elements")
@@ -548,8 +566,8 @@ unittest {
 
   auto value = equableValue(new TestObject(), "[1, 2]").toArray;
   assert(value.length == 2, "invalid length");
-  assert(value[0].toString == "Equable.1", value[0].toString ~ " != Equable.1");
-  assert(value[1].toString == "Equable.2", value[1].toString ~ " != Equable.2");
+  assert(value[0].toString == "1", value[0].toString ~ " != 1");
+  assert(value[1].toString == "2", value[1].toString ~ " != 2");
 }
 
 @("isLessThan returns true when value is less than other")
@@ -598,58 +616,62 @@ class ArrayEquable(U: T[], T) : EquableValue {
     string serialized;
   }
 
-  @safe nothrow:
-    /// Constructs an ArrayEquable wrapping the given array.
-    this(T[] values, string serialized) {
-      this.values = values;
-      this.serialized = serialized;
+  /// Constructs an ArrayEquable wrapping the given array.
+  this(T[] values, string serialized) @safe nothrow {
+    this.values = values;
+    this.serialized = serialized;
+  }
+
+  /// Checks equality with another EquableValue by comparing serialized forms.
+  bool isEqualTo(EquableValue otherEquable) @trusted nothrow @nogc {
+    auto other = cast(ArrayEquable!U) otherEquable;
+
+    if(other is null) {
+      return serialized == otherEquable.getSerialized;
     }
 
-    /// Checks equality with another EquableValue by comparing serialized forms.
-    bool isEqualTo(EquableValue otherEquable) {
-      auto other = cast(ArrayEquable!U) otherEquable;
+    return serialized == other.serialized;
+  }
 
-      if(other is null) {
-        return false;
-      }
+  /// Arrays do not support less-than comparison, always returns false.
+  bool isLessThan(EquableValue otherEquable) @safe nothrow @nogc {
+    return false;
+  }
 
-      return serialized == other.serialized;
-    }
+  /// Returns the serialized string representation.
+  string getSerialized() @safe nothrow @nogc {
+    return serialized;
+  }
 
-    /// Arrays do not support less-than comparison, always returns false.
-    bool isLessThan(EquableValue otherEquable) nothrow @safe @nogc {
-      return false;
-    }
+  /// Converts each array element to an EquableValue.
+  EquableValue[] toArray() @trusted nothrow {
+    static if(is(T == void)) {
+      return [];
+    } else {
+      try {
+        auto newList = values.map!(a => equableValue(a, SerializerRegistry.instance.niceValue(a))).array;
 
-    /// Returns the serialized string representation.
-    string getSerialized() nothrow @safe @nogc {
-      return serialized;
-    }
-
-    /// Converts each array element to an EquableValue.
-    @trusted EquableValue[] toArray() {
-      static if(is(T == void)) {
+        return cast(EquableValue[]) newList;
+      } catch(Exception) {
         return [];
-      } else {
-        try {
-          auto newList = values.map!(a => equableValue(a, SerializerRegistry.instance.niceValue(a))).array;
-
-          return cast(EquableValue[]) newList;
-        } catch(Exception) {
-          return [];
-        }
       }
     }
+  }
 
-    /// Arrays are already generalized, returns self.
-    EquableValue generalize() {
-      return this;
-    }
+  /// Arrays are already generalized, returns self.
+  EquableValue generalize() @safe nothrow @nogc {
+    return this;
+  }
 
-    /// Returns the serialized string representation.
-    override string toString() {
-      return serialized;
-    }
+  /// Arrays are not Objects, returns null.
+  Object getObjectValue() @safe nothrow @nogc {
+    return null;
+  }
+
+  /// Returns the serialized string representation.
+  override string toString() @safe nothrow @nogc {
+    return serialized;
+  }
 }
 
 /// An EquableValue wrapper for associative array types.

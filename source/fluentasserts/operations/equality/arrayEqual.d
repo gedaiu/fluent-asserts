@@ -17,23 +17,11 @@ version(unittest) {
 static immutable arrayEqualDescription = "Asserts that the target is strictly == equal to the given val.";
 
 /// Asserts that two arrays are strictly equal element by element.
+/// Uses serialized string comparison via isEqualTo.
 void arrayEqual(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
-  bool result = true;
 
-  EquableValue[] expectedPieces = evaluation.expectedValue.proxyValue.toArray;
-  EquableValue[] testData = evaluation.currentValue.proxyValue.toArray;
-
-  if(testData.length == expectedPieces.length) {
-    foreach(index, testedValue; testData) {
-      if(testedValue !is null && !testedValue.isEqualTo(expectedPieces[index])) {
-        result = false;
-        break;
-      }
-    }
-  } else {
-    result = false;
-  }
+  bool result = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
 
   if(evaluation.isNegated) {
     result = !result;
