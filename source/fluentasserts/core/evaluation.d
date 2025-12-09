@@ -491,10 +491,12 @@ class ObjectEquable(T) : EquableValue {
           return false;
         }
         return value.opEquals(otherObj);
+      } else {
+        return serialized == otherEquable.getSerialized;
       }
+    } else {
+      return serialized == otherEquable.getSerialized;
     }
-
-    return serialized == otherEquable.getSerialized;
   }
 
   /// Checks if this value is less than another EquableValue.
