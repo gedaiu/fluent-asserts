@@ -468,7 +468,7 @@ class ObjectEquable(T) : EquableValue {
     }
 
     /// Returns the serialized string representation.
-    string getSerialized() {
+    string getSerialized() nothrow @safe @nogc {
       return serialized;
     }
 
@@ -588,12 +588,12 @@ class ArrayEquable(U: T[], T) : EquableValue {
     }
 
     /// Arrays do not support less-than comparison, always returns false.
-    bool isLessThan(EquableValue otherEquable) {
+    bool isLessThan(EquableValue otherEquable) nothrow @safe @nogc {
       return false;
     }
 
     /// Returns the serialized string representation.
-    string getSerialized() {
+    string getSerialized() nothrow @safe @nogc {
       return serialized;
     }
 

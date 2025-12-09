@@ -430,7 +430,7 @@ import std.conv;
   }
 
   /// Prevents the destructor from finalizing the evaluation.
-  void inhibit() {
+  void inhibit() nothrow @safe @nogc {
     this.refCount = int.max;
   }
 

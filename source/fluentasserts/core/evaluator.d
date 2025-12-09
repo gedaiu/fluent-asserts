@@ -46,7 +46,7 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
         return this;
     }
 
-    void inhibit() {
+    void inhibit() nothrow @safe @nogc {
         this.refCount = int.max;
     }
 
@@ -129,7 +129,7 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
         return this;
     }
 
-    void inhibit() {
+    void inhibit() nothrow @safe @nogc {
         this.refCount = int.max;
     }
 
@@ -255,7 +255,7 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
         return this;
     }
 
-    void inhibit() {
+    void inhibit() nothrow @safe @nogc {
         this.refCount = int.max;
     }
 
