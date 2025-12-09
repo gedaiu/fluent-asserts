@@ -30,25 +30,25 @@ class SerializerRegistry {
 
   /// Registers a custom serializer delegate for an aggregate type.
   /// The serializer will be used when serializing values of that type.
-  void register(T)(string delegate(T) serializer) if(isAggregateType!T) {
+  void register(T)(string delegate(T) serializer) @trusted if(isAggregateType!T) {
     enum key = T.stringof;
 
     static if(is(Unqual!T == T)) {
-      string wrap(void* val) {
+      string wrap(void* val) @trusted {
         auto value = (cast(T*) val);
         return serializer(*value);
       }
 
       serializers[key] = &wrap;
     } else static if(is(ConstOf!T == T)) {
-      string wrap(const void* val) {
+      string wrap(const void* val) @trusted {
         auto value = (cast(T*) val);
         return serializer(*value);
       }
 
       constSerializers[key] = &wrap;
     } else static if(is(ImmutableOf!T == T)) {
-      string wrap(immutable void* val) {
+      string wrap(immutable void* val) @trusted {
         auto value = (cast(T*) val);
         return serializer(*value);
       }
@@ -59,32 +59,58 @@ class SerializerRegistry {
 
   /// Registers a custom serializer function for a type.
   /// Converts the function to a delegate and registers it.
-  void register(T)(string function(T) serializer) {
+  void register(T)(string function(T) serializer) @trusted {
     auto serializerDelegate = serializer.toDelegate;
     this.register(serializerDelegate);
   }
 
   /// Serializes an array to a string representation.
   /// Each element is serialized and joined with commas.
-  string serialize(T)(T[] value) if(!isSomeString!(T[])) {
+  string serialize(T)(T[] value) @safe if(!isSomeString!(T[])) {
+    import std.array : Appender;
+
     static if(is(Unqual!T == void)) {
       return "[]";
     } else {
-      return "[" ~ value.map!(a => serialize(a)).joiner(", ").array.to!string ~ "]";
+      Appender!string result;
+      result.put("[");
+      bool first = true;
+      foreach(elem; value) {
+        if(!first) result.put(", ");
+        first = false;
+        result.put(serialize(elem));
+      }
+      result.put("]");
+      return result[];
     }
   }
 
   /// Serializes an associative array to a string representation.
   /// Keys are sorted for consistent output.
-  string serialize(T: V[K], V, K)(T value) {
-    auto keys = value.byKey.array.sort;
+  string serialize(T: V[K], V, K)(T value) @safe {
+    import std.array : Appender;
 
-    return "[" ~ keys.map!(a => `"` ~ serialize(a) ~ `":` ~ serialize(value[a])).joiner(", ").array.to!string ~ "]";
+    Appender!string result;
+    result.put("[");
+    auto keys = value.byKey.array.sort;
+    bool first = true;
+    foreach(k; keys) {
+      if(!first) result.put(", ");
+      first = false;
+      result.put(`"`);
+      result.put(serialize(k));
+      result.put(`":`);
+      result.put(serialize(value[k]));
+    }
+    result.put("]");
+    return result[];
   }
 
   /// Serializes an aggregate type (class, struct, interface) to a string.
   /// Uses a registered custom serializer if available.
-  string serialize(T)(T value) if(isAggregateType!T) {
+  string serialize(T)(T value) @trusted if(isAggregateType!T) {
+    import std.array : Appender;
+
     auto key = T.stringof;
     auto tmp = &value;
 
@@ -113,7 +139,12 @@ class SerializerRegistry {
         result = "null";
       } else {
         auto v = (cast() value);
-        result = T.stringof ~ "(" ~ v.toHash.to!string ~ ")";
+        Appender!string buf;
+        buf.put(T.stringof);
+        buf.put("(");
+        buf.put(v.toHash.to!string);
+        buf.put(")");
+        result = buf[];
       }
     } else static if(is(Unqual!T == Duration)) {
       result = value.total!"nsecs".to!string;
@@ -127,13 +158,19 @@ class SerializerRegistry {
       result = result[6..$];
 
       auto pos = result.indexOf(")");
-      result = result[0..pos] ~ result[pos + 1..$];
+      Appender!string buf;
+      buf.put(result[0..pos]);
+      buf.put(result[pos + 1..$]);
+      result = buf[];
     }
 
     if(result.indexOf("immutable(") == 0) {
       result = result[10..$];
       auto pos = result.indexOf(")");
-      result = result[0..pos] ~ result[pos + 1..$];
+      Appender!string buf;
+      buf.put(result[0..pos]);
+      buf.put(result[pos + 1..$]);
+      result = buf[];
     }
 
     return result;
@@ -142,7 +179,7 @@ class SerializerRegistry {
   /// Serializes a primitive type (string, char, number) to a string.
   /// Strings are quoted with double quotes, chars with single quotes.
   /// Special characters are replaced with their visual representations.
-  string serialize(T)(T value) if(!is(T == enum) && (isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T))) {
+  string serialize(T)(T value) @safe if(!is(T == enum) && (isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T))) {
     static if(isSomeString!T) {
       return replaceSpecialChars(value.to!string);
     } else static if(isSomeChar!T) {
@@ -153,7 +190,7 @@ class SerializerRegistry {
   }
 
   /// Serializes an enum value to its underlying type representation.
-  string serialize(T)(T value) if(is(T == enum)) {
+  string serialize(T)(T value) @safe if(is(T == enum)) {
     static foreach(member; EnumMembers!T) {
       if(member == value) {
         return this.serialize(cast(OriginalType!T) member);
@@ -165,7 +202,7 @@ class SerializerRegistry {
 
   /// Returns a human-readable representation of a value.
   /// Uses specialized formatting for SysTime and Duration.
-  string niceValue(T)(T value) {
+  string niceValue(T)(T value) @safe {
     static if(is(Unqual!T == SysTime)) {
       return value.toISOExtString;
     } else static if(is(Unqual!T == Duration)) {
@@ -558,19 +595,31 @@ unittest {
 
 /// Returns the unqualified type name for an array type.
 /// Appends "[]" to the element type name.
-string unqualString(T: U[], U)() if(isArray!T && !isSomeString!T) {
-  return unqualString!U ~ "[]";
+string unqualString(T: U[], U)() pure @safe if(isArray!T && !isSomeString!T) {
+  import std.array : Appender;
+
+  Appender!string result;
+  result.put(unqualString!U);
+  result.put("[]");
+  return result[];
 }
 
 /// Returns the unqualified type name for an associative array type.
 /// Formats as "ValueType[KeyType]".
-string unqualString(T: V[K], V, K)() if(isAssociativeArray!T) {
-  return unqualString!V ~ "[" ~ unqualString!K ~ "]";
+string unqualString(T: V[K], V, K)() pure @safe if(isAssociativeArray!T) {
+  import std.array : Appender;
+
+  Appender!string result;
+  result.put(unqualString!V);
+  result.put("[");
+  result.put(unqualString!K);
+  result.put("]");
+  return result[];
 }
 
 /// Returns the unqualified type name for a non-array type.
 /// Uses fully qualified names for classes, structs, and interfaces.
-string unqualString(T)() if(isSomeString!T || (!isArray!T && !isAssociativeArray!T)) {
+string unqualString(T)() pure @safe if(isSomeString!T || (!isArray!T && !isAssociativeArray!T)) {
   static if(is(T == class) || is(T == struct) || is(T == interface)) {
     return fullyQualifiedName!(Unqual!(T));
   } else {
@@ -581,27 +630,29 @@ string unqualString(T)() if(isSomeString!T || (!isArray!T && !isAssociativeArray
 
 /// Joins the type names of a class hierarchy.
 /// Includes base classes and implemented interfaces.
-string joinClassTypes(T)() {
-  string result;
+string joinClassTypes(T)() pure @safe {
+  import std.array : Appender;
+
+  Appender!string result;
 
   static if(is(T == class)) {
     static foreach(Type; BaseClassesTuple!T) {
-      result ~= Type.stringof;
+      result.put(Type.stringof);
     }
   }
 
   static if(is(T == interface) || is(T == class)) {
     static foreach(Type; InterfacesTuple!T) {
-      if(result.length > 0) result ~= ":";
-      result ~= Type.stringof;
+      if(result[].length > 0) result.put(":");
+      result.put(Type.stringof);
     }
   }
 
   static if(!is(T == interface) && !is(T == class)) {
-    result = Unqual!T.stringof;
+    result.put(Unqual!T.stringof);
   }
 
-  return result;
+  return result[];
 }
 
 /// Parses a serialized list string into individual elements.
@@ -610,6 +661,8 @@ string joinClassTypes(T)() {
 ///   value = The serialized list string (e.g., "[1, 2, 3]")
 /// Returns: An array of individual element strings.
 string[] parseList(string value) @safe nothrow {
+  import std.array : Appender;
+
   if(value.length == 0) {
     return [];
   }
@@ -622,8 +675,8 @@ string[] parseList(string value) @safe nothrow {
     return [ value ];
   }
 
-  string[] result;
-  string currentValue;
+  Appender!(string[]) result;
+  Appender!string currentValue;
 
   bool isInsideString;
   bool isInsideChar;
@@ -634,9 +687,9 @@ string[] parseList(string value) @safe nothrow {
     auto ch = value[index];
     auto canSplit = !isInsideString && !isInsideChar && !isInsideArray;
 
-    if(canSplit && ch == ',' && currentValue.length > 0) {
-      result ~= currentValue.strip.dup;
-      currentValue = "";
+    if(canSplit && ch == ',' && currentValue[].length > 0) {
+      result.put(currentValue[].strip.idup);
+      currentValue = Appender!string();
       continue;
     }
 
@@ -665,14 +718,14 @@ string[] parseList(string value) @safe nothrow {
       }
     }
 
-    currentValue ~= ch;
+    currentValue.put(ch);
   }
 
-  if(currentValue.length > 0) {
-    result ~= currentValue.strip;
+  if(currentValue[].length > 0) {
+    result.put(currentValue[].strip.idup);
   }
 
-  return result;
+  return result[];
 }
 
 @("parseList parses an empty string")
