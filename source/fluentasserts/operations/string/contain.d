@@ -96,8 +96,8 @@ unittest {
     expect("hello world").to.contain("foo");
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal(`to contain foo`);
-  expect(evaluation.result.actual).to.equal("hello world");
+  expect(evaluation.result.expected[]).to.equal(`to contain foo`);
+  expect(evaluation.result.actual[]).to.equal("hello world");
 }
 
 @("string hello world not contain world reports error with expected and actual")
@@ -106,8 +106,8 @@ unittest {
     expect("hello world").to.not.contain("world");
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal(`not to contain world`);
-  expect(evaluation.result.actual).to.equal("hello world");
+  expect(evaluation.result.expected[]).to.equal(`not to contain world`);
+  expect(evaluation.result.actual[]).to.equal("hello world");
   expect(evaluation.result.negated).to.equal(true);
 }
 
@@ -160,8 +160,8 @@ unittest {
     expect([1, 2, 3]).to.contain(5);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("to contain 5");
-  expect(evaluation.result.actual).to.equal("[1, 2, 3]");
+  expect(evaluation.result.expected[]).to.equal("to contain 5");
+  expect(evaluation.result.actual[]).to.equal("[1, 2, 3]");
 }
 
 @("array [1,2,3] not contain 2 reports error with expected and actual")
@@ -170,7 +170,7 @@ unittest {
     expect([1, 2, 3]).to.not.contain(2);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("not to contain 2");
+  expect(evaluation.result.expected[]).to.equal("not to contain 2");
   expect(evaluation.result.negated).to.equal(true);
 }
 
@@ -226,7 +226,7 @@ unittest {
     expect([1, 2, 3, 4]).to.containOnly([1, 2, 3]);
   }).recordEvaluation;
 
-  expect(evaluation.result.actual).to.equal("[1, 2, 3, 4]");
+  expect(evaluation.result.actual[]).to.equal("[1, 2, 3, 4]");
 }
 
 @("array [1,2] containOnly [1,2,3] reports error with extra")

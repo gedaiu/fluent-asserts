@@ -47,8 +47,8 @@ unittest {
     ({ }).should.beNull;
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("null");
-  expect(evaluation.result.actual).to.not.equal("null");
+  expect(evaluation.result.expected[]).to.equal("null");
+  expect(evaluation.result.actual[]).to.not.equal("null");
 }
 
 @("beNull negated passes for non-null delegate")
@@ -64,7 +64,7 @@ unittest {
     action.should.not.beNull;
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("not null");
+  expect(evaluation.result.expected[]).to.equal("not null");
   expect(evaluation.result.negated).to.equal(true);
 }
 
@@ -100,8 +100,8 @@ unittest {
   }).recordEvaluation;
 
   evaluation.result.messageString.should.equal("o should not be null.");
-  evaluation.result.expected.should.equal("not null");
-  evaluation.result.actual.should.equal("object.Object");
+  evaluation.result.expected[].should.equal("not null");
+  evaluation.result.actual[].should.equal("object.Object");
 }
 
 @("new object beNull reports expected null")
@@ -111,6 +111,6 @@ unittest {
   }).recordEvaluation;
 
   evaluation.result.messageString.should.equal("(new Object) should be null.");
-  evaluation.result.expected.should.equal("null");
-  evaluation.result.actual.should.equal("object.Object");
+  evaluation.result.expected[].should.equal("null");
+  evaluation.result.actual[].should.equal("object.Object");
 }

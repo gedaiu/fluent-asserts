@@ -23,16 +23,18 @@ void allocateNonGCMemory(ref Evaluation evaluation) @safe nothrow {
     evaluation.result.addValue(evaluation.currentValue.strValue);
     evaluation.result.addText(" allocated non-GC memory.");
 
-    evaluation.result.expected = "to allocate non-GC memory";
-    evaluation.result.actual = "allocated " ~ evaluation.currentValue.nonGCMemoryUsed.formatBytes;
+    evaluation.result.expected.put("to allocate non-GC memory");
+    evaluation.result.actual.put("allocated ");
+    evaluation.result.actual.put(evaluation.currentValue.nonGCMemoryUsed.formatBytes);
   }
 
   if(!isSuccess && evaluation.isNegated) {
     evaluation.result.addValue(evaluation.currentValue.strValue);
     evaluation.result.addText(" did not allocate non-GC memory.");
 
-    evaluation.result.expected = "not to allocate non-GC memory";
-    evaluation.result.actual = "allocated " ~ evaluation.currentValue.nonGCMemoryUsed.formatBytes;
+    evaluation.result.expected.put("not to allocate non-GC memory");
+    evaluation.result.actual.put("allocated ");
+    evaluation.result.actual.put(evaluation.currentValue.nonGCMemoryUsed.formatBytes);
   }
 }
 
@@ -68,8 +70,8 @@ version (linux) {} else {
       }).should.allocateNonGCMemory();
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(`to allocate non-GC memory`);
-    expect(evaluation.result.actual).to.startWith("allocated ");
+    expect(evaluation.result.expected[]).to.equal(`to allocate non-GC memory`);
+    expect(evaluation.result.actual[]).to.startWith("allocated ");
   }
 }
 
@@ -89,9 +91,9 @@ version (linux) {
     }).recordEvaluation;
     (() @trusted => free(leaked))();
 
-    expect(evaluation.result.expected).to.equal(`not to allocate non-GC memory`);
-    expect(evaluation.result.actual).to.startWith("allocated ");
-    expect(evaluation.result.actual).to.contain("MB");
+    expect(evaluation.result.expected[]).to.equal(`not to allocate non-GC memory`);
+    expect(evaluation.result.actual[]).to.startWith("allocated ");
+    expect(evaluation.result.actual[]).to.contain("MB");
   }
 }
 

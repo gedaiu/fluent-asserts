@@ -31,13 +31,14 @@ void arrayEqual(ref Evaluation evaluation) @safe nothrow {
     return;
   }
 
-  evaluation.result.expected = evaluation.expectedValue.strValue;
-  evaluation.result.actual = evaluation.currentValue.strValue;
+  if(evaluation.isNegated) {
+    evaluation.result.expected.put("not ");
+  }
+  evaluation.result.expected.put(evaluation.expectedValue.strValue);
+  evaluation.result.actual.put(evaluation.currentValue.strValue);
   evaluation.result.negated = evaluation.isNegated;
 
-  if(evaluation.isNegated) {
-    evaluation.result.expected = "not " ~ evaluation.expectedValue.strValue;
-  } else {
+  if(!evaluation.isNegated) {
     evaluation.result.computeDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
   }
 }
@@ -62,8 +63,8 @@ unittest {
     expect([1, 2, 3]).to.equal([1, 2, 4]);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("[1, 2, 4]");
-  expect(evaluation.result.actual).to.equal("[1, 2, 3]");
+  expect(evaluation.result.expected[]).to.equal("[1, 2, 4]");
+  expect(evaluation.result.actual[]).to.equal("[1, 2, 3]");
 }
 
 @("[1,2,3] not equal [1,2,3] reports error with expected and actual")
@@ -72,8 +73,8 @@ unittest {
     expect([1, 2, 3]).to.not.equal([1, 2, 3]);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("not [1, 2, 3]");
-  expect(evaluation.result.actual).to.equal("[1, 2, 3]");
+  expect(evaluation.result.expected[]).to.equal("not [1, 2, 3]");
+  expect(evaluation.result.actual[]).to.equal("[1, 2, 3]");
   expect(evaluation.result.negated).to.equal(true);
 }
 
@@ -83,8 +84,8 @@ unittest {
     expect([1, 2, 3]).to.equal([1, 2]);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("[1, 2]");
-  expect(evaluation.result.actual).to.equal("[1, 2, 3]");
+  expect(evaluation.result.expected[]).to.equal("[1, 2]");
+  expect(evaluation.result.actual[]).to.equal("[1, 2, 3]");
 }
 
 @("string array compares two equal arrays")
@@ -103,8 +104,8 @@ unittest {
     expect(["a", "b", "c"]).to.equal(["a", "b", "d"]);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal(`[a, b, d]`);
-  expect(evaluation.result.actual).to.equal(`[a, b, c]`);
+  expect(evaluation.result.expected[]).to.equal(`[a, b, d]`);
+  expect(evaluation.result.actual[]).to.equal(`[a, b, c]`);
 }
 
 @("empty arrays are equal")

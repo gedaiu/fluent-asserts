@@ -171,8 +171,8 @@ static foreach (Type; FPTypes) {
       "".should.be.approximately(3, 0.34);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("valid numeric values");
-    expect(evaluation.result.actual).to.equal("conversion error");
+    expect(evaluation.result.expected[]).to.equal("valid numeric values");
+    expect(evaluation.result.actual[]).to.equal("conversion error");
   }
 
   @(Type.stringof ~ " values approximately compares two numbers")
@@ -201,8 +201,8 @@ static foreach (Type; FPTypes) {
       expect(testValue).to.be.approximately(0.35, 0.0001);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("0.35±0.0001");
-    expect(evaluation.result.actual).to.equal("0.351");
+    expect(evaluation.result.expected[]).to.equal("0.35±0.0001");
+    expect(evaluation.result.actual[]).to.equal("0.351");
   }
 
   @(Type.stringof ~ " 0.351 not approximately 0.351 with delta 0.0001 reports error with expected and actual")
@@ -213,7 +213,7 @@ static foreach (Type; FPTypes) {
       expect(testValue).to.not.be.approximately(testValue, 0.0001);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal(testValue.to!string ~ "±0.0001");
+    expect(evaluation.result.expected[]).to.equal(testValue.to!string ~ "±0.0001");
     expect(evaluation.result.negated).to.equal(true);
   }
 
@@ -249,7 +249,7 @@ static foreach (Type; FPTypes) {
       expect(testValues).to.be.approximately([0.35, 0.50, 0.34], 0.0001);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
+    expect(evaluation.result.expected[]).to.equal("[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
     expect(evaluation.result.missing.length).to.equal(2);
   }
 
@@ -261,7 +261,7 @@ static foreach (Type; FPTypes) {
       expect(testValues).to.not.be.approximately(testValues, 0.0001);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("[0.35±0.0001, 0.501±0.0001, 0.341±0.0001]");
+    expect(evaluation.result.expected[]).to.equal("[0.35±0.0001, 0.501±0.0001, 0.341±0.0001]");
     expect(evaluation.result.negated).to.equal(true);
   }
 }
@@ -309,7 +309,7 @@ unittest {
     [0.350, 0.501, 0.341].should.be.approximately([0.35, 0.50, 0.34], 0.0001);
   }).recordEvaluation;
 
-  evaluation.result.expected.should.equal("[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
+  evaluation.result.expected[].should.equal("[0.35±0.0001, 0.5±0.0001, 0.34±0.0001]");
   evaluation.result.missing.length.should.equal(2);
 }
 

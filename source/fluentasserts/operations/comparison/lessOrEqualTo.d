@@ -29,8 +29,10 @@ void lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
     expectedValue = evaluation.expectedValue.strValue.to!T;
     currentValue = evaluation.currentValue.strValue.to!T;
   } catch(Exception e) {
-    evaluation.result.expected = "valid " ~ T.stringof ~ " values";
-    evaluation.result.actual = "conversion error";
+    evaluation.result.expected.put("valid ");
+    evaluation.result.expected.put(T.stringof);
+    evaluation.result.expected.put(" values");
+    evaluation.result.actual.put("conversion error");
     return;
   }
 
@@ -49,13 +51,15 @@ void lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow {
 
   if(evaluation.isNegated) {
     evaluation.result.addText(" is less or equal to ");
-    evaluation.result.expected = "greater than " ~ evaluation.expectedValue.niceValue;
+    evaluation.result.expected.put("greater than ");
+    evaluation.result.expected.put(evaluation.expectedValue.niceValue);
   } else {
     evaluation.result.addText(" is greater than ");
-    evaluation.result.expected = "less or equal to " ~ evaluation.expectedValue.niceValue;
+    evaluation.result.expected.put("less or equal to ");
+    evaluation.result.expected.put(evaluation.expectedValue.niceValue);
   }
 
-  evaluation.result.actual = evaluation.currentValue.niceValue;
+  evaluation.result.actual.put(evaluation.currentValue.niceValue);
   evaluation.result.negated = evaluation.isNegated;
 
   evaluation.result.addValue(evaluation.expectedValue.niceValue);
@@ -78,8 +82,8 @@ void lessOrEqualToDuration(ref Evaluation evaluation) @safe nothrow {
     niceExpectedValue = expectedValue.to!string;
     niceCurrentValue = currentValue.to!string;
   } catch(Exception e) {
-    evaluation.result.expected = "valid Duration values";
-    evaluation.result.actual = "conversion error";
+    evaluation.result.expected.put("valid Duration values");
+    evaluation.result.actual.put("conversion error");
     return;
   }
 
@@ -99,8 +103,8 @@ void lessOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
     expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
     currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
   } catch(Exception e) {
-    evaluation.result.expected = "valid SysTime values";
-    evaluation.result.actual = "conversion error";
+    evaluation.result.expected.put("valid SysTime values");
+    evaluation.result.actual.put("conversion error");
     return;
   }
 
@@ -123,13 +127,15 @@ private void lessOrEqualToResults(bool result, string niceExpectedValue, string 
 
   if(evaluation.isNegated) {
     evaluation.result.addText(" is less or equal to ");
-    evaluation.result.expected = "greater than " ~ niceExpectedValue;
+    evaluation.result.expected.put("greater than ");
+    evaluation.result.expected.put(niceExpectedValue);
   } else {
     evaluation.result.addText(" is greater than ");
-    evaluation.result.expected = "less or equal to " ~ niceExpectedValue;
+    evaluation.result.expected.put("less or equal to ");
+    evaluation.result.expected.put(niceExpectedValue);
   }
 
-  evaluation.result.actual = niceCurrentValue;
+  evaluation.result.actual.put(niceCurrentValue);
   evaluation.result.negated = evaluation.isNegated;
 
   evaluation.result.addValue(niceExpectedValue);
@@ -167,8 +173,8 @@ static foreach (Type; NumericTypes) {
       expect(largeValue).to.be.lessOrEqualTo(smallValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("less or equal to " ~ smallValue.to!string);
-    expect(evaluation.result.actual).to.equal(largeValue.to!string);
+    expect(evaluation.result.expected[]).to.equal("less or equal to " ~ smallValue.to!string);
+    expect(evaluation.result.actual[]).to.equal(largeValue.to!string);
   }
 
   @(Type.stringof ~ " 40 not lessOrEqualTo 50 reports error with expected and actual")
@@ -180,8 +186,8 @@ static foreach (Type; NumericTypes) {
       expect(smallValue).not.to.be.lessOrEqualTo(largeValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("greater than " ~ largeValue.to!string);
-    expect(evaluation.result.actual).to.equal(smallValue.to!string);
+    expect(evaluation.result.expected[]).to.equal("greater than " ~ largeValue.to!string);
+    expect(evaluation.result.actual[]).to.equal(smallValue.to!string);
   }
 }
 
@@ -209,8 +215,8 @@ unittest {
     expect(largeValue).to.be.lessOrEqualTo(smallValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("less or equal to " ~ smallValue.to!string);
-  expect(evaluation.result.actual).to.equal(largeValue.to!string);
+  expect(evaluation.result.expected[]).to.equal("less or equal to " ~ smallValue.to!string);
+  expect(evaluation.result.actual[]).to.equal(largeValue.to!string);
 }
 
 @("Duration 40s not lessOrEqualTo 50s reports error with expected and actual")
@@ -222,8 +228,8 @@ unittest {
     expect(smallValue).not.to.be.lessOrEqualTo(largeValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("greater than " ~ largeValue.to!string);
-  expect(evaluation.result.actual).to.equal(smallValue.to!string);
+  expect(evaluation.result.expected[]).to.equal("greater than " ~ largeValue.to!string);
+  expect(evaluation.result.actual[]).to.equal(smallValue.to!string);
 }
 
 @("SysTime compares two values")
@@ -250,8 +256,8 @@ unittest {
     expect(largeValue).to.be.lessOrEqualTo(smallValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("less or equal to " ~ smallValue.toISOExtString);
-  expect(evaluation.result.actual).to.equal(largeValue.toISOExtString);
+  expect(evaluation.result.expected[]).to.equal("less or equal to " ~ smallValue.toISOExtString);
+  expect(evaluation.result.actual[]).to.equal(largeValue.toISOExtString);
 }
 
 @("SysTime smaller not lessOrEqualTo larger reports error with expected and actual")
@@ -263,6 +269,6 @@ unittest {
     expect(smallValue).not.to.be.lessOrEqualTo(largeValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("greater than " ~ largeValue.toISOExtString);
-  expect(evaluation.result.actual).to.equal(smallValue.toISOExtString);
+  expect(evaluation.result.expected[]).to.equal("greater than " ~ largeValue.toISOExtString);
+  expect(evaluation.result.actual[]).to.equal(smallValue.toISOExtString);
 }

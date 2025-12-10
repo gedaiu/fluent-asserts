@@ -144,8 +144,8 @@ static foreach (Type; NumericTypes) {
       expect(smallValue).to.be.greaterOrEqualTo(largeValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("greater or equal than " ~ largeValue.to!string);
-    expect(evaluation.result.actual).to.equal(smallValue.to!string);
+    expect(evaluation.result.expected[]).to.equal("greater or equal than " ~ largeValue.to!string);
+    expect(evaluation.result.actual[]).to.equal(smallValue.to!string);
   }
 
   @(Type.stringof ~ " 50 not greaterOrEqualTo 40 reports error with expected and actual")
@@ -157,8 +157,8 @@ static foreach (Type; NumericTypes) {
       expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("less than " ~ smallValue.to!string);
-    expect(evaluation.result.actual).to.equal(largeValue.to!string);
+    expect(evaluation.result.expected[]).to.equal("less than " ~ smallValue.to!string);
+    expect(evaluation.result.actual[]).to.equal(largeValue.to!string);
   }
 }
 
@@ -191,8 +191,8 @@ unittest {
     expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("less than " ~ smallValue.to!string);
-  expect(evaluation.result.actual).to.equal(largeValue.to!string);
+  expect(evaluation.result.expected[]).to.equal("less than " ~ smallValue.to!string);
+  expect(evaluation.result.actual[]).to.equal(largeValue.to!string);
 }
 
 @("SysTime compares two values")
@@ -226,6 +226,6 @@ unittest {
     expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("less than " ~ smallValue.toISOExtString);
-  expect(evaluation.result.actual).to.equal(largeValue.toISOExtString);
+  expect(evaluation.result.expected[]).to.equal("less than " ~ smallValue.toISOExtString);
+  expect(evaluation.result.actual[]).to.equal(largeValue.toISOExtString);
 }

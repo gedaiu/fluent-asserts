@@ -79,8 +79,8 @@ unittest {
   }).recordEvaluation;
 
   expect(evaluation.result.messageString).to.contain("should not throw any exception. `object.Exception` saying `Test exception` was thrown.");
-  expect(evaluation.result.expected).to.equal("No exception to be thrown");
-  expect(evaluation.result.actual).to.equal("`object.Exception` saying `Test exception`");
+  expect(evaluation.result.expected[]).to.equal("No exception to be thrown");
+  expect(evaluation.result.actual[]).to.equal("`object.Exception` saying `Test exception`");
 }
 
 @("throwing function throwAnyException succeeds")
@@ -100,8 +100,8 @@ unittest {
 
   expect(evaluation.result.messageString).to.contain("should throw any exception.");
   expect(evaluation.result.messageString).to.contain("A `Throwable` saying `Assertion failure` was thrown.");
-  expect(evaluation.result.expected).to.equal("Any exception to be thrown");
-  expect(evaluation.result.actual).to.equal("A `Throwable` with message `Assertion failure` was thrown");
+  expect(evaluation.result.expected[]).to.equal("Any exception to be thrown");
+  expect(evaluation.result.actual[]).to.equal("A `Throwable` with message `Assertion failure` was thrown");
 }
 
 @("function throwing any exception throwAnyException succeeds")
@@ -292,8 +292,8 @@ unittest {
 
   expect(evaluation.result.messageString).to.contain("should throw exception");
   expect(evaluation.result.messageString).to.contain("No exception was thrown.");
-  expect(evaluation.result.expected).to.equal("`object.Exception` to be thrown");
-  expect(evaluation.result.actual).to.equal("Nothing was thrown");
+  expect(evaluation.result.expected[]).to.equal("`object.Exception` to be thrown");
+  expect(evaluation.result.actual[]).to.equal("Nothing was thrown");
 }
 
 @("Exception throwException CustomException reports error with expected and actual")
@@ -306,8 +306,8 @@ unittest {
 
   expect(evaluation.result.messageString).to.contain("should throw exception");
   expect(evaluation.result.messageString).to.contain("`object.Exception` saying `test` was thrown.");
-  expect(evaluation.result.expected).to.equal("fluentasserts.operations.exception.throwable.CustomException");
-  expect(evaluation.result.actual).to.equal("`object.Exception` saying `test`");
+  expect(evaluation.result.expected[]).to.equal("fluentasserts.operations.exception.throwable.CustomException");
+  expect(evaluation.result.actual[]).to.equal("`object.Exception` saying `test`");
 }
 
 @("Exception not throwException CustomException succeeds")
@@ -328,8 +328,8 @@ unittest {
 
   expect(evaluation.result.messageString).to.contain("should not throw exception");
   expect(evaluation.result.messageString).to.contain("`fluentasserts.operations.exception.throwable.CustomException` saying `test` was thrown.");
-  expect(evaluation.result.expected).to.equal("no `fluentasserts.operations.exception.throwable.CustomException` to be thrown");
-  expect(evaluation.result.actual).to.equal("`fluentasserts.operations.exception.throwable.CustomException` saying `test`");
+  expect(evaluation.result.expected[]).to.equal("no `fluentasserts.operations.exception.throwable.CustomException` to be thrown");
+  expect(evaluation.result.actual[]).to.equal("`fluentasserts.operations.exception.throwable.CustomException` saying `test`");
 }
 
 void throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {

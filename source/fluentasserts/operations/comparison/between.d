@@ -184,8 +184,8 @@ static foreach (Type; NumericTypes) {
       expect(largeValue).to.be.between(smallValue, largeValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-    expect(evaluation.result.actual).to.equal(largeValue.to!string);
+    expect(evaluation.result.expected[]).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+    expect(evaluation.result.actual[]).to.equal(largeValue.to!string);
   }
 
   @(Type.stringof ~ " 40 between 40 and 50 reports error with expected and actual")
@@ -197,8 +197,8 @@ static foreach (Type; NumericTypes) {
       expect(smallValue).to.be.between(smallValue, largeValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-    expect(evaluation.result.actual).to.equal(smallValue.to!string);
+    expect(evaluation.result.expected[]).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+    expect(evaluation.result.actual[]).to.equal(smallValue.to!string);
   }
 
   @(Type.stringof ~ " 45 not between 40 and 50 reports error with expected and actual")
@@ -211,8 +211,8 @@ static foreach (Type; NumericTypes) {
       expect(middleValue).to.not.be.between(smallValue, largeValue);
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-    expect(evaluation.result.actual).to.equal(middleValue.to!string);
+    expect(evaluation.result.expected[]).to.equal("a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+    expect(evaluation.result.actual[]).to.equal(middleValue.to!string);
     expect(evaluation.result.negated).to.equal(true);
   }
 }
@@ -245,8 +245,8 @@ unittest {
     expect(largeValue).to.be.between(smallValue, largeValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-  expect(evaluation.result.actual).to.equal(largeValue.to!string);
+  expect(evaluation.result.expected[]).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+  expect(evaluation.result.actual[]).to.equal(largeValue.to!string);
 }
 
 @("Duration 40s between 40s and 50s reports error with expected and actual")
@@ -258,8 +258,8 @@ unittest {
     expect(smallValue).to.be.between(smallValue, largeValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-  expect(evaluation.result.actual).to.equal(smallValue.to!string);
+  expect(evaluation.result.expected[]).to.equal("a value inside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+  expect(evaluation.result.actual[]).to.equal(smallValue.to!string);
 }
 
 @("Duration 45s not between 40s and 50s reports error with expected and actual")
@@ -272,8 +272,8 @@ unittest {
     expect(middleValue).to.not.be.between(smallValue, largeValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
-  expect(evaluation.result.actual).to.equal(middleValue.to!string);
+  expect(evaluation.result.expected[]).to.equal("a value outside (" ~ smallValue.to!string ~ ", " ~ largeValue.to!string ~ ") interval");
+  expect(evaluation.result.actual[]).to.equal(middleValue.to!string);
   expect(evaluation.result.negated).to.equal(true);
 }
 
@@ -305,8 +305,8 @@ unittest {
     expect(largeValue).to.be.between(smallValue, largeValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
-  expect(evaluation.result.actual).to.equal(largeValue.toISOExtString);
+  expect(evaluation.result.expected[]).to.equal("a value inside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
+  expect(evaluation.result.actual[]).to.equal(largeValue.toISOExtString);
 }
 
 @("SysTime smaller between smaller and larger reports error with expected and actual")
@@ -318,8 +318,8 @@ unittest {
     expect(smallValue).to.be.between(smallValue, largeValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("a value inside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
-  expect(evaluation.result.actual).to.equal(smallValue.toISOExtString);
+  expect(evaluation.result.expected[]).to.equal("a value inside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
+  expect(evaluation.result.actual[]).to.equal(smallValue.toISOExtString);
 }
 
 @("SysTime middle not between smaller and larger reports error with expected and actual")
@@ -332,7 +332,7 @@ unittest {
     expect(middleValue).to.not.be.between(smallValue, largeValue);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("a value outside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
-  expect(evaluation.result.actual).to.equal(middleValue.toISOExtString);
+  expect(evaluation.result.expected[]).to.equal("a value outside (" ~ smallValue.toISOExtString ~ ", " ~ largeValue.toISOExtString ~ ") interval");
+  expect(evaluation.result.actual[]).to.equal(middleValue.toISOExtString);
   expect(evaluation.result.negated).to.equal(true);
 }

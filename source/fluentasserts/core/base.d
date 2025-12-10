@@ -439,8 +439,8 @@ void fluentHandler(string file, size_t line, string msg) @system nothrow {
   evaluation.currentValue.typeNames = ["assert state"];
   evaluation.expectedValue.typeNames = ["assert state"];
   evaluation.isEvaluated = true;
-  evaluation.result.expected = "true";
-  evaluation.result.actual = "false";
+  evaluation.result.expected.put("true");
+  evaluation.result.actual.put("false");
   evaluation.result.addText("Assert failed: " ~ msg);
 
   throw new AssertError(evaluation.toString(), file, line);

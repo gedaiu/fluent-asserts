@@ -85,8 +85,8 @@ unittest {
     }).should.allocateGCMemory();
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal(`to allocate GC memory`);
-  expect(evaluation.result.actual).to.equal("allocated 0 bytes");
+  expect(evaluation.result.expected[]).to.equal(`to allocate GC memory`);
+  expect(evaluation.result.actual[]).to.equal("allocated 0 bytes");
 }
 
 @("it fails when a callable allocates memory and it is not expected to")
@@ -98,9 +98,9 @@ unittest {
     }).should.not.allocateGCMemory();
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal(`not to allocate GC memory`);
-  expect(evaluation.result.actual).to.startWith("allocated ");
-  expect(evaluation.result.actual).to.contain("KB");
+  expect(evaluation.result.expected[]).to.equal(`not to allocate GC memory`);
+  expect(evaluation.result.actual[].idup).to.startWith("allocated ");
+  expect(evaluation.result.actual[].idup).to.contain("KB");
 }
 
 @("it does not fail when a callable does not allocate memory and it is not expected to")

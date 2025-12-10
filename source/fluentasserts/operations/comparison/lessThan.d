@@ -138,8 +138,8 @@ unittest {
     5.should.be.lessThan(4);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("less than 4");
-  expect(evaluation.result.actual).to.equal("5");
+  expect(evaluation.result.expected[]).to.equal("less than 4");
+  expect(evaluation.result.actual[]).to.equal("5");
 }
 
 @("5 lessThan 5 reports error with expected and actual")
@@ -148,8 +148,8 @@ unittest {
     5.should.be.lessThan(5);
   }).recordEvaluation;
 
-  expect(evaluation.result.expected).to.equal("less than 5");
-  expect(evaluation.result.actual).to.equal("5");
+  expect(evaluation.result.expected[]).to.equal("less than 5");
+  expect(evaluation.result.actual[]).to.equal("5");
 }
 
 @("lessThan works with negation")

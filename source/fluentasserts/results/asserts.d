@@ -10,6 +10,59 @@ import fluentasserts.results.message : Message, ResultGlyphs;
 
 @safe:
 
+/// A fixed-size appender for building strings without GC allocation.
+/// Useful for @nogc contexts where string concatenation is needed.
+struct FixedAppender(size_t N = 512) {
+  private {
+    char[N] data = 0;
+    size_t _length;
+  }
+
+  /// Returns the current length of the buffer contents.
+  size_t length() @nogc nothrow @safe const {
+    return _length;
+  }
+
+  /// Appends a string to the buffer.
+  void put(const(char)[] s) @nogc nothrow @safe {
+    import std.algorithm : min;
+    auto copyLen = min(s.length, N - _length);
+    data[_length .. _length + copyLen] = s[0 .. copyLen];
+    _length += copyLen;
+  }
+
+  /// Clears the buffer.
+  void clear() @nogc nothrow @safe {
+    _length = 0;
+  }
+
+  /// Returns the current contents as a string slice.
+  const(char)[] opSlice() @nogc nothrow @safe const {
+    return data[0 .. _length];
+  }
+
+  /// Returns the current contents as a string slice.
+  const(char)[] toString() @nogc nothrow @safe const {
+    return data[0 .. _length];
+  }
+
+  /// Assigns from a string.
+  void opAssign(const(char)[] s) @nogc nothrow @safe {
+    clear();
+    put(s);
+  }
+
+  /// Returns true if the buffer is empty.
+  bool empty() @nogc nothrow @safe const {
+    return _length == 0;
+  }
+
+  /// Returns the current length of the buffer contents.
+  size_t opDollar() @nogc nothrow @safe const {
+    return _length;
+  }
+}
+
 /// Represents a segment of a diff between expected and actual values.
 struct DiffSegment {
   /// The type of diff operation
@@ -60,11 +113,11 @@ struct AssertResult {
     return _messages[0 .. _messageCount];
   }
 
-  /// The expected value as a string
-  string expected;
+  /// The expected value as a fixed-size buffer
+  FixedAppender!512 expected;
 
-  /// The actual value as a string
-  string actual;
+  /// The actual value as a fixed-size buffer
+  FixedAppender!512 actual;
 
   /// Whether the assertion was negated
   bool negated;
@@ -79,8 +132,8 @@ struct AssertResult {
   string[] missing;
 
   /// Returns true if the result has any content indicating a failure.
-  bool hasContent() nothrow @safe @nogc inout {
-    return expected.length > 0 || actual.length > 0
+  bool hasContent() nothrow @safe @nogc const {
+    return !expected.empty || !actual.empty
       || diff.length > 0 || extra.length > 0 || missing.length > 0;
   }
 
@@ -108,7 +161,7 @@ struct AssertResult {
   }
 
   /// Adds a message to the result.
-  void add(Message msg) nothrow @safe {
+  void add(Message msg) nothrow @safe @nogc {
     if (_messageCount < _messages.length) {
       _messages[_messageCount++] = msg;
     }

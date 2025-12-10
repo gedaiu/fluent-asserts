@@ -91,8 +91,8 @@ static foreach (Type; NumericTypes) {
       expect(value).to.be.instanceOf!string;
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("typeof string");
-    expect(evaluation.result.actual).to.equal("typeof " ~ Type.stringof);
+    expect(evaluation.result.expected[]).to.equal("typeof string");
+    expect(evaluation.result.actual[]).to.equal("typeof " ~ Type.stringof);
   }
 
   @(Type.stringof ~ " not instanceOf itself reports error with expected and negated")
@@ -103,8 +103,8 @@ static foreach (Type; NumericTypes) {
       expect(value).to.not.be.instanceOf!Type;
     }).recordEvaluation;
 
-    expect(evaluation.result.expected).to.equal("not typeof " ~ Type.stringof);
-    expect(evaluation.result.actual).to.equal("typeof " ~ Type.stringof);
+    expect(evaluation.result.expected[]).to.equal("not typeof " ~ Type.stringof);
+    expect(evaluation.result.actual[]).to.equal("typeof " ~ Type.stringof);
     expect(evaluation.result.negated).to.equal(true);
   }
 }
@@ -167,8 +167,8 @@ unittest {
   }).recordEvaluation;
 
   evaluation.result.messageString.should.contain(`otherObject should be instance of`);
-  evaluation.result.expected.should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfBaseClass");
-  evaluation.result.actual.should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
+  evaluation.result.expected[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfBaseClass");
+  evaluation.result.actual[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
 }
 
 @("object not instanceOf own class reports expected not typeof")
@@ -181,8 +181,8 @@ unittest {
 
   evaluation.result.messageString.should.startWith(`otherObject should not be instance of "fluentasserts.operations.type.instanceOf.InstanceOfOtherClass".`);
   evaluation.result.messageString.should.endWith(`is instance of fluentasserts.operations.type.instanceOf.InstanceOfOtherClass.`);
-  evaluation.result.actual.should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
-  evaluation.result.expected.should.equal("not typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
+  evaluation.result.actual[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
+  evaluation.result.expected[].should.equal("not typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
 }
 
 @("interface instanceOf same interface succeeds")
@@ -213,8 +213,8 @@ unittest {
 
   evaluation.result.messageString.should.contain(`otherObject should be instance of`);
   evaluation.result.messageString.should.contain(`InstanceOfTestInterface`);
-  evaluation.result.expected.should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfTestInterface");
-  evaluation.result.actual.should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
+  evaluation.result.expected[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfTestInterface");
+  evaluation.result.actual[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
 }
 
 @("object not instanceOf implemented interface reports expected not typeof")
@@ -227,6 +227,6 @@ unittest {
 
   evaluation.result.messageString.should.startWith(`someObject should not be instance of "fluentasserts.operations.type.instanceOf.InstanceOfTestInterface".`);
   evaluation.result.messageString.should.endWith(`is instance of fluentasserts.operations.type.instanceOf.InstanceOfBaseClass.`);
-  evaluation.result.expected.should.equal("not typeof fluentasserts.operations.type.instanceOf.InstanceOfTestInterface");
-  evaluation.result.actual.should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfBaseClass");
+  evaluation.result.expected[].should.equal("not typeof fluentasserts.operations.type.instanceOf.InstanceOfTestInterface");
+  evaluation.result.actual[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfBaseClass");
 }

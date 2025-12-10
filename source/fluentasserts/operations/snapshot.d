@@ -110,10 +110,10 @@ unittest {
         output.put("```\n\n");
 
         // Verify positive case
-        assert(posEval.result.expected == c.posExpected,
-            c.name ~ " positive expected: got '" ~ posEval.result.expected ~ "' but expected '" ~ c.posExpected ~ "'");
-        assert(posEval.result.actual == c.posActual,
-            c.name ~ " positive actual: got '" ~ posEval.result.actual ~ "' but expected '" ~ c.posActual ~ "'");
+        assert(posEval.result.expected[] == c.posExpected,
+            c.name ~ " positive expected: got '" ~ posEval.result.expected[] ~ "' but expected '" ~ c.posExpected ~ "'");
+        assert(posEval.result.actual[] == c.posActual,
+            c.name ~ " positive actual: got '" ~ posEval.result.actual[] ~ "' but expected '" ~ c.posActual ~ "'");
         assert(posEval.result.negated == c.posNegated,
             c.name ~ " positive negated flag mismatch");
 
@@ -125,10 +125,10 @@ unittest {
         output.put("```\n\n");
 
         // Verify negated case
-        assert(negEval.result.expected == c.negExpected,
-            c.name ~ " negated expected: got '" ~ negEval.result.expected ~ "' but expected '" ~ c.negExpected ~ "'");
-        assert(negEval.result.actual == c.negActual,
-            c.name ~ " negated actual: got '" ~ negEval.result.actual ~ "' but expected '" ~ c.negActual ~ "'");
+        assert(negEval.result.expected[] == c.negExpected,
+            c.name ~ " negated expected: got '" ~ negEval.result.expected[] ~ "' but expected '" ~ c.negExpected ~ "'");
+        assert(negEval.result.actual[] == c.negActual,
+            c.name ~ " negated actual: got '" ~ negEval.result.actual[] ~ "' but expected '" ~ c.negActual ~ "'");
         assert(negEval.result.negated == c.negNegated,
             c.name ~ " negated flag mismatch");
     }}

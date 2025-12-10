@@ -177,14 +177,14 @@ struct Evaluation {
     printer.primary("<");
     printer.primary(currentValue.typeName);
     printer.primary("> ");
-    printer.primary(result.actual);
+    printer.primary(result.actual[].idup);
     printer.newLine;
 
     printer.info("EXPECTED: ");
     printer.primary("<");
     printer.primary(expectedValue.typeName);
     printer.primary("> ");
-    printer.primary(result.expected);
+    printer.primary(result.expected[].idup);
     printer.newLine;
 
     source.print(printer);

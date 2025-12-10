@@ -45,13 +45,12 @@ void equal(ref Evaluation evaluation) @safe nothrow {
     return;
   }
 
-  evaluation.result.expected = evaluation.expectedValue.strValue;
-  evaluation.result.actual = evaluation.currentValue.strValue;
-  evaluation.result.negated = evaluation.isNegated;
-
   if(evaluation.isNegated) {
-    evaluation.result.expected = "not " ~ evaluation.expectedValue.strValue;
+    evaluation.result.expected.put("not ");
   }
+  evaluation.result.expected.put(evaluation.expectedValue.strValue);
+  evaluation.result.actual.put(evaluation.currentValue.strValue);
+  evaluation.result.negated = evaluation.isNegated;
 
   if(evaluation.currentValue.typeName != "bool") {
     evaluation.result.computeDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
@@ -89,8 +88,8 @@ static foreach (Type; StringTypes) {
       expect("test string").to.equal("test");
     }).recordEvaluation;
 
-    assert(evaluation.result.expected == `test`, "expected 'test' but got: " ~ evaluation.result.expected);
-    assert(evaluation.result.actual == `test string`, "expected 'test string' but got: " ~ evaluation.result.actual);
+    assert(evaluation.result.expected[] == `test`, "expected 'test' but got: " ~ evaluation.result.expected[]);
+    assert(evaluation.result.actual[] == `test string`, "expected 'test string' but got: " ~ evaluation.result.actual[]);
   }
 
   @(Type.stringof ~ " test string not equal test string reports error with expected and negated")
@@ -99,8 +98,8 @@ static foreach (Type; StringTypes) {
       expect("test string").to.not.equal("test string");
     }).recordEvaluation;
 
-    assert(evaluation.result.expected == `not test string`, "expected 'not test string' but got: " ~ evaluation.result.expected);
-    assert(evaluation.result.actual == `test string`, "expected 'test string' but got: " ~ evaluation.result.actual);
+    assert(evaluation.result.expected[] == `not test string`, "expected 'not test string' but got: " ~ evaluation.result.expected[]);
+    assert(evaluation.result.actual[] == `test string`, "expected 'test string' but got: " ~ evaluation.result.actual[]);
     assert(evaluation.result.negated == true, "expected negated to be true");
   }
 
@@ -112,8 +111,8 @@ static foreach (Type; StringTypes) {
       expect(data.assumeUTF.to!Type).to.equal("some data");
     }).recordEvaluation;
 
-    assert(evaluation.result.expected == `some data`, "expected 'some data' but got: " ~ evaluation.result.expected);
-    assert(evaluation.result.actual == `some data\0\0`, "expected 'some data\\0\\0' but got: " ~ evaluation.result.actual);
+    assert(evaluation.result.expected[] == `some data`, "expected 'some data' but got: " ~ evaluation.result.expected[]);
+    assert(evaluation.result.actual[] == `some data\0\0`, "expected 'some data\\0\\0' but got: " ~ evaluation.result.actual[]);
   }
 }
 
@@ -152,8 +151,8 @@ static foreach (Type; NumericTypes) {
       expect(testValue).to.equal(otherTestValue);
     }).recordEvaluation;
 
-    assert(evaluation.result.expected == otherTestValue.to!string, "expected '" ~ otherTestValue.to!string ~ "' but got: " ~ evaluation.result.expected);
-    assert(evaluation.result.actual == testValue.to!string, "expected '" ~ testValue.to!string ~ "' but got: " ~ evaluation.result.actual);
+    assert(evaluation.result.expected[] == otherTestValue.to!string, "expected '" ~ otherTestValue.to!string ~ "' but got: " ~ evaluation.result.expected[]);
+    assert(evaluation.result.actual[] == testValue.to!string, "expected '" ~ testValue.to!string ~ "' but got: " ~ evaluation.result.actual[]);
   }
 
   @(Type.stringof ~ " 40 not equal 40 reports error with expected and negated")
@@ -164,8 +163,8 @@ static foreach (Type; NumericTypes) {
       expect(testValue).to.not.equal(testValue);
     }).recordEvaluation;
 
-    assert(evaluation.result.expected == "not " ~ testValue.to!string, "expected 'not " ~ testValue.to!string ~ "' but got: " ~ evaluation.result.expected);
-    assert(evaluation.result.actual == testValue.to!string, "expected '" ~ testValue.to!string ~ "' but got: " ~ evaluation.result.actual);
+    assert(evaluation.result.expected[] == "not " ~ testValue.to!string, "expected 'not " ~ testValue.to!string ~ "' but got: " ~ evaluation.result.expected[]);
+    assert(evaluation.result.actual[] == testValue.to!string, "expected '" ~ testValue.to!string ~ "' but got: " ~ evaluation.result.actual[]);
     assert(evaluation.result.negated == true, "expected negated to be true");
   }
 }
@@ -212,8 +211,8 @@ unittest {
     expect(true).to.equal(false);
   }).recordEvaluation;
 
-  assert(evaluation.result.expected == "false", "expected 'false' but got: " ~ evaluation.result.expected);
-  assert(evaluation.result.actual == "true", "expected 'true' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.expected[] == "false", "expected 'false' but got: " ~ evaluation.result.expected[]);
+  assert(evaluation.result.actual[] == "true", "expected 'true' but got: " ~ evaluation.result.actual[]);
 }
 
 @("durations compares two equal values")
@@ -249,8 +248,8 @@ unittest {
     expect(3.seconds).to.equal(2.seconds);
   }).recordEvaluation;
 
-  assert(evaluation.result.expected == "2000000000", "expected '2000000000' but got: " ~ evaluation.result.expected);
-  assert(evaluation.result.actual == "3000000000", "expected '3000000000' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.expected[] == "2000000000", "expected '2000000000' but got: " ~ evaluation.result.expected[]);
+  assert(evaluation.result.actual[] == "3000000000", "expected '3000000000' but got: " ~ evaluation.result.actual[]);
 }
 
 @("objects without custom opEquals compares two exact values")
@@ -287,8 +286,8 @@ unittest {
     expect(testValue).to.equal(otherTestValue);
   }).recordEvaluation;
 
-  assert(evaluation.result.expected == niceOtherTestValue, "expected '" ~ niceOtherTestValue ~ "' but got: " ~ evaluation.result.expected);
-  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.expected[] == niceOtherTestValue, "expected '" ~ niceOtherTestValue ~ "' but got: " ~ evaluation.result.expected[]);
+  assert(evaluation.result.actual[] == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual[]);
 }
 
 @("object not equal itself reports error with expected and negated")
@@ -300,8 +299,8 @@ unittest {
     expect(testValue).to.not.equal(testValue);
   }).recordEvaluation;
 
-  assert(evaluation.result.expected == "not " ~ niceTestValue, "expected 'not " ~ niceTestValue ~ "' but got: " ~ evaluation.result.expected);
-  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.expected[] == "not " ~ niceTestValue, "expected 'not " ~ niceTestValue ~ "' but got: " ~ evaluation.result.expected[]);
+  assert(evaluation.result.actual[] == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual[]);
   assert(evaluation.result.negated == true, "expected negated to be true");
 }
 
@@ -363,8 +362,8 @@ unittest {
     expect(testValue).to.equal(otherTestValue);
   }).recordEvaluation;
 
-  assert(evaluation.result.expected == niceOtherTestValue, "expected '" ~ niceOtherTestValue ~ "' but got: " ~ evaluation.result.expected);
-  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.expected[] == niceOtherTestValue, "expected '" ~ niceOtherTestValue ~ "' but got: " ~ evaluation.result.expected[]);
+  assert(evaluation.result.actual[] == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual[]);
 }
 
 @("EqualThing(1) not equal itself reports error with expected and negated")
@@ -376,8 +375,8 @@ unittest {
     expect(testValue).to.not.equal(testValue);
   }).recordEvaluation;
 
-  assert(evaluation.result.expected == "not " ~ niceTestValue, "expected 'not " ~ niceTestValue ~ "' but got: " ~ evaluation.result.expected);
-  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.expected[] == "not " ~ niceTestValue, "expected 'not " ~ niceTestValue ~ "' but got: " ~ evaluation.result.expected[]);
+  assert(evaluation.result.actual[] == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual[]);
   assert(evaluation.result.negated == true, "expected negated to be true");
 }
 
@@ -427,8 +426,8 @@ unittest {
     expect(testValue).to.equal(otherTestValue);
   }).recordEvaluation;
 
-  assert(evaluation.result.expected == niceOtherTestValue, "expected '" ~ niceOtherTestValue ~ "' but got: " ~ evaluation.result.expected);
-  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.expected[] == niceOtherTestValue, "expected '" ~ niceOtherTestValue ~ "' but got: " ~ evaluation.result.expected[]);
+  assert(evaluation.result.actual[] == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual[]);
 }
 
 @("assoc array not equal itself reports error with expected and negated")
@@ -440,8 +439,8 @@ unittest {
     expect(testValue).to.not.equal(testValue);
   }).recordEvaluation;
 
-  assert(evaluation.result.expected == "not " ~ niceTestValue, "expected 'not " ~ niceTestValue ~ "' but got: " ~ evaluation.result.expected);
-  assert(evaluation.result.actual == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual);
+  assert(evaluation.result.expected[] == "not " ~ niceTestValue, "expected 'not " ~ niceTestValue ~ "' but got: " ~ evaluation.result.expected[]);
+  assert(evaluation.result.actual[] == niceTestValue, "expected '" ~ niceTestValue ~ "' but got: " ~ evaluation.result.actual[]);
   assert(evaluation.result.negated == true, "expected negated to be true");
 }
 
