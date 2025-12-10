@@ -25,7 +25,7 @@ static immutable isNotEqualTo = Message(Message.Type.info, " is not equal to ");
 static immutable endSentence = Message(Message.Type.info, ".");
 
 /// Asserts that the current value is strictly equal to the expected value.
-void equal(ref Evaluation evaluation) @safe nothrow {
+void equal(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.add(endSentence);
 
   bool isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
@@ -51,10 +51,6 @@ void equal(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.expected.put(evaluation.expectedValue.strValue);
   evaluation.result.actual.put(evaluation.currentValue.strValue);
   evaluation.result.negated = evaluation.isNegated;
-
-  if(evaluation.currentValue.typeName != "bool") {
-    evaluation.result.computeDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
-  }
 }
 
 // ---------------------------------------------------------------------------
