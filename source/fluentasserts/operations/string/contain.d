@@ -66,7 +66,7 @@ private struct MatchResult {
   string first;
 }
 
-private MatchResult countMatches(bool findPresent)(string[] pieces, string testData) @safe nothrow {
+private MatchResult countMatches(bool findPresent)(string[] pieces, string testData) @safe nothrow @nogc {
   MatchResult result;
   foreach(piece; pieces) {
     if(testData.canFind(piece) != findPresent) {
@@ -81,7 +81,7 @@ private MatchResult countMatches(bool findPresent)(string[] pieces, string testD
 }
 
 private void appendValueList(ref AssertResult result, string[] pieces, string testData,
-                             MatchResult matchResult, bool findPresent) @safe nothrow {
+                             MatchResult matchResult, bool findPresent) @safe nothrow @nogc {
   if(matchResult.count == 1) {
     result.addValue(matchResult.first);
     return;
