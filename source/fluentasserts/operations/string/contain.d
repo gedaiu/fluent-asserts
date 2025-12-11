@@ -66,25 +66,10 @@ private struct MatchResult {
   string first;
 }
 
-private bool containsSubstring(string haystack, string needle) @safe pure nothrow @nogc {
-  if(needle.length == 0) {
-    return true;
-  }
-  if(needle.length > haystack.length) {
-    return false;
-  }
-  foreach(i; 0 .. haystack.length - needle.length + 1) {
-    if(haystack[i .. i + needle.length] == needle) {
-      return true;
-    }
-  }
-  return false;
-}
-
-private MatchResult countMatches(bool findPresent)(string[] pieces, string testData) @safe nothrow @nogc {
+private MatchResult countMatches(bool findPresent)(string[] pieces, string testData) @safe nothrow {
   MatchResult result;
   foreach(piece; pieces) {
-    if(containsSubstring(testData, piece) != findPresent) {
+    if(testData.canFind(piece) != findPresent) {
       continue;
     }
     if(result.count == 0) {
@@ -96,7 +81,7 @@ private MatchResult countMatches(bool findPresent)(string[] pieces, string testD
 }
 
 private void appendValueList(ref AssertResult result, string[] pieces, string testData,
-                             MatchResult matchResult, bool findPresent) @safe nothrow @nogc {
+                             MatchResult matchResult, bool findPresent) @safe nothrow {
   if(matchResult.count == 1) {
     result.addValue(matchResult.first);
     return;
@@ -105,7 +90,7 @@ private void appendValueList(ref AssertResult result, string[] pieces, string te
   result.addText("[");
   bool first = true;
   foreach(piece; pieces) {
-    if(containsSubstring(testData, piece) != findPresent) {
+    if(testData.canFind(piece) != findPresent) {
       continue;
     }
     if(!first) {
