@@ -20,11 +20,14 @@ version (unittest) {
 static immutable startWithDescription = "Tests that the tested string starts with the expected value.";
 
 /// Asserts that a string starts with the expected prefix.
-void startWith(ref Evaluation evaluation) @safe nothrow {
+void startWith(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(".");
 
-  auto index = evaluation.currentValue.strValue.cleanString.indexOf(evaluation.expectedValue.strValue.cleanString);
-  auto doesStartWith = index == 0;
+  auto current = evaluation.currentValue.strValue.cleanString;
+  auto expected = evaluation.expectedValue.strValue.cleanString;
+
+  // Check if string starts with prefix (replaces indexOf for @nogc)
+  bool doesStartWith = current.length >= expected.length && current[0 .. expected.length] == expected;
 
   if(evaluation.isNegated) {
     if(doesStartWith) {
@@ -34,8 +37,9 @@ void startWith(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.addValue(evaluation.expectedValue.strValue);
       evaluation.result.addText(".");
 
-      evaluation.result.expected = "not to start with " ~ evaluation.expectedValue.strValue;
-      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.expected.put("not to start with ");
+      evaluation.result.expected.put(evaluation.expectedValue.strValue);
+      evaluation.result.actual.put(evaluation.currentValue.strValue);
       evaluation.result.negated = true;
     }
   } else {
@@ -46,8 +50,9 @@ void startWith(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.addValue(evaluation.expectedValue.strValue);
       evaluation.result.addText(".");
 
-      evaluation.result.expected = "to start with " ~ evaluation.expectedValue.strValue;
-      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.expected.put("to start with ");
+      evaluation.result.expected.put(evaluation.expectedValue.strValue);
+      evaluation.result.actual.put(evaluation.currentValue.strValue);
     }
   }
 }
@@ -56,9 +61,10 @@ void startWith(ref Evaluation evaluation) @safe nothrow {
 // Unit tests
 // ---------------------------------------------------------------------------
 
-alias StringTypes = AliasSeq!(string, wstring, dstring);
+version(unittest) {
+  alias StringTypes = AliasSeq!(string, wstring, dstring);
 
-static foreach (Type; StringTypes) {
+  static foreach (Type; StringTypes) {
   @(Type.stringof ~ " checks that a string starts with a certain substring")
   unittest {
     Type testValue = "test string".to!Type;
@@ -144,4 +150,5 @@ unittest {
   ({
     someLazyString.should.startWith(" ");
   }).should.throwAnyException.withMessage("This is it.");
+}
 }

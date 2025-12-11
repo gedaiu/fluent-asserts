@@ -20,19 +20,14 @@ version (unittest) {
 static immutable endWithDescription = "Tests that the tested string ends with the expected value.";
 
 /// Asserts that a string ends with the expected suffix.
-void endWith(ref Evaluation evaluation) @safe nothrow {
+void endWith(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(".");
 
   auto current = evaluation.currentValue.strValue.cleanString;
   auto expected = evaluation.expectedValue.strValue.cleanString;
 
-  long index = -1;
-
-  try {
-    index = current.lastIndexOf(expected);
-  } catch(Exception) { }
-
-  auto doesEndWith = index >= 0 && index == current.length - expected.length;
+  // Check if string ends with suffix (replaces lastIndexOf for @nogc)
+  bool doesEndWith = current.length >= expected.length && current[$ - expected.length .. $] == expected;
 
   if(evaluation.isNegated) {
     if(doesEndWith) {
@@ -42,8 +37,9 @@ void endWith(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.addValue(evaluation.expectedValue.strValue);
       evaluation.result.addText(".");
 
-      evaluation.result.expected = "not to end with " ~ evaluation.expectedValue.strValue;
-      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.expected.put("not to end with ");
+      evaluation.result.expected.put(evaluation.expectedValue.strValue);
+      evaluation.result.actual.put(evaluation.currentValue.strValue);
       evaluation.result.negated = true;
     }
   } else {
@@ -54,8 +50,9 @@ void endWith(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.addValue(evaluation.expectedValue.strValue);
       evaluation.result.addText(".");
 
-      evaluation.result.expected = "to end with " ~ evaluation.expectedValue.strValue;
-      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.expected.put("to end with ");
+      evaluation.result.expected.put(evaluation.expectedValue.strValue);
+      evaluation.result.actual.put(evaluation.currentValue.strValue);
     }
   }
 }
