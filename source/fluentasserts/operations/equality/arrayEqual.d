@@ -18,7 +18,7 @@ static immutable arrayEqualDescription = "Asserts that the target is strictly ==
 
 /// Asserts that two arrays are strictly equal element by element.
 /// Uses serialized string comparison via isEqualTo.
-void arrayEqual(ref Evaluation evaluation) @safe nothrow {
+void arrayEqual(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(".");
 
   bool result = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
@@ -37,10 +37,6 @@ void arrayEqual(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.expected.put(evaluation.expectedValue.strValue);
   evaluation.result.actual.put(evaluation.currentValue.strValue);
   evaluation.result.negated = evaluation.isNegated;
-
-  if(!evaluation.isNegated) {
-    evaluation.result.computeDiff(evaluation.expectedValue.strValue, evaluation.currentValue.strValue);
-  }
 }
 
 // ---------------------------------------------------------------------------

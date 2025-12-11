@@ -195,12 +195,12 @@ struct AssertResult {
   }
 
   /// Adds a value to the result.
-  void addValue(string text) nothrow @safe {
+  void addValue(string text) nothrow @safe @nogc {
     add(Message(Message.Type.value, text));
   }
 
   /// Adds informational text to the result.
-  void addText(string text) nothrow @safe {
+  void addText(string text) nothrow @safe @nogc {
     if (text == "throwAnyException") {
       text = "throw any exception";
     }

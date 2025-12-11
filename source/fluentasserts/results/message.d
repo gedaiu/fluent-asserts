@@ -122,35 +122,40 @@ struct Message {
   string text;
 
   /// Constructs a message with the given type and text.
-  /// For value, insert, and delete types, special characters are replaced with glyphs.
-  this(Type type, string text) nothrow {
+  this(Type type, string text) nothrow @nogc {
     this.type = type;
+    this.text = text;
+  }
+
+  /// Returns the raw text content. Use formattedText() for display with special formatting.
+  string toString() nothrow @nogc inout {
+    return text;
+  }
+
+  /// Returns the text with special character replacements and type-specific formatting.
+  /// This allocates memory and should be used only for display purposes.
+  string formattedText() nothrow inout {
+    string content = text;
 
     if (type == Type.value || type == Type.insert || type == Type.delete_) {
-      this.text = text
+      content = content
         .replace("\r", ResultGlyphs.carriageReturn)
         .replace("\n", ResultGlyphs.newline)
         .replace("\0", ResultGlyphs.nullChar)
         .replace("\t", ResultGlyphs.tab);
-    } else {
-      this.text = text;
     }
-  }
 
-  /// Converts the message to a string representation.
-  /// Titles and categories include newlines, inserts/deletes include markers.
-  string toString() nothrow inout {
     switch (type) {
       case Type.title:
         return "\n\n" ~ text ~ "\n";
       case Type.insert:
-        return "[-" ~ text ~ "]";
+        return "[-" ~ content ~ "]";
       case Type.delete_:
-        return "[+" ~ text ~ "]";
+        return "[+" ~ content ~ "]";
       case Type.category:
         return "\n" ~ text ~ "";
       default:
-        return text;
+        return content;
     }
   }
 }
