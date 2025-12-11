@@ -100,7 +100,7 @@ void lessThanGeneric(ref Evaluation evaluation) @safe nothrow {
   lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
-private void lessThanResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
+private void lessThanResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow @nogc {
   if(evaluation.isNegated) {
     result = !result;
   }
@@ -114,13 +114,15 @@ private void lessThanResults(bool result, string niceExpectedValue, string niceC
 
   if(evaluation.isNegated) {
     evaluation.result.addText(" is less than ");
-    evaluation.result.expected = "greater than or equal to " ~ niceExpectedValue;
+    evaluation.result.expected.put("greater than or equal to ");
+    evaluation.result.expected.put(niceExpectedValue);
   } else {
     evaluation.result.addText(" is greater than or equal to ");
-    evaluation.result.expected = "less than " ~ niceExpectedValue;
+    evaluation.result.expected.put("less than ");
+    evaluation.result.expected.put(niceExpectedValue);
   }
 
-  evaluation.result.actual = niceCurrentValue;
+  evaluation.result.actual.put(niceCurrentValue);
   evaluation.result.negated = evaluation.isNegated;
 
   evaluation.result.addValue(niceExpectedValue);

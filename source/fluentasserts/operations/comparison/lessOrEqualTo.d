@@ -113,7 +113,7 @@ void lessOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
   lessOrEqualToResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
-private void lessOrEqualToResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
+private void lessOrEqualToResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow @nogc {
   if(evaluation.isNegated) {
     result = !result;
   }

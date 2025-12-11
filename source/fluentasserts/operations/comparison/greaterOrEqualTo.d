@@ -86,7 +86,7 @@ void greaterOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
   greaterOrEqualToResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
-private void greaterOrEqualToResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow {
+private void greaterOrEqualToResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow @nogc {
   if(evaluation.isNegated) {
     result = !result;
   }
@@ -100,13 +100,15 @@ private void greaterOrEqualToResults(bool result, string niceExpectedValue, stri
 
   if(evaluation.isNegated) {
     evaluation.result.addText(" is greater or equal than ");
-    evaluation.result.expected = "less than " ~ niceExpectedValue;
+    evaluation.result.expected.put("less than ");
+    evaluation.result.expected.put(niceExpectedValue);
   } else {
     evaluation.result.addText(" is less than ");
-    evaluation.result.expected = "greater or equal than " ~ niceExpectedValue;
+    evaluation.result.expected.put("greater or equal than ");
+    evaluation.result.expected.put(niceExpectedValue);
   }
 
-  evaluation.result.actual = niceCurrentValue;
+  evaluation.result.actual.put(niceCurrentValue);
   evaluation.result.negated = evaluation.isNegated;
 
   evaluation.result.addValue(niceExpectedValue);
