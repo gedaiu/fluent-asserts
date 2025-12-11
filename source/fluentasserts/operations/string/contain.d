@@ -7,6 +7,7 @@ import std.conv;
 
 import fluentasserts.core.listcomparison;
 import fluentasserts.results.printer;
+import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.evaluation;
 import fluentasserts.results.serializers;
 
@@ -25,53 +26,80 @@ static immutable containDescription = "When the tested value is a string, it ass
   "When the tested value is an array, it asserts that the given val is inside the tested value.";
 
 /// Asserts that a string contains specified substrings.
-/// Sets evaluation.result with missing values if the assertion fails.
 void contain(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
   auto expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString;
   auto testData = evaluation.currentValue.strValue.cleanString;
+  bool negated = evaluation.isNegated;
 
-  if(!evaluation.isNegated) {
-    auto missingValues = expectedPieces.filter!(a => !testData.canFind(a)).array;
+  auto result = negated
+    ? countMatches!true(expectedPieces, testData)
+    : countMatches!false(expectedPieces, testData);
 
-    if(missingValues.length > 0) {
-      addLifecycleMessage(evaluation, missingValues);
-      evaluation.result.expected = createResultMessage(evaluation.expectedValue, expectedPieces);
-      evaluation.result.actual = testData;
-    }
-
+  if(result.count == 0) {
     return;
   }
 
-  auto presentValues = expectedPieces.filter!(a => testData.canFind(a)).array;
+  evaluation.result.addText(" ");
+  appendValueList(evaluation.result, expectedPieces, testData, result, negated);
+  evaluation.result.addText(negated
+    ? (result.count == 1 ? " is present in " : " are present in ")
+    : (result.count == 1 ? " is missing from " : " are missing from "));
+  evaluation.result.addValue(evaluation.currentValue.strValue);
+  evaluation.result.addText(".");
 
-  if(presentValues.length > 0) {
-    string message = "to contain ";
-
-    if(presentValues.length > 1) {
-      message ~= "any ";
-    }
-
-    message ~= evaluation.expectedValue.strValue;
-
-    evaluation.result.addText(" ");
-
-    if(presentValues.length == 1) {
-      evaluation.result.addValue(presentValues[0]);
-      evaluation.result.addText(" is present in ");
-    } else {
-      evaluation.result.addValue(presentValues.to!string.assumeWontThrow);
-      evaluation.result.addText(" are present in ");
-    }
-
-    evaluation.result.addValue(evaluation.currentValue.strValue);
-    evaluation.result.addText(".");
-
-    evaluation.result.expected = "not " ~ message;
-    evaluation.result.actual = testData;
-    evaluation.result.negated = true;
+  if(negated) {
+    evaluation.result.expected.put("not ");
   }
+  evaluation.result.expected.put("to contain ");
+  if(negated ? result.count > 1 : expectedPieces.length > 1) {
+    evaluation.result.expected.put(negated ? "any " : "all ");
+  }
+  evaluation.result.expected.put(evaluation.expectedValue.strValue);
+  evaluation.result.actual.put(testData);
+  evaluation.result.negated = negated;
+}
+
+private struct MatchResult {
+  size_t count;
+  string first;
+}
+
+private MatchResult countMatches(bool findPresent)(string[] pieces, string testData) @safe nothrow {
+  MatchResult result;
+  foreach(piece; pieces) {
+    if(testData.canFind(piece) != findPresent) {
+      continue;
+    }
+    if(result.count == 0) {
+      result.first = piece;
+    }
+    result.count++;
+  }
+  return result;
+}
+
+private void appendValueList(ref AssertResult result, string[] pieces, string testData,
+                             MatchResult matchResult, bool findPresent) @safe nothrow {
+  if(matchResult.count == 1) {
+    result.addValue(matchResult.first);
+    return;
+  }
+
+  result.addText("[");
+  bool first = true;
+  foreach(piece; pieces) {
+    if(testData.canFind(piece) != findPresent) {
+      continue;
+    }
+    if(!first) {
+      result.addText(", ");
+    }
+    result.addValue(piece);
+    first = false;
+  }
+  result.addText("]");
 }
 
 @("string contains a substring")
