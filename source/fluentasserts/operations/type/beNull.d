@@ -16,10 +16,19 @@ version(unittest) {
 static immutable beNullDescription = "Asserts that the value is null.";
 
 /// Asserts that a value is null (for nullable types like pointers, delegates, classes).
-void beNull(ref Evaluation evaluation) @safe nothrow {
+void beNull(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(".");
 
-  auto result = evaluation.currentValue.typeNames.canFind("null") || evaluation.currentValue.strValue == "null";
+  // Check if "null" is in typeNames (replaces canFind for @nogc)
+  bool hasNullType = false;
+  foreach (typeName; evaluation.currentValue.typeNames) {
+    if (typeName == "null") {
+      hasNullType = true;
+      break;
+    }
+  }
+
+  auto result = hasNullType || evaluation.currentValue.strValue == "null";
 
   if(evaluation.isNegated) {
     result = !result;
@@ -29,8 +38,12 @@ void beNull(ref Evaluation evaluation) @safe nothrow {
     return;
   }
 
-  evaluation.result.expected = evaluation.isNegated ? "not null" : "null";
-  evaluation.result.actual = evaluation.currentValue.typeNames.length ? evaluation.currentValue.typeNames[0] : "unknown";
+  if (evaluation.isNegated) {
+    evaluation.result.expected.put("not null");
+  } else {
+    evaluation.result.expected.put("null");
+  }
+  evaluation.result.actual.put(evaluation.currentValue.typeNames.length ? evaluation.currentValue.typeNames[0] : "unknown");
   evaluation.result.negated = evaluation.isNegated;
 }
 

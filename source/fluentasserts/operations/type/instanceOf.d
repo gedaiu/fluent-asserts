@@ -21,15 +21,22 @@ version (unittest) {
 static immutable instanceOfDescription = "Asserts that the tested value is related to a type.";
 
 /// Asserts that a value is an instance of a specific type or inherits from it.
-void instanceOf(ref Evaluation evaluation) @safe nothrow {
+void instanceOf(ref Evaluation evaluation) @safe nothrow @nogc {
   string expectedType = evaluation.expectedValue.strValue[1 .. $-1];
   string currentType = evaluation.currentValue.typeNames[0];
 
   evaluation.result.addText(". ");
 
-  auto existingTypes = findAmong(evaluation.currentValue.typeNames, [expectedType]);
+  // Check if expectedType is in typeNames (replaces findAmong for @nogc)
+  bool found = false;
+  foreach (typeName; evaluation.currentValue.typeNames) {
+    if (typeName == expectedType) {
+      found = true;
+      break;
+    }
+  }
 
-  auto isExpected = existingTypes.length > 0;
+  auto isExpected = found;
 
   if(evaluation.isNegated) {
     isExpected = !isExpected;
@@ -44,8 +51,14 @@ void instanceOf(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addValue(currentType);
   evaluation.result.addText(".");
 
-  evaluation.result.expected = (evaluation.isNegated ? "not " : "") ~ "typeof " ~ expectedType;
-  evaluation.result.actual = "typeof " ~ currentType;
+  if (evaluation.isNegated) {
+    evaluation.result.expected.put("not typeof ");
+  } else {
+    evaluation.result.expected.put("typeof ");
+  }
+  evaluation.result.expected.put(expectedType);
+  evaluation.result.actual.put("typeof ");
+  evaluation.result.actual.put(currentType);
   evaluation.result.negated = evaluation.isNegated;
 }
 
@@ -53,7 +66,9 @@ void instanceOf(ref Evaluation evaluation) @safe nothrow {
 // Unit tests
 // ---------------------------------------------------------------------------
 
-alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
+version(unittest) {
+  alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
+}
 
 @("does not throw when comparing an object")
 unittest {
@@ -74,38 +89,40 @@ unittest {
   expect(value).to.not.be.instanceOf!string;
 }
 
-static foreach (Type; NumericTypes) {
-  @(Type.stringof ~ " can compare two types")
-  unittest {
-    Lifecycle.instance.disableFailureHandling = false;
-    Type value = cast(Type) 40;
-    expect(value).to.be.instanceOf!Type;
-    expect(value).to.not.be.instanceOf!string;
-  }
+version(unittest) {
+  static foreach (Type; NumericTypes) {
+    @(Type.stringof ~ " can compare two types")
+    unittest {
+      Lifecycle.instance.disableFailureHandling = false;
+      Type value = cast(Type) 40;
+      expect(value).to.be.instanceOf!Type;
+      expect(value).to.not.be.instanceOf!string;
+    }
 
-  @(Type.stringof ~ " instanceOf string reports error with expected and actual")
-  unittest {
-    Type value = cast(Type) 40;
+    @(Type.stringof ~ " instanceOf string reports error with expected and actual")
+    unittest {
+      Type value = cast(Type) 40;
 
-    auto evaluation = ({
-      expect(value).to.be.instanceOf!string;
-    }).recordEvaluation;
+      auto evaluation = ({
+        expect(value).to.be.instanceOf!string;
+      }).recordEvaluation;
 
-    expect(evaluation.result.expected[]).to.equal("typeof string");
-    expect(evaluation.result.actual[]).to.equal("typeof " ~ Type.stringof);
-  }
+      expect(evaluation.result.expected[]).to.equal("typeof string");
+      expect(evaluation.result.actual[]).to.equal("typeof " ~ Type.stringof);
+    }
 
-  @(Type.stringof ~ " not instanceOf itself reports error with expected and negated")
-  unittest {
-    Type value = cast(Type) 40;
+    @(Type.stringof ~ " not instanceOf itself reports error with expected and negated")
+    unittest {
+      Type value = cast(Type) 40;
 
-    auto evaluation = ({
-      expect(value).to.not.be.instanceOf!Type;
-    }).recordEvaluation;
+      auto evaluation = ({
+        expect(value).to.not.be.instanceOf!Type;
+      }).recordEvaluation;
 
-    expect(evaluation.result.expected[]).to.equal("not typeof " ~ Type.stringof);
-    expect(evaluation.result.actual[]).to.equal("typeof " ~ Type.stringof);
-    expect(evaluation.result.negated).to.equal(true);
+      expect(evaluation.result.expected[]).to.equal("not typeof " ~ Type.stringof);
+      expect(evaluation.result.actual[]).to.equal("typeof " ~ Type.stringof);
+      expect(evaluation.result.negated).to.equal(true);
+    }
   }
 }
 
