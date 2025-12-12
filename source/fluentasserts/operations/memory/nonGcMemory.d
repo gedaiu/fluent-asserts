@@ -92,8 +92,8 @@ version (linux) {
     (() @trusted => free(leaked))();
 
     expect(evaluation.result.expected[]).to.equal(`not to allocate non-GC memory`);
-    expect(evaluation.result.actual[]).to.startWith("allocated ");
-    expect(evaluation.result.actual[]).to.contain("MB");
+    expect(evaluation.result.actual[].idup).to.startWith("allocated ");
+    expect(evaluation.result.actual[].idup).to.contain("MB");
   }
 }
 
