@@ -34,8 +34,10 @@ void between(T)(ref Evaluation evaluation) @safe nothrow {
     limit1 = evaluation.expectedValue.strValue.to!T;
     limit2 = evaluation.expectedValue.meta["1"].to!T;
   } catch(Exception e) {
-    evaluation.result.expected = "valid " ~ T.stringof ~ " values";
-    evaluation.result.actual = "conversion error";
+    evaluation.result.expected.put("valid ");
+    evaluation.result.expected.put(T.stringof);
+    evaluation.result.expected.put(" values");
+    evaluation.result.actual.put("conversion error");
     return;
   }
 
@@ -58,8 +60,8 @@ void betweenDuration(ref Evaluation evaluation) @safe nothrow {
 
     evaluation.result.addValue(limit2.to!string);
   } catch(Exception e) {
-    evaluation.result.expected = "valid Duration values";
-    evaluation.result.actual = "conversion error";
+    evaluation.result.expected.put("valid Duration values");
+    evaluation.result.actual.put("conversion error");
     return;
   }
 
@@ -83,8 +85,8 @@ void betweenSysTime(ref Evaluation evaluation) @safe nothrow {
 
     evaluation.result.addValue(limit2.toISOExtString);
   } catch(Exception e) {
-    evaluation.result.expected = "valid SysTime values";
-    evaluation.result.actual = "conversion error";
+    evaluation.result.expected.put("valid SysTime values");
+    evaluation.result.actual.put("conversion error");
     return;
   }
 
@@ -139,12 +141,12 @@ private void betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluatio
 
       evaluation.result.addText(".");
 
-      evaluation.result.expected = interval;
-      evaluation.result.actual = evaluation.currentValue.niceValue;
+      evaluation.result.expected.put(interval);
+      evaluation.result.actual.put(evaluation.currentValue.niceValue);
     }
   } else if(isBetween) {
-    evaluation.result.expected = interval;
-    evaluation.result.actual = evaluation.currentValue.niceValue;
+    evaluation.result.expected.put(interval);
+    evaluation.result.actual.put(evaluation.currentValue.niceValue);
     evaluation.result.negated = true;
   }
 }

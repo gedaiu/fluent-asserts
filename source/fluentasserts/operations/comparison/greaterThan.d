@@ -29,8 +29,10 @@ void greaterThan(T)(ref Evaluation evaluation) @safe nothrow {
     expectedValue = evaluation.expectedValue.strValue.to!T;
     currentValue = evaluation.currentValue.strValue.to!T;
   } catch(Exception e) {
-    evaluation.result.expected = "valid " ~ T.stringof ~ " values";
-    evaluation.result.actual = "conversion error";
+    evaluation.result.expected.put("valid ");
+    evaluation.result.expected.put(T.stringof);
+    evaluation.result.expected.put(" values");
+    evaluation.result.actual.put("conversion error");
     return;
   }
 
@@ -55,8 +57,8 @@ void greaterThanDuration(ref Evaluation evaluation) @safe nothrow {
     niceExpectedValue = expectedValue.to!string;
     niceCurrentValue = currentValue.to!string;
   } catch(Exception e) {
-    evaluation.result.expected = "valid Duration values";
-    evaluation.result.actual = "conversion error";
+    evaluation.result.expected.put("valid Duration values");
+    evaluation.result.actual.put("conversion error");
     return;
   }
 
@@ -78,8 +80,8 @@ void greaterThanSysTime(ref Evaluation evaluation) @safe nothrow {
     expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
     currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
   } catch(Exception e) {
-    evaluation.result.expected = "valid SysTime values";
-    evaluation.result.actual = "conversion error";
+    evaluation.result.expected.put("valid SysTime values");
+    evaluation.result.actual.put("conversion error");
     return;
   }
 
