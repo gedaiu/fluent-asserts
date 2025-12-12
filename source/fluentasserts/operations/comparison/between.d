@@ -2,6 +2,7 @@ module fluentasserts.operations.comparison.between;
 
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation;
+import fluentasserts.core.toNumeric;
 
 import fluentasserts.core.lifecycle;
 
@@ -25,15 +26,11 @@ void between(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
   evaluation.result.addText(". ");
 
-  T currentValue;
-  T limit1;
-  T limit2;
+  auto currentParsed = toNumeric!T(evaluation.currentValue.strValue);
+  auto limit1Parsed = toNumeric!T(evaluation.expectedValue.strValue);
+  auto limit2Parsed = toNumeric!T(evaluation.expectedValue.meta["1"]);
 
-  try {
-    currentValue = evaluation.currentValue.strValue.to!T;
-    limit1 = evaluation.expectedValue.strValue.to!T;
-    limit2 = evaluation.expectedValue.meta["1"].to!T;
-  } catch(Exception e) {
+  if (!currentParsed.success || !limit1Parsed.success || !limit2Parsed.success) {
     evaluation.result.expected.put("valid ");
     evaluation.result.expected.put(T.stringof);
     evaluation.result.expected.put(" values");
@@ -41,7 +38,7 @@ void between(T)(ref Evaluation evaluation) @safe nothrow {
     return;
   }
 
-  betweenResults(currentValue, limit1, limit2, evaluation);
+  betweenResults(currentParsed.value, limit1Parsed.value, limit2Parsed.value, evaluation);
 }
 
 
@@ -49,22 +46,21 @@ void between(T)(ref Evaluation evaluation) @safe nothrow {
 void betweenDuration(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(" and ");
 
-  Duration currentValue;
-  Duration limit1;
-  Duration limit2;
+  auto currentParsed = toNumeric!ulong(evaluation.currentValue.strValue);
+  auto limit1Parsed = toNumeric!ulong(evaluation.expectedValue.strValue);
+  auto limit2Parsed = toNumeric!ulong(evaluation.expectedValue.meta["1"]);
 
-  try {
-    currentValue = dur!"nsecs"(evaluation.currentValue.strValue.to!size_t);
-    limit1 = dur!"nsecs"(evaluation.expectedValue.strValue.to!size_t);
-    limit2 = dur!"nsecs"(evaluation.expectedValue.meta["1"].to!size_t);
-
-    evaluation.result.addValue(limit2.to!string);
-  } catch(Exception e) {
+  if (!currentParsed.success || !limit1Parsed.success || !limit2Parsed.success) {
     evaluation.result.expected.put("valid Duration values");
     evaluation.result.actual.put("conversion error");
     return;
   }
 
+  Duration currentValue = dur!"nsecs"(currentParsed.value);
+  Duration limit1 = dur!"nsecs"(limit1Parsed.value);
+  Duration limit2 = dur!"nsecs"(limit2Parsed.value);
+
+  evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
   evaluation.result.addText(". ");
 
   betweenResults(currentValue, limit1, limit2, evaluation);

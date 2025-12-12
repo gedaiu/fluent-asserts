@@ -5,6 +5,7 @@ import fluentasserts.core.evaluation;
 import fluentasserts.core.listcomparison;
 import fluentasserts.results.serializers;
 import fluentasserts.operations.string.contain;
+import fluentasserts.core.toNumeric;
 
 import fluentasserts.core.lifecycle;
 
@@ -30,19 +31,19 @@ void approximately(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
   evaluation.result.addText(".");
 
-  real current;
-  real expected;
-  real delta;
+  auto currentParsed = toNumeric!real(evaluation.currentValue.strValue);
+  auto expectedParsed = toNumeric!real(evaluation.expectedValue.strValue);
+  auto deltaParsed = toNumeric!real(evaluation.expectedValue.meta["1"]);
 
-  try {
-    current = evaluation.currentValue.strValue.to!real;
-    expected = evaluation.expectedValue.strValue.to!real;
-    delta = evaluation.expectedValue.meta["1"].to!real;
-  } catch(Exception e) {
+  if (!currentParsed.success || !expectedParsed.success || !deltaParsed.success) {
     evaluation.result.expected = "valid numeric values";
     evaluation.result.actual = "conversion error";
     return;
   }
+
+  real current = currentParsed.value;
+  real expected = expectedParsed.value;
+  real delta = deltaParsed.value;
 
   string strExpected = evaluation.expectedValue.strValue ~ "±" ~ evaluation.expectedValue.meta["1"];
   string strCurrent = evaluation.currentValue.strValue;
