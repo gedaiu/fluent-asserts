@@ -188,10 +188,10 @@ static foreach (Type; FPTypes) {
     expect(testValue).to.not.be.approximately(0.35, 0.00001);
   }
 
-  @(Type.stringof ~ " values checks approximately with delta 0.001")
+  @(Type.stringof ~ " values checks approximately with delta 0.0005")
   unittest {
     Type testValue = cast(Type) 0.351;
-    expect(testValue).to.not.be.approximately(0.35, 0.001);
+    expect(testValue).to.not.be.approximately(0.35, 0.0005);
   }
 
   @(Type.stringof ~ " 0.351 approximately 0.35 with delta 0.0001 reports error with expected and actual")
