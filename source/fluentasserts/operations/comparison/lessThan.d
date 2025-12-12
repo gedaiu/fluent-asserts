@@ -2,6 +2,7 @@ module fluentasserts.operations.comparison.lessThan;
 
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation;
+import fluentasserts.core.toNumeric;
 
 import fluentasserts.core.lifecycle;
 
@@ -18,16 +19,13 @@ version(unittest) {
 static immutable lessThanDescription = "Asserts that the tested value is less than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
 /// Asserts that a value is strictly less than the expected value.
-void lessThan(T)(ref Evaluation evaluation) @safe nothrow {
+void lessThan(T)(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(".");
 
-  T expectedValue;
-  T currentValue;
+  auto expectedParsed = toNumeric!T(evaluation.expectedValue.strValue);
+  auto currentParsed = toNumeric!T(evaluation.currentValue.strValue);
 
-  try {
-    expectedValue = evaluation.expectedValue.strValue.to!T;
-    currentValue = evaluation.currentValue.strValue.to!T;
-  } catch(Exception e) {
+  if (!expectedParsed.success || !currentParsed.success) {
     evaluation.result.expected.put("valid ");
     evaluation.result.expected.put(T.stringof);
     evaluation.result.expected.put(" values");
@@ -35,35 +33,30 @@ void lessThan(T)(ref Evaluation evaluation) @safe nothrow {
     return;
   }
 
-  auto result = currentValue < expectedValue;
+  auto result = currentParsed.value < expectedParsed.value;
 
   lessThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
 }
 
 ///
-void lessThanDuration(ref Evaluation evaluation) @safe nothrow {
+void lessThanDuration(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(".");
 
-  Duration expectedValue;
-  Duration currentValue;
-  string niceExpectedValue;
-  string niceCurrentValue;
+  auto expectedParsed = toNumeric!ulong(evaluation.expectedValue.strValue);
+  auto currentParsed = toNumeric!ulong(evaluation.currentValue.strValue);
 
-  try {
-    expectedValue = dur!"nsecs"(evaluation.expectedValue.strValue.to!size_t);
-    currentValue = dur!"nsecs"(evaluation.currentValue.strValue.to!size_t);
-
-    niceExpectedValue = expectedValue.to!string;
-    niceCurrentValue = currentValue.to!string;
-  } catch(Exception e) {
+  if (!expectedParsed.success || !currentParsed.success) {
     evaluation.result.expected.put("valid Duration values");
     evaluation.result.actual.put("conversion error");
     return;
   }
 
+  Duration expectedValue = dur!"nsecs"(expectedParsed.value);
+  Duration currentValue = dur!"nsecs"(currentParsed.value);
+
   auto result = currentValue < expectedValue;
 
-  lessThanResults(result, niceExpectedValue, niceCurrentValue, evaluation);
+  lessThanResults(result, evaluation.expectedValue.niceValue, evaluation.currentValue.niceValue, evaluation);
 }
 
 ///
