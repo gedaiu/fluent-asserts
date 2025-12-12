@@ -93,7 +93,7 @@ version (linux) {
 
     expect(evaluation.result.expected[]).to.equal(`not to allocate non-GC memory`);
     expect(evaluation.result.actual[].idup).to.startWith("allocated ");
-    expect(evaluation.result.actual[].idup).to.contain("MB");
+    expect(evaluation.result.actual[].idup).to.endWith("MB");
   }
 }
 
