@@ -20,6 +20,7 @@ import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.base : TestException;
 import fluentasserts.results.printer : ResultPrinter, StringResultPrinter;
 import fluentasserts.results.serializers : SerializerRegistry;
+import fluentasserts.core.heapdata;
 
 /// Holds the result of evaluating a single value.
 /// Captures the value itself, any exceptions thrown, timing information,
@@ -79,6 +80,22 @@ struct Evaluation {
   /// The id of the current evaluation
   size_t id;
 
+  /// Copy constructor
+  this(ref return scope Evaluation other) @trusted nothrow {
+    this.id = other.id;
+    this.currentValue = other.currentValue;
+    this.expectedValue = other.expectedValue;
+    this._operationCount = other._operationCount;
+    foreach (i; 0 .. other._operationCount) {
+      this._operationNames[i] = other._operationNames[i];
+    }
+    this.isNegated = other.isNegated;
+    this.source = other.source;
+    this.throwable = other.throwable;
+    this.isEvaluated = other.isEvaluated;
+    this.result = other.result;
+  }
+
   /// The value that will be validated
   ValueEvaluation currentValue;
 
@@ -87,7 +104,7 @@ struct Evaluation {
 
   /// The operation names (stored as array, joined on access)
   private {
-    string[8] _operationNames;
+    HeapString[8] _operationNames;
     size_t _operationCount;
   }
 
@@ -98,13 +115,13 @@ struct Evaluation {
     }
 
     if (_operationCount == 1) {
-      return _operationNames[0];
+      return _operationNames[0][].idup;
     }
 
     Appender!string result;
     foreach (i; 0 .. _operationCount) {
       if (i > 0) result.put(".");
-      result.put(_operationNames[i]);
+      result.put(_operationNames[i][]);
     }
 
     return result[];
@@ -113,7 +130,9 @@ struct Evaluation {
   /// Adds an operation name to the chain
   void addOperationName(string name) nothrow @safe @nogc {
     if (_operationCount < _operationNames.length) {
-      _operationNames[_operationCount++] = name;
+      auto heapName = HeapString.create(name.length);
+      heapName.put(name);
+      _operationNames[_operationCount++] = heapName;
     }
   }
 

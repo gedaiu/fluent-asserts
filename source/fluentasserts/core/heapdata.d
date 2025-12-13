@@ -95,6 +95,17 @@ struct HeapData(T) {
     return _data[0 .. _length];
   }
 
+  /// Slice operator for creating a sub-HeapData.
+  HeapData!T opSlice(size_t start, size_t end) @nogc nothrow @trusted const {
+    HeapData!T result;
+
+    foreach (i; start .. end) {
+      result.put(cast(T) this[i]);
+    }
+
+    return result;
+  }
+
   /// Index operator.
   ref inout(T) opIndex(size_t i) @nogc nothrow @trusted inout {
     return _data[i];
