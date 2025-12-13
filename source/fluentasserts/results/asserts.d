@@ -125,12 +125,22 @@ struct AssertResult {
     add(Message(Message.Type.value, text));
   }
 
+  /// Adds a value to the result (const(char)[] overload).
+  void addValue(const(char)[] text) nothrow @trusted @nogc {
+    add(Message(Message.Type.value, cast(string) text));
+  }
+
   /// Adds informational text to the result.
   void addText(string text) nothrow @safe @nogc {
     if (text == "throwAnyException") {
       text = "throw any exception";
     }
     add(Message(Message.Type.info, text));
+  }
+
+  /// Adds informational text to the result (const(char)[] overload).
+  void addText(const(char)[] text) nothrow @trusted @nogc {
+    add(Message(Message.Type.info, cast(string) text));
   }
 
   /// Prepends a message to the result (shifts existing messages).

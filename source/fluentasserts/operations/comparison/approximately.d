@@ -6,6 +6,7 @@ import fluentasserts.core.listcomparison;
 import fluentasserts.results.serializers;
 import fluentasserts.operations.string.contain;
 import fluentasserts.core.toNumeric;
+import fluentasserts.core.heapdata;
 
 import fluentasserts.core.lifecycle;
 
@@ -87,10 +88,23 @@ void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   real[] expectedPieces;
 
   try {
-    testData = evaluation.currentValue.strValue.parseList.cleanString.map!(a => a.to!real).array;
-    expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString.map!(a => a.to!real).array;
+    auto currentParsed = evaluation.currentValue.strValue.parseList;
+    cleanString(currentParsed);
+    auto expectedParsed = evaluation.expectedValue.strValue.parseList;
+    cleanString(expectedParsed);
+
+    testData = new real[currentParsed.length];
+    foreach (i; 0 .. currentParsed.length) {
+      testData[i] = currentParsed[i][].to!real;
+    }
+
+    expectedPieces = new real[expectedParsed.length];
+    foreach (i; 0 .. expectedParsed.length) {
+      expectedPieces[i] = expectedParsed[i][].to!real;
+    }
+
     maxRelDiff = evaluation.expectedValue.meta["1"].to!double;
-  } catch(Exception e) {
+  } catch (Exception e) {
     evaluation.result.expected = "valid numeric list";
     evaluation.result.actual = "conversion error";
     return;

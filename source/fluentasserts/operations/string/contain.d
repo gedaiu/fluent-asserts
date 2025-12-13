@@ -10,6 +10,7 @@ import fluentasserts.results.printer;
 import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.evaluation;
 import fluentasserts.results.serializers;
+import fluentasserts.core.heapdata;
 
 import fluentasserts.core.lifecycle;
 
@@ -26,10 +27,11 @@ static immutable containDescription = "When the tested value is a string, it ass
   "When the tested value is an array, it asserts that the given val is inside the tested value.";
 
 /// Asserts that a string contains specified substrings.
-void contain(ref Evaluation evaluation) @safe nothrow {
+void contain(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addText(".");
 
-  auto expectedPieces = evaluation.expectedValue.strValue.parseList.cleanString;
+  auto expectedPieces = evaluation.expectedValue.strValue.parseList;
+  cleanString(expectedPieces);
   auto testData = evaluation.currentValue.strValue.cleanString;
   bool negated = evaluation.isNegated;
 
@@ -37,7 +39,7 @@ void contain(ref Evaluation evaluation) @safe nothrow {
     ? countMatches!true(expectedPieces, testData)
     : countMatches!false(expectedPieces, testData);
 
-  if(result.count == 0) {
+  if (result.count == 0) {
     return;
   }
 
@@ -49,11 +51,11 @@ void contain(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addValue(evaluation.currentValue.strValue);
   evaluation.result.addText(".");
 
-  if(negated) {
+  if (negated) {
     evaluation.result.expected.put("not ");
   }
   evaluation.result.expected.put("to contain ");
-  if(negated ? result.count > 1 : expectedPieces.length > 1) {
+  if (negated ? result.count > 1 : expectedPieces.length > 1) {
     evaluation.result.expected.put(negated ? "any " : "all ");
   }
   evaluation.result.expected.put(evaluation.expectedValue.strValue);
@@ -63,16 +65,17 @@ void contain(ref Evaluation evaluation) @safe nothrow {
 
 private struct MatchResult {
   size_t count;
-  string first;
+  const(char)[] first;
 }
 
-private MatchResult countMatches(bool findPresent)(string[] pieces, string testData) @safe nothrow {
+private MatchResult countMatches(bool findPresent)(ref HeapStringList pieces, const(char)[] testData) @nogc nothrow {
   MatchResult result;
-  foreach(piece; pieces) {
-    if(testData.canFind(piece) != findPresent) {
+  foreach (i; 0 .. pieces.length) {
+    auto piece = pieces[i][];
+    if (canFind(testData, piece) != findPresent) {
       continue;
     }
-    if(result.count == 0) {
+    if (result.count == 0) {
       result.first = piece;
     }
     result.count++;
@@ -80,20 +83,21 @@ private MatchResult countMatches(bool findPresent)(string[] pieces, string testD
   return result;
 }
 
-private void appendValueList(ref AssertResult result, string[] pieces, string testData,
-                             MatchResult matchResult, bool findPresent) @safe nothrow {
-  if(matchResult.count == 1) {
+private void appendValueList(ref AssertResult result, ref HeapStringList pieces, const(char)[] testData,
+                             MatchResult matchResult, bool findPresent) @nogc nothrow {
+  if (matchResult.count == 1) {
     result.addValue(matchResult.first);
     return;
   }
 
   result.addText("[");
   bool first = true;
-  foreach(piece; pieces) {
-    if(testData.canFind(piece) != findPresent) {
+  foreach (i; 0 .. pieces.length) {
+    auto piece = pieces[i][];
+    if (canFind(testData, piece) != findPresent) {
       continue;
     }
-    if(!first) {
+    if (!first) {
       result.addText(", ");
     }
     result.addValue(piece);
@@ -296,7 +300,15 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
 
 /// Adds a failure message to evaluation.result describing missing EquableValue elements.
 void addLifecycleMessage(ref Evaluation evaluation, EquableValue[] missingValues) @safe nothrow {
-  auto missing = missingValues.map!(a => a.getSerialized.cleanString).array;
+  string[] missing;
+  try {
+    missing = new string[missingValues.length];
+    foreach (i, val; missingValues) {
+      missing[i] = val.getSerialized.cleanString;
+    }
+  } catch (Exception) {
+    return;
+  }
 
   addLifecycleMessage(evaluation, missing);
 }
@@ -372,8 +384,17 @@ string niceJoin(string[] values, string typeName = "") @trusted nothrow {
   return result;
 }
 
-string niceJoin(EquableValue[] values, string typeName = "") @safe nothrow {
-  return values.map!(a => a.getSerialized.cleanString).array.niceJoin(typeName);
+string niceJoin(EquableValue[] values, string typeName = "") @trusted nothrow {
+  string[] strValues;
+  try {
+    strValues = new string[values.length];
+    foreach (i, val; values) {
+      strValues[i] = val.getSerialized.cleanString;
+    }
+  } catch (Exception) {
+    return "";
+  }
+  return strValues.niceJoin(typeName);
 }
 
 @("range contain array succeeds")

@@ -10,6 +10,8 @@ import std.conv;
 import std.datetime;
 import std.functional;
 
+import fluentasserts.core.heapdata;
+
 version(unittest) {
   import fluent.asserts;
   import fluentasserts.core.lifecycle;
@@ -179,11 +181,20 @@ class SerializerRegistry {
   /// Serializes a primitive type (string, char, number) to a string.
   /// Strings are quoted with double quotes, chars with single quotes.
   /// Special characters are replaced with their visual representations.
-  string serialize(T)(T value) @safe if(!is(T == enum) && (isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T))) {
+  string serialize(T)(T value) @trusted if(!is(T == enum) && (isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T))) {
     static if(isSomeString!T) {
-      return replaceSpecialChars(value.to!string);
+      static if (is(T == string) || is(T == const(char)[])) {
+        auto result = replaceSpecialChars(value);
+        return result[].idup;
+      } else {
+        // For wstring/dstring, convert to string first
+        auto result = replaceSpecialChars(value.to!string);
+        return result[].idup;
+      }
     } else static if(isSomeChar!T) {
-      return replaceSpecialChars(value.to!string);
+      char[1] buf = [cast(char) value];
+      auto result = replaceSpecialChars(buf[]);
+      return result[].idup;
     } else {
       return value.to!string;
     }
@@ -216,8 +227,8 @@ class SerializerRegistry {
 /// Replaces ASCII control characters and trailing spaces with visual representations from ResultGlyphs.
 /// Params:
 ///   value = The string to process
-/// Returns: A new string with control characters and trailing spaces replaced by glyphs.
-string replaceSpecialChars(string value) @safe nothrow {
+/// Returns: A HeapString with control characters and trailing spaces replaced by glyphs.
+HeapString replaceSpecialChars(const(char)[] value) @trusted nothrow @nogc {
   import fluentasserts.results.message : ResultGlyphs;
 
   size_t trailingSpaceStart = value.length;
@@ -231,66 +242,67 @@ string replaceSpecialChars(string value) @safe nothrow {
     trailingSpaceStart = 0;
   }
 
-  auto result = appender!string;
-  result.reserve(value.length);
+  auto result = HeapString.create(value.length);
 
   foreach (i, c; value) {
     if (c < 32 || c == 127) {
       switch (c) {
-        case '\0': result ~= ResultGlyphs.nullChar; break;
-        case '\a': result ~= ResultGlyphs.bell; break;
-        case '\b': result ~= ResultGlyphs.backspace; break;
-        case '\t': result ~= ResultGlyphs.tab; break;
-        case '\n': result ~= ResultGlyphs.newline; break;
-        case '\v': result ~= ResultGlyphs.verticalTab; break;
-        case '\f': result ~= ResultGlyphs.formFeed; break;
-        case '\r': result ~= ResultGlyphs.carriageReturn; break;
-        case 27:   result ~= ResultGlyphs.escape; break;
-        default:   result ~= toHex(cast(ubyte) c); break;
+        case '\0': result.put(ResultGlyphs.nullChar); break;
+        case '\a': result.put(ResultGlyphs.bell); break;
+        case '\b': result.put(ResultGlyphs.backspace); break;
+        case '\t': result.put(ResultGlyphs.tab); break;
+        case '\n': result.put(ResultGlyphs.newline); break;
+        case '\v': result.put(ResultGlyphs.verticalTab); break;
+        case '\f': result.put(ResultGlyphs.formFeed); break;
+        case '\r': result.put(ResultGlyphs.carriageReturn); break;
+        case 27:   result.put(ResultGlyphs.escape); break;
+        default:   putHex(result, cast(ubyte) c); break;
       }
     } else if (c == ' ' && i >= trailingSpaceStart) {
-      result ~= ResultGlyphs.space;
+      result.put(ResultGlyphs.space);
     } else {
-      result ~= c;
+      result.put(c);
     }
   }
 
-  return result.data;
+  return result;
 }
 
-/// Converts a byte to a hex escape sequence like `\x1F`.
-private string toHex(ubyte b) pure @safe nothrow {
-  immutable hexDigits = "0123456789ABCDEF";
-  char[4] buf = ['\\', 'x', hexDigits[b >> 4], hexDigits[b & 0xF]];
-  return buf[].idup;
+/// Appends a hex escape sequence like `\x1F` to the buffer.
+private void putHex(ref HeapString buf, ubyte b) @safe nothrow @nogc {
+  static immutable hexDigits = "0123456789ABCDEF";
+  buf.put('\\');
+  buf.put('x');
+  buf.put(hexDigits[b >> 4]);
+  buf.put(hexDigits[b & 0xF]);
 }
 
 @("replaceSpecialChars replaces null character")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = replaceSpecialChars("hello\0world");
-  result.should.equal("hello\\0world");
+  result[].should.equal("hello\\0world");
 }
 
 @("replaceSpecialChars replaces tab character")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = replaceSpecialChars("hello\tworld");
-  result.should.equal("hello\\tworld");
+  result[].should.equal("hello\\tworld");
 }
 
 @("replaceSpecialChars replaces newline character")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = replaceSpecialChars("hello\nworld");
-  result.should.equal("hello\\nworld");
+  result[].should.equal("hello\\nworld");
 }
 
 @("replaceSpecialChars replaces carriage return character")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = replaceSpecialChars("hello\rworld");
-  result.should.equal("hello\\rworld");
+  result[].should.equal("hello\\rworld");
 }
 
 @("replaceSpecialChars replaces trailing spaces")
@@ -303,7 +315,7 @@ unittest {
   ResultGlyphs.space = "\u00B7";
 
   auto result = replaceSpecialChars("hello   ");
-  result.should.equal("hello\u00B7\u00B7\u00B7");
+  result[].should.equal("hello\u00B7\u00B7\u00B7");
 }
 
 @("replaceSpecialChars preserves internal spaces")
@@ -316,7 +328,7 @@ unittest {
   ResultGlyphs.space = "\u00B7";
 
   auto result = replaceSpecialChars("hello world");
-  result.should.equal("hello world");
+  result[].should.equal("hello world");
 }
 
 @("replaceSpecialChars replaces all spaces when string is only spaces")
@@ -329,28 +341,28 @@ unittest {
   ResultGlyphs.space = "\u00B7";
 
   auto result = replaceSpecialChars("   ");
-  result.should.equal("\u00B7\u00B7\u00B7");
+  result[].should.equal("\u00B7\u00B7\u00B7");
 }
 
 @("replaceSpecialChars handles empty string")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = replaceSpecialChars("");
-  result.should.equal("");
+  result[].should.equal("");
 }
 
 @("replaceSpecialChars replaces unknown control character with hex")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = replaceSpecialChars("hello\x01world");
-  result.should.equal("hello\\x01world");
+  result[].should.equal("hello\\x01world");
 }
 
 @("replaceSpecialChars replaces DEL character with hex")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = replaceSpecialChars("hello\x7Fworld");
-  result.should.equal("hello\\x7Fworld");
+  result[].should.equal("hello\\x7Fworld");
 }
 
 @("overrides the default struct serializer")
@@ -659,61 +671,66 @@ string joinClassTypes(T)() pure @safe {
 /// Handles nested arrays, quoted strings, and char literals.
 /// Params:
 ///   value = The serialized list string (e.g., "[1, 2, 3]")
-/// Returns: An array of individual element strings.
-string[] parseList(string value) @safe nothrow {
-  import std.array : Appender;
+/// Returns: A HeapStringList containing individual element strings.
+HeapStringList parseList(const(char)[] value) @trusted nothrow @nogc {
+  HeapStringList result;
 
-  if(value.length == 0) {
-    return [];
+  if (value.length == 0) {
+    return result;
   }
 
-  if(value.length == 1) {
-    return [ value ];
+  if (value.length == 1) {
+    auto item = HeapString.create(1);
+    item.put(value[0]);
+    result.put(item);
+    return result;
   }
 
-  if(value[0] != '[' || value[value.length - 1] != ']') {
-    return [ value ];
+  if (value[0] != '[' || value[value.length - 1] != ']') {
+    auto item = HeapString.create(value.length);
+    item.put(value);
+    result.put(item);
+    return result;
   }
 
-  Appender!(string[]) result;
-  Appender!string currentValue;
-
+  HeapString currentValue;
   bool isInsideString;
   bool isInsideChar;
   bool isInsideArray;
   long arrayIndex = 0;
 
-  foreach(index; 1..value.length - 1) {
+  foreach (index; 1 .. value.length - 1) {
     auto ch = value[index];
     auto canSplit = !isInsideString && !isInsideChar && !isInsideArray;
 
-    if(canSplit && ch == ',' && currentValue[].length > 0) {
-      result.put(currentValue[].strip.idup);
-      currentValue = Appender!string();
+    if (canSplit && ch == ',' && currentValue.length > 0) {
+      auto stripped = stripHeapString(currentValue);
+      result.put(stripped);
+      currentValue = HeapString.init;
       continue;
     }
 
-    if(!isInsideChar && !isInsideString) {
-      if(ch == '[') {
+    if (!isInsideChar && !isInsideString) {
+      if (ch == '[') {
         arrayIndex++;
         isInsideArray = true;
       }
 
-      if(ch == ']') {
+      if (ch == ']') {
         arrayIndex--;
 
-        if(arrayIndex == 0) {
+        if (arrayIndex == 0) {
           isInsideArray = false;
         }
       }
     }
 
-    if(!isInsideArray) {
-      if(!isInsideChar && ch == '"') {
+    if (!isInsideArray) {
+      if (!isInsideChar && ch == '"') {
         isInsideString = !isInsideString;
       }
 
-      if(!isInsideString && ch == '\'') {
+      if (!isInsideString && ch == '\'') {
         isInsideChar = !isInsideChar;
       }
     }
@@ -721,144 +738,167 @@ string[] parseList(string value) @safe nothrow {
     currentValue.put(ch);
   }
 
-  if(currentValue[].length > 0) {
-    result.put(currentValue[].strip.idup);
+  if (currentValue.length > 0) {
+    auto stripped = stripHeapString(currentValue);
+    result.put(stripped);
   }
 
-  return result[];
+  return result;
+}
+
+/// Strips leading and trailing whitespace from a HeapString.
+private HeapString stripHeapString(ref HeapString input) @trusted nothrow @nogc {
+  if (input.length == 0) {
+    return HeapString.init;
+  }
+
+  auto data = input[];
+  size_t start = 0;
+  size_t end = data.length;
+
+  while (start < end && (data[start] == ' ' || data[start] == '\t')) {
+    start++;
+  }
+
+  while (end > start && (data[end - 1] == ' ' || data[end - 1] == '\t')) {
+    end--;
+  }
+
+  auto result = HeapString.create(end - start);
+  result.put(data[start .. end]);
+  return result;
+}
+
+/// Helper function for testing: checks if HeapStringList matches expected strings.
+version(unittest) {
+  private void assertHeapStringListEquals(ref HeapStringList list, string[] expected) {
+    import std.conv : to;
+    assert(list.length == expected.length,
+      "Length mismatch: got " ~ list.length.to!string ~ ", expected " ~ expected.length.to!string);
+    foreach (i, exp; expected) {
+      assert(list[i][] == exp,
+        "Element " ~ i.to!string ~ " mismatch: got '" ~ list[i][].idup ~ "', expected '" ~ exp ~ "'");
+    }
+  }
 }
 
 @("parseList parses an empty string")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "".parseList;
-
-  pieces.should.equal([]);
+  assertHeapStringListEquals(pieces, []);
 }
 
 @("parseList does not parse a string that does not contain []")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "test".parseList;
-
-  pieces.should.equal([ "test" ]);
+  assertHeapStringListEquals(pieces, ["test"]);
 }
-
 
 @("parseList does not parse a char that does not contain []")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "t".parseList;
-
-  pieces.should.equal([ "t" ]);
+  assertHeapStringListEquals(pieces, ["t"]);
 }
 
 @("parseList parses an empty array")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "[]".parseList;
-
-  pieces.should.equal([]);
+  assertHeapStringListEquals(pieces, []);
 }
 
 @("parseList parses a list of one number")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "[1]".parseList;
-
-  pieces.should.equal(["1"]);
+  assertHeapStringListEquals(pieces, ["1"]);
 }
 
 @("parseList parses a list of two numbers")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "[1,2]".parseList;
-
-  pieces.should.equal(["1","2"]);
+  assertHeapStringListEquals(pieces, ["1", "2"]);
 }
 
 @("parseList removes the whitespaces from the parsed values")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = "[ 1, 2 ]".parseList;
-
-  pieces.should.equal(["1","2"]);
+  assertHeapStringListEquals(pieces, ["1", "2"]);
 }
 
 @("parseList parses two string values that contain a comma")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ "a,b", "c,d" ]`.parseList;
-
-  pieces.should.equal([`"a,b"`,`"c,d"`]);
+  assertHeapStringListEquals(pieces, [`"a,b"`, `"c,d"`]);
 }
 
 @("parseList parses two string values that contain a single quote")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ "a'b", "c'd" ]`.parseList;
-
-  pieces.should.equal([`"a'b"`,`"c'd"`]);
+  assertHeapStringListEquals(pieces, [`"a'b"`, `"c'd"`]);
 }
 
 @("parseList parses two char values that contain a comma")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ ',' , ',' ]`.parseList;
-
-  pieces.should.equal([`','`,`','`]);
+  assertHeapStringListEquals(pieces, [`','`, `','`]);
 }
 
 @("parseList parses two char values that contain brackets")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ '[' , ']' ]`.parseList;
-
-  pieces.should.equal([`'['`,`']'`]);
+  assertHeapStringListEquals(pieces, [`'['`, `']'`]);
 }
 
 @("parseList parses two string values that contain brackets")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ "[" , "]" ]`.parseList;
-
-  pieces.should.equal([`"["`,`"]"`]);
+  assertHeapStringListEquals(pieces, [`"["`, `"]"`]);
 }
 
 @("parseList parses two char values that contain a double quote")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ '"' , '"' ]`.parseList;
-
-  pieces.should.equal([`'"'`,`'"'`]);
+  assertHeapStringListEquals(pieces, [`'"'`, `'"'`]);
 }
 
 @("parseList parses two empty lists")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ [] , [] ]`.parseList;
-  pieces.should.equal([`[]`,`[]`]);
+  assertHeapStringListEquals(pieces, [`[]`, `[]`]);
 }
 
 @("parseList parses two nested lists")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ [[],[]] , [[[]],[]] ]`.parseList;
-  pieces.should.equal([`[[],[]]`,`[[[]],[]]`]);
+  assertHeapStringListEquals(pieces, [`[[],[]]`, `[[[]],[]]`]);
 }
 
 @("parseList parses two lists with items")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ [1,2] , [3,4] ]`.parseList;
-  pieces.should.equal([`[1,2]`,`[3,4]`]);
+  assertHeapStringListEquals(pieces, [`[1,2]`, `[3,4]`]);
 }
 
 @("parseList parses two lists with string and char items")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto pieces = `[ ["1", "2"] , ['3', '4'] ]`.parseList;
-  pieces.should.equal([`["1", "2"]`,`['3', '4']`]);
+  assertHeapStringListEquals(pieces, [`["1", "2"]`, `['3', '4']`]);
 }
 
 /// Removes surrounding quotes from a string value.
@@ -866,18 +906,33 @@ unittest {
 /// Params:
 ///   value = The potentially quoted string
 /// Returns: The string with surrounding quotes removed.
-string cleanString(string value) @safe nothrow @nogc {
-  if(value.length <= 1) {
+const(char)[] cleanString(const(char)[] value) @safe nothrow @nogc {
+  if (value.length <= 1) {
     return value;
   }
 
   char first = value[0];
   char last = value[value.length - 1];
 
-  if(first == last && (first == '"' || first == '\'')) {
-    return value[1..$-1];
+  if (first == last && (first == '"' || first == '\'')) {
+    return value[1 .. $ - 1];
   }
 
+  return value;
+}
+
+/// Overload for immutable strings that returns string for backward compatibility.
+string cleanString(string value) @safe nothrow @nogc {
+  if (value.length <= 1) {
+    return value;
+  }
+
+  char first = value[0];
+  char last = value[value.length - 1];
+
+  if (first == last && (first == '"' || first == '\'')) {
+    return value[1 .. $ - 1];
+  }
 
   return value;
 }
@@ -906,24 +961,35 @@ unittest {
   `''`.cleanString.should.equal(``);
 }
 
-/// Removes surrounding quotes from each string in an array.
+/// Removes surrounding quotes from each HeapString in a HeapStringList.
+/// Modifies the list in place.
 /// Params:
-///   pieces = The array of potentially quoted strings
-/// Returns: An array with quotes removed from each element.
-string[] cleanString(string[] pieces) @safe nothrow {
-  return pieces.map!(a => a.cleanString).array;
+///   pieces = The HeapStringList of potentially quoted strings
+void cleanString(ref HeapStringList pieces) @trusted nothrow @nogc {
+  foreach (i; 0 .. pieces.length) {
+    auto cleaned = cleanString(pieces[i][]);
+    if (cleaned.length != pieces[i].length) {
+      auto newItem = HeapString.create(cleaned.length);
+      newItem.put(cleaned);
+      pieces[i] = newItem;
+    }
+  }
 }
 
-@("cleanString returns an empty array when the input list is empty")
+@("cleanString modifies empty HeapStringList without error")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
-  string[] empty;
-
-  empty.cleanString.should.equal(empty);
+  HeapStringList empty;
+  cleanString(empty);
+  assert(empty.length == 0, "empty list should remain empty");
 }
 
-@("cleanString removes the double quote from the begin and end of the string")
+@("cleanString removes double quotes from HeapStringList elements")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
-  [`"1"`, `"2"`].cleanString.should.equal([`1`, `2`]);
+  auto pieces = parseList(`["1", "2"]`);
+  cleanString(pieces);
+  assert(pieces.length == 2, "should have 2 elements");
+  assert(pieces[0][] == "1", "first element should be '1' without quotes");
+  assert(pieces[1][] == "2", "second element should be '2' without quotes");
 }

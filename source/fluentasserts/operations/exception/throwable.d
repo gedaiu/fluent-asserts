@@ -259,8 +259,9 @@ void throwException(ref Evaluation evaluation) @trusted nothrow {
 
   string exceptionType;
 
-  if("exceptionType" in evaluation.expectedValue.meta) {
-    exceptionType = evaluation.expectedValue.meta["exceptionType"].cleanString;
+  if ("exceptionType" in evaluation.expectedValue.meta) {
+    auto metaValue = evaluation.expectedValue.meta["exceptionType"];
+    exceptionType = cleanString(metaValue);
   }
 
   auto thrown = evaluation.currentValue.throwable;
@@ -383,8 +384,9 @@ void throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
     expectedMessage = expectedMessage[1..$-1];
   }
 
-  if("exceptionType" in evaluation.expectedValue.meta) {
-    exceptionType = evaluation.expectedValue.meta["exceptionType"].cleanString;
+  if ("exceptionType" in evaluation.expectedValue.meta) {
+    auto metaValue = evaluation.expectedValue.meta["exceptionType"];
+    exceptionType = cleanString(metaValue);
   }
 
   auto thrown = evaluation.currentValue.throwable;
