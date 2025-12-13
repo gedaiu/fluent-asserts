@@ -7,83 +7,9 @@ import std.conv;
 import ddmp.diff;
 
 import fluentasserts.results.message : Message, ResultGlyphs;
+public import fluentasserts.core.array : FixedArray, FixedAppender, FixedStringArray;
 
 @safe:
-
-/// A fixed-size array for storing elements without GC allocation.
-/// Useful for @nogc contexts where dynamic arrays would normally be used.
-/// Template parameter T is the element type (e.g., char for strings, string for string arrays).
-struct FixedArray(T, size_t N = 512) {
-  private {
-    T[N] _data = T.init;
-    size_t _length;
-  }
-
-  /// Returns the current length.
-  size_t length() @nogc nothrow @safe const {
-    return _length;
-  }
-
-  /// Appends an element to the array.
-  void opOpAssign(string op : "~")(T s) @nogc nothrow @safe {
-    if (_length < N) {
-      _data[_length++] = s;
-    }
-  }
-
-  /// Returns the contents as a slice.
-  inout(T)[] opSlice() @nogc nothrow @safe inout {
-    return _data[0 .. _length];
-  }
-
-  /// Index operator.
-  inout(T) opIndex(size_t i) @nogc nothrow @safe inout {
-    return _data[i];
-  }
-
-  /// Clears the array.
-  void clear() @nogc nothrow @safe {
-    _length = 0;
-  }
-
-  /// Returns true if the array is empty.
-  bool empty() @nogc nothrow @safe const {
-    return _length == 0;
-  }
-
-  /// Returns the current length (for $ in slices).
-  size_t opDollar() @nogc nothrow @safe const {
-    return _length;
-  }
-
-  // Specializations for char type (string building)
-  static if (is(T == char)) {
-    /// Appends a string slice to the buffer (char specialization).
-    void put(const(char)[] s) @nogc nothrow @safe {
-      import std.algorithm : min;
-      auto copyLen = min(s.length, N - _length);
-      _data[_length .. _length + copyLen] = s[0 .. copyLen];
-      _length += copyLen;
-    }
-
-    /// Assigns from a string (char specialization).
-    void opAssign(const(char)[] s) @nogc nothrow @safe {
-      clear();
-      put(s);
-    }
-
-    /// Returns the current contents as a string slice.
-    const(char)[] toString() @nogc nothrow @safe const {
-      return _data[0 .. _length];
-    }
-  }
-}
-
-/// Alias for backward compatibility - fixed char buffer for string building
-alias FixedAppender(size_t N = 512) = FixedArray!(char, N);
-
-/// Alias for backward compatibility - fixed string reference array
-alias FixedStringArray(size_t N = 32) = FixedArray!(string, N);
 
 /// Represents a segment of a diff between expected and actual values.
 struct DiffSegment {
