@@ -83,7 +83,7 @@ void lessThanSysTime(ref Evaluation evaluation) @safe nothrow {
 }
 
 /// Generic lessThan using proxy values - works for any comparable type
-void lessThanGeneric(ref Evaluation evaluation) @safe nothrow {
+void lessThanGeneric(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(".");
 
   bool result = false;
