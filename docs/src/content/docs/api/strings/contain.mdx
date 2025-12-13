@@ -1,0 +1,41 @@
+---
+title: .contain()
+description: Asserts that a string contains the specified substring.
+---
+
+Asserts that a string contains the specified substring.
+
+## Examples
+
+### Basic Usage
+
+```d
+expect("hello world").to.contain("world");
+expect("hello world").to.contain("hello");
+expect("hello world").to.contain("world");
+expect([1, 2, 3]).to.contain(2);
+```
+
+### With Negation
+
+```d
+expect("hello world").to.not.contain("foo");
+expect([1, 2, 3]).to.not.contain(5);
+```
+
+### What Failures Look Like
+
+When the assertion fails, you'll see a clear error message:
+
+```d
+// This would fail:
+expect("hello world").to.contain("foo");
+```
+
+## Modifiers
+
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

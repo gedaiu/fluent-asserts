@@ -1,21 +1,33 @@
+/// Evaluator structs for executing assertion operations.
+/// Provides lifetime management and result handling for assertions.
 module fluentasserts.core.evaluator;
 
 import fluentasserts.core.evaluation;
-import fluentasserts.core.results;
+import fluentasserts.core.lifecycle;
+import fluentasserts.results.printer;
 import fluentasserts.core.base : TestException;
-import fluentasserts.core.serializers;
+import fluentasserts.results.serializers;
+import fluentasserts.results.formatting : toNiceOperation;
 
 import std.functional : toDelegate;
 import std.conv : to;
 
-alias OperationFunc = IResult[] function(ref Evaluation) @safe nothrow;
-alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow;
+alias OperationFunc = void function(ref Evaluation) @safe nothrow;
+alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
+alias OperationFuncNoGC = void function(ref Evaluation) @safe nothrow @nogc;
+alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow @nogc;
 
 @safe struct Evaluator {
     private {
         Evaluation* evaluation;
-        IResult[] delegate(ref Evaluation) @safe nothrow operation;
+        void delegate(ref Evaluation) @safe nothrow operation;
         int refCount;
+    }
+
+    this(ref Evaluation eval, OperationFuncNoGC op) @trusted {
+        this.evaluation = &eval;
+        this.operation = op.toDelegate;
+        this.refCount = 0;
     }
 
     this(ref Evaluation eval, OperationFunc op) @trusted {
@@ -38,11 +50,11 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     Evaluator because(string reason) {
-        evaluation.message.prependText("Because " ~ reason ~ ", ");
+        evaluation.result.prependText("Because " ~ reason ~ ", ");
         return this;
     }
 
-    void inhibit() {
+    void inhibit() nothrow @safe @nogc {
         this.refCount = int.max;
     }
 
@@ -65,8 +77,6 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         }
         evaluation.isEvaluated = true;
 
-        auto results = operation(*evaluation);
-
         if (evaluation.currentValue.throwable !is null) {
             throw evaluation.currentValue.throwable;
         }
@@ -75,20 +85,17 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
             throw evaluation.expectedValue.throwable;
         }
 
-        if (results.length == 0) {
+        operation(*evaluation);
+
+        if (Lifecycle.instance.keepLastEvaluation) {
+            Lifecycle.instance.lastEvaluation = *evaluation;
+        }
+
+        if (!evaluation.hasResult()) {
             return;
         }
 
-        version (DisableSourceResult) {
-        } else {
-            results ~= evaluation.getSourceResult();
-        }
-
-        if (evaluation.message !is null) {
-            results = evaluation.message ~ results;
-        }
-
-        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
+        Lifecycle.instance.handleFailure(*evaluation);
     }
 }
 
@@ -96,8 +103,20 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 @safe struct TrustedEvaluator {
     private {
         Evaluation* evaluation;
-        IResult[] delegate(ref Evaluation) @trusted nothrow operation;
+        void delegate(ref Evaluation) @trusted nothrow operation;
         int refCount;
+    }
+
+    this(ref Evaluation eval, OperationFuncTrustedNoGC op) @trusted {
+        this.evaluation = &eval;
+        this.operation = op.toDelegate;
+        this.refCount = 0;
+    }
+
+    this(ref Evaluation eval, OperationFuncNoGC op) @trusted {
+        this.evaluation = &eval;
+        this.operation = cast(void delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
+        this.refCount = 0;
     }
 
     this(ref Evaluation eval, OperationFuncTrusted op) @trusted {
@@ -108,7 +127,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 
     this(ref Evaluation eval, OperationFunc op) @trusted {
         this.evaluation = &eval;
-        this.operation = cast(IResult[] delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
+        this.operation = cast(void delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
         this.refCount = 0;
     }
 
@@ -126,11 +145,11 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     TrustedEvaluator because(string reason) {
-        evaluation.message.prependText("Because " ~ reason ~ ", ");
+        evaluation.result.prependText("Because " ~ reason ~ ", ");
         return this;
     }
 
-    void inhibit() {
+    void inhibit() nothrow @safe @nogc {
         this.refCount = int.max;
     }
 
@@ -140,7 +159,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         }
         evaluation.isEvaluated = true;
 
-        auto results = operation(*evaluation);
+        operation(*evaluation);
 
         if (evaluation.currentValue.throwable !is null) {
             throw evaluation.currentValue.throwable;
@@ -150,20 +169,15 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
             throw evaluation.expectedValue.throwable;
         }
 
-        if (results.length == 0) {
+        if (Lifecycle.instance.keepLastEvaluation) {
+            Lifecycle.instance.lastEvaluation = *evaluation;
+        }
+
+        if (!evaluation.hasResult()) {
             return;
         }
 
-        version (DisableSourceResult) {
-        } else {
-            results ~= evaluation.getSourceResult();
-        }
-
-        if (evaluation.message !is null) {
-            results = evaluation.message ~ results;
-        }
-
-        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
+        Lifecycle.instance.handleFailure(*evaluation);
     }
 }
 
@@ -171,8 +185,8 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
 @safe struct ThrowableEvaluator {
     private {
         Evaluation* evaluation;
-        IResult[] delegate(ref Evaluation) @trusted nothrow standaloneOp;
-        IResult[] delegate(ref Evaluation) @trusted nothrow withMessageOp;
+        void delegate(ref Evaluation) @trusted nothrow standaloneOp;
+        void delegate(ref Evaluation) @trusted nothrow withMessageOp;
         int refCount;
         bool chainedWithMessage;
     }
@@ -201,14 +215,14 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     ThrowableEvaluator withMessage() {
-        evaluation.operationName ~= ".withMessage";
-        evaluation.message.addText(" with message");
+        evaluation.addOperationName("withMessage");
+        evaluation.result.addText(" with message");
         return this;
     }
 
     ThrowableEvaluator withMessage(T)(T message) {
-        evaluation.operationName ~= ".withMessage";
-        evaluation.message.addText(" with message");
+        evaluation.addOperationName("withMessage");
+        evaluation.result.addText(" with message");
 
         auto expectedValue = message.evaluate.evaluation;
         foreach (key, value; evaluation.expectedValue.meta) {
@@ -218,11 +232,11 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(message); }();
 
         if (evaluation.expectedValue.niceValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.niceValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.niceValue);
         } else if (evaluation.expectedValue.strValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.strValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.strValue);
         }
 
         chainedWithMessage = true;
@@ -232,7 +246,7 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     ThrowableEvaluator equal(T)(T value) {
-        evaluation.operationName ~= ".equal";
+        evaluation.addOperationName("equal");
 
         auto expectedValue = value.evaluate.evaluation;
         foreach (key, v; evaluation.expectedValue.meta) {
@@ -241,13 +255,13 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
         evaluation.expectedValue = expectedValue;
         () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(value); }();
 
-        evaluation.message.addText(" equal");
+        evaluation.result.addText(" equal");
         if (evaluation.expectedValue.niceValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.niceValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.niceValue);
         } else if (evaluation.expectedValue.strValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.strValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.strValue);
         }
 
         chainedWithMessage = true;
@@ -257,11 +271,11 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     ThrowableEvaluator because(string reason) {
-        evaluation.message.prependText("Because " ~ reason ~ ", ");
+        evaluation.result.prependText("Because " ~ reason ~ ", ");
         return this;
     }
 
-    void inhibit() {
+    void inhibit() nothrow @safe @nogc {
         this.refCount = int.max;
     }
 
@@ -279,25 +293,25 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
     }
 
     private void finalizeMessage() {
-        evaluation.message.addText(" ");
-        evaluation.message.addText(toNiceOperation(evaluation.operationName));
+        evaluation.result.addText(" ");
+        evaluation.result.addText(toNiceOperation(evaluation.operationName));
 
         if (evaluation.expectedValue.niceValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.niceValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.niceValue);
         } else if (evaluation.expectedValue.strValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.strValue);
+            evaluation.result.addText(" ");
+            evaluation.result.addValue(evaluation.expectedValue.strValue);
         }
     }
 
-    private void executeOperation(IResult[] delegate(ref Evaluation) @trusted nothrow op) @trusted {
+    private void executeOperation(void delegate(ref Evaluation) @trusted nothrow op) @trusted {
         if (evaluation.isEvaluated) {
             return;
         }
         evaluation.isEvaluated = true;
 
-        auto results = op(*evaluation);
+        op(*evaluation);
 
         if (evaluation.currentValue.throwable !is null) {
             throw evaluation.currentValue.throwable;
@@ -307,47 +321,14 @@ alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow
             throw evaluation.expectedValue.throwable;
         }
 
-        if (results.length == 0) {
+        if (Lifecycle.instance.keepLastEvaluation) {
+            Lifecycle.instance.lastEvaluation = *evaluation;
+        }
+
+        if (!evaluation.hasResult()) {
             return;
         }
 
-        version (DisableSourceResult) {
-        } else {
-            results ~= evaluation.getSourceResult();
-        }
-
-        if (evaluation.message !is null) {
-            results = evaluation.message ~ results;
-        }
-
-        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
+        Lifecycle.instance.handleFailure(*evaluation);
     }
-}
-
-private string toNiceOperation(string value) @safe nothrow {
-    import std.uni : toLower, isUpper, isLower;
-
-    string newValue;
-
-    foreach (index, ch; value) {
-        if (index == 0) {
-            newValue ~= ch.toLower;
-            continue;
-        }
-
-        if (ch == '.') {
-            newValue ~= ' ';
-            continue;
-        }
-
-        if (ch.isUpper && value[index - 1].isLower) {
-            newValue ~= ' ';
-            newValue ~= ch.toLower;
-            continue;
-        }
-
-        newValue ~= ch;
-    }
-
-    return newValue;
 }

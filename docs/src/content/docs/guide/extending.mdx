@@ -1,0 +1,203 @@
+---
+title: Extending
+description: Create custom operations and serializers for fluent-asserts
+---
+
+fluent-asserts is designed to be extensible. You can create custom operations for domain-specific assertions and custom serializers for your types.
+
+## Custom Operations
+
+Operations are functions that perform the actual assertion logic. They receive an `Evaluation` struct and determine success or failure.
+
+### Creating a Custom Operation
+
+```d
+import fluentasserts.core.evaluation : Evaluation;
+
+/// Asserts that a string is a valid email address.
+void beValidEmail(ref Evaluation evaluation) @safe nothrow {
+    import std.regex : ctRegex, matchFirst;
+
+    // Get the actual value
+    auto email = evaluation.currentValue.strValue;
+
+    // Remove quotes from string representation
+    if (email.length >= 2 && email[0] == '"' && email[$-1] == '"') {
+        email = email[1..$-1];
+    }
+
+    // Check if it matches email pattern
+    auto emailRegex = ctRegex!`^[^@]+@[^@]+\.[^@]+$`;
+    auto isSuccess = !matchFirst(email, emailRegex).empty;
+
+    // Handle negation
+    if (evaluation.isNegated) {
+        isSuccess = !isSuccess;
+    }
+
+    // Set error message on failure
+    if (!isSuccess && !evaluation.isNegated) {
+        evaluation.result.expected = "a valid email address";
+        evaluation.result.actual = evaluation.currentValue.strValue;
+    }
+
+    if (!isSuccess && evaluation.isNegated) {
+        evaluation.result.expected = "not a valid email address";
+        evaluation.result.actual = evaluation.currentValue.strValue;
+    }
+}
+```
+
+### Registering with UFCS
+
+Use UFCS (Uniform Function Call Syntax) to add the operation to `Expect`:
+
+```d
+import fluentasserts.core.expect : Expect;
+
+// Extend Expect with UFCS
+auto beValidEmail(ref Expect expect) {
+    return expect.customOp!beValidEmail();
+}
+```
+
+### Registering with the Registry
+
+For operations that should be available globally across your codebase, use the `Registry`:
+
+```d
+import fluentasserts.operations.registry : Registry;
+
+// Register during module initialization
+shared static this() {
+    Registry.instance.register("string", "", "beValidEmail", &beValidEmail);
+}
+```
+
+The `register` method takes:
+- **valueType**: The type being tested (`"string"`, `"int"`, `"*"` for any type, `"*[]"` for any array)
+- **expectedValueType**: The expected value type (use `""` if no expected value)
+- **name**: The operation name used in assertions
+- **operation**: The operation function
+
+#### Type Wildcards
+
+The Registry supports wildcards for flexible type matching:
+
+```d
+// Match any type
+Registry.instance.register("*", "*", "beValid", &beValid);
+
+// Match any array
+Registry.instance.register("*[]", "*", "containElement", &containElement);
+
+// Match specific types
+Registry.instance.register("string", "string", "matchPattern", &matchPattern);
+
+// Match with template helper
+Registry.instance.register!(Duration, Duration)("lessThan", &lessThanDuration);
+```
+
+### Using Your Custom Operation
+
+```d
+unittest {
+    expect("user@example.com").to.beValidEmail();
+    expect("invalid-email").to.not.beValidEmail();
+}
+```
+
+## Custom Serializers
+
+Serializers convert values to strings for display in error messages.
+
+### Creating a Custom Serializer
+
+```d
+import fluentasserts.core.serializers : registerSerializer;
+
+struct User {
+    string name;
+    int age;
+}
+
+// Register a custom serializer
+shared static this() {
+    registerSerializer!User((user) {
+        return format!"User(%s, age=%d)"(user.name, user.age);
+    });
+}
+```
+
+### Using Custom Serializers
+
+With the serializer registered, error messages show meaningful output:
+
+```d
+unittest {
+    auto alice = User("Alice", 30);
+    auto bob = User("Bob", 25);
+
+    expect(alice).to.equal(bob);
+    // Output:
+    // ASSERTION FAILED: expect(value) should equal User(Bob, age=25)
+    //   ACTUAL: User(Alice, age=30)
+    //   EXPECTED: User(Bob, age=25)
+}
+```
+
+## Best Practices
+
+### Operation Guidelines
+
+1. **Make operations `@safe nothrow`** when possible
+2. **Handle negation** - check `evaluation.isNegated`
+3. **Provide clear error messages** - set both `expected` and `actual`
+4. **Be type-safe** - use D's type system to catch errors at compile time
+
+### Serializer Guidelines
+
+1. **Keep output concise** - long strings are hard to read in error messages
+2. **Include identifying information** - show what makes values different
+3. **Handle null/empty cases** - don't crash on edge cases
+
+## Real-World Examples
+
+### Domain-Specific Assertions
+
+```d
+/// Assert that a response has a specific HTTP status
+void haveStatus(int expectedStatus)(ref Evaluation evaluation) {
+    // Parse actual status from response
+    auto actualStatus = parseStatus(evaluation.currentValue.strValue);
+
+    auto isSuccess = actualStatus == expectedStatus;
+    if (evaluation.isNegated) isSuccess = !isSuccess;
+
+    if (!isSuccess) {
+        evaluation.result.expected = format!"HTTP %d"(expectedStatus);
+        evaluation.result.actual = format!"HTTP %d"(actualStatus);
+    }
+}
+
+// Usage:
+expect(response).to.haveStatus!200;
+expect(errorResponse).to.haveStatus!404;
+```
+
+### Collection Assertions
+
+```d
+/// Assert that all items in a collection satisfy a predicate
+void allSatisfy(alias pred)(ref Evaluation evaluation) {
+    // Implementation...
+}
+
+// Usage:
+expect(users).to.allSatisfy!(u => u.age >= 18);
+```
+
+## Next Steps
+
+- See the [API Reference](/api/) for built-in operations
+- Read [Core Concepts](/guide/core-concepts/) to understand the internals

@@ -1,6 +1,7 @@
 module updateDocs;
 
-import fluentasserts.core.operations.registry;
+import fluentasserts.operations.registry;
+import fluentasserts.core.lifecycle;
 import std.stdio;
 import std.file;
 import std.path;
@@ -10,6 +11,7 @@ import std.string;
 
 @("updates the built in operations in readme.md file")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   auto content = readText("README.md").split("#");
 
   foreach(ref section; content) {
@@ -27,6 +29,7 @@ unittest {
 
 @("updates the operations md files")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   foreach(operation; Registry.instance.registeredOperations) {
     string content = "# The `" ~ operation ~ "` operation\n\n";
     content ~= "[up](../README.md)\n\n";

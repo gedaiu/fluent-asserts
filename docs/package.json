@@ -1,0 +1,19 @@
+{
+  "name": "fluent-asserts-docs",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "npm run update-version && astro dev",
+    "start": "npm run update-version && astro dev",
+    "build": "npm run update-version && npm run extract-docs && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "update-version": "node scripts/update-version.js",
+    "extract-docs": "node scripts/extract-docs.js"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.29.0",
+    "astro": "^4.16.0",
+    "sharp": "^0.32.5"
+  }
+}

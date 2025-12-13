@@ -1,33 +1,47 @@
+/// Lifecycle management for fluent-asserts.
+/// Handles initialization of the assertion framework and manages
+/// the assertion evaluation lifecycle.
 module fluentasserts.core.lifecycle;
+
+import core.memory : GC;
+
+import std.conv;
+import std.datetime;
+import std.meta;
 
 import fluentasserts.core.base;
 import fluentasserts.core.evaluation;
-import fluentasserts.core.operations.approximately;
-import fluentasserts.core.operations.arrayEqual;
-import fluentasserts.core.operations.beNull;
-import fluentasserts.core.operations.between;
-import fluentasserts.core.operations.contain;
-import fluentasserts.core.operations.endWith;
-import fluentasserts.core.operations.equal;
-import fluentasserts.core.operations.greaterThan;
-import fluentasserts.core.operations.greaterOrEqualTo;
-import fluentasserts.core.operations.instanceOf;
-import fluentasserts.core.operations.lessThan;
-import fluentasserts.core.operations.lessOrEqualTo;
-import fluentasserts.core.operations.registry;
-import fluentasserts.core.operations.startWith;
-import fluentasserts.core.operations.throwable;
-import fluentasserts.core.results;
-import fluentasserts.core.serializers;
 
-import std.meta;
-import std.conv;
-import std.datetime;
+import fluentasserts.results.message;
+import fluentasserts.results.serializers;
 
+import fluentasserts.operations.registry;
+import fluentasserts.operations.comparison.approximately;
+import fluentasserts.operations.comparison.between;
+import fluentasserts.operations.comparison.greaterOrEqualTo;
+import fluentasserts.operations.comparison.greaterThan;
+import fluentasserts.operations.comparison.lessOrEqualTo;
+import fluentasserts.operations.comparison.lessThan;
+import fluentasserts.operations.equality.arrayEqual;
+import fluentasserts.operations.equality.equal;
+import fluentasserts.operations.exception.throwable;
+import fluentasserts.operations.string.contain;
+import fluentasserts.operations.string.endWith;
+import fluentasserts.operations.string.startWith;
+import fluentasserts.operations.type.beNull;
+import fluentasserts.operations.type.instanceOf;
+
+/// Tuple of basic numeric types supported by fluent-asserts.
 alias BasicNumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
+
+/// Tuple of all numeric types for operation registration.
 alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
+
+/// Tuple of string types supported by fluent-asserts.
 alias StringTypes = AliasSeq!(string, wstring, dstring, const(char)[]);
 
+/// Module constructor that initializes all fluent-asserts components.
+/// Registers all built-in operations, serializers, and sets up the lifecycle.
 static this() {
   SerializerRegistry.instance = new SerializerRegistry;
   Lifecycle.instance = new Lifecycle;
@@ -47,7 +61,7 @@ static this() {
   Registry.instance.describe("greaterOrEqualTo", greaterOrEqualToDescription);
   Registry.instance.describe("lessThan", lessThanDescription);
 
-  Registry.instance.register("*", "*", "equal", &equal);
+  // equal is now handled directly by Expect.equal, not through Registry
   Registry.instance.register("*[]", "*[]", "equal", &arrayEqual);
   Registry.instance.register("*[*]", "*[*]", "equal", &arrayEqual);
   Registry.instance.register("*[][]", "*[][]", "equal", &arrayEqual);
@@ -104,9 +118,11 @@ static this() {
   Registry.instance.register!(SysTime, SysTime)("below", &lessThanSysTime);
   Registry.instance.register!(Duration, Duration)("greaterThan", &greaterThanDuration);
   Registry.instance.register!(Duration, Duration)("greaterOrEqualTo", &greaterOrEqualToDuration);
+  Registry.instance.register!(Duration, Duration)("lessOrEqualTo", &lessOrEqualToDuration);
   Registry.instance.register!(Duration, Duration)("above", &greaterThanDuration);
   Registry.instance.register!(SysTime, SysTime)("greaterThan", &greaterThanSysTime);
   Registry.instance.register!(SysTime, SysTime)("greaterOrEqualTo", &greaterOrEqualToSysTime);
+  Registry.instance.register!(SysTime, SysTime)("lessOrEqualTo", &lessOrEqualToSysTime);
   Registry.instance.register!(SysTime, SysTime)("above", &greaterThanSysTime);
   Registry.instance.register!(Duration, Duration)("between", &betweenDuration);
   Registry.instance.register!(Duration, Duration)("within", &betweenDuration);
@@ -126,50 +142,143 @@ static this() {
   Registry.instance.register("*", "*", "throwSomething.withMessage.equal", &throwAnyExceptionWithMessage);
 }
 
-/// The assert lifecycle
+/// Delegate type for custom failure handlers.
+/// Receives the evaluation that failed and can handle it as needed.
+alias FailureHandlerDelegate = void delegate(ref Evaluation evaluation) @safe;
+
+/// String mixin for unit tests that need to capture evaluation results.
+/// Enables keepLastEvaluation and disableFailureHandling, then restores
+/// them in scope(exit).
+enum enableEvaluationRecording = q{
+  Lifecycle.instance.keepLastEvaluation = true;
+  Lifecycle.instance.disableFailureHandling = true;
+  scope(exit) {
+    Lifecycle.instance.keepLastEvaluation = false;
+    Lifecycle.instance.disableFailureHandling = false;
+  }
+};
+
+/// Executes an assertion and captures its evaluation result.
+/// Use this to test assertion behavior without throwing on failure.
+Evaluation recordEvaluation(void delegate() assertion) @trusted {
+  Lifecycle.instance.keepLastEvaluation = true;
+  Lifecycle.instance.disableFailureHandling = true;
+  scope(exit) {
+    Lifecycle.instance.keepLastEvaluation = false;
+    Lifecycle.instance.disableFailureHandling = false;
+  }
+
+  assertion();
+
+  return Lifecycle.instance.lastEvaluation;
+}
+
+/// Manages the assertion evaluation lifecycle.
+/// Tracks assertion counts and handles the finalization of evaluations.
 @safe class Lifecycle {
-  /// Global instance for the assert lifecicle
+  /// Global singleton instance.
   static Lifecycle instance;
 
+  /// Custom failure handler delegate. When set, this is called instead of
+  /// defaultFailureHandler when an assertion fails.
+  FailureHandlerDelegate failureHandler;
+
+  /// When true, stores the most recent evaluation in lastEvaluation.
+  /// Used by recordEvaluation to capture assertion results.
+  bool keepLastEvaluation;
+
+  /// Stores the most recent evaluation when keepLastEvaluation is true.
+  /// Access this after running an assertion to inspect its result.
+  Evaluation lastEvaluation;
+
+  /// When true, assertion failures are silently ignored instead of throwing.
+  /// Used by recordEvaluation to prevent test abortion during evaluation capture.
+  bool disableFailureHandling;
+
+
   private {
-    ///
+    /// Counter for total assertions executed.
     int totalAsserts;
   }
 
-  /// Method called when a new value is evaluated
-  int beginEvaluation(ValueEvaluation value) @safe nothrow {
+  /// Called when a new value evaluation begins.
+  /// Increments the assertion counter and returns the current count.
+  /// Params:
+  ///   value = The value evaluation being started
+  /// Returns: The current assertion number.
+  int beginEvaluation(ValueEvaluation value) nothrow @nogc {
     totalAsserts++;
 
     return totalAsserts;
   }
 
-  ///
-  void endEvaluation(ref Evaluation evaluation) @trusted {
-    if(evaluation.isEvaluated) return;
-
-    evaluation.isEvaluated = true;
-    auto results = Registry.instance.handle(evaluation);
-
+  /// Default handler for assertion failures.
+  /// Throws any captured throwable from value evaluation, or constructs
+  /// a TestException with the formatted failure message.
+  /// Params:
+  ///   evaluation = The evaluation containing the failure details
+  /// Throws: TestException or the original throwable from evaluation
+  void defaultFailureHandler(ref Evaluation evaluation) {
     if(evaluation.currentValue.throwable !is null) {
       throw evaluation.currentValue.throwable;
     }
 
     if(evaluation.expectedValue.throwable !is null) {
-      throw evaluation.currentValue.throwable;
+      throw evaluation.expectedValue.throwable;
     }
 
-    if(results.length == 0) {
+    throw new TestException(evaluation);
+  }
+
+  /// Processes an assertion failure by delegating to the appropriate handler.
+  /// If disableFailureHandling is true, does nothing.
+  /// If a custom failureHandler is set, calls it.
+  /// Otherwise, calls defaultFailureHandler.
+  /// Params:
+  ///   evaluation = The evaluation containing the failure details
+  void handleFailure(ref Evaluation evaluation) {
+    if(this.disableFailureHandling) {
       return;
     }
 
-    version(DisableSourceResult) {} else {
-      results ~= evaluation.getSourceResult();
+    if(this.failureHandler !is null) {
+      this.failureHandler(evaluation);
+      return;
     }
 
-    if(evaluation.message !is null) {
-      results = evaluation.message ~ results;
+    this.defaultFailureHandler(evaluation);
+  }
+
+  /// Finalizes an evaluation and throws TestException on failure.
+  /// Delegates to the Registry to handle the evaluation and throws
+  /// if the result contains failure content.
+  /// Does not throw if called from a GC finalizer.
+  void endEvaluation(ref Evaluation evaluation) {
+    if(evaluation.isEvaluated) {
+      return;
     }
 
-    throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
+    evaluation.isEvaluated = true;
+
+    if(GC.inFinalizer) {
+      return;
+    }
+
+    Registry.instance.handle(evaluation);
+
+    if(keepLastEvaluation) {
+      lastEvaluation = evaluation;
+    }
+
+    if(evaluation.currentValue.throwable !is null || evaluation.expectedValue.throwable !is null) {
+      this.handleFailure(evaluation);
+      return;
+    }
+
+    if(!evaluation.result.hasContent()) {
+      return;
+    }
+
+    this.handleFailure(evaluation);
   }
 }

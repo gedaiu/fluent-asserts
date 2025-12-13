@@ -1,0 +1,42 @@
+---
+title: Type Operations
+description: Assertions for testing type properties
+---
+
+Test type properties with these assertions.
+
+## beNull
+
+Asserts that a value is null.
+
+```d
+void delegate() action = null;
+expect(action).to.beNull();
+```
+
+### Negation
+
+```d
+expect({ /* something */ }).to.not.beNull();
+```
+
+## instanceOf
+
+Asserts that an object is an instance of a specific class or interface.
+
+```d
+class Animal {}
+class Dog : Animal {}
+
+auto dog = new Dog();
+expect(dog).to.be.instanceOf!Dog;
+expect(dog).to.be.instanceOf!Animal;
+```
+
+### Negation
+
+```d
+class Cat : Animal {}
+
+expect(dog).to.not.be.instanceOf!Cat;
+```

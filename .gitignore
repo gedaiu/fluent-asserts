@@ -1,6 +1,12 @@
 .dub
 docs.json
 __dummy.html
+
+# Documentation site (Starlight/Astro)
+docs/node_modules/
+docs/dist/
+docs/.astro/
+docs/public/version.json
 *.o
 *.obj
 *.lst

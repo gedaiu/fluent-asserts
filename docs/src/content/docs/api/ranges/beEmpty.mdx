@@ -1,0 +1,41 @@
+---
+title: .beEmpty()
+description: Asserts that an array or range is empty
+---
+
+Asserts that an array or range contains no elements.
+
+## Examples
+
+```d
+int[] empty;
+expect(empty).to.beEmpty();
+expect([]).to.beEmpty();
+```
+
+### With Strings
+
+```d
+expect("").to.beEmpty();
+```
+
+### With Negation
+
+```d
+expect([1, 2, 3]).to.not.beEmpty();
+expect("hello").to.not.beEmpty();
+```
+
+### What Failures Look Like
+
+```d
+expect([1, 2, 3]).to.beEmpty();
+```
+
+```
+ASSERTION FAILED: [1, 2, 3] should be empty.
+OPERATION: beEmpty
+
+  ACTUAL: <int[]> [1, 2, 3]
+EXPECTED: empty
+```

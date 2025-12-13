@@ -1,0 +1,33 @@
+---
+title: String Operations
+description: Assertions for testing string content
+---
+
+Test string content with these assertions.
+
+## contain
+
+Asserts that a string contains the expected substring.
+
+```d
+expect("hello world").to.contain("world");
+expect("hello world").to.contain("o w");
+```
+
+## startWith
+
+Asserts that a string starts with the expected prefix.
+
+```d
+expect("hello").to.startWith("hel");
+expect("https://example.com").to.startWith("https://");
+```
+
+## endWith
+
+Asserts that a string ends with the expected suffix.
+
+```d
+expect("hello").to.endWith("llo");
+expect("file.txt").to.endWith(".txt");
+```

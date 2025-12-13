@@ -1,0 +1,179 @@
+---
+title: Operation Snapshots
+description: Reference of assertion failure messages for all operations
+---
+
+This page shows what assertion failure messages look like for each operation. Use this as a reference to understand the output format when tests fail.
+
+## equal
+
+### Positive failure
+
+```d
+expect(5).to.equal(3);
+```
+
+```
+ASSERTION FAILED: 5 should equal 3.
+OPERATION: equal
+
+  ACTUAL: <int> 5
+EXPECTED: <int> 3
+```
+
+### Negated failure
+
+```d
+expect(5).to.not.equal(5);
+```
+
+```
+ASSERTION FAILED: 5 should not equal 5.
+OPERATION: not equal
+
+  ACTUAL: <int> 5
+EXPECTED: <int> not 5
+```
+
+## contain
+
+### String - Positive failure
+
+```d
+expect("hello").to.contain("xyz");
+```
+
+```
+ASSERTION FAILED: hello should contain xyz. xyz is missing from hello.
+OPERATION: contain
+
+  ACTUAL: <string> hello
+EXPECTED: <string> to contain xyz
+```
+
+### Array - Positive failure
+
+```d
+expect([1,2,3]).to.contain(5);
+```
+
+```
+ASSERTION FAILED: [1, 2, 3] should contain 5. 5 is missing from [1, 2, 3].
+OPERATION: contain
+
+  ACTUAL: <int[]> [1, 2, 3]
+EXPECTED: <int> to contain 5
+```
+
+## containOnly
+
+### Positive failure
+
+```d
+expect([1,2,3]).to.containOnly([1,2]);
+```
+
+```
+ASSERTION FAILED: [1, 2, 3] should contain only [1, 2].
+OPERATION: containOnly
+
+  ACTUAL: <int[]> [1, 2, 3]
+EXPECTED: <int[]> to contain only [1, 2]
+```
+
+## greaterThan
+
+### Positive failure
+
+```d
+expect(3).to.be.greaterThan(5);
+```
+
+```
+ASSERTION FAILED: 3 should be greater than 5. 3 is less than or equal to 5.
+OPERATION: greaterThan
+
+  ACTUAL: <int> 3
+EXPECTED: <int> greater than 5
+```
+
+## lessThan
+
+### Positive failure
+
+```d
+expect(5).to.be.lessThan(3);
+```
+
+```
+ASSERTION FAILED: 5 should be less than 3. 5 is greater than or equal to 3.
+OPERATION: lessThan
+
+  ACTUAL: <int> 5
+EXPECTED: <int> less than 3
+```
+
+## between
+
+### Positive failure
+
+```d
+expect(10).to.be.between(1, 5);
+```
+
+```
+ASSERTION FAILED: 10 should be between 1 and 5. 10 is greater than or equal to 5.
+OPERATION: between
+
+  ACTUAL: <int> 10
+EXPECTED: <int> a value inside (1, 5) interval
+```
+
+## approximately
+
+### Positive failure
+
+```d
+expect(0.5).to.be.approximately(0.3, 0.1);
+```
+
+```
+ASSERTION FAILED: 0.5 should be approximately 0.3±0.1. 0.5 is not approximately 0.3±0.1.
+OPERATION: approximately
+
+  ACTUAL: <double> 0.5
+EXPECTED: <double> 0.3±0.1
+```
+
+## beNull
+
+### Positive failure
+
+```d
+Object obj = new Object();
+expect(obj).to.beNull;
+```
+
+```
+ASSERTION FAILED: Object should be null.
+OPERATION: beNull
+
+  ACTUAL: <object.Object> object.Object
+EXPECTED: <unknown> null
+```
+
+## instanceOf
+
+### Positive failure
+
+```d
+expect(new Object()).to.be.instanceOf!Exception;
+```
+
+```
+ASSERTION FAILED: Object should be instance of "object.Exception".
+OPERATION: instanceOf
+
+  ACTUAL: <object.Object> typeof object.Object
+EXPECTED: <object.Exception> typeof object.Exception
+```

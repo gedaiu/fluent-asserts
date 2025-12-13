@@ -1,0 +1,42 @@
+---
+title: Range & Array Operations
+description: Assertions for testing collections
+---
+
+Test collections with these assertions.
+
+## contain
+
+Asserts that an array or range contains the expected element.
+
+```d
+expect([1, 2, 3]).to.contain(2);
+expect(["a", "b", "c"]).to.contain("b");
+```
+
+## containOnly
+
+Asserts that an array contains only the specified elements (in any order).
+
+```d
+expect([1, 2, 3]).to.containOnly([3, 2, 1]);
+expect([1, 2, 3]).to.containOnly([1, 2, 3]);
+```
+
+## beEmpty
+
+Asserts that an array or range is empty.
+
+```d
+int[] empty;
+expect(empty).to.beEmpty();
+expect([]).to.beEmpty();
+```
+
+## beSorted
+
+Asserts that an array is sorted in ascending order.
+
+```d
+expect([1, 2, 3, 4, 5]).to.beSorted();
+```
