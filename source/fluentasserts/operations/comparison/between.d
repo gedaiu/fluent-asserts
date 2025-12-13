@@ -21,7 +21,7 @@ static immutable betweenDescription = "Asserts that the target is a number or a 
   "and less than or equal to the given number or date finish respectively. However, it's often best to assert that the target is equal to its expected value.";
 
 /// Asserts that a value is strictly between two bounds (exclusive).
-void between(T)(ref Evaluation evaluation) @safe nothrow {
+void between(T)(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(" and ");
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
   evaluation.result.addText(". ");
@@ -38,7 +38,8 @@ void between(T)(ref Evaluation evaluation) @safe nothrow {
     return;
   }
 
-  betweenResults(currentParsed.value, limit1Parsed.value, limit2Parsed.value, evaluation);
+  betweenResults(currentParsed.value, limit1Parsed.value, limit2Parsed.value,
+      evaluation.expectedValue.strValue, evaluation.expectedValue.meta["1"], evaluation);
 }
 
 
@@ -60,10 +61,21 @@ void betweenDuration(ref Evaluation evaluation) @safe nothrow {
   Duration limit1 = dur!"nsecs"(limit1Parsed.value);
   Duration limit2 = dur!"nsecs"(limit2Parsed.value);
 
-  evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
+  // Format Duration values nicely (requires allocation, can't be @nogc)
+  string strLimit1, strLimit2;
+  try {
+    strLimit1 = limit1.to!string;
+    strLimit2 = limit2.to!string;
+  } catch (Exception) {
+    evaluation.result.expected.put("valid Duration values");
+    evaluation.result.actual.put("conversion error");
+    return;
+  }
+
+  evaluation.result.addValue(strLimit2);
   evaluation.result.addText(". ");
 
-  betweenResults(currentValue, limit1, limit2, evaluation);
+  betweenResultsDuration(currentValue, limit1, limit2, strLimit1, strLimit2, evaluation);
 }
 
 /// Asserts that a SysTime value is strictly between two bounds (exclusive).
@@ -88,18 +100,59 @@ void betweenSysTime(ref Evaluation evaluation) @safe nothrow {
 
   evaluation.result.addText(". ");
 
-  betweenResults(currentValue, limit1, limit2, evaluation);
+  betweenResults(currentValue, limit1, limit2,
+      evaluation.expectedValue.strValue, evaluation.expectedValue.meta["1"], evaluation);
 }
 
-private string valueToString(T)(T value) {
-  static if (is(T == SysTime)) {
-    return value.toISOExtString;
-  } else {
-    return value.to!string;
+/// Helper for Duration between - separate because Duration formatting can't be @nogc
+private void betweenResultsDuration(Duration currentValue, Duration limit1, Duration limit2,
+    string strLimit1, string strLimit2, ref Evaluation evaluation) @safe nothrow {
+  Duration min = limit1 < limit2 ? limit1 : limit2;
+  Duration max = limit1 > limit2 ? limit1 : limit2;
+
+  auto isLess = currentValue <= min;
+  auto isGreater = currentValue >= max;
+  auto isBetween = !isLess && !isGreater;
+
+  string minStr = limit1 < limit2 ? strLimit1 : strLimit2;
+  string maxStr = limit1 > limit2 ? strLimit1 : strLimit2;
+
+  if (!evaluation.isNegated) {
+    if (!isBetween) {
+      evaluation.result.addValue(evaluation.currentValue.niceValue);
+
+      if (isGreater) {
+        evaluation.result.addText(" is greater than or equal to ");
+        evaluation.result.addValue(maxStr);
+      }
+
+      if (isLess) {
+        evaluation.result.addText(" is less than or equal to ");
+        evaluation.result.addValue(minStr);
+      }
+
+      evaluation.result.addText(".");
+
+      evaluation.result.expected.put("a value inside (");
+      evaluation.result.expected.put(minStr);
+      evaluation.result.expected.put(", ");
+      evaluation.result.expected.put(maxStr);
+      evaluation.result.expected.put(") interval");
+      evaluation.result.actual.put(evaluation.currentValue.niceValue);
+    }
+  } else if (isBetween) {
+    evaluation.result.expected.put("a value outside (");
+    evaluation.result.expected.put(minStr);
+    evaluation.result.expected.put(", ");
+    evaluation.result.expected.put(maxStr);
+    evaluation.result.expected.put(") interval");
+    evaluation.result.actual.put(evaluation.currentValue.niceValue);
+    evaluation.result.negated = true;
   }
 }
 
-private void betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluation evaluation) {
+private void betweenResults(T)(T currentValue, T limit1, T limit2,
+    const(char)[] strMin, const(char)[] strMax, ref Evaluation evaluation) @safe nothrow @nogc {
   T min = limit1 < limit2 ? limit1 : limit2;
   T max = limit1 > limit2 ? limit1 : limit2;
 
@@ -107,41 +160,39 @@ private void betweenResults(T)(T currentValue, T limit1, T limit2, ref Evaluatio
   auto isGreater = currentValue >= max;
   auto isBetween = !isLess && !isGreater;
 
-  string interval;
+  // Determine which string is min/max based on value comparison
+  const(char)[] minStr = limit1 < limit2 ? strMin : strMax;
+  const(char)[] maxStr = limit1 > limit2 ? strMin : strMax;
 
-  try {
-    if (evaluation.isNegated) {
-      interval = "a value outside (" ~ valueToString(min) ~ ", " ~ valueToString(max) ~ ") interval";
-    } else {
-      interval = "a value inside (" ~ valueToString(min) ~ ", " ~ valueToString(max) ~ ") interval";
-    }
-  } catch(Exception) {
-    interval = evaluation.isNegated ? "a value outside the interval" : "a value inside the interval";
-  }
-
-  if(!evaluation.isNegated) {
-    if(!isBetween) {
+  if (!evaluation.isNegated) {
+    if (!isBetween) {
       evaluation.result.addValue(evaluation.currentValue.niceValue);
 
-      if(isGreater) {
+      if (isGreater) {
         evaluation.result.addText(" is greater than or equal to ");
-        try evaluation.result.addValue(valueToString(max));
-        catch(Exception) {}
+        evaluation.result.addValue(maxStr);
       }
 
-      if(isLess) {
+      if (isLess) {
         evaluation.result.addText(" is less than or equal to ");
-        try evaluation.result.addValue(valueToString(min));
-        catch(Exception) {}
+        evaluation.result.addValue(minStr);
       }
 
       evaluation.result.addText(".");
 
-      evaluation.result.expected.put(interval);
+      evaluation.result.expected.put("a value inside (");
+      evaluation.result.expected.put(minStr);
+      evaluation.result.expected.put(", ");
+      evaluation.result.expected.put(maxStr);
+      evaluation.result.expected.put(") interval");
       evaluation.result.actual.put(evaluation.currentValue.niceValue);
     }
-  } else if(isBetween) {
-    evaluation.result.expected.put(interval);
+  } else if (isBetween) {
+    evaluation.result.expected.put("a value outside (");
+    evaluation.result.expected.put(minStr);
+    evaluation.result.expected.put(", ");
+    evaluation.result.expected.put(maxStr);
+    evaluation.result.expected.put(") interval");
     evaluation.result.actual.put(evaluation.currentValue.niceValue);
     evaluation.result.negated = true;
   }

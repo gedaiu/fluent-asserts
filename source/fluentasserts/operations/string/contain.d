@@ -27,7 +27,7 @@ static immutable containDescription = "When the tested value is a string, it ass
   "When the tested value is an array, it asserts that the given val is inside the tested value.";
 
 /// Asserts that a string contains specified substrings.
-void contain(ref Evaluation evaluation) @trusted nothrow {
+void contain(ref Evaluation evaluation) @trusted nothrow @nogc {
   evaluation.result.addText(".");
 
   auto expectedPieces = evaluation.expectedValue.strValue.parseList;

@@ -14,12 +14,20 @@ import std.conv : to;
 
 alias OperationFunc = void function(ref Evaluation) @safe nothrow;
 alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
+alias OperationFuncNoGC = void function(ref Evaluation) @safe nothrow @nogc;
+alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow @nogc;
 
 @safe struct Evaluator {
     private {
         Evaluation* evaluation;
         void delegate(ref Evaluation) @safe nothrow operation;
         int refCount;
+    }
+
+    this(ref Evaluation eval, OperationFuncNoGC op) @trusted {
+        this.evaluation = &eval;
+        this.operation = op.toDelegate;
+        this.refCount = 0;
     }
 
     this(ref Evaluation eval, OperationFunc op) @trusted {
@@ -97,6 +105,18 @@ alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
         Evaluation* evaluation;
         void delegate(ref Evaluation) @trusted nothrow operation;
         int refCount;
+    }
+
+    this(ref Evaluation eval, OperationFuncTrustedNoGC op) @trusted {
+        this.evaluation = &eval;
+        this.operation = op.toDelegate;
+        this.refCount = 0;
+    }
+
+    this(ref Evaluation eval, OperationFuncNoGC op) @trusted {
+        this.evaluation = &eval;
+        this.operation = cast(void delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
+        this.refCount = 0;
     }
 
     this(ref Evaluation eval, OperationFuncTrusted op) @trusted {
