@@ -39,13 +39,13 @@ struct ValueEvaluation {
   size_t nonGCMemoryUsed;
 
   /// Serialized value as string
-  string strValue;
+  HeapString strValue;
 
   /// Proxy object holding the evaluated value to help doing better comparisions
   EquableValue proxyValue;
 
   /// Human readable value
-  string niceValue;
+  HeapString niceValue;
 
   /// The name of the type before it was converted to string
   string[] typeNames;
@@ -53,7 +53,7 @@ struct ValueEvaluation {
   /// Other info about the value
   string[string] meta;
 
-  /// The file name contining the evaluated value
+  /// The file name containing the evaluated value
   string fileName;
 
   /// The line number of the evaluated value
@@ -61,6 +61,79 @@ struct ValueEvaluation {
 
   /// a custom text to be prepended to the value
   string prependText;
+
+  /// Copy constructor
+  this(ref return scope ValueEvaluation other) @trusted nothrow {
+    this.throwable = other.throwable;
+    this.duration = other.duration;
+    this.gcMemoryUsed = other.gcMemoryUsed;
+    this.nonGCMemoryUsed = other.nonGCMemoryUsed;
+    this.strValue = other.strValue;
+    this.proxyValue = other.proxyValue;
+    this.niceValue = other.niceValue;
+    this.typeNames = other.typeNames;
+    this.meta = other.meta;
+    this.fileName = other.fileName;
+    this.line = other.line;
+    this.prependText = other.prependText;
+  }
+
+  /// Assignment operator (properly handles HeapString ref counting)
+  void opAssign(ref ValueEvaluation other) @trusted nothrow {
+    this.throwable = other.throwable;
+    this.duration = other.duration;
+    this.gcMemoryUsed = other.gcMemoryUsed;
+    this.nonGCMemoryUsed = other.nonGCMemoryUsed;
+    this.strValue = other.strValue;
+    this.proxyValue = other.proxyValue;
+    this.niceValue = other.niceValue;
+    this.typeNames = other.typeNames;
+    this.meta = other.meta;
+    this.fileName = other.fileName;
+    this.line = other.line;
+    this.prependText = other.prependText;
+  }
+
+  /// Assignment operator for rvalues
+  void opAssign(ValueEvaluation other) @trusted nothrow {
+    this.throwable = other.throwable;
+    this.duration = other.duration;
+    this.gcMemoryUsed = other.gcMemoryUsed;
+    this.nonGCMemoryUsed = other.nonGCMemoryUsed;
+    this.strValue = other.strValue;
+    this.proxyValue = other.proxyValue;
+    this.niceValue = other.niceValue;
+    this.typeNames = other.typeNames;
+    this.meta = other.meta;
+    this.fileName = other.fileName;
+    this.line = other.line;
+    this.prependText = other.prependText;
+  }
+
+  /// Postblit - called after D blits this struct.
+  /// HeapString members have their own postblit that increments ref counts.
+  /// This is called automatically by D when the struct is copied via blit.
+  this(this) @trusted nothrow @nogc {
+    // HeapString's postblit handles ref counting automatically
+    // No additional work needed here, but having an explicit postblit
+    // ensures the struct is properly marked as having postblit semantics
+  }
+
+  /// Increment HeapString ref counts to survive blit operations.
+  /// D's blit (memcpy) doesn't call copy constructors.
+  ///
+  /// IMPORTANT: Call this IMMEDIATELY before returning a ValueEvaluation
+  /// or any struct containing it from a function.
+  void prepareForBlit() @trusted nothrow @nogc {
+    strValue.incrementRefCount();
+    niceValue.incrementRefCount();
+  }
+
+  /// Returns true if this ValueEvaluation's HeapString fields are valid.
+  /// Use this in debug assertions to catch memory corruption early.
+  bool isValid() @trusted nothrow @nogc const {
+    return strValue.isValid() && niceValue.isValid();
+  }
 
   /// Returns the primary type name of the evaluated value.
   /// Returns: The first type name, or "unknown" if no types are available.
@@ -94,6 +167,59 @@ struct Evaluation {
     this.throwable = other.throwable;
     this.isEvaluated = other.isEvaluated;
     this.result = other.result;
+  }
+
+  /// Assignment operator (properly handles HeapString ref counting)
+  void opAssign(ref Evaluation other) @trusted nothrow {
+    this.id = other.id;
+    this.currentValue = other.currentValue;
+    this.expectedValue = other.expectedValue;
+    this._operationCount = other._operationCount;
+    foreach (i; 0 .. other._operationCount) {
+      this._operationNames[i] = other._operationNames[i];
+    }
+    this.isNegated = other.isNegated;
+    this.source = other.source;
+    this.throwable = other.throwable;
+    this.isEvaluated = other.isEvaluated;
+    this.result = other.result;
+  }
+
+  /// Assignment operator for rvalues
+  void opAssign(Evaluation other) @trusted nothrow {
+    this.id = other.id;
+    this.currentValue = other.currentValue;
+    this.expectedValue = other.expectedValue;
+    this._operationCount = other._operationCount;
+    foreach (i; 0 .. other._operationCount) {
+      this._operationNames[i] = other._operationNames[i];
+    }
+    this.isNegated = other.isNegated;
+    this.source = other.source;
+    this.throwable = other.throwable;
+    this.isEvaluated = other.isEvaluated;
+    this.result = other.result;
+  }
+
+  /// Postblit - called after D blits this struct.
+  /// Nested structs with postblit (ValueEvaluation, HeapString) have
+  /// their postblits called automatically by D.
+  this(this) @trusted nothrow @nogc {
+    // Nested postblits handle ref counting automatically
+  }
+
+  /// Increment HeapString ref counts to survive blit operations.
+  /// D's blit (memcpy) doesn't call copy constructors.
+  ///
+  /// NOTE: With postblit constructors, this method may no longer be needed
+  /// in most cases. Keep it for backwards compatibility and edge cases.
+  void prepareForBlit() @trusted nothrow @nogc {
+    currentValue.prepareForBlit();
+    expectedValue.prepareForBlit();
+    foreach (i; 0 .. _operationCount) {
+      _operationNames[i].incrementRefCount();
+    }
+    result.prepareForBlit();
   }
 
   /// The value that will be validated
@@ -270,16 +396,25 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 
     auto duration = Clock.currTime - begin;
     auto serializedValue = SerializerRegistry.instance.serialize(value);
-    auto niceValue = SerializerRegistry.instance.niceValue(value);
+    auto niceValueStr = SerializerRegistry.instance.niceValue(value);
 
-    auto valueEvaluation = ValueEvaluation(null, duration, 0, 0, serializedValue, equableValue(value, niceValue), niceValue, extractTypes!TT);
+    // Avoid struct literal initialization with HeapString fields.
+    // Struct literals use blit which doesn't call opAssign, causing ref count issues.
+    ValueEvaluation valueEvaluation;
+    valueEvaluation.throwable = null;
+    valueEvaluation.duration = duration;
+    valueEvaluation.gcMemoryUsed = gcMemoryUsed;
+    valueEvaluation.nonGCMemoryUsed = nonGCMemoryUsed;
+    valueEvaluation.strValue = toHeapString(serializedValue);
+    valueEvaluation.proxyValue = equableValue(value, niceValueStr);
+    valueEvaluation.niceValue = toHeapString(niceValueStr);
+    valueEvaluation.typeNames = extractTypes!TT;
     valueEvaluation.fileName = file;
     valueEvaluation.line = line;
     valueEvaluation.prependText = prependText;
-    valueEvaluation.gcMemoryUsed = gcMemoryUsed;
-    valueEvaluation.nonGCMemoryUsed = nonGCMemoryUsed;
 
-
+    // Increment HeapString ref counts to survive the blit on return
+    valueEvaluation.prepareForBlit();
     return Result(value, valueEvaluation);
   } catch(Throwable t) {
     T result;
@@ -288,11 +423,24 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
       result = testData;
     }
 
-    auto valueEvaluation = ValueEvaluation(t, Clock.currTime - begin, 0, 0, result.to!string, equableValue(result, result.to!string), result.to!string, extractTypes!T);
+    auto resultStr = result.to!string;
+
+    // Avoid struct literal initialization with HeapString fields
+    ValueEvaluation valueEvaluation;
+    valueEvaluation.throwable = t;
+    valueEvaluation.duration = Clock.currTime - begin;
+    valueEvaluation.gcMemoryUsed = 0;
+    valueEvaluation.nonGCMemoryUsed = 0;
+    valueEvaluation.strValue = toHeapString(resultStr);
+    valueEvaluation.proxyValue = equableValue(result, resultStr);
+    valueEvaluation.niceValue = toHeapString(resultStr);
+    valueEvaluation.typeNames = extractTypes!T;
     valueEvaluation.fileName = file;
     valueEvaluation.line = line;
     valueEvaluation.prependText = prependText;
 
+    // Increment HeapString ref counts to survive the blit on return
+    valueEvaluation.prepareForBlit();
     return Result(result, valueEvaluation);
   }
 }

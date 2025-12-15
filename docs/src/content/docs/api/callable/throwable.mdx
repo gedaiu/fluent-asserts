@@ -1,69 +1,35 @@
 ---
-title: .throwException()
-description: Asserts that a callable throws a specific exception type
+title: throwAnyException
+description: Tests that the tested callable throws an exception.
 ---
 
-Asserts that a callable throws an exception of a specific type during execution.
+# .throwAnyException()
 
-## throwException
+Tests that the tested callable throws an exception.
 
-Assert that a specific exception type is thrown:
+throwSomething - accepts any Throwable including Error/AssertError
 
-```d
-expect({
-    throw new CustomException("error");
-}).to.throwException!CustomException;
-```
-
-### With Message Checking
-
-Chain `.withMessage` to also verify the exception message:
-
-```d
-expect({
-    throw new Exception("specific error");
-}).to.throwException!Exception.withMessage.equal("specific error");
-```
+## Examples
 
 ### With Negation
 
 ```d
-expect({
-    // code that doesn't throw
-}).to.not.throwException!Exception;
+expect({}).not.to.throwException!Exception.withMessage.equal("test");
 ```
 
-## throwAnyException
+### What Failures Look Like
 
-Assert that any exception is thrown (regardless of type):
+When the assertion fails, you'll see a clear error message:
 
 ```d
-expect({
-    throw new Exception("error");
-}).to.throwAnyException();
+// This would fail:
+expect({}).to.throwException!Exception.withMessage.equal("test");
 ```
 
-### With Negation
+## Modifiers
 
-```d
-expect({
-    // safe code
-    int x = 42;
-}).to.not.throwAnyException();
-```
+This assertion supports the following modifiers:
 
-## What Failures Look Like
-
-```d
-expect({
-    // doesn't throw
-}).to.throwException!Exception;
-```
-
-```
-ASSERTION FAILED: delegate should throw Exception.
-OPERATION: throwException
-
-  ACTUAL: no exception thrown
-EXPECTED: Exception
-```
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

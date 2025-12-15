@@ -5,6 +5,7 @@ module fluentasserts.core.expect;
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.evaluation;
 import fluentasserts.core.evaluator;
+import fluentasserts.core.heapdata : toHeapString;
 
 import fluentasserts.results.printer;
 import fluentasserts.results.formatting : toNiceOperation;
@@ -61,12 +62,12 @@ import std.conv;
       auto sourceValue = _evaluation.source.getValue;
 
       if(sourceValue == "") {
-        _evaluation.result.startWith(_evaluation.currentValue.niceValue);
+        _evaluation.result.startWith(_evaluation.currentValue.niceValue[].idup);
       } else {
         _evaluation.result.startWith(sourceValue);
       }
     } catch(Exception) {
-      _evaluation.result.startWith(_evaluation.currentValue.strValue);
+      _evaluation.result.startWith(_evaluation.currentValue.strValue[].idup);
     }
 
     _evaluation.result.addText(" should");
@@ -76,8 +77,13 @@ import std.conv;
     }
   }
 
-  /// Copy constructor disabled - use ref returns for chaining.
-  @disable this(ref return scope Expect another);
+  /// Copy constructor - properly handles Evaluation with HeapString fields.
+  /// Increments the source's refCount so only the last copy triggers finalization.
+  this(ref return scope Expect another) @trusted nothrow {
+    this._evaluation = another._evaluation;
+    this.refCount = 0;  // New copy starts with 0
+    another.refCount++;  // Prevent source from finalizing
+  }
 
   /// Destructor. Finalizes the evaluation when reference count reaches zero.
   ~this() {
@@ -87,12 +93,12 @@ import std.conv;
       _evaluation.result.addText(" ");
       _evaluation.result.addText(_evaluation.operationName.toNiceOperation);
 
-      if(_evaluation.expectedValue.niceValue) {
+      if(!_evaluation.expectedValue.niceValue.empty) {
         _evaluation.result.addText(" ");
-        _evaluation.result.addValue(_evaluation.expectedValue.niceValue);
-      } else if(_evaluation.expectedValue.strValue) {
+        _evaluation.result.addValue(_evaluation.expectedValue.niceValue[]);
+      } else if(!_evaluation.expectedValue.strValue.empty) {
         _evaluation.result.addText(" ");
-        _evaluation.result.addValue(_evaluation.expectedValue.strValue);
+        _evaluation.result.addValue(_evaluation.expectedValue.strValue[]);
       }
 
       Lifecycle.instance.endEvaluation(_evaluation);
@@ -105,12 +111,12 @@ import std.conv;
     _evaluation.result.addText(" ");
     _evaluation.result.addText(_evaluation.operationName.toNiceOperation);
 
-    if(_evaluation.expectedValue.niceValue) {
+    if(!_evaluation.expectedValue.niceValue.empty) {
       _evaluation.result.addText(" ");
-      _evaluation.result.addValue(_evaluation.expectedValue.niceValue);
-    } else if(_evaluation.expectedValue.strValue) {
+      _evaluation.result.addValue(_evaluation.expectedValue.niceValue[]);
+    } else if(!_evaluation.expectedValue.strValue.empty) {
       _evaluation.result.addText(" ");
-      _evaluation.result.addValue(_evaluation.expectedValue.strValue);
+      _evaluation.result.addValue(_evaluation.expectedValue.strValue[]);
     }
   }
 
@@ -178,13 +184,14 @@ import std.conv;
 
   /// Asserts that the callable throws a specific exception type.
   ThrowableEvaluator throwException(Type)() @trusted {
+    import fluentasserts.core.heapdata : toHeapString;
     this._evaluation.expectedValue.meta["exceptionType"] = fullyQualifiedName!Type;
     this._evaluation.expectedValue.meta["throwableType"] = fullyQualifiedName!Type;
-    this._evaluation.expectedValue.strValue = "\"" ~ fullyQualifiedName!Type ~ "\"";
+    this._evaluation.expectedValue.strValue = toHeapString("\"" ~ fullyQualifiedName!Type ~ "\"");
 
     addOperationName("throwException");
     _evaluation.result.addText(" throw exception ");
-    _evaluation.result.addValue(_evaluation.expectedValue.strValue);
+    _evaluation.result.addValue(_evaluation.expectedValue.strValue[]);
     inhibit();
     return ThrowableEvaluator(_evaluation, &throwExceptionOp, &throwExceptionWithMessageOp);
   }
@@ -367,7 +374,7 @@ import std.conv;
   Evaluator instanceOf(Type)() {
     addOperationName("instanceOf");
     this._evaluation.expectedValue.typeNames = [fullyQualifiedName!Type];
-    this._evaluation.expectedValue.strValue = "\"" ~ fullyQualifiedName!Type ~ "\"";
+    this._evaluation.expectedValue.strValue = toHeapString("\"" ~ fullyQualifiedName!Type ~ "\"");
     finalizeMessage();
     inhibit();
     return Evaluator(_evaluation, &instanceOfOp);
@@ -527,7 +534,10 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
   value.line = line;
   value.prependText = prependText;
 
-  return Expect(value);
+  auto result = Expect(value);
+  // Increment HeapString ref counts to survive the blit on return.
+  result._evaluation.prepareForBlit();
+  return result;
 }
 
 /// Creates an Expect struct from a lazy value.
@@ -538,5 +548,10 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
 ///   prependText = Optional text to prepend to the value display
 /// Returns: An Expect struct for fluent assertions
 Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
-  return Expect(testedValue.evaluate(file, line, prependText).evaluation);
+  auto result = Expect(testedValue.evaluate(file, line, prependText).evaluation);
+  // Increment HeapString ref counts to survive the blit on return.
+  // D's blit (memcpy) doesn't call copy constructors, so we must manually
+  // ensure ref counts are incremented before the original is destroyed.
+  result._evaluation.prepareForBlit();
+  return result;
 }

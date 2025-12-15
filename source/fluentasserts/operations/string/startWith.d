@@ -23,8 +23,8 @@ static immutable startWithDescription = "Tests that the tested string starts wit
 void startWith(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(".");
 
-  auto current = evaluation.currentValue.strValue.cleanString;
-  auto expected = evaluation.expectedValue.strValue.cleanString;
+  auto current = evaluation.currentValue.strValue[].cleanString;
+  auto expected = evaluation.expectedValue.strValue[].cleanString;
 
   // Check if string starts with prefix (replaces indexOf for @nogc)
   bool doesStartWith = current.length >= expected.length && current[0 .. expected.length] == expected;
@@ -32,27 +32,27 @@ void startWith(ref Evaluation evaluation) @safe nothrow @nogc {
   if(evaluation.isNegated) {
     if(doesStartWith) {
       evaluation.result.addText(" ");
-      evaluation.result.addValue(evaluation.currentValue.strValue);
+      evaluation.result.addValue(evaluation.currentValue.strValue[]);
       evaluation.result.addText(" starts with ");
-      evaluation.result.addValue(evaluation.expectedValue.strValue);
+      evaluation.result.addValue(evaluation.expectedValue.strValue[]);
       evaluation.result.addText(".");
 
       evaluation.result.expected.put("not to start with ");
-      evaluation.result.expected.put(evaluation.expectedValue.strValue);
-      evaluation.result.actual.put(evaluation.currentValue.strValue);
+      evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
+      evaluation.result.actual.put(evaluation.currentValue.strValue[]);
       evaluation.result.negated = true;
     }
   } else {
     if(!doesStartWith) {
       evaluation.result.addText(" ");
-      evaluation.result.addValue(evaluation.currentValue.strValue);
+      evaluation.result.addValue(evaluation.currentValue.strValue[]);
       evaluation.result.addText(" does not start with ");
-      evaluation.result.addValue(evaluation.expectedValue.strValue);
+      evaluation.result.addValue(evaluation.expectedValue.strValue[]);
       evaluation.result.addText(".");
 
       evaluation.result.expected.put("to start with ");
-      evaluation.result.expected.put(evaluation.expectedValue.strValue);
-      evaluation.result.actual.put(evaluation.currentValue.strValue);
+      evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
+      evaluation.result.actual.put(evaluation.currentValue.strValue[]);
     }
   }
 }

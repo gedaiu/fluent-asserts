@@ -1,47 +1,14 @@
 ---
-title: .allocateGCMemory()
-description: Asserts that a callable allocates GC-managed memory
+title: allocateGCMemory
+description: The allocateGCMemory assertion
 ---
 
-Asserts that a callable allocates memory managed by the garbage collector during its execution. Uses `GC.allocatedInCurrentThread()` for accurate per-thread allocation tracking.
+# .allocateGCMemory()
 
-## Examples
+## Modifiers
 
-```d
-expect({
-    auto arr = new int[1000];
-    return arr.length;
-}).to.allocateGCMemory();
-```
+This assertion supports the following modifiers:
 
-### With Negation
-
-Use negation to ensure code is `@nogc`-safe:
-
-```d
-expect({
-    int[4] stackArray = [1, 2, 3, 4];
-    return stackArray.length;
-}).to.not.allocateGCMemory();
-```
-
-### What Failures Look Like
-
-```d
-expect({
-    int x = 42;  // no GC allocation
-    return x;
-}).to.allocateGCMemory();
-```
-
-```
-ASSERTION FAILED: delegate should allocate GC memory.
-OPERATION: allocateGCMemory
-
-  ACTUAL: no GC allocations
-EXPECTED: GC allocations
-```
-
-## See Also
-
-- [allocateNonGCMemory](/api/callable/nonGcMemory/) - Assert non-GC memory allocation
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

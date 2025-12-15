@@ -3,6 +3,7 @@ module fluentasserts.operations.comparison.between;
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation;
 import fluentasserts.core.toNumeric;
+import fluentasserts.core.heapdata : toHeapString;
 
 import fluentasserts.core.lifecycle;
 
@@ -28,7 +29,7 @@ void between(T)(ref Evaluation evaluation) @safe nothrow @nogc {
 
   auto currentParsed = toNumeric!T(evaluation.currentValue.strValue);
   auto limit1Parsed = toNumeric!T(evaluation.expectedValue.strValue);
-  auto limit2Parsed = toNumeric!T(evaluation.expectedValue.meta["1"]);
+  auto limit2Parsed = toNumeric!T(toHeapString(evaluation.expectedValue.meta["1"]));
 
   if (!currentParsed.success || !limit1Parsed.success || !limit2Parsed.success) {
     evaluation.result.expected.put("valid ");
@@ -39,7 +40,7 @@ void between(T)(ref Evaluation evaluation) @safe nothrow @nogc {
   }
 
   betweenResults(currentParsed.value, limit1Parsed.value, limit2Parsed.value,
-      evaluation.expectedValue.strValue, evaluation.expectedValue.meta["1"], evaluation);
+      evaluation.expectedValue.strValue[], evaluation.expectedValue.meta["1"], evaluation);
 }
 
 
@@ -49,7 +50,7 @@ void betweenDuration(ref Evaluation evaluation) @safe nothrow {
 
   auto currentParsed = toNumeric!ulong(evaluation.currentValue.strValue);
   auto limit1Parsed = toNumeric!ulong(evaluation.expectedValue.strValue);
-  auto limit2Parsed = toNumeric!ulong(evaluation.expectedValue.meta["1"]);
+  auto limit2Parsed = toNumeric!ulong(toHeapString(evaluation.expectedValue.meta["1"]));
 
   if (!currentParsed.success || !limit1Parsed.success || !limit2Parsed.success) {
     evaluation.result.expected.put("valid Duration values");
@@ -87,8 +88,8 @@ void betweenSysTime(ref Evaluation evaluation) @safe nothrow {
   SysTime limit2;
 
   try {
-    currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
-    limit1 = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
+    currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue[]);
+    limit1 = SysTime.fromISOExtString(evaluation.expectedValue.strValue[]);
     limit2 = SysTime.fromISOExtString(evaluation.expectedValue.meta["1"]);
 
     evaluation.result.addValue(limit2.toISOExtString);
@@ -101,7 +102,7 @@ void betweenSysTime(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(". ");
 
   betweenResults(currentValue, limit1, limit2,
-      evaluation.expectedValue.strValue, evaluation.expectedValue.meta["1"], evaluation);
+      evaluation.expectedValue.strValue[], evaluation.expectedValue.meta["1"], evaluation);
 }
 
 /// Helper for Duration between - separate because Duration formatting can't be @nogc
@@ -119,7 +120,7 @@ private void betweenResultsDuration(Duration currentValue, Duration limit1, Dura
 
   if (!evaluation.isNegated) {
     if (!isBetween) {
-      evaluation.result.addValue(evaluation.currentValue.niceValue);
+      evaluation.result.addValue(evaluation.currentValue.niceValue[]);
 
       if (isGreater) {
         evaluation.result.addText(" is greater than or equal to ");
@@ -138,7 +139,7 @@ private void betweenResultsDuration(Duration currentValue, Duration limit1, Dura
       evaluation.result.expected.put(", ");
       evaluation.result.expected.put(maxStr);
       evaluation.result.expected.put(") interval");
-      evaluation.result.actual.put(evaluation.currentValue.niceValue);
+      evaluation.result.actual.put(evaluation.currentValue.niceValue[]);
     }
   } else if (isBetween) {
     evaluation.result.expected.put("a value outside (");
@@ -146,7 +147,7 @@ private void betweenResultsDuration(Duration currentValue, Duration limit1, Dura
     evaluation.result.expected.put(", ");
     evaluation.result.expected.put(maxStr);
     evaluation.result.expected.put(") interval");
-    evaluation.result.actual.put(evaluation.currentValue.niceValue);
+    evaluation.result.actual.put(evaluation.currentValue.niceValue[]);
     evaluation.result.negated = true;
   }
 }
@@ -166,7 +167,7 @@ private void betweenResults(T)(T currentValue, T limit1, T limit2,
 
   if (!evaluation.isNegated) {
     if (!isBetween) {
-      evaluation.result.addValue(evaluation.currentValue.niceValue);
+      evaluation.result.addValue(evaluation.currentValue.niceValue[]);
 
       if (isGreater) {
         evaluation.result.addText(" is greater than or equal to ");
@@ -185,7 +186,7 @@ private void betweenResults(T)(T currentValue, T limit1, T limit2,
       evaluation.result.expected.put(", ");
       evaluation.result.expected.put(maxStr);
       evaluation.result.expected.put(") interval");
-      evaluation.result.actual.put(evaluation.currentValue.niceValue);
+      evaluation.result.actual.put(evaluation.currentValue.niceValue[]);
     }
   } else if (isBetween) {
     evaluation.result.expected.put("a value outside (");
@@ -193,7 +194,7 @@ private void betweenResults(T)(T currentValue, T limit1, T limit2,
     evaluation.result.expected.put(", ");
     evaluation.result.expected.put(maxStr);
     evaluation.result.expected.put(") interval");
-    evaluation.result.actual.put(evaluation.currentValue.niceValue);
+    evaluation.result.actual.put(evaluation.currentValue.niceValue[]);
     evaluation.result.negated = true;
   }
 }

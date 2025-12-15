@@ -231,12 +231,12 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         evaluation.expectedValue = expectedValue;
         () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(message); }();
 
-        if (evaluation.expectedValue.niceValue) {
+        if (!evaluation.expectedValue.niceValue.empty) {
             evaluation.result.addText(" ");
-            evaluation.result.addValue(evaluation.expectedValue.niceValue);
-        } else if (evaluation.expectedValue.strValue) {
+            evaluation.result.addValue(evaluation.expectedValue.niceValue[]);
+        } else if (!evaluation.expectedValue.strValue.empty) {
             evaluation.result.addText(" ");
-            evaluation.result.addValue(evaluation.expectedValue.strValue);
+            evaluation.result.addValue(evaluation.expectedValue.strValue[]);
         }
 
         chainedWithMessage = true;
@@ -256,12 +256,12 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(value); }();
 
         evaluation.result.addText(" equal");
-        if (evaluation.expectedValue.niceValue) {
+        if (!evaluation.expectedValue.niceValue.empty) {
             evaluation.result.addText(" ");
-            evaluation.result.addValue(evaluation.expectedValue.niceValue);
-        } else if (evaluation.expectedValue.strValue) {
+            evaluation.result.addValue(evaluation.expectedValue.niceValue[]);
+        } else if (!evaluation.expectedValue.strValue.empty) {
             evaluation.result.addText(" ");
-            evaluation.result.addValue(evaluation.expectedValue.strValue);
+            evaluation.result.addValue(evaluation.expectedValue.strValue[]);
         }
 
         chainedWithMessage = true;
@@ -296,12 +296,12 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         evaluation.result.addText(" ");
         evaluation.result.addText(toNiceOperation(evaluation.operationName));
 
-        if (evaluation.expectedValue.niceValue) {
+        if (!evaluation.expectedValue.niceValue.empty) {
             evaluation.result.addText(" ");
-            evaluation.result.addValue(evaluation.expectedValue.niceValue);
-        } else if (evaluation.expectedValue.strValue) {
+            evaluation.result.addValue(evaluation.expectedValue.niceValue[]);
+        } else if (!evaluation.expectedValue.strValue.empty) {
             evaluation.result.addText(" ");
-            evaluation.result.addValue(evaluation.expectedValue.strValue);
+            evaluation.result.addValue(evaluation.expectedValue.strValue[]);
         }
     }
 

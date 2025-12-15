@@ -48,8 +48,8 @@ void equal(ref Evaluation evaluation) @safe nothrow @nogc {
   if(evaluation.isNegated) {
     evaluation.result.expected.put("not ");
   }
-  evaluation.result.expected.put(evaluation.expectedValue.strValue);
-  evaluation.result.actual.put(evaluation.currentValue.strValue);
+  evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
+  evaluation.result.actual.put(evaluation.currentValue.strValue[]);
   evaluation.result.negated = evaluation.isNegated;
 }
 

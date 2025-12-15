@@ -20,7 +20,7 @@ void allocateNonGCMemory(ref Evaluation evaluation) @safe nothrow {
   }
 
   if(!isSuccess && !evaluation.isNegated) {
-    evaluation.result.addValue(evaluation.currentValue.strValue);
+    evaluation.result.addValue(evaluation.currentValue.strValue[]);
     evaluation.result.addText(" allocated non-GC memory.");
 
     evaluation.result.expected.put("to allocate non-GC memory");
@@ -29,7 +29,7 @@ void allocateNonGCMemory(ref Evaluation evaluation) @safe nothrow {
   }
 
   if(!isSuccess && evaluation.isNegated) {
-    evaluation.result.addValue(evaluation.currentValue.strValue);
+    evaluation.result.addValue(evaluation.currentValue.strValue[]);
     evaluation.result.addText(" did not allocate non-GC memory.");
 
     evaluation.result.expected.put("not to allocate non-GC memory");

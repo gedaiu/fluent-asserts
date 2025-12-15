@@ -1,37 +1,18 @@
 ---
-title: .lessThan()
-description: Asserts that a value is strictly less than the expected value
+title: lessThanDuration
+description: Asserts that the tested value is less than the tested value. However, it's often best to assert that the target is equal to its expected value.
 ---
+
+# .lessThanDuration()
+
+Asserts that the tested value is less than the tested value. However, it's often best to assert that the target is equal to its expected value.
 
 Asserts that a value is strictly less than the expected value.
 
-## Examples
+## Modifiers
 
-```d
-expect(5).to.be.lessThan(10);
-expect(10).to.be.below(42);  // alias
-```
+This assertion supports the following modifiers:
 
-### With Negation
-
-```d
-expect(10).to.not.be.lessThan(5);
-```
-
-### What Failures Look Like
-
-```d
-expect(5).to.be.lessThan(3);
-```
-
-```
-ASSERTION FAILED: 5 should be less than 3. 5 is greater than or equal to 3.
-OPERATION: lessThan
-
-  ACTUAL: <int> 5
-EXPECTED: <int> less than 3
-```
-
-## Aliases
-
-- `.below()` - Same behavior as `.lessThan()`
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

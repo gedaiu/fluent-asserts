@@ -34,7 +34,7 @@ void approximately(ref Evaluation evaluation) @trusted nothrow {
 
   auto currentParsed = toNumeric!real(evaluation.currentValue.strValue);
   auto expectedParsed = toNumeric!real(evaluation.expectedValue.strValue);
-  auto deltaParsed = toNumeric!real(evaluation.expectedValue.meta["1"]);
+  auto deltaParsed = toNumeric!real(toHeapString(evaluation.expectedValue.meta["1"]));
 
   if (!currentParsed.success || !expectedParsed.success || !deltaParsed.success) {
     evaluation.result.expected = "valid numeric values";
@@ -46,8 +46,8 @@ void approximately(ref Evaluation evaluation) @trusted nothrow {
   real expected = expectedParsed.value;
   real delta = deltaParsed.value;
 
-  string strExpected = evaluation.expectedValue.strValue ~ "±" ~ evaluation.expectedValue.meta["1"];
-  string strCurrent = evaluation.currentValue.strValue;
+  string strExpected = evaluation.expectedValue.strValue[].idup ~ "±" ~ evaluation.expectedValue.meta["1"];
+  string strCurrent = evaluation.currentValue.strValue[].idup;
 
   auto result = isClose(current, expected, 0, delta);
 
@@ -88,9 +88,9 @@ void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   real[] expectedPieces;
 
   try {
-    auto currentParsed = evaluation.currentValue.strValue.parseList;
+    auto currentParsed = evaluation.currentValue.strValue[].parseList;
     cleanString(currentParsed);
-    auto expectedParsed = evaluation.expectedValue.strValue.parseList;
+    auto expectedParsed = evaluation.expectedValue.strValue[].parseList;
     cleanString(expectedParsed);
 
     testData = new real[currentParsed.length];
@@ -130,7 +130,7 @@ void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   string strMissing;
 
   if(maxRelDiff == 0) {
-    strExpected = evaluation.expectedValue.strValue;
+    strExpected = evaluation.expectedValue.strValue[].idup;
     strMissing = missing.length == 0 ? "" : assumeWontThrow(missing.to!string);
   } else {
     strMissing = "[" ~ assumeWontThrow(missing.map!(a => a.to!string ~ "±" ~ maxRelDiff.to!string).join(", ")) ~ "]";
@@ -140,7 +140,7 @@ void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   if(!evaluation.isNegated) {
     if(!allEqual) {
       evaluation.result.expected = strExpected;
-      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.actual = evaluation.currentValue.strValue[];
 
       foreach(e; extra) {
         evaluation.result.extra ~= assumeWontThrow(e.to!string ~ "±" ~ maxRelDiff.to!string);
@@ -153,7 +153,7 @@ void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   } else {
     if(allEqual) {
       evaluation.result.expected = strExpected;
-      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.actual = evaluation.currentValue.strValue[];
       evaluation.result.negated = true;
     }
   }

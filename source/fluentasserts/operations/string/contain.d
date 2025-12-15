@@ -30,9 +30,9 @@ static immutable containDescription = "When the tested value is a string, it ass
 void contain(ref Evaluation evaluation) @trusted nothrow @nogc {
   evaluation.result.addText(".");
 
-  auto expectedPieces = evaluation.expectedValue.strValue.parseList;
+  auto expectedPieces = evaluation.expectedValue.strValue[].parseList;
   cleanString(expectedPieces);
-  auto testData = evaluation.currentValue.strValue.cleanString;
+  auto testData = evaluation.currentValue.strValue[].cleanString;
   bool negated = evaluation.isNegated;
 
   auto result = negated
@@ -48,7 +48,7 @@ void contain(ref Evaluation evaluation) @trusted nothrow @nogc {
   evaluation.result.addText(negated
     ? (result.count == 1 ? " is present in " : " are present in ")
     : (result.count == 1 ? " is missing from " : " are missing from "));
-  evaluation.result.addValue(evaluation.currentValue.strValue);
+  evaluation.result.addValue(evaluation.currentValue.strValue[]);
   evaluation.result.addText(".");
 
   if (negated) {
@@ -58,7 +58,7 @@ void contain(ref Evaluation evaluation) @trusted nothrow @nogc {
   if (negated ? result.count > 1 : expectedPieces.length > 1) {
     evaluation.result.expected.put(negated ? "any " : "all ");
   }
-  evaluation.result.expected.put(evaluation.expectedValue.strValue);
+  evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
   evaluation.result.actual.put(testData);
   evaluation.result.negated = negated;
 }
@@ -157,7 +157,7 @@ void arrayContain(ref Evaluation evaluation) @trusted nothrow {
     if(missingValues.length > 0) {
       addLifecycleMessage(evaluation, missingValues);
       evaluation.result.expected = createResultMessage(evaluation.expectedValue, expectedPieces);
-      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.actual = evaluation.currentValue.strValue[];
     }
   } else {
     auto presentValues = expectedPieces.filter!(a => !testData.filter!(b => b.isEqualTo(a)).empty).array;
@@ -165,7 +165,7 @@ void arrayContain(ref Evaluation evaluation) @trusted nothrow {
     if(presentValues.length > 0) {
       addNegatedLifecycleMessage(evaluation, presentValues);
       evaluation.result.expected = createNegatedResultMessage(evaluation.expectedValue, expectedPieces);
-      evaluation.result.actual = evaluation.currentValue.strValue;
+      evaluation.result.actual = evaluation.currentValue.strValue[];
       evaluation.result.negated = true;
     }
   }
@@ -294,7 +294,7 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
     evaluation.result.addText(" are missing from ");
   }
 
-  evaluation.result.addValue(evaluation.currentValue.strValue);
+  evaluation.result.addValue(evaluation.currentValue.strValue[]);
   evaluation.result.addText(".");
 }
 
@@ -325,7 +325,7 @@ void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValue
     evaluation.result.addText(" are present in ");
   }
 
-  evaluation.result.addValue(evaluation.currentValue.strValue);
+  evaluation.result.addValue(evaluation.currentValue.strValue[]);
   evaluation.result.addText(".");
 }
 
@@ -343,7 +343,7 @@ string createResultMessage(ValueEvaluation expectedValue, string[] expectedPiece
     message ~= "all ";
   }
 
-  message ~= expectedValue.strValue;
+  message ~= expectedValue.strValue[].idup;
 
   return message;
 }
@@ -362,7 +362,7 @@ string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expect
     message ~= "any ";
   }
 
-  message ~= expectedValue.strValue;
+  message ~= expectedValue.strValue[].idup;
 
   return message;
 }

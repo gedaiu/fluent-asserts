@@ -22,6 +22,7 @@ export default defineConfig({
             { label: 'Installation', link: '/guide/installation/' },
             { label: 'Assertion Styles', link: '/guide/assertion-styles/' },
             { label: 'Core Concepts', link: '/guide/core-concepts/' },
+            { label: 'Memory Management', link: '/guide/memory-management/' },
             { label: 'Extending', link: '/guide/extending/' },
             { label: 'Philosophy', link: '/guide/philosophy/' },
             { label: 'Contributing', link: '/guide/contributing/' },
@@ -54,6 +55,10 @@ export default defineConfig({
             {
               label: 'Types',
               autogenerate: { directory: 'api/types' },
+            },
+            {
+              label: 'Other',
+              autogenerate: { directory: 'api/other' },
             },
           ],
         },

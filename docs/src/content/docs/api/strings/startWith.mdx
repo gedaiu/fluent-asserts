@@ -1,33 +1,10 @@
 ---
-title: .startWith()
-description: Asserts that a string starts with the expected prefix
+title: startWith
+description: Tests that the tested string starts with the expected value.
 ---
 
+# .startWith()
+
+Tests that the tested string starts with the expected value.
+
 Asserts that a string starts with the expected prefix.
-
-## Examples
-
-```d
-expect("hello").to.startWith("hel");
-expect("https://example.com").to.startWith("https://");
-```
-
-### With Negation
-
-```d
-expect("hello").to.not.startWith("world");
-```
-
-### What Failures Look Like
-
-```d
-expect("hello").to.startWith("xyz");
-```
-
-```
-ASSERTION FAILED: hello should start with xyz. hello does not start with xyz.
-OPERATION: startWith
-
-  ACTUAL: <string> hello
-EXPECTED: <string> to start with xyz
-```

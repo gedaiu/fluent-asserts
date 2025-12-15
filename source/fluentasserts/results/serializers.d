@@ -899,6 +899,11 @@ string joinClassTypes(T)() pure @safe {
 /// Params:
 ///   value = The serialized list string (e.g., "[1, 2, 3]")
 /// Returns: A HeapStringList containing individual element strings.
+HeapStringList parseList(HeapString value) @trusted nothrow @nogc {
+  return parseList(value[]);
+}
+
+/// ditto
 HeapStringList parseList(const(char)[] value) @trusted nothrow @nogc {
   HeapStringList result;
 
@@ -1133,6 +1138,11 @@ unittest {
 /// Params:
 ///   value = The potentially quoted string
 /// Returns: The string with surrounding quotes removed.
+const(char)[] cleanString(HeapString value) @safe nothrow @nogc {
+  return cleanString(value[]);
+}
+
+/// ditto
 const(char)[] cleanString(const(char)[] value) @safe nothrow @nogc {
   if (value.length <= 1) {
     return value;

@@ -36,7 +36,7 @@ void greaterThan(T)(ref Evaluation evaluation) @safe nothrow @nogc {
 
   auto result = currentParsed.value > expectedParsed.value;
 
-  greaterThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  greaterThanResults(result, evaluation.expectedValue.strValue[], evaluation.currentValue.strValue[], evaluation);
 }
 
 ///
@@ -57,7 +57,7 @@ void greaterThanDuration(ref Evaluation evaluation) @safe nothrow @nogc {
 
   auto result = currentValue > expectedValue;
 
-  greaterThanResults(result, evaluation.expectedValue.niceValue, evaluation.currentValue.niceValue, evaluation);
+  greaterThanResults(result, evaluation.expectedValue.niceValue[], evaluation.currentValue.niceValue[], evaluation);
 }
 
 ///
@@ -70,8 +70,8 @@ void greaterThanSysTime(ref Evaluation evaluation) @safe nothrow {
   string niceCurrentValue;
 
   try {
-    expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
-    currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
+    expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue[]);
+    currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue[]);
   } catch(Exception e) {
     evaluation.result.expected.put("valid SysTime values");
     evaluation.result.actual.put("conversion error");
@@ -80,10 +80,10 @@ void greaterThanSysTime(ref Evaluation evaluation) @safe nothrow {
 
   auto result = currentValue > expectedValue;
 
-  greaterThanResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  greaterThanResults(result, evaluation.expectedValue.strValue[], evaluation.currentValue.strValue[], evaluation);
 }
 
-private void greaterThanResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow @nogc {
+private void greaterThanResults(bool result, const(char)[] niceExpectedValue, const(char)[] niceCurrentValue, ref Evaluation evaluation) @safe nothrow @nogc {
   if(evaluation.isNegated) {
     result = !result;
   }
@@ -93,7 +93,7 @@ private void greaterThanResults(bool result, string niceExpectedValue, string ni
   }
 
   evaluation.result.addText(" ");
-  evaluation.result.addValue(evaluation.currentValue.niceValue);
+  evaluation.result.addValue(evaluation.currentValue.niceValue[]);
 
   if(evaluation.isNegated) {
     evaluation.result.addText(" is greater than ");

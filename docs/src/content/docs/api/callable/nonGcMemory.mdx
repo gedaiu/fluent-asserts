@@ -1,59 +1,14 @@
 ---
-title: .allocateNonGCMemory()
-description: Asserts that a callable allocates non-GC memory (malloc, etc.)
+title: allocateNonGCMemory
+description: The allocateNonGCMemory assertion
 ---
 
-Asserts that a callable allocates memory outside of the garbage collector during its execution. This includes manual memory allocation via `malloc`, `core.stdc.stdlib`, or similar mechanisms.
+# .allocateNonGCMemory()
 
-:::caution[Platform Limitations]
-Non-GC memory tracking uses platform-specific APIs:
-- **Linux**: `mallinfo()` reports global heap state. Small runtime allocations may be detected even when the tested code doesn't allocate. Use this assertion primarily to detect large allocations (> 1MB).
-- **macOS**: Uses `phys_footprint` from TASK_VM_INFO, which tracks dirty memory including malloc allocations.
-- **Windows**: Falls back to process memory estimation (less accurate).
-:::
+## Modifiers
 
-## Examples
+This assertion supports the following modifiers:
 
-```d
-import core.stdc.stdlib : malloc, free;
-
-expect({
-    // Allocate a large block to ensure reliable detection
-    auto ptr = malloc(10 * 1024 * 1024);  // 10 MB
-    free(ptr);
-}).to.allocateNonGCMemory();
-```
-
-### With Negation
-
-:::note
-Negation (`not.allocateNonGCMemory()`) is unreliable on Linux because `mallinfo()` may detect runtime allocations even when the tested code doesn't allocate. Works reliably on macOS.
-:::
-
-```d
-expect({
-    int x = 42;  // no allocation
-    return x;
-}).to.not.allocateNonGCMemory();
-```
-
-### What Failures Look Like
-
-```d
-expect({
-    int x = 42;
-    return x;
-}).to.allocateNonGCMemory();
-```
-
-```
-ASSERTION FAILED: delegate should allocate non-GC memory.
-OPERATION: allocateNonGCMemory
-
-  ACTUAL: no non-GC allocations
-EXPECTED: non-GC allocations
-```
-
-## See Also
-
-- [allocateGCMemory](/api/callable/gcMemory/) - Assert GC memory allocation
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

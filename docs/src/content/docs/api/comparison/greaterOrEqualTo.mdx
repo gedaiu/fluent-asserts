@@ -1,33 +1,46 @@
 ---
-title: .greaterOrEqualTo()
-description: Asserts that a value is greater than or equal to the expected value
+title: greaterOrEqualToDuration
+description: Asserts that the tested value is greater or equal than the tested value. However, it's often best to assert that the target is equal to its expected value.
 ---
+
+# .greaterOrEqualToDuration()
+
+Asserts that the tested value is greater or equal than the tested value. However, it's often best to assert that the target is equal to its expected value.
 
 Asserts that a value is greater than or equal to the expected value.
 
 ## Examples
 
+### Basic Usage
+
 ```d
-expect(10).to.be.greaterOrEqualTo(5);
-expect(5).to.be.greaterOrEqualTo(5);  // equal values pass
+expect(largeValue).to.be.greaterOrEqualTo(smallValue);
+expect(smallValue).to.be.greaterOrEqualTo(smallValue);
+expect(largeValue).to.be.greaterOrEqualTo(smallValue);
+expect(largeValue).to.be.above(smallValue);
 ```
 
 ### With Negation
 
 ```d
-expect(3).to.not.be.greaterOrEqualTo(5);
+expect(smallValue).not.to.be.greaterOrEqualTo(largeValue);
+expect(smallValue).not.to.be.greaterOrEqualTo(largeValue);
+expect(smallValue).not.to.be.above(largeValue);
 ```
 
 ### What Failures Look Like
 
+When the assertion fails, you'll see a clear error message:
+
 ```d
-expect(3).to.be.greaterOrEqualTo(5);
+// This would fail:
+expect(largeValue).not.to.be.greaterOrEqualTo(smallValue);
 ```
 
-```
-ASSERTION FAILED: 3 should be greater or equal to 5. 3 is less than 5.
-OPERATION: greaterOrEqualTo
+## Modifiers
 
-  ACTUAL: <int> 3
-EXPECTED: <int> greater or equal than 5
-```
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

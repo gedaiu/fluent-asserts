@@ -85,6 +85,12 @@ struct AssertResult {
       || diff.length > 0 || extra.length > 0 || missing.length > 0;
   }
 
+  /// No-op for AssertResult (no HeapString fields).
+  /// Required for Evaluation.prepareForBlit() compatibility.
+  void prepareForBlit() @trusted nothrow @nogc {
+    // AssertResult uses FixedAppender, not HeapString, so nothing to do
+  }
+
   /// Formats a value for display, replacing special characters with glyphs.
   string formatValue(string value) nothrow inout {
     return value

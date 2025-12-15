@@ -1,34 +1,18 @@
 ---
-title: .endWith()
-description: Asserts that a string ends with the expected suffix
+title: endWith
+description: Tests that the tested string ends with the expected value.
 ---
+
+# .endWith()
+
+Tests that the tested string ends with the expected value.
 
 Asserts that a string ends with the expected suffix.
 
 ## Examples
 
+### Basic Usage
+
 ```d
-expect("hello").to.endWith("llo");
-expect("file.txt").to.endWith(".txt");
 expect("str\ning").to.endWith("ing");
-```
-
-### With Negation
-
-```d
-expect("hello").to.not.endWith("xyz");
-```
-
-### What Failures Look Like
-
-```d
-expect("hello").to.endWith("xyz");
-```
-
-```
-ASSERTION FAILED: hello should end with xyz. hello does not end with xyz.
-OPERATION: endWith
-
-  ACTUAL: <string> hello
-EXPECTED: <string> to end with xyz
 ```

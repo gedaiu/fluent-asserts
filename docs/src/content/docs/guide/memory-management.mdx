@@ -1,0 +1,313 @@
+---
+title: Memory Management
+description: How fluent-asserts manages memory in @nogc contexts
+---
+
+This guide explains how fluent-asserts handles memory allocation internally, particularly for `@nogc` compatibility. Understanding these concepts is essential if you're extending the library or debugging memory-related issues.
+
+## Why Manual Memory Management?
+
+Fluent-asserts aims to work in `@nogc` contexts, which means it cannot use D's garbage collector for dynamic allocations. This is achieved through:
+
+1. **Fixed-size arrays** (`FixedArray`, `FixedAppender`) for bounded data
+2. **Heap-allocated arrays** (`HeapData`, `HeapString`) for unbounded data with reference counting
+
+## HeapData and HeapString
+
+`HeapData!T` is a heap-allocated dynamic array using `malloc`/`free` instead of the GC:
+
+```d
+/// Heap-allocated dynamic array with ref-counting.
+struct HeapData(T) {
+    private T* _data;
+    private size_t _length;
+    private size_t _capacity;
+    private size_t* _refCount;  // Shared reference count
+}
+
+alias HeapString = HeapData!char;
+```
+
+### Creating HeapStrings
+
+```d
+// From a string literal
+auto hs = toHeapString("hello world");
+
+// Using create() for manual control
+auto hs2 = HeapString.create(100);  // Initial capacity of 100
+hs2.put("data");
+```
+
+### Reference Counting
+
+HeapData uses reference counting for memory management:
+
+```d
+auto a = toHeapString("hello");  // refCount = 1
+auto b = a;                       // refCount = 2 (copy constructor)
+// When b goes out of scope: refCount = 1
+// When a goes out of scope: refCount = 0, memory freed
+```
+
+The copy constructor and assignment operators handle ref counting automatically:
+
+```d
+// Copy constructor - increments ref count
+this(ref return scope HeapData other) {
+    _data = other._data;
+    _refCount = other._refCount;
+    if (_refCount) (*_refCount)++;
+}
+
+// Destructor - decrements ref count, frees when zero
+~this() {
+    if (_refCount && --(*_refCount) == 0) {
+        free(_data);
+        free(_refCount);
+    }
+}
+```
+
+## The Blit Problem
+
+D uses "blit" (bitwise copy via `memcpy`) when copying structs in various situations. **Blit does not call copy constructors.** This can cause issues with reference-counted types if not handled properly.
+
+### Why Blit Happens
+
+D may use blit instead of copy constructors in several cases:
+- Returning structs from functions (when NRVO doesn't apply)
+- Passing structs through `Tuple` or other containers
+- Struct literals in return statements
+
+## The Postblit Solution
+
+fluent-asserts uses D's **postblit constructor** (`this(this)`) to handle blit operations automatically. Postblit is called **after** D performs a blit, allowing us to fix up reference counts:
+
+```d
+struct HeapData(T) {
+    // ... fields ...
+
+    /// Postblit - called after D blits this struct.
+    /// Increments ref count to account for the new copy.
+    this(this) @trusted @nogc nothrow {
+        if (_refCount) {
+            (*_refCount)++;
+        }
+    }
+}
+```
+
+### How Postblit Works
+
+1. D performs blit (memcpy) of the struct
+2. D calls `this(this)` on the new copy
+3. Postblit increments the reference count
+
+This happens automatically - **you don't need to call any special methods** when returning HeapString or structs containing HeapString from functions.
+
+### Nested Structs
+
+When a struct contains members with postblit constructors, D automatically calls postblit on each member:
+
+```d
+struct ValueEvaluation {
+    HeapString strValue;   // Has postblit
+    HeapString niceValue;  // Has postblit
+
+    // D automatically calls strValue.this(this) and niceValue.this(this)
+    // when ValueEvaluation is blitted
+    this(this) @trusted nothrow @nogc {
+        // Nested postblits handle ref counting automatically
+    }
+}
+```
+
+## Legacy: prepareForBlit()
+
+For backwards compatibility and edge cases, `prepareForBlit()` and `incrementRefCount()` methods are still available:
+
+```d
+/// Manually increment ref count (for edge cases)
+void incrementRefCount() @trusted @nogc nothrow {
+    if (_refCount) {
+        (*_refCount)++;
+    }
+}
+```
+
+In most cases, you should **not need to call these methods** - the postblit constructor handles everything automatically.
+
+## Memory Initialization
+
+HeapData zero-initializes allocated memory using `memset`. This prevents garbage values in uninitialized struct fields from causing issues with reference counting:
+
+```d
+static HeapData create(size_t initialCapacity) @trusted @nogc nothrow {
+    HeapData h;
+    h._data = cast(T*) malloc(cap * T.sizeof);
+
+    // Zero-initialize to prevent garbage ref counts
+    if (h._data) {
+        memset(h._data, 0, cap * T.sizeof);
+    }
+
+    h._refCount = cast(size_t*) malloc(size_t.sizeof);
+    if (h._refCount) *h._refCount = 1;
+
+    return h;
+}
+```
+
+## Assignment Operators
+
+HeapData provides both lvalue and rvalue assignment operators:
+
+### Lvalue Assignment (from another variable)
+
+```d
+void opAssign(ref HeapData rhs) @trusted @nogc nothrow {
+    if (_data is rhs._data) return;  // Self-assignment check
+
+    // Decrement old ref count
+    if (_refCount && --(*_refCount) == 0) {
+        free(_data);
+        free(_refCount);
+    }
+
+    // Copy and increment new ref count
+    _data = rhs._data;
+    _refCount = rhs._refCount;
+    if (_refCount) (*_refCount)++;
+}
+```
+
+### Rvalue Assignment (from temporary)
+
+```d
+void opAssign(HeapData rhs) @trusted @nogc nothrow {
+    // Decrement old ref count
+    if (_refCount && --(*_refCount) == 0) {
+        free(_data);
+        free(_refCount);
+    }
+
+    // Take ownership
+    _data = rhs._data;
+    _refCount = rhs._refCount;
+
+    // Prevent rhs destructor from decrementing
+    rhs._data = null;
+    rhs._refCount = null;
+}
+```
+
+## Accessing HeapString Content
+
+Use the slice operator `[]` to get a `const(char)[]` from a HeapString:
+
+```d
+HeapString hs = toHeapString("hello");
+
+// Get slice for use with string functions
+const(char)[] slice = hs[];
+
+// Pass to functions expecting const(char)[]
+writeln(hs[]);
+```
+
+## Comparing HeapStrings
+
+HeapData provides `opEquals` for convenient comparisons without needing the slice operator:
+
+```d
+HeapString hs = toHeapString("hello");
+
+// Direct comparison with string literal
+if (hs == "hello") { /* ... */ }
+
+// Comparison with another HeapString
+HeapString hs2 = toHeapString("hello");
+if (hs == hs2) { /* ... */ }
+
+// Negation works too
+if (hs != "world") { /* ... */ }
+```
+
+This is cleaner than using the slice operator for comparisons:
+
+```d
+// Without opEquals (verbose)
+if (hs[] == "hello") { /* ... */ }
+
+// With opEquals (cleaner)
+if (hs == "hello") { /* ... */ }
+```
+
+## Best Practices
+
+1. **Use slice operator `[]`** to access HeapString content for functions expecting `const(char)[]`
+2. **Prefer FixedArray** when the maximum size is known at compile time
+3. **Initialize structs field-by-field**, not with struct literals (struct literals may cause issues)
+4. **Use `isValid()` in debug assertions** to catch memory corruption early
+
+```d
+// Access content with slice operator
+HeapString hs = toHeapString("hello");
+writeln(hs[]);  // Use [] to get const(char)[]
+
+// Compare directly (opEquals implemented)
+if (hs == "hello") { /* ... */ }
+
+// Field-by-field initialization (safer)
+ValueEvaluation val;
+val.strValue = toHeapString("test");  // opAssign handles refCount
+
+// Debug validation
+assert(val.isValid(), "ValueEvaluation memory corruption detected");
+```
+
+### What You Don't Need to Do Anymore
+
+With postblit constructors, you **no longer need to**:
+- Call `prepareForBlit()` before returning structs (postblit handles this)
+- Manually track reference counts when passing structs through containers
+
+The postblit constructor automatically increments reference counts after any blit operation.
+
+## Debugging Memory Issues
+
+If you encounter heap corruption or use-after-free:
+
+1. **Enable debug mode**: Compile with `-version=DebugHeapData` for extra validation
+2. **Use `isValid()` checks**: Add assertions to catch corruption early
+3. **Check struct literals**: Replace with field-by-field assignment
+4. **Verify initialization**: Ensure HeapData is properly initialized before use
+5. **Check `refCount()`**: Use the debug method to inspect reference counts
+
+### Debug Mode Features
+
+When compiled with `-version=DebugHeapData`, HeapData includes:
+- Double-free detection (asserts if ref count already zero)
+- Corruption detection (asserts if ref count impossibly high)
+- Creation tracking for debugging lifecycle issues
+
+```d
+// Enable debug checks
+HeapString hs = toHeapString("test");
+assert(hs.isValid(), "HeapString is corrupted");
+assert(hs.refCount() > 0, "Invalid ref count");
+```
+
+### Common Symptoms
+
+- Crashes in `malloc`/`free`
+- Invalid pointer values like `0x6`, `0xa`, `0xc`
+- Double-free errors
+- Use-after-free (reading garbage data)
+- Assertion failures in debug mode
+
+## Next Steps
+
+- Review the [Core Concepts](/guide/core-concepts/) for understanding the evaluation pipeline
+- See [Extending](/guide/extending/) for adding custom operations

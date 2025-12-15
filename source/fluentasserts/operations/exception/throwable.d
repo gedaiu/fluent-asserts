@@ -378,7 +378,7 @@ void throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
 
   string exceptionType;
   string message;
-  string expectedMessage = evaluation.expectedValue.strValue;
+  string expectedMessage = evaluation.expectedValue.strValue[].idup;
 
   if(expectedMessage.startsWith(`"`)) {
     expectedMessage = expectedMessage[1..$-1];

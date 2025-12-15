@@ -28,7 +28,7 @@ void beNull(ref Evaluation evaluation) @safe nothrow @nogc {
     }
   }
 
-  auto result = hasNullType || evaluation.currentValue.strValue == "null";
+  auto result = hasNullType || evaluation.currentValue.strValue[] == "null";
 
   if(evaluation.isNegated) {
     result = !result;
@@ -43,6 +43,7 @@ void beNull(ref Evaluation evaluation) @safe nothrow @nogc {
   } else {
     evaluation.result.expected.put("null");
   }
+
   evaluation.result.actual.put(evaluation.currentValue.typeNames.length ? evaluation.currentValue.typeNames[0] : "unknown");
   evaluation.result.negated = evaluation.isNegated;
 }

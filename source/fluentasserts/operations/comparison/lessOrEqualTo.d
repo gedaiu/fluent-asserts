@@ -36,7 +36,7 @@ void lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow @nogc {
 
   auto result = currentParsed.value <= expectedParsed.value;
 
-  lessOrEqualToResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  lessOrEqualToResults(result, evaluation.expectedValue.strValue[], evaluation.currentValue.strValue[], evaluation);
 }
 
 /// Asserts that a Duration value is less than or equal to the expected Duration.
@@ -57,7 +57,7 @@ void lessOrEqualToDuration(ref Evaluation evaluation) @safe nothrow @nogc {
 
   auto result = currentValue <= expectedValue;
 
-  lessOrEqualToResults(result, evaluation.expectedValue.niceValue, evaluation.currentValue.niceValue, evaluation);
+  lessOrEqualToResults(result, evaluation.expectedValue.niceValue[], evaluation.currentValue.niceValue[], evaluation);
 }
 
 /// Asserts that a SysTime value is less than or equal to the expected SysTime.
@@ -68,8 +68,8 @@ void lessOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
   SysTime currentValue;
 
   try {
-    expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue);
-    currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue);
+    expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue[]);
+    currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue[]);
   } catch(Exception e) {
     evaluation.result.expected.put("valid SysTime values");
     evaluation.result.actual.put("conversion error");
@@ -78,10 +78,10 @@ void lessOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
 
   auto result = currentValue <= expectedValue;
 
-  lessOrEqualToResults(result, evaluation.expectedValue.strValue, evaluation.currentValue.strValue, evaluation);
+  lessOrEqualToResults(result, evaluation.expectedValue.strValue[], evaluation.currentValue.strValue[], evaluation);
 }
 
-private void lessOrEqualToResults(bool result, string niceExpectedValue, string niceCurrentValue, ref Evaluation evaluation) @safe nothrow @nogc {
+private void lessOrEqualToResults(bool result, const(char)[] niceExpectedValue, const(char)[] niceCurrentValue, ref Evaluation evaluation) @safe nothrow @nogc {
   if(evaluation.isNegated) {
     result = !result;
   }
@@ -91,7 +91,7 @@ private void lessOrEqualToResults(bool result, string niceExpectedValue, string 
   }
 
   evaluation.result.addText(" ");
-  evaluation.result.addValue(evaluation.currentValue.niceValue);
+  evaluation.result.addValue(evaluation.currentValue.niceValue[]);
 
   if(evaluation.isNegated) {
     evaluation.result.addText(" is less or equal to ");

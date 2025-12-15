@@ -23,8 +23,8 @@ static immutable endWithDescription = "Tests that the tested string ends with th
 void endWith(ref Evaluation evaluation) @safe nothrow @nogc {
   evaluation.result.addText(".");
 
-  auto current = evaluation.currentValue.strValue.cleanString;
-  auto expected = evaluation.expectedValue.strValue.cleanString;
+  auto current = evaluation.currentValue.strValue[].cleanString;
+  auto expected = evaluation.expectedValue.strValue[].cleanString;
 
   // Check if string ends with suffix (replaces lastIndexOf for @nogc)
   bool doesEndWith = current.length >= expected.length && current[$ - expected.length .. $] == expected;
@@ -32,27 +32,27 @@ void endWith(ref Evaluation evaluation) @safe nothrow @nogc {
   if(evaluation.isNegated) {
     if(doesEndWith) {
       evaluation.result.addText(" ");
-      evaluation.result.addValue(evaluation.currentValue.strValue);
+      evaluation.result.addValue(evaluation.currentValue.strValue[]);
       evaluation.result.addText(" ends with ");
-      evaluation.result.addValue(evaluation.expectedValue.strValue);
+      evaluation.result.addValue(evaluation.expectedValue.strValue[]);
       evaluation.result.addText(".");
 
       evaluation.result.expected.put("not to end with ");
-      evaluation.result.expected.put(evaluation.expectedValue.strValue);
-      evaluation.result.actual.put(evaluation.currentValue.strValue);
+      evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
+      evaluation.result.actual.put(evaluation.currentValue.strValue[]);
       evaluation.result.negated = true;
     }
   } else {
     if(!doesEndWith) {
       evaluation.result.addText(" ");
-      evaluation.result.addValue(evaluation.currentValue.strValue);
+      evaluation.result.addValue(evaluation.currentValue.strValue[]);
       evaluation.result.addText(" does not end with ");
-      evaluation.result.addValue(evaluation.expectedValue.strValue);
+      evaluation.result.addValue(evaluation.expectedValue.strValue[]);
       evaluation.result.addText(".");
 
       evaluation.result.expected.put("to end with ");
-      evaluation.result.expected.put(evaluation.expectedValue.strValue);
-      evaluation.result.actual.put(evaluation.currentValue.strValue);
+      evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
+      evaluation.result.actual.put(evaluation.currentValue.strValue[]);
     }
   }
 }

@@ -22,7 +22,7 @@ static immutable instanceOfDescription = "Asserts that the tested value is relat
 
 /// Asserts that a value is an instance of a specific type or inherits from it.
 void instanceOf(ref Evaluation evaluation) @safe nothrow @nogc {
-  string expectedType = evaluation.expectedValue.strValue[1 .. $-1];
+  const(char)[] expectedType = evaluation.expectedValue.strValue[][1 .. $-1];
   string currentType = evaluation.currentValue.typeNames[0];
 
   evaluation.result.addText(". ");
@@ -46,7 +46,7 @@ void instanceOf(ref Evaluation evaluation) @safe nothrow @nogc {
     return;
   }
 
-  evaluation.result.addValue(evaluation.currentValue.strValue);
+  evaluation.result.addValue(evaluation.currentValue.strValue[]);
   evaluation.result.addText(" is instance of ");
   evaluation.result.addValue(currentType);
   evaluation.result.addText(".");

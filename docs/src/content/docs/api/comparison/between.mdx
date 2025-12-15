@@ -1,38 +1,51 @@
 ---
-title: .between()
-description: Asserts that a value is strictly between two bounds (exclusive)
+title: betweenDuration
+description: Asserts that the target is a number or a date greater than or equal to the given number or date start, 
 ---
 
-Asserts that a value is strictly between two bounds (exclusive). The value must be greater than the lower bound and less than the upper bound.
+# .betweenDuration()
+
+Asserts that the target is a number or a date greater than or equal to the given number or date start, 
+
+Asserts that a value is strictly between two bounds (exclusive).
 
 ## Examples
 
+### Basic Usage
+
 ```d
-expect(5).to.be.between(1, 10);
-expect(50).to.be.between(0, 100);
+expect(middleValue).to.be.between(smallValue, largeValue);
+expect(middleValue).to.be.between(largeValue, smallValue);
+expect(middleValue).to.be.within(smallValue, largeValue);
+expect(middleValue).to.be.between(smallValue, largeValue);
+expect(middleValue).to.be.between(largeValue, smallValue);
+expect(middleValue).to.be.within(smallValue, largeValue);
 ```
 
 ### With Negation
 
 ```d
-expect(10).to.not.be.between(1, 5);
-expect(0).to.not.be.between(1, 10);
+expect(largeValue).to.not.be.between(smallValue, largeValue);
+expect(largeValue).to.not.be.between(largeValue, smallValue);
+expect(largeValue).to.not.be.within(smallValue, largeValue);
+expect(largeValue).to.not.be.between(smallValue, largeValue);
+expect(largeValue).to.not.be.between(largeValue, smallValue);
+expect(largeValue).to.not.be.within(smallValue, largeValue);
 ```
 
 ### What Failures Look Like
 
+When the assertion fails, you'll see a clear error message:
+
 ```d
-expect(10).to.be.between(1, 5);
+// This would fail:
+expect(largeValue).to.be.between(smallValue, largeValue);
 ```
 
-```
-ASSERTION FAILED: 10 should be between 1 and 5. 10 is greater than or equal to 5.
-OPERATION: between
+## Modifiers
 
-  ACTUAL: <int> 10
-EXPECTED: <int> a value inside (1, 5) interval
-```
+This assertion supports the following modifiers:
 
-## See Also
-
-- [within](/api/comparison/within/) - Similar but with inclusive bounds
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

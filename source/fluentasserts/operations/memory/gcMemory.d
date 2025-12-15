@@ -52,7 +52,7 @@ void allocateGCMemory(ref Evaluation evaluation) @safe nothrow {
   }
 
   if(!isSuccess && !evaluation.isNegated) {
-    evaluation.result.addValue(evaluation.currentValue.strValue);
+    evaluation.result.addValue(evaluation.currentValue.strValue[]);
     evaluation.result.addText(" allocated GC memory.");
 
     evaluation.result.expected.put("to allocate GC memory");
@@ -61,7 +61,7 @@ void allocateGCMemory(ref Evaluation evaluation) @safe nothrow {
   }
 
   if(!isSuccess && evaluation.isNegated) {
-    evaluation.result.addValue(evaluation.currentValue.strValue);
+    evaluation.result.addValue(evaluation.currentValue.strValue[]);
     evaluation.result.addText(" did not allocated GC memory.");
 
     evaluation.result.expected.put("not to allocate GC memory");

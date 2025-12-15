@@ -1,5 +1,7 @@
 module fluentasserts.core.toNumeric;
 
+import fluentasserts.core.heapdata : HeapString, toHeapString;
+
 version (unittest) {
   import fluent.asserts;
 }
@@ -106,7 +108,7 @@ struct FractionResult(T) {
 /// auto r3 = toNumeric!int("not a number");
 /// assert(!r3.success);
 /// ---
-ParsedResult!T toNumeric(T)(string input) @safe nothrow @nogc
+ParsedResult!T toNumeric(T)(HeapString input) @safe nothrow @nogc
 if (__traits(isIntegral, T) || __traits(isFloating, T)) {
   if (input.length == 0) {
     return ParsedResult!T();
@@ -154,7 +156,7 @@ bool isDigit(char c) @safe nothrow @nogc {
 ///
 /// Returns:
 ///   A SignResult containing the position after the sign and validity status.
-SignResult parseSign(T)(string input) @safe nothrow @nogc {
+SignResult parseSign(T)(HeapString input) @safe nothrow @nogc {
   SignResult result;
   result.valid = true;
 
@@ -189,7 +191,7 @@ SignResult parseSign(T)(string input) @safe nothrow @nogc {
 ///
 /// Returns:
 ///   A DigitsResult containing the parsed value and status.
-DigitsResult!long parseDigitsLong(string input, size_t i) @safe nothrow @nogc {
+DigitsResult!long parseDigitsLong(HeapString input, size_t i) @safe nothrow @nogc {
   DigitsResult!long result;
   result.position = i;
 
@@ -217,7 +219,7 @@ DigitsResult!long parseDigitsLong(string input, size_t i) @safe nothrow @nogc {
 ///
 /// Returns:
 ///   A DigitsResult containing the parsed value and status.
-DigitsResult!ulong parseDigitsUlong(string input, size_t i) @safe nothrow @nogc {
+DigitsResult!ulong parseDigitsUlong(HeapString input, size_t i) @safe nothrow @nogc {
   DigitsResult!ulong result;
   result.position = i;
 
@@ -245,7 +247,7 @@ DigitsResult!ulong parseDigitsUlong(string input, size_t i) @safe nothrow @nogc 
 ///
 /// Returns:
 ///   A DigitsResult containing the parsed value and status.
-DigitsResult!int parseDigitsInt(string input, size_t i) @safe nothrow @nogc {
+DigitsResult!int parseDigitsInt(HeapString input, size_t i) @safe nothrow @nogc {
   DigitsResult!int result;
   result.position = i;
 
@@ -316,7 +318,7 @@ T computeMultiplier(T)(int exp) @safe nothrow @nogc {
 ///
 /// Returns:
 ///   A ParsedResult containing the parsed ulong value.
-ParsedResult!ulong parseUlong(string input, size_t i) @safe nothrow @nogc {
+ParsedResult!ulong parseUlong(HeapString input, size_t i) @safe nothrow @nogc {
   auto digits = parseDigitsUlong(input, i);
 
   if (!digits.hasDigits || digits.overflow || digits.position != input.length) {
@@ -335,7 +337,7 @@ ParsedResult!ulong parseUlong(string input, size_t i) @safe nothrow @nogc {
 ///
 /// Returns:
 ///   A ParsedResult containing the parsed value.
-ParsedResult!T parseSignedIntegral(T)(string input, size_t i, bool negative) @safe nothrow @nogc {
+ParsedResult!T parseSignedIntegral(T)(HeapString input, size_t i, bool negative) @safe nothrow @nogc {
   auto digits = parseDigitsLong(input, i);
 
   if (!digits.hasDigits || digits.overflow || digits.position != input.length) {
@@ -365,7 +367,7 @@ ParsedResult!T parseSignedIntegral(T)(string input, size_t i, bool negative) @sa
 ///
 /// Returns:
 ///   A FractionResult containing the fractional value (between 0 and 1).
-FractionResult!T parseFraction(T)(string input, size_t i) @safe nothrow @nogc {
+FractionResult!T parseFraction(T)(HeapString input, size_t i) @safe nothrow @nogc {
   FractionResult!T result;
   result.position = i;
 
@@ -394,7 +396,7 @@ FractionResult!T parseFraction(T)(string input, size_t i) @safe nothrow @nogc {
 ///
 /// Returns:
 ///   A ParsedResult containing the parsed floating point value.
-ParsedResult!T parseFloating(T)(string input, size_t i, bool negative) @safe nothrow @nogc {
+ParsedResult!T parseFloating(T)(HeapString input, size_t i, bool negative) @safe nothrow @nogc {
   T value = 0;
   bool hasDigits = false;
 
@@ -438,7 +440,7 @@ ParsedResult!T parseFloating(T)(string input, size_t i, bool negative) @safe not
 ///
 /// Returns:
 ///   A ParsedResult containing the value with exponent applied.
-ParsedResult!T parseExponent(T)(string input, size_t i, T baseValue) @safe nothrow @nogc {
+ParsedResult!T parseExponent(T)(HeapString input, size_t i, T baseValue) @safe nothrow @nogc {
   if (i >= input.length) {
     return ParsedResult!T();
   }
@@ -503,7 +505,7 @@ unittest {
 
 @("parseSign detects negative sign for int")
 unittest {
-  auto result = parseSign!int("-42");
+  auto result = parseSign!int(toHeapString("-42"));
   expect(result.valid).to.equal(true);
   expect(result.negative).to.equal(true);
   expect(result.position).to.equal(1);
@@ -511,7 +513,7 @@ unittest {
 
 @("parseSign detects positive sign")
 unittest {
-  auto result = parseSign!int("+42");
+  auto result = parseSign!int(toHeapString("+42"));
   expect(result.valid).to.equal(true);
   expect(result.negative).to.equal(false);
   expect(result.position).to.equal(1);
@@ -519,7 +521,7 @@ unittest {
 
 @("parseSign handles no sign")
 unittest {
-  auto result = parseSign!int("42");
+  auto result = parseSign!int(toHeapString("42"));
   expect(result.valid).to.equal(true);
   expect(result.negative).to.equal(false);
   expect(result.position).to.equal(0);
@@ -527,13 +529,13 @@ unittest {
 
 @("parseSign rejects negative for unsigned")
 unittest {
-  auto result = parseSign!uint("-42");
+  auto result = parseSign!uint(toHeapString("-42"));
   expect(result.valid).to.equal(false);
 }
 
 @("parseSign rejects sign-only string")
 unittest {
-  auto result = parseSign!int("-");
+  auto result = parseSign!int(toHeapString("-"));
   expect(result.valid).to.equal(false);
 }
 
@@ -543,7 +545,7 @@ unittest {
 
 @("parseDigitsLong parses simple number")
 unittest {
-  auto result = parseDigitsLong("12345", 0);
+  auto result = parseDigitsLong(toHeapString("12345"), 0);
   expect(result.hasDigits).to.equal(true);
   expect(result.overflow).to.equal(false);
   expect(result.value).to.equal(12345);
@@ -552,7 +554,7 @@ unittest {
 
 @("parseDigitsLong parses from offset")
 unittest {
-  auto result = parseDigitsLong("abc123def", 3);
+  auto result = parseDigitsLong(toHeapString("abc123def"), 3);
   expect(result.hasDigits).to.equal(true);
   expect(result.value).to.equal(123);
   expect(result.position).to.equal(6);
@@ -560,14 +562,14 @@ unittest {
 
 @("parseDigitsLong handles no digits")
 unittest {
-  auto result = parseDigitsLong("abc", 0);
+  auto result = parseDigitsLong(toHeapString("abc"), 0);
   expect(result.hasDigits).to.equal(false);
   expect(result.position).to.equal(0);
 }
 
 @("parseDigitsLong detects overflow")
 unittest {
-  auto result = parseDigitsLong("99999999999999999999", 0);
+  auto result = parseDigitsLong(toHeapString("99999999999999999999"), 0);
   expect(result.overflow).to.equal(true);
 }
 
@@ -577,7 +579,7 @@ unittest {
 
 @("parseDigitsUlong parses large number")
 unittest {
-  auto result = parseDigitsUlong("12345678901234567890", 0);
+  auto result = parseDigitsUlong(toHeapString("12345678901234567890"), 0);
   expect(result.hasDigits).to.equal(true);
   expect(result.overflow).to.equal(false);
   expect(result.value).to.equal(12345678901234567890UL);
@@ -585,7 +587,7 @@ unittest {
 
 @("parseDigitsUlong detects overflow")
 unittest {
-  auto result = parseDigitsUlong("99999999999999999999", 0);
+  auto result = parseDigitsUlong(toHeapString("99999999999999999999"), 0);
   expect(result.overflow).to.equal(true);
 }
 
@@ -595,7 +597,7 @@ unittest {
 
 @("parseDigitsInt parses number")
 unittest {
-  auto result = parseDigitsInt("42", 0);
+  auto result = parseDigitsInt(toHeapString("42"), 0);
   expect(result.hasDigits).to.equal(true);
   expect(result.value).to.equal(42);
 }
@@ -655,21 +657,21 @@ unittest {
 
 @("parseFraction parses .5")
 unittest {
-  auto result = parseFraction!double("5", 0);
+  auto result = parseFraction!double(toHeapString("5"), 0);
   expect(result.hasDigits).to.equal(true);
   expect(result.value).to.be.approximately(0.5, 0.001);
 }
 
 @("parseFraction parses .25")
 unittest {
-  auto result = parseFraction!double("25", 0);
+  auto result = parseFraction!double(toHeapString("25"), 0);
   expect(result.hasDigits).to.equal(true);
   expect(result.value).to.be.approximately(0.25, 0.001);
 }
 
 @("parseFraction parses .125")
 unittest {
-  auto result = parseFraction!double("125", 0);
+  auto result = parseFraction!double(toHeapString("125"), 0);
   expect(result.hasDigits).to.equal(true);
   expect(result.value).to.be.approximately(0.125, 0.001);
 }
@@ -680,126 +682,126 @@ unittest {
 
 @("toNumeric parses positive int")
 unittest {
-  auto result = toNumeric!int("42");
+  auto result = toNumeric!int(toHeapString("42"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(42);
 }
 
 @("toNumeric parses negative int")
 unittest {
-  auto result = toNumeric!int("-42");
+  auto result = toNumeric!int(toHeapString("-42"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(-42);
 }
 
 @("toNumeric parses zero")
 unittest {
-  auto result = toNumeric!int("0");
+  auto result = toNumeric!int(toHeapString("0"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(0);
 }
 
 @("toNumeric fails on empty string")
 unittest {
-  auto result = toNumeric!int("");
+  auto result = toNumeric!int(toHeapString(""));
   expect(result.success).to.equal(false);
 }
 
 @("toNumeric fails on non-numeric string")
 unittest {
-  auto result = toNumeric!int("abc");
+  auto result = toNumeric!int(toHeapString("abc"));
   expect(result.success).to.equal(false);
 }
 
 @("toNumeric fails on mixed content")
 unittest {
-  auto result = toNumeric!int("42abc");
+  auto result = toNumeric!int(toHeapString("42abc"));
   expect(result.success).to.equal(false);
 }
 
 @("toNumeric fails on negative for unsigned")
 unittest {
-  auto result = toNumeric!uint("-1");
+  auto result = toNumeric!uint(toHeapString("-1"));
   expect(result.success).to.equal(false);
 }
 
 @("toNumeric parses max byte value")
 unittest {
-  auto result = toNumeric!byte("127");
+  auto result = toNumeric!byte(toHeapString("127"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(127);
 }
 
 @("toNumeric fails on overflow for byte")
 unittest {
-  auto result = toNumeric!byte("128");
+  auto result = toNumeric!byte(toHeapString("128"));
   expect(result.success).to.equal(false);
 }
 
 @("toNumeric parses min byte value")
 unittest {
-  auto result = toNumeric!byte("-128");
+  auto result = toNumeric!byte(toHeapString("-128"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(-128);
 }
 
 @("toNumeric fails on underflow for byte")
 unittest {
-  auto result = toNumeric!byte("-129");
+  auto result = toNumeric!byte(toHeapString("-129"));
   expect(result.success).to.equal(false);
 }
 
 @("toNumeric parses ubyte")
 unittest {
-  auto result = toNumeric!ubyte("255");
+  auto result = toNumeric!ubyte(toHeapString("255"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(255);
 }
 
 @("toNumeric parses short")
 unittest {
-  auto result = toNumeric!short("32767");
+  auto result = toNumeric!short(toHeapString("32767"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(32767);
 }
 
 @("toNumeric parses ushort")
 unittest {
-  auto result = toNumeric!ushort("65535");
+  auto result = toNumeric!ushort(toHeapString("65535"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(65535);
 }
 
 @("toNumeric parses long")
 unittest {
-  auto result = toNumeric!long("9223372036854775807");
+  auto result = toNumeric!long(toHeapString("9223372036854775807"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(long.max);
 }
 
 @("toNumeric parses ulong")
 unittest {
-  auto result = toNumeric!ulong("12345678901234567890");
+  auto result = toNumeric!ulong(toHeapString("12345678901234567890"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(12345678901234567890UL);
 }
 
 @("toNumeric handles leading plus sign")
 unittest {
-  auto result = toNumeric!int("+42");
+  auto result = toNumeric!int(toHeapString("+42"));
   expect(result.success).to.equal(true);
   expect(result.value).to.equal(42);
 }
 
 @("toNumeric fails on just minus sign")
 unittest {
-  auto result = toNumeric!int("-");
+  auto result = toNumeric!int(toHeapString("-"));
   expect(result.success).to.equal(false);
 }
 
 @("toNumeric fails on just plus sign")
 unittest {
-  auto result = toNumeric!int("+");
+  auto result = toNumeric!int(toHeapString("+"));
   expect(result.success).to.equal(false);
 }
 
@@ -809,83 +811,83 @@ unittest {
 
 @("toNumeric parses positive float")
 unittest {
-  auto result = toNumeric!float("3.14");
+  auto result = toNumeric!float(toHeapString("3.14"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(3.14, 0.001);
 }
 
 @("toNumeric parses negative float")
 unittest {
-  auto result = toNumeric!float("-3.14");
+  auto result = toNumeric!float(toHeapString("-3.14"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(-3.14, 0.001);
 }
 
 @("toNumeric parses double")
 unittest {
-  auto result = toNumeric!double("123.456789");
+  auto result = toNumeric!double(toHeapString("123.456789"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(123.456789, 0.000001);
 }
 
 @("toNumeric parses real")
 unittest {
-  auto result = toNumeric!real("999.999");
+  auto result = toNumeric!real(toHeapString("999.999"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(999.999, 0.001);
 }
 
 @("toNumeric parses float without decimal part")
 unittest {
-  auto result = toNumeric!float("42");
+  auto result = toNumeric!float(toHeapString("42"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(42.0, 0.001);
 }
 
 @("toNumeric parses float with trailing decimal")
 unittest {
-  auto result = toNumeric!float("42.");
+  auto result = toNumeric!float(toHeapString("42."));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(42.0, 0.001);
 }
 
 @("toNumeric parses float with scientific notation")
 unittest {
-  auto result = toNumeric!double("1.5e3");
+  auto result = toNumeric!double(toHeapString("1.5e3"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(1500.0, 0.001);
 }
 
 @("toNumeric parses float with negative exponent")
 unittest {
-  auto result = toNumeric!double("1.5e-3");
+  auto result = toNumeric!double(toHeapString("1.5e-3"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(0.0015, 0.0001);
 }
 
 @("toNumeric parses float with uppercase E")
 unittest {
-  auto result = toNumeric!double("2.5E2");
+  auto result = toNumeric!double(toHeapString("2.5E2"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(250.0, 0.001);
 }
 
 @("toNumeric parses float with positive exponent sign")
 unittest {
-  auto result = toNumeric!double("1e+2");
+  auto result = toNumeric!double(toHeapString("1e+2"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(100.0, 0.001);
 }
 
 @("toNumeric fails on invalid exponent")
 unittest {
-  auto result = toNumeric!double("1e");
+  auto result = toNumeric!double(toHeapString("1e"));
   expect(result.success).to.equal(false);
 }
 
 @("toNumeric parses zero float")
 unittest {
-  auto result = toNumeric!float("0.0");
+  auto result = toNumeric!float(toHeapString("0.0"));
   expect(result.success).to.equal(true);
   expect(result.value).to.be.approximately(0.0, 0.001);
 }
@@ -896,19 +898,19 @@ unittest {
 
 @("ParsedResult casts to bool for success")
 unittest {
-  auto result = toNumeric!int("42");
+  auto result = toNumeric!int(toHeapString("42"));
   expect(cast(bool) result).to.equal(true);
 }
 
 @("ParsedResult casts to bool for failure")
 unittest {
-  auto result = toNumeric!int("abc");
+  auto result = toNumeric!int(toHeapString("abc"));
   expect(cast(bool) result).to.equal(false);
 }
 
 @("ParsedResult works in if condition")
 unittest {
-  if (auto result = toNumeric!int("42")) {
+  if (auto result = toNumeric!int(toHeapString("42"))) {
     expect(result.value).to.equal(42);
   } else {
     expect(false).to.equal(true);

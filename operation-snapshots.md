@@ -119,7 +119,7 @@ expect("hello").to.contain("xyz");
 ```
 
 ```
-ASSERTION FAILED: hello should contain xyz. xyz is missing from hello.
+ASSERTION FAILED: hello should contain xyz. ßjü is missing from hello.
 OPERATION: contain
 
   ACTUAL: <string> hello
@@ -136,7 +136,7 @@ expect("hello").to.not.contain("ell");
 ```
 
 ```
-ASSERTION FAILED: hello should not contain ell. ell is present in hello.
+ASSERTION FAILED: hello should not contain ell. _|ü is present in hello.
 OPERATION: not contain
 
   ACTUAL: <string> hello
@@ -299,7 +299,7 @@ Object obj = new Object(); expect(obj).to.beNull;
 ```
 
 ```
-ASSERTION FAILED: Object(4679019930) should be null.
+ASSERTION FAILED: Object(4640319875) should be null.
 OPERATION: beNull
 
   ACTUAL: <object.Object> object.Object
@@ -587,7 +587,7 @@ expect(new Object()).to.be.instanceOf!Exception;
 ```
 
 ```
-ASSERTION FAILED: Object(4679101303) should be instance of "object.Exception". Object(4679101303) is instance of object.Object.
+ASSERTION FAILED: Object(4640679133) should be instance of "object.Exception". Object(4640679133) is instance of object.Object.
 OPERATION: instanceOf
 
   ACTUAL: <object.Object> typeof object.Object
@@ -604,7 +604,7 @@ expect(new Exception("test")).to.not.be.instanceOf!Object;
 ```
 
 ```
-ASSERTION FAILED: Exception(4679107424) should not be instance of "object.Object". Exception(4679107424) is instance of object.Exception.
+ASSERTION FAILED: Exception(4640514288) should not be instance of "object.Object". Exception(4640514288) is instance of object.Exception.
 OPERATION: not instanceOf
 
   ACTUAL: <object.Exception> typeof object.Exception
