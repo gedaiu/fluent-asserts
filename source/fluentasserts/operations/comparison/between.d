@@ -22,7 +22,7 @@ static immutable betweenDescription = "Asserts that the target is a number or a 
   "and less than or equal to the given number or date finish respectively. However, it's often best to assert that the target is equal to its expected value.";
 
 /// Asserts that a value is strictly between two bounds (exclusive).
-void between(T)(ref Evaluation evaluation) @safe nothrow @nogc {
+void between(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(" and ");
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
   evaluation.result.addText(". ");
