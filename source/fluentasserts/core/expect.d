@@ -85,6 +85,9 @@ import std.conv;
     another.refCount++;  // Prevent source from finalizing
   }
 
+  /// Disable postblit to use copy constructor instead.
+  @disable this(this);
+
   /// Destructor. Finalizes the evaluation when reference count reaches zero.
   ~this() {
     refCount--;
