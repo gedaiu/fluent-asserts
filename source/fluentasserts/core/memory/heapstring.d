@@ -11,7 +11,7 @@
 /// - The data size is unbounded or unpredictable
 /// - You need cheap copying via ref-counting
 /// - Stack space is a co
-module fluentasserts.core.heapdata;
+module fluentasserts.core.memory.heapstring;
 
 import core.stdc.stdlib : malloc, free, realloc;
 import core.stdc.string : memcpy, memset;
@@ -517,6 +517,13 @@ alias HeapStringList = HeapData!HeapString;
 
 /// Converts a string to HeapString.
 HeapString toHeapString(string s) @trusted nothrow @nogc {
+  auto h = HeapString.create(s.length);
+  h.put(s);
+  return h;
+}
+
+/// Converts a const(char)[] to HeapString.
+HeapString toHeapString(const(char)[] s) @trusted nothrow @nogc {
   auto h = HeapString.create(s.length);
   h.put(s);
   return h;

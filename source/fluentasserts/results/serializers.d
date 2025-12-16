@@ -10,7 +10,7 @@ import std.conv;
 import std.datetime;
 import std.functional;
 
-import fluentasserts.core.heapdata;
+import fluentasserts.core.memory;
 
 version(unittest) {
   import fluent.asserts;

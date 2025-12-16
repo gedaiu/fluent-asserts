@@ -3,7 +3,7 @@ module fluentasserts.operations.comparison.between;
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation;
 import fluentasserts.core.toNumeric;
-import fluentasserts.core.heapdata : toHeapString;
+import fluentasserts.core.memory : toHeapString;
 
 import fluentasserts.core.lifecycle;
 

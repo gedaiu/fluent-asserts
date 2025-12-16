@@ -6,7 +6,7 @@ import fluentasserts.core.listcomparison;
 import fluentasserts.results.serializers;
 import fluentasserts.operations.string.contain;
 import fluentasserts.core.toNumeric;
-import fluentasserts.core.heapdata;
+import fluentasserts.core.memory;
 
 import fluentasserts.core.lifecycle;
 

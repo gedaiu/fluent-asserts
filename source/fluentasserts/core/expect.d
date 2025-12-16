@@ -5,7 +5,7 @@ module fluentasserts.core.expect;
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.evaluation;
 import fluentasserts.core.evaluator;
-import fluentasserts.core.heapdata : toHeapString;
+import fluentasserts.core.memory : toHeapString;
 
 import fluentasserts.results.printer;
 import fluentasserts.results.formatting : toNiceOperation;
@@ -77,6 +77,9 @@ import std.conv;
     }
   }
 
+  /// Disable postblit to allow copy constructor to work
+  @disable this(this);
+
   /// Copy constructor - properly handles Evaluation with HeapString fields.
   /// Increments the source's refCount so only the last copy triggers finalization.
   this(ref return scope Expect another) @trusted nothrow {
@@ -84,9 +87,6 @@ import std.conv;
     this.refCount = 0;  // New copy starts with 0
     another.refCount++;  // Prevent source from finalizing
   }
-
-  /// Disable postblit to use copy constructor instead.
-  @disable this(this);
 
   /// Destructor. Finalizes the evaluation when reference count reaches zero.
   ~this() {
@@ -187,7 +187,7 @@ import std.conv;
 
   /// Asserts that the callable throws a specific exception type.
   ThrowableEvaluator throwException(Type)() @trusted {
-    import fluentasserts.core.heapdata : toHeapString;
+    import fluentasserts.core.memory : toHeapString;
     this._evaluation.expectedValue.meta["exceptionType"] = fullyQualifiedName!Type;
     this._evaluation.expectedValue.meta["throwableType"] = fullyQualifiedName!Type;
     this._evaluation.expectedValue.strValue = toHeapString("\"" ~ fullyQualifiedName!Type ~ "\"");
@@ -504,8 +504,8 @@ import std.conv;
   void setExpectedValue(T)(T value) @trusted {
     auto expectedValue = value.evaluate.evaluation;
 
-    foreach(key, v; _evaluation.expectedValue.meta) {
-      expectedValue.meta[key] = v;
+    foreach(key, metaValue; _evaluation.expectedValue.meta) {
+      expectedValue.meta[key] = metaValue;
     }
 
     _evaluation.expectedValue = expectedValue;

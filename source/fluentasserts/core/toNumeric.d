@@ -1,6 +1,6 @@
 module fluentasserts.core.toNumeric;
 
-import fluentasserts.core.heapdata : HeapString, toHeapString;
+import fluentasserts.core.memory : HeapString, toHeapString;
 
 version (unittest) {
   import fluent.asserts;

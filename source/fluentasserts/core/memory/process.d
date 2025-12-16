@@ -1,6 +1,6 @@
 /// Cross-platform memory utilities for fluent-asserts.
 /// Provides functions to query process memory usage across different operating systems.
-module fluentasserts.core.memory;
+module fluentasserts.core.memory.process;
 
 import core.memory : GC;
 

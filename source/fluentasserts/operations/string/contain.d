@@ -10,7 +10,7 @@ import fluentasserts.results.printer;
 import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.evaluation;
 import fluentasserts.results.serializers;
-import fluentasserts.core.heapdata;
+import fluentasserts.core.memory;
 
 import fluentasserts.core.lifecycle;
 

@@ -225,8 +225,8 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         evaluation.result.addText(" with message");
 
         auto expectedValue = message.evaluate.evaluation;
-        foreach (key, value; evaluation.expectedValue.meta) {
-            expectedValue.meta[key] = value;
+        foreach (kv; evaluation.expectedValue.meta.byKeyValue) {
+            expectedValue.meta[kv.key] = kv.value;
         }
         evaluation.expectedValue = expectedValue;
         () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(message); }();
@@ -249,8 +249,8 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         evaluation.addOperationName("equal");
 
         auto expectedValue = value.evaluate.evaluation;
-        foreach (key, v; evaluation.expectedValue.meta) {
-            expectedValue.meta[key] = v;
+        foreach (kv; evaluation.expectedValue.meta.byKeyValue) {
+            expectedValue.meta[kv.key] = kv.value;
         }
         evaluation.expectedValue = expectedValue;
         () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(value); }();

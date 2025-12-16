@@ -20,7 +20,7 @@ import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.base : TestException;
 import fluentasserts.results.printer : ResultPrinter, StringResultPrinter;
 import fluentasserts.results.serializers : SerializerRegistry;
-import fluentasserts.core.heapdata;
+import fluentasserts.core.memory;
 
 /// Holds the result of evaluating a single value.
 /// Captures the value itself, any exceptions thrown, timing information,
@@ -61,8 +61,6 @@ struct ValueEvaluation {
 
   /// a custom text to be prepended to the value
   HeapString prependText;
-
-  // HeapString has proper postblit/opAssign, so D handles copying automatically
 
   /// Returns true if this ValueEvaluation's HeapString fields are valid.
   bool isValid() @trusted nothrow @nogc const {
