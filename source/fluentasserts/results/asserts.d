@@ -7,6 +7,7 @@ import std.conv;
 import ddmp.diff;
 
 import fluentasserts.results.message : Message, ResultGlyphs;
+import fluentasserts.core.heapdata : HeapString;
 public import fluentasserts.core.array : FixedArray, FixedAppender, FixedStringArray;
 
 @safe:
@@ -94,18 +95,25 @@ struct AssertResult {
       .replace("\t", ResultGlyphs.tab);
   }
 
-  /// Returns the message as a plain string.
-  string messageString() nothrow @trusted inout {
-    string result;
-    foreach (m; messages) {
-      result ~= m.text;
+  /// Returns the message as a HeapString.
+  HeapString messageString() nothrow @trusted @nogc inout {
+    // Calculate total size needed
+    size_t totalSize = 0;
+    foreach (ref m; messages) {
+      totalSize += m.text.length;
+    }
+
+    // Preallocate and copy
+    HeapString result = HeapString.create(totalSize);
+    foreach (ref m; messages) {
+      result.put(m.text[]);
     }
     return result;
   }
 
   /// Converts the entire result to a displayable string.
   string toString() nothrow @trusted inout {
-    return messageString();
+    return messageString()[].idup;
   }
 
   /// Adds a message to the result.

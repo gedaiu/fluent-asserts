@@ -168,7 +168,7 @@ struct Evaluation {
 
     printer.info("ASSERTION FAILED: ");
 
-    foreach(message; result.messages) {
+    foreach(ref message; result.messages) {
       printer.print(message);
     }
 

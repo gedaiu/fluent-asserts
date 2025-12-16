@@ -4,6 +4,8 @@ module fluentasserts.results.message;
 
 import std.string;
 
+import fluentasserts.core.heapdata : HeapString, toHeapString;
+
 @safe:
 
 /// Glyphs used to display special characters in the results.
@@ -119,23 +121,23 @@ struct Message {
   Type type;
 
   /// The text content of this message
-  string text;
+  HeapString text;
 
   /// Constructs a message with the given type and text.
-  this(Type type, string text) nothrow @nogc {
+  this(Type type, string text) nothrow @trusted @nogc {
     this.type = type;
-    this.text = text;
+    this.text = toHeapString(text);
   }
 
   /// Returns the raw text content. Use formattedText() for display with special formatting.
-  string toString() nothrow @nogc inout {
-    return text;
+  const(char)[] toString() nothrow @nogc inout {
+    return text[];
   }
 
   /// Returns the text with special character replacements and type-specific formatting.
   /// This allocates memory and should be used only for display purposes.
   string formattedText() nothrow inout {
-    string content = text;
+    string content = text[].idup;
 
     if (type == Type.value || type == Type.insert || type == Type.delete_) {
       content = content
@@ -147,13 +149,13 @@ struct Message {
 
     switch (type) {
       case Type.title:
-        return "\n\n" ~ text ~ "\n";
+        return "\n\n" ~ text[].idup ~ "\n";
       case Type.insert:
         return "[-" ~ content ~ "]";
       case Type.delete_:
         return "[+" ~ content ~ "]";
       case Type.category:
-        return "\n" ~ text ~ "";
+        return "\n" ~ text[].idup ~ "";
       default:
         return content;
     }

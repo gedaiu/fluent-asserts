@@ -50,7 +50,7 @@ version (unittest) {
       import std.conv : to;
 
       try {
-        buffer ~= "[" ~ message.type.to!string ~ ":" ~ message.text ~ "]";
+        buffer ~= "[" ~ message.type.to!string ~ ":" ~ message.text[].idup ~ "]";
       } catch (Exception) {
         buffer ~= "ERROR";
       }
@@ -164,7 +164,7 @@ class StringResultPrinter : ResultPrinter {
   nothrow:
 
     void print(Message message) {
-      buffer.put(message.text);
+      buffer.put(message.text[]);
     }
 
     void primary(string text) {

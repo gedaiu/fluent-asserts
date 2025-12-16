@@ -190,6 +190,22 @@ struct HeapData(T) {
         ptr[_length++] = item;
       }
     }
+
+    /// Appends contents from another HeapData.
+    void put(ref const HeapData other) @trusted @nogc nothrow {
+      if (other._length == 0) {
+        return;
+      }
+      put(other[]);
+    }
+
+    /// Appends contents from another HeapData (rvalue).
+    void put(const HeapData other) @trusted @nogc nothrow {
+      if (other._length == 0) {
+        return;
+      }
+      put(other[]);
+    }
   }
 
   /// Returns the contents as a slice.
