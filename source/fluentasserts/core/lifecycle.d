@@ -170,8 +170,6 @@ Evaluation recordEvaluation(void delegate() assertion) @trusted {
 
   assertion();
 
-  // Increment HeapString ref counts to survive the blit on return
-  Lifecycle.instance.lastEvaluation.prepareForBlit();
   return Lifecycle.instance.lastEvaluation;
 }
 

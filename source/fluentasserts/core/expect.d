@@ -56,7 +56,7 @@ import std.conv;
   this(ValueEvaluation value) @trusted {
     _evaluation.id = Lifecycle.instance.beginEvaluation(value);
     _evaluation.currentValue = value;
-    _evaluation.source = SourceResult.create(value.fileName, value.line);
+    _evaluation.source = SourceResult.create(value.fileName[].idup, value.line);
 
     try {
       auto sourceValue = _evaluation.source.getValue;
@@ -72,8 +72,8 @@ import std.conv;
 
     _evaluation.result.addText(" should");
 
-    if(value.prependText) {
-      _evaluation.result.addText(value.prependText);
+    if(value.prependText.length > 0) {
+      _evaluation.result.addText(value.prependText[].idup);
     }
   }
 
@@ -530,13 +530,11 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
     value.meta["Throwable"] = "yes";
   }
 
-  value.fileName = file;
+  value.fileName = toHeapString(file);
   value.line = line;
-  value.prependText = prependText;
+  value.prependText = toHeapString(prependText);
 
   auto result = Expect(value);
-  // Increment HeapString ref counts to survive the blit on return.
-  result._evaluation.prepareForBlit();
   return result;
 }
 
@@ -549,9 +547,5 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
 /// Returns: An Expect struct for fluent assertions
 Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
   auto result = Expect(testedValue.evaluate(file, line, prependText).evaluation);
-  // Increment HeapString ref counts to survive the blit on return.
-  // D's blit (memcpy) doesn't call copy constructors, so we must manually
-  // ensure ref counts are incremented before the original is destroyed.
-  result._evaluation.prepareForBlit();
   return result;
 }

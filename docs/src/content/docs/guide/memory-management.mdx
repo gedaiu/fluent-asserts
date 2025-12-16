@@ -129,18 +129,18 @@ This happens automatically - **you don't need to call any special methods** when
 
 ### Nested Structs
 
-When a struct contains members with postblit constructors, D automatically calls postblit on each member:
+When a struct contains members with postblit constructors, D automatically calls postblit on each member - **no explicit postblit is needed** in the containing struct:
 
 ```d
 struct ValueEvaluation {
     HeapString strValue;   // Has postblit
     HeapString niceValue;  // Has postblit
+    HeapString fileName;   // Has postblit
+    HeapString prependText; // Has postblit
 
-    // D automatically calls strValue.this(this) and niceValue.this(this)
+    // No explicit postblit needed!
+    // D automatically calls the postblit for each HeapString field
     // when ValueEvaluation is blitted
-    this(this) @trusted nothrow @nogc {
-        // Nested postblits handle ref counting automatically
-    }
 }
 ```
 
@@ -203,40 +203,9 @@ static HeapData create(size_t initialCapacity = 0) @trusted @nogc nothrow {
 }
 ```
 
-## Assignment Operators
+## Assignment Operator
 
-HeapData provides both lvalue and rvalue assignment operators:
-
-### Lvalue Assignment (from another variable)
-
-```d
-void opAssign(ref HeapData rhs) @trusted @nogc nothrow {
-    // Handle self-assignment
-    if (isHeap() && rhs.isHeap() && _payload.heap is rhs._payload.heap) {
-        return;
-    }
-
-    // Decrement old ref count and free if needed
-    if (isHeap() && _payload.heap) {
-        if (--_payload.heap.refCount == 0) {
-            free(_payload.heap);
-        }
-    }
-
-    // Copy from rhs
-    _length = rhs._length;
-    _flags = rhs._flags;
-
-    if (rhs.isHeap()) {
-        _payload.heap = rhs._payload.heap;
-        if (_payload.heap) _payload.heap.refCount++;
-    } else {
-        _payload.small = rhs._payload.small;  // Copy SBO data
-    }
-}
-```
-
-### Rvalue Assignment (from temporary)
+HeapData provides a single assignment operator that handles both lvalue and rvalue assignments efficiently:
 
 ```d
 void opAssign(HeapData rhs) @trusted @nogc nothrow {
@@ -247,7 +216,7 @@ void opAssign(HeapData rhs) @trusted @nogc nothrow {
         }
     }
 
-    // Take ownership from rhs
+    // Take ownership from rhs (rhs was copied via postblit)
     _length = rhs._length;
     _flags = rhs._flags;
 
@@ -256,10 +225,12 @@ void opAssign(HeapData rhs) @trusted @nogc nothrow {
         rhs._payload.heap = null;  // Prevent rhs destructor from freeing
         rhs.setHeap(false);
     } else {
-        _payload.small = rhs._payload.small;
+        _payload.small = rhs._payload.small;  // Copy SBO data
     }
 }
 ```
+
+When called with an lvalue, D invokes the postblit constructor on `rhs` first, incrementing the ref count. The assignment then takes ownership of the copied reference. This unified approach keeps the code simpler while handling all cases correctly.
 
 ## Accessing HeapString Content
 
@@ -319,6 +290,8 @@ assert(hs.isValid(), "HeapString memory corruption detected");
 
 With the current implementation, you **don't need to**:
 - Call `incrementRefCount()` before returning structs (postblit handles this)
+- Write explicit postblit or copy constructors for structs containing HeapString (D calls nested postblits automatically)
+- Write explicit assignment operators for structs containing HeapString (D handles this)
 - Worry about heap allocation for short strings (SBO handles this)
 - Make two allocations for ref count and data (combined allocation)
 - Manually track reference counts when passing structs through containers

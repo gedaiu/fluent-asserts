@@ -54,94 +54,26 @@ struct ValueEvaluation {
   string[string] meta;
 
   /// The file name containing the evaluated value
-  string fileName;
+  HeapString fileName;
 
   /// The line number of the evaluated value
   size_t line;
 
   /// a custom text to be prepended to the value
-  string prependText;
+  HeapString prependText;
 
-  /// Copy constructor
-  this(ref return scope ValueEvaluation other) @trusted nothrow {
-    this.throwable = other.throwable;
-    this.duration = other.duration;
-    this.gcMemoryUsed = other.gcMemoryUsed;
-    this.nonGCMemoryUsed = other.nonGCMemoryUsed;
-    this.strValue = other.strValue;
-    this.proxyValue = other.proxyValue;
-    this.niceValue = other.niceValue;
-    this.typeNames = other.typeNames;
-    this.meta = other.meta;
-    this.fileName = other.fileName;
-    this.line = other.line;
-    this.prependText = other.prependText;
-  }
-
-  /// Assignment operator (properly handles HeapString ref counting)
-  void opAssign(ref ValueEvaluation other) @trusted nothrow {
-    this.throwable = other.throwable;
-    this.duration = other.duration;
-    this.gcMemoryUsed = other.gcMemoryUsed;
-    this.nonGCMemoryUsed = other.nonGCMemoryUsed;
-    this.strValue = other.strValue;
-    this.proxyValue = other.proxyValue;
-    this.niceValue = other.niceValue;
-    this.typeNames = other.typeNames;
-    this.meta = other.meta;
-    this.fileName = other.fileName;
-    this.line = other.line;
-    this.prependText = other.prependText;
-  }
-
-  /// Assignment operator for rvalues
-  void opAssign(ValueEvaluation other) @trusted nothrow {
-    this.throwable = other.throwable;
-    this.duration = other.duration;
-    this.gcMemoryUsed = other.gcMemoryUsed;
-    this.nonGCMemoryUsed = other.nonGCMemoryUsed;
-    this.strValue = other.strValue;
-    this.proxyValue = other.proxyValue;
-    this.niceValue = other.niceValue;
-    this.typeNames = other.typeNames;
-    this.meta = other.meta;
-    this.fileName = other.fileName;
-    this.line = other.line;
-    this.prependText = other.prependText;
-  }
-
-  /// Postblit - called after D blits this struct.
-  /// HeapString members have their own postblit that increments ref counts.
-  /// This is called automatically by D when the struct is copied via blit.
-  this(this) @trusted nothrow @nogc {
-    // HeapString's postblit handles ref counting automatically
-    // No additional work needed here, but having an explicit postblit
-    // ensures the struct is properly marked as having postblit semantics
-  }
-
-  /// Increment HeapString ref counts to survive blit operations.
-  /// D's blit (memcpy) doesn't call copy constructors.
-  ///
-  /// IMPORTANT: Call this IMMEDIATELY before returning a ValueEvaluation
-  /// or any struct containing it from a function.
-  void prepareForBlit() @trusted nothrow @nogc {
-    strValue.incrementRefCount();
-    niceValue.incrementRefCount();
-  }
+  // HeapString has proper postblit/opAssign, so D handles copying automatically
 
   /// Returns true if this ValueEvaluation's HeapString fields are valid.
-  /// Use this in debug assertions to catch memory corruption early.
   bool isValid() @trusted nothrow @nogc const {
     return strValue.isValid() && niceValue.isValid();
   }
 
   /// Returns the primary type name of the evaluated value.
-  /// Returns: The first type name, or "unknown" if no types are available.
   string typeName() @safe nothrow @nogc {
-    if(typeNames.length == 0) {
+    if (typeNames.length == 0) {
       return "unknown";
     }
-
     return typeNames[0];
   }
 }
@@ -153,74 +85,7 @@ struct Evaluation {
   /// The id of the current evaluation
   size_t id;
 
-  /// Copy constructor
-  this(ref return scope Evaluation other) @trusted nothrow {
-    this.id = other.id;
-    this.currentValue = other.currentValue;
-    this.expectedValue = other.expectedValue;
-    this._operationCount = other._operationCount;
-    foreach (i; 0 .. other._operationCount) {
-      this._operationNames[i] = other._operationNames[i];
-    }
-    this.isNegated = other.isNegated;
-    this.source = other.source;
-    this.throwable = other.throwable;
-    this.isEvaluated = other.isEvaluated;
-    this.result = other.result;
-  }
-
-  /// Assignment operator (properly handles HeapString ref counting)
-  void opAssign(ref Evaluation other) @trusted nothrow {
-    this.id = other.id;
-    this.currentValue = other.currentValue;
-    this.expectedValue = other.expectedValue;
-    this._operationCount = other._operationCount;
-    foreach (i; 0 .. other._operationCount) {
-      this._operationNames[i] = other._operationNames[i];
-    }
-    this.isNegated = other.isNegated;
-    this.source = other.source;
-    this.throwable = other.throwable;
-    this.isEvaluated = other.isEvaluated;
-    this.result = other.result;
-  }
-
-  /// Assignment operator for rvalues
-  void opAssign(Evaluation other) @trusted nothrow {
-    this.id = other.id;
-    this.currentValue = other.currentValue;
-    this.expectedValue = other.expectedValue;
-    this._operationCount = other._operationCount;
-    foreach (i; 0 .. other._operationCount) {
-      this._operationNames[i] = other._operationNames[i];
-    }
-    this.isNegated = other.isNegated;
-    this.source = other.source;
-    this.throwable = other.throwable;
-    this.isEvaluated = other.isEvaluated;
-    this.result = other.result;
-  }
-
-  /// Postblit - called after D blits this struct.
-  /// Nested structs with postblit (ValueEvaluation, HeapString) have
-  /// their postblits called automatically by D.
-  this(this) @trusted nothrow @nogc {
-    // Nested postblits handle ref counting automatically
-  }
-
-  /// Increment HeapString ref counts to survive blit operations.
-  /// D's blit (memcpy) doesn't call copy constructors.
-  ///
-  /// NOTE: With postblit constructors, this method may no longer be needed
-  /// in most cases. Keep it for backwards compatibility and edge cases.
-  void prepareForBlit() @trusted nothrow @nogc {
-    currentValue.prepareForBlit();
-    expectedValue.prepareForBlit();
-    foreach (i; 0 .. _operationCount) {
-      _operationNames[i].incrementRefCount();
-    }
-    result.prepareForBlit();
-  }
+  // HeapString has proper postblit/opAssign, so D handles copying automatically
 
   /// The value that will be validated
   ValueEvaluation currentValue;
@@ -409,12 +274,10 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
     valueEvaluation.proxyValue = equableValue(value, niceValueStr);
     valueEvaluation.niceValue = toHeapString(niceValueStr);
     valueEvaluation.typeNames = extractTypes!TT;
-    valueEvaluation.fileName = file;
+    valueEvaluation.fileName = toHeapString(file);
     valueEvaluation.line = line;
-    valueEvaluation.prependText = prependText;
+    valueEvaluation.prependText = toHeapString(prependText);
 
-    // Increment HeapString ref counts to survive the blit on return
-    valueEvaluation.prepareForBlit();
     return Result(value, valueEvaluation);
   } catch(Throwable t) {
     T result;
@@ -435,12 +298,10 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
     valueEvaluation.proxyValue = equableValue(result, resultStr);
     valueEvaluation.niceValue = toHeapString(resultStr);
     valueEvaluation.typeNames = extractTypes!T;
-    valueEvaluation.fileName = file;
+    valueEvaluation.fileName = toHeapString(file);
     valueEvaluation.line = line;
-    valueEvaluation.prependText = prependText;
+    valueEvaluation.prependText = toHeapString(prependText);
 
-    // Increment HeapString ref counts to survive the blit on return
-    valueEvaluation.prepareForBlit();
     return Result(result, valueEvaluation);
   }
 }
