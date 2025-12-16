@@ -14,18 +14,41 @@ Fluent-asserts aims to work in `@nogc` contexts, which means it cannot use D's g
 
 ## HeapData and HeapString
 
-`HeapData!T` is a heap-allocated dynamic array using `malloc`/`free` instead of the GC:
+`HeapData!T` is a dynamic array using `malloc`/`free` instead of the GC, with two key optimizations:
+
+1. **Small Buffer Optimization (SBO)**: Short data is stored inline without heap allocation
+2. **Combined Allocation**: Reference count is stored with the data in a single allocation
 
 ```d
-/// Heap-allocated dynamic array with ref-counting.
+/// Heap-allocated dynamic array with ref-counting and small buffer optimization.
 struct HeapData(T) {
-    private T* _data;
+    private union Payload {
+        T[SBO_SIZE] small;      // Inline storage for small data
+        HeapPayload* heap;       // Pointer to heap allocation
+    }
+    private Payload _payload;
     private size_t _length;
-    private size_t _capacity;
-    private size_t* _refCount;  // Shared reference count
+    private ubyte _flags;        // Bit 0: isHeap flag
 }
 
 alias HeapString = HeapData!char;
+```
+
+### Small Buffer Optimization
+
+HeapData stores small amounts of data directly in the struct without any heap allocation:
+
+- **x86-64**: Up to ~47 characters stored inline (64-byte cache line)
+- **ARM64** (Apple M1/M2): Up to ~111 characters stored inline (128-byte cache line)
+
+This dramatically reduces allocations for short strings and improves cache locality.
+
+```d
+auto hs = toHeapString("hello");  // Stored inline, no malloc!
+assert(hs.refCount() == 0);        // SBO doesn't use ref counting
+
+auto long_str = toHeapString("a]".repeat(100).join);  // Heap allocated
+assert(long_str.refCount() == 1);  // Heap data has ref count
 ```
 
 ### Creating HeapStrings
@@ -37,48 +60,46 @@ auto hs = toHeapString("hello world");
 // Using create() for manual control
 auto hs2 = HeapString.create(100);  // Initial capacity of 100
 hs2.put("data");
+
+// create() with small capacity uses SBO
+auto hs3 = HeapString.create();     // Uses small buffer
 ```
 
 ### Reference Counting
 
-HeapData uses reference counting for memory management:
+HeapData uses reference counting for **heap-allocated** data only. Small buffer data is copied independently:
 
 ```d
-auto a = toHeapString("hello");  // refCount = 1
-auto b = a;                       // refCount = 2 (copy constructor)
-// When b goes out of scope: refCount = 1
-// When a goes out of scope: refCount = 0, memory freed
+// Small buffer - copies are independent
+auto a = toHeapString("hi");     // SBO, refCount = 0
+auto b = a;                       // Independent copy
+b.put("!");                       // Only b is modified
+assert(a[] == "hi");              // a unchanged
+assert(b[] == "hi!");
+
+// Heap allocation - copies share data
+auto x = toHeapString("x".repeat(200).join);  // Forces heap
+auto y = x;                       // Shares reference, refCount = 2
+assert(x.refCount() == 2);
 ```
 
-The copy constructor and assignment operators handle ref counting automatically:
+### Combined Allocation
+
+The reference count is stored at the start of the heap allocation, followed by the data:
 
 ```d
-// Copy constructor - increments ref count
-this(ref return scope HeapData other) {
-    _data = other._data;
-    _refCount = other._refCount;
-    if (_refCount) (*_refCount)++;
-}
+private struct HeapPayload {
+    size_t refCount;
+    size_t capacity;
+    // Data follows immediately after...
 
-// Destructor - decrements ref count, frees when zero
-~this() {
-    if (_refCount && --(*_refCount) == 0) {
-        free(_data);
-        free(_refCount);
+    T* dataPtr() {
+        return cast(T*)(cast(void*)&this + HeapPayload.sizeof);
     }
 }
 ```
 
-## The Blit Problem
-
-D uses "blit" (bitwise copy via `memcpy`) when copying structs in various situations. **Blit does not call copy constructors.** This can cause issues with reference-counted types if not handled properly.
-
-### Why Blit Happens
-
-D may use blit instead of copy constructors in several cases:
-- Returning structs from functions (when NRVO doesn't apply)
-- Passing structs through `Tuple` or other containers
-- Struct literals in return statements
+This means heap allocation requires only **one malloc call** instead of two (compared to the old implementation).
 
 ## The Postblit Solution
 
@@ -86,13 +107,12 @@ fluent-asserts uses D's **postblit constructor** (`this(this)`) to handle blit o
 
 ```d
 struct HeapData(T) {
-    // ... fields ...
-
     /// Postblit - called after D blits this struct.
-    /// Increments ref count to account for the new copy.
+    /// For heap data: increments ref count.
+    /// For small buffer: nothing to do (data already copied).
     this(this) @trusted @nogc nothrow {
-        if (_refCount) {
-            (*_refCount)++;
+        if (isHeap() && _payload.heap) {
+            _payload.heap.refCount++;
         }
     }
 }
@@ -102,7 +122,8 @@ struct HeapData(T) {
 
 1. D performs blit (memcpy) of the struct
 2. D calls `this(this)` on the new copy
-3. Postblit increments the reference count
+3. For heap data: postblit increments the reference count
+4. For SBO data: nothing needed (blit already copied the inline data)
 
 This happens automatically - **you don't need to call any special methods** when returning HeapString or structs containing HeapString from functions.
 
@@ -123,37 +144,60 @@ struct ValueEvaluation {
 }
 ```
 
-## Legacy: prepareForBlit()
+## String Concatenation
 
-For backwards compatibility and edge cases, `prepareForBlit()` and `incrementRefCount()` methods are still available:
+HeapData supports concatenation operators for convenient string building:
+
+```d
+auto hs = toHeapString("hello");
+
+// Create new HeapData with combined content
+auto result = hs ~ " world";
+assert(result[] == "hello world");
+assert(hs[] == "hello");  // Original unchanged
+
+// Append in place
+hs ~= " world";
+assert(hs[] == "hello world");
+
+// Concatenate two HeapData instances
+auto a = toHeapString("foo");
+auto b = toHeapString("bar");
+auto c = a ~ b;
+assert(c[] == "foobar");
+```
+
+## Legacy: incrementRefCount()
+
+For edge cases, the `incrementRefCount()` method is still available:
 
 ```d
 /// Manually increment ref count (for edge cases)
+/// Note: Only affects heap-allocated data, not SBO
 void incrementRefCount() @trusted @nogc nothrow {
-    if (_refCount) {
-        (*_refCount)++;
+    if (isHeap() && _payload.heap) {
+        _payload.heap.refCount++;
     }
 }
 ```
 
-In most cases, you should **not need to call these methods** - the postblit constructor handles everything automatically.
+In most cases, you should **not need to call this method** - the postblit constructor handles everything automatically.
 
 ## Memory Initialization
 
-HeapData zero-initializes allocated memory using `memset`. This prevents garbage values in uninitialized struct fields from causing issues with reference counting:
+HeapData zero-initializes allocated memory using `memset`. This prevents garbage values in uninitialized struct fields from causing issues:
 
 ```d
-static HeapData create(size_t initialCapacity) @trusted @nogc nothrow {
+static HeapData create(size_t initialCapacity = 0) @trusted @nogc nothrow {
     HeapData h;
-    h._data = cast(T*) malloc(cap * T.sizeof);
+    h._flags = 0;   // Ensure flags are initialized
+    h._length = 0;
 
-    // Zero-initialize to prevent garbage ref counts
-    if (h._data) {
-        memset(h._data, 0, cap * T.sizeof);
+    if (initialCapacity > SBO_SIZE) {
+        h._payload.heap = HeapPayload.create(cap);
+        h.setHeap(true);
     }
-
-    h._refCount = cast(size_t*) malloc(size_t.sizeof);
-    if (h._refCount) *h._refCount = 1;
+    // Otherwise uses SBO - no allocation needed
 
     return h;
 }
@@ -167,18 +211,28 @@ HeapData provides both lvalue and rvalue assignment operators:
 
 ```d
 void opAssign(ref HeapData rhs) @trusted @nogc nothrow {
-    if (_data is rhs._data) return;  // Self-assignment check
-
-    // Decrement old ref count
-    if (_refCount && --(*_refCount) == 0) {
-        free(_data);
-        free(_refCount);
+    // Handle self-assignment
+    if (isHeap() && rhs.isHeap() && _payload.heap is rhs._payload.heap) {
+        return;
     }
 
-    // Copy and increment new ref count
-    _data = rhs._data;
-    _refCount = rhs._refCount;
-    if (_refCount) (*_refCount)++;
+    // Decrement old ref count and free if needed
+    if (isHeap() && _payload.heap) {
+        if (--_payload.heap.refCount == 0) {
+            free(_payload.heap);
+        }
+    }
+
+    // Copy from rhs
+    _length = rhs._length;
+    _flags = rhs._flags;
+
+    if (rhs.isHeap()) {
+        _payload.heap = rhs._payload.heap;
+        if (_payload.heap) _payload.heap.refCount++;
+    } else {
+        _payload.small = rhs._payload.small;  // Copy SBO data
+    }
 }
 ```
 
@@ -186,19 +240,24 @@ void opAssign(ref HeapData rhs) @trusted @nogc nothrow {
 
 ```d
 void opAssign(HeapData rhs) @trusted @nogc nothrow {
-    // Decrement old ref count
-    if (_refCount && --(*_refCount) == 0) {
-        free(_data);
-        free(_refCount);
+    // Decrement old ref count and free if needed
+    if (isHeap() && _payload.heap) {
+        if (--_payload.heap.refCount == 0) {
+            free(_payload.heap);
+        }
     }
 
-    // Take ownership
-    _data = rhs._data;
-    _refCount = rhs._refCount;
+    // Take ownership from rhs
+    _length = rhs._length;
+    _flags = rhs._flags;
 
-    // Prevent rhs destructor from decrementing
-    rhs._data = null;
-    rhs._refCount = null;
+    if (rhs.isHeap()) {
+        _payload.heap = rhs._payload.heap;
+        rhs._payload.heap = null;  // Prevent rhs destructor from freeing
+        rhs.setHeap(false);
+    } else {
+        _payload.small = rhs._payload.small;
+    }
 }
 ```
 
@@ -234,21 +293,11 @@ if (hs == hs2) { /* ... */ }
 if (hs != "world") { /* ... */ }
 ```
 
-This is cleaner than using the slice operator for comparisons:
-
-```d
-// Without opEquals (verbose)
-if (hs[] == "hello") { /* ... */ }
-
-// With opEquals (cleaner)
-if (hs == "hello") { /* ... */ }
-```
-
 ## Best Practices
 
 1. **Use slice operator `[]`** to access HeapString content for functions expecting `const(char)[]`
 2. **Prefer FixedArray** when the maximum size is known at compile time
-3. **Initialize structs field-by-field**, not with struct literals (struct literals may cause issues)
+3. **Let SBO work for you** - short strings are automatically optimized
 4. **Use `isValid()` in debug assertions** to catch memory corruption early
 
 ```d
@@ -259,21 +308,20 @@ writeln(hs[]);  // Use [] to get const(char)[]
 // Compare directly (opEquals implemented)
 if (hs == "hello") { /* ... */ }
 
-// Field-by-field initialization (safer)
-ValueEvaluation val;
-val.strValue = toHeapString("test");  // opAssign handles refCount
+// Use concatenation for building strings
+auto result = toHeapString("Error: ") ~ message ~ " at line " ~ lineNum;
 
 // Debug validation
-assert(val.isValid(), "ValueEvaluation memory corruption detected");
+assert(hs.isValid(), "HeapString memory corruption detected");
 ```
 
-### What You Don't Need to Do Anymore
+### What You Don't Need to Do
 
-With postblit constructors, you **no longer need to**:
-- Call `prepareForBlit()` before returning structs (postblit handles this)
+With the current implementation, you **don't need to**:
+- Call `incrementRefCount()` before returning structs (postblit handles this)
+- Worry about heap allocation for short strings (SBO handles this)
+- Make two allocations for ref count and data (combined allocation)
 - Manually track reference counts when passing structs through containers
-
-The postblit constructor automatically increments reference counts after any blit operation.
 
 ## Debugging Memory Issues
 
@@ -283,7 +331,7 @@ If you encounter heap corruption or use-after-free:
 2. **Use `isValid()` checks**: Add assertions to catch corruption early
 3. **Check struct literals**: Replace with field-by-field assignment
 4. **Verify initialization**: Ensure HeapData is properly initialized before use
-5. **Check `refCount()`**: Use the debug method to inspect reference counts
+5. **Check `refCount()`**: Use the debug method to inspect reference counts (returns 0 for SBO)
 
 ### Debug Mode Features
 
@@ -296,7 +344,13 @@ When compiled with `-version=DebugHeapData`, HeapData includes:
 // Enable debug checks
 HeapString hs = toHeapString("test");
 assert(hs.isValid(), "HeapString is corrupted");
-assert(hs.refCount() > 0, "Invalid ref count");
+
+// Check if using heap (refCount > 0) or SBO (refCount == 0)
+if (hs.refCount() > 0) {
+    // Heap allocated
+} else {
+    // Using small buffer optimization
+}
 ```
 
 ### Common Symptoms
@@ -306,6 +360,17 @@ assert(hs.refCount() > 0, "Invalid ref count");
 - Double-free errors
 - Use-after-free (reading garbage data)
 - Assertion failures in debug mode
+
+## Architecture-Specific Details
+
+HeapData adapts to different CPU architectures for optimal cache performance:
+
+| Architecture | Cache Line | SBO Size (chars) | Min Heap Capacity |
+|--------------|------------|------------------|-------------------|
+| x86-64       | 64 bytes   | ~47              | 64                |
+| x86 (32-bit) | 64 bytes   | ~47              | 64                |
+| ARM64        | 128 bytes  | ~111             | 128               |
+| ARM (32-bit) | 32 bytes   | ~15              | 32                |
 
 ## Next Steps
 

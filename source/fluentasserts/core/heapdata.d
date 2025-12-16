@@ -1,11 +1,16 @@
 /// Heap-allocated dynamic array using malloc/free for @nogc contexts.
 /// This is an alternative to FixedArray when dynamic sizing is needed.
 ///
+/// Features:
+/// - Small Buffer Optimization (SBO): stores small data inline to avoid heap allocation
+/// - Reference counting for cheap copying of heap-allocated data
+/// - Combined allocation: refCount stored with data to reduce malloc calls
+///
 /// Note: FixedArray is preferred for most use cases due to its simplicity
 /// and performance (no malloc/free overhead). Use HeapData when:
 /// - The data size is unbounded or unpredictable
 /// - You need cheap copying via ref-counting
-/// - Stack space is a concern
+/// - Stack space is a co
 module fluentasserts.core.heapdata;
 
 import core.stdc.stdlib : malloc, free, realloc;
@@ -13,36 +18,17 @@ import core.stdc.string : memcpy, memset;
 
 @safe:
 
-/// Heap-allocated dynamic array with ref-counting.
+/// Heap-allocated dynamic array with ref-counting and small buffer optimization.
 /// Uses malloc/free instead of GC for @nogc compatibility.
 ///
-/// IMPORTANT: When returning structs containing HeapData fields from functions,
-/// you MUST call prepareForBlit() or incrementRefCount() before the return statement.
-/// D uses blit (memcpy) for struct returns which doesn't call copy constructors.
+/// Small Buffer Optimization (SBO):
+/// - Data up to SBO_SIZE elements is stored inline (no heap allocation)
+/// - Larger data uses heap with reference counting
+/// - SBO threshold is tuned to fit within L1 cache line
 ///
-/// Example:
-/// ---
-/// HeapString createString() {
-///     auto result = toHeapString("hello");
-///     result.incrementRefCount();  // Required before return!
-///     return result;
-/// }
-/// ---
+/// The postblit constructor handles reference counting automatically for
+/// blit operations (memcpy), so manual incrementRefCount() calls are rarely needed.
 struct HeapData(T) {
-  private {
-    T* _data;
-    size_t _length;
-    size_t _capacity;
-    size_t* _refCount;
-
-    // Debug-mode tracking for detecting ref count issues
-    version (DebugHeapData) {
-      bool _blitPrepared;
-      size_t _creationId;
-      static size_t _nextId = 0;
-    }
-  }
-
   /// Cache line size varies by architecture
   private enum size_t CACHE_LINE_SIZE = {
     version (X86_64) {
@@ -58,90 +44,160 @@ struct HeapData(T) {
     }
   }();
 
-  /// Minimum allocation to avoid tiny reallocs
-  private enum size_t MIN_CAPACITY = CACHE_LINE_SIZE / T.sizeof > 0 ? CACHE_LINE_SIZE / T.sizeof : 1;
+  /// Size of small buffer in bytes - fits data + metadata in cache line
+  /// Reserve space for: length (size_t), capacity (size_t), discriminator flag
+  private enum size_t SBO_BYTES = CACHE_LINE_SIZE - size_t.sizeof * 2 - 1;
+
+  /// Number of elements that fit in small buffer
+  private enum size_t SBO_SIZE = SBO_BYTES / T.sizeof > 0 ? SBO_BYTES / T.sizeof : 0;
+
+  /// Minimum heap allocation to avoid tiny reallocs
+  private enum size_t MIN_HEAP_CAPACITY = CACHE_LINE_SIZE / T.sizeof > SBO_SIZE
+    ? CACHE_LINE_SIZE / T.sizeof : SBO_SIZE + 1;
 
   /// Check if T is a HeapData instantiation (for recursive cleanup)
   private enum isHeapData = is(T == HeapData!U, U);
 
-  /// Creates a new HeapData with the given initial capacity.
-  static HeapData create(size_t initialCapacity = MIN_CAPACITY) @trusted @nogc nothrow {
-    HeapData h;
-    size_t cap = initialCapacity < MIN_CAPACITY ? MIN_CAPACITY : initialCapacity;
-    h._data = cast(T*) malloc(cap * T.sizeof);
-    h._capacity = cap;
-    h._length = 0;
-    h._refCount = cast(size_t*) malloc(size_t.sizeof);
+  /// Heap payload: refCount stored at start of allocation, followed by data
+  private struct HeapPayload {
+    size_t refCount;
+    size_t capacity;
 
-    // Zero-initialize data array to ensure clean state for types with opAssign
-    if (h._data) {
-      memset(h._data, 0, cap * T.sizeof);
+    /// Get pointer to data area (immediately after header)
+    inout(T)* dataPtr() @trusted @nogc nothrow inout {
+      return cast(inout(T)*)(cast(inout(void)*)&this + HeapPayload.sizeof);
     }
 
-    if (h._refCount) {
-      *h._refCount = 1;
+    /// Allocate a new heap payload with given capacity
+    static HeapPayload* create(size_t capacity) @trusted @nogc nothrow {
+      size_t totalSize = HeapPayload.sizeof + capacity * T.sizeof;
+      auto payload = cast(HeapPayload*) malloc(totalSize);
+      if (payload) {
+        payload.refCount = 1;
+        payload.capacity = capacity;
+        memset(payload.dataPtr(), 0, capacity * T.sizeof);
+      }
+      return payload;
+    }
+
+    /// Reallocate with new capacity
+    static HeapPayload* realloc(HeapPayload* old, size_t newCapacity) @trusted @nogc nothrow {
+      size_t totalSize = HeapPayload.sizeof + newCapacity * T.sizeof;
+      auto payload = cast(HeapPayload*) .realloc(old, totalSize);
+      if (payload && newCapacity > payload.capacity) {
+        memset(payload.dataPtr() + payload.capacity, 0, (newCapacity - payload.capacity) * T.sizeof);
+      }
+      if (payload) {
+        payload.capacity = newCapacity;
+      }
+      return payload;
+    }
+  }
+
+  /// Union for small buffer optimization
+  private union Payload {
+    /// Small buffer for inline storage (no heap allocation)
+    T[SBO_SIZE] small;
+
+    /// Pointer to heap-allocated payload (refCount + data)
+    HeapPayload* heap;
+  }
+
+  private {
+    Payload _payload;
+    size_t _length;
+    ubyte _flags;  // bit 0: isHeap flag
+
+    version (DebugHeapData) {
+      size_t _creationId;
+      static size_t _nextId = 0;
+    }
+  }
+
+  /// Check if curr
+  private bool isHeap() @nogc nothrow const {
+    return (_flags & 1) != 0;
+  }
+
+  /// Set heap storage flag
+  private void setHeap(bool value) @nogc nothrow {
+    if (value) {
+      _flags |= 1;
+    } else {
+      _flags &= ~1;
+    }
+  }
+
+  /// Get pointer to data (either small buffer or heap)
+  private inout(T)* dataPtr() @trusted @nogc nothrow inout {
+    if (isHeap()) {
+      return _payload.heap ? (cast(inout(HeapPayload)*) _payload.heap).dataPtr() : null;
+    }
+    return cast(inout(T)*) _payload.small.ptr;
+  }
+
+  /// Get current capacity
+  private size_t capacity() @nogc nothrow const @trusted {
+    if (isHeap()) {
+      return _payload.heap ? _payload.heap.capacity : 0;
+    }
+    return SBO_SIZE;
+  }
+
+  /// Creates a new HeapData with the given initial capacity.
+  static HeapData create(size_t initialCapacity = 0) @trusted @nogc nothrow {
+    HeapData h;
+    h._flags = 0;
+    h._length = 0;
+
+    if (initialCapacity > SBO_SIZE) {
+      size_t cap = initialCapacity < MIN_HEAP_CAPACITY ? MIN_HEAP_CAPACITY : initialCapacity;
+      h._payload.heap = HeapPayload.create(cap);
+      h.setHeap(true);
     }
 
     version (DebugHeapData) {
       h._creationId = _nextId++;
-      h._blitPrepared = false;
     }
 
     return h;
   }
 
-  /// Initialize uninitialized HeapData in-place (avoids assignment issues).
-  private void initInPlace(size_t initialCapacity = MIN_CAPACITY) @trusted @nogc nothrow {
-    size_t cap = initialCapacity < MIN_CAPACITY ? MIN_CAPACITY : initialCapacity;
-    _data = cast(T*) malloc(cap * T.sizeof);
-    _capacity = cap;
-    _length = 0;
-    _refCount = cast(size_t*) malloc(size_t.sizeof);
-
-    // Zero-initialize data array to ensure clean state for types with opAssign
-    if (_data) {
-      memset(_data, 0, cap * T.sizeof);
+  /// Transition from small buffer to heap when capacity exceeded
+  private void transitionToHeap(size_t requiredCapacity) @trusted @nogc nothrow {
+    size_t newCap = optimalCapacity(requiredCapacity);
+    auto newPayload = HeapPayload.create(newCap);
+    if (newPayload && _length > 0) {
+      memcpy(newPayload.dataPtr(), _payload.small.ptr, _length * T.sizeof);
     }
-
-    if (_refCount) {
-      *_refCount = 1;
-    }
+    _payload.heap = newPayload;
+    setHeap(true);
   }
 
   /// Appends a single item.
   void put(T item) @trusted @nogc nothrow {
-    if (_data is null) {
-      initInPlace();
-    }
-
-    if (_length >= _capacity) {
-      grow();
-    }
-
-    _data[_length++] = item;
+    ensureCapacity(_length + 1);
+    dataPtr()[_length++] = item;
   }
 
   /// Appends multiple items (for simple types).
   static if (!isHeapData) {
     void put(const(T)[] items) @trusted @nogc nothrow {
-      if (_data is null) {
-        initInPlace(items.length);
-      } else {
-        reserve(items.length);
-      }
+      reserve(items.length);
 
+      auto ptr = dataPtr();
       foreach (item; items) {
-        _data[_length++] = item;
+        ptr[_length++] = item;
       }
     }
   }
 
   /// Returns the contents as a slice.
   inout(T)[] opSlice() @nogc nothrow @trusted inout {
-    if (_data is null) {
+    if (_length == 0) {
       return null;
     }
-    return _data[0 .. _length];
+    return dataPtr()[0 .. _length];
   }
 
   /// Slice operator for creating a sub-HeapData.
@@ -157,7 +213,7 @@ struct HeapData(T) {
 
   /// Index operator.
   ref inout(T) opIndex(size_t i) @nogc nothrow @trusted inout {
-    return _data[i];
+    return dataPtr()[i];
   }
 
   /// Returns the current length.
@@ -182,16 +238,17 @@ struct HeapData(T) {
 
   /// Equality comparison with a slice (e.g., HeapString == "hello").
   bool opEquals(const(T)[] other) @nogc nothrow const @trusted {
-    if (_data is null) {
-      return other.length == 0;
-    }
-
     if (_length != other.length) {
       return false;
     }
 
+    if (_length == 0) {
+      return true;
+    }
+
+    auto ptr = dataPtr();
     foreach (i; 0 .. _length) {
-      if (_data[i] != other[i]) {
+      if (ptr[i] != other[i]) {
         return false;
       }
     }
@@ -201,20 +258,23 @@ struct HeapData(T) {
 
   /// Equality comparison with another HeapData.
   bool opEquals(ref const HeapData other) @nogc nothrow const @trusted {
-    if (_data is other._data) {
-      return true;
-    }
-
-    if (_data is null || other._data is null) {
-      return _length == other._length;
-    }
-
     if (_length != other._length) {
       return false;
     }
 
+    if (_length == 0) {
+      return true;
+    }
+
+    auto ptr = dataPtr();
+    auto otherPtr = other.dataPtr();
+
+    if (ptr is otherPtr) {
+      return true;
+    }
+
     foreach (i; 0 .. _length) {
-      if (_data[i] != other._data[i]) {
+      if (ptr[i] != otherPtr[i]) {
         return false;
       }
     }
@@ -228,13 +288,18 @@ struct HeapData(T) {
   }
 
   /// Calculate optimal new capacity.
-  private size_t optimalCapacity(size_t required) @nogc nothrow pure {
-    if (required < MIN_CAPACITY) {
-      return MIN_CAPACITY;
+  private size_t optimalCapacity(size_t required) @nogc nothrow const {
+    if (required <= SBO_SIZE) {
+      return SBO_SIZE;
+    }
+
+    if (required < MIN_HEAP_CAPACITY) {
+      return MIN_HEAP_CAPACITY;
     }
 
     // Growth factor: 1.5x is good balance between memory waste and realloc frequency
-    size_t growthBased = _capacity + (_capacity >> 1);
+    size_t currentCap = capacity();
+    size_t growthBased = currentCap + (currentCap >> 1);
     size_t target = growthBased > required ? growthBased : required;
 
     // Round up to cache-aligned element count
@@ -244,175 +309,177 @@ struct HeapData(T) {
     return alignedBytes / T.sizeof;
   }
 
-  private void grow() @trusted @nogc nothrow {
-    size_t oldCap = _capacity;
-    size_t newCap = optimalCapacity(_length + 1);
-    _data = cast(T*) realloc(_data, newCap * T.sizeof);
-
-    // Zero-initialize new portion for types with opAssign
-    if (_data && newCap > oldCap) {
-      memset(_data + oldCap, 0, (newCap - oldCap) * T.sizeof);
+  /// Ensure capacity for at least `needed` total elements.
+  private void ensureCapacity(size_t needed) @trusted @nogc nothrow {
+    if (needed <= capacity()) {
+      return;
     }
 
-    _capacity = newCap;
+    if (!isHeap()) {
+      transitionToHeap(needed);
+      return;
+    }
+
+    size_t newCap = optimalCapacity(needed);
+    _payload.heap = HeapPayload.realloc(_payload.heap, newCap);
   }
 
   /// Pre-allocate space for additional items.
   void reserve(size_t additionalCount) @trusted @nogc nothrow {
-    size_t needed = _length + additionalCount;
-    if (needed <= _capacity) {
-      return;
-    }
-
-    size_t oldCap = _capacity;
-    size_t newCap = optimalCapacity(needed);
-    _data = cast(T*) realloc(_data, newCap * T.sizeof);
-
-    // Zero-initialize new portion for types with opAssign
-    if (_data && newCap > oldCap) {
-      memset(_data + oldCap, 0, (newCap - oldCap) * T.sizeof);
-    }
-
-    _capacity = newCap;
+    ensureCapacity(_length + additionalCount);
   }
 
   /// Manually increment ref count. Used to prepare for blit operations
   /// where D's memcpy won't call copy constructors.
-  ///
-  /// Call this IMMEDIATELY before returning a HeapData or a struct containing
-  /// HeapData fields from a function. D uses blit (memcpy) for returns which
-  /// doesn't call copy constructors, causing ref count mismatches.
+  /// Note: With SBO, this only applies to heap-allocated data.
   void incrementRefCount() @trusted @nogc nothrow {
-    if (_refCount) {
-      (*_refCount)++;
-      version (DebugHeapData) {
-        _blitPrepared = true;
-      }
+    if (isHeap() && _payload.heap) {
+      _payload.heap.refCount++;
     }
   }
 
   /// Returns true if this HeapData appears to be in a valid state.
-  /// Useful for debug assertions.
   bool isValid() @trusted @nogc nothrow const {
-    if (_data is null && _refCount is null) {
-      return true;  // Uninitialized is valid
+    if (!isHeap()) {
+      return true;  // Small buffer is always valid
     }
-    if (_data is null || _refCount is null) {
-      return false;  // Partially initialized is invalid
+
+    if (_payload.heap is null) {
+      return _length == 0;
     }
-    if (*_refCount == 0 || *_refCount > 1_000_000) {
-      return false;  // Invalid ref count
+
+    if (_payload.heap.refCount == 0 || _payload.heap.refCount > 1_000_000) {
+      return false;
     }
+
     return true;
   }
 
   /// Returns the current reference count (for debugging).
+  /// Returns 0 for small buffer (no ref counting needed).
   size_t refCount() @trusted @nogc nothrow const {
-    return _refCount ? *_refCount : 0;
+    if (!isHeap()) {
+      return 0;  // Small buffer doesn't use ref counting
+    }
+    return _payload.heap ? _payload.heap.refCount : 0;
   }
 
   /// Postblit constructor - called after D blits (memcpy) this struct.
-  /// Increments the ref count to account for the new copy.
-  ///
-  /// Using postblit instead of copy constructor because:
-  /// 1. Postblit is called AFTER blit happens (perfect for ref count fix-up)
-  /// 2. D's Tuple and other containers use blit internally
-  /// 3. Copy constructors have incomplete druntime support for arrays/AAs
-  ///
-  /// With postblit, prepareForBlit() is NO LONGER NEEDED for HeapData itself,
-  /// but still needed for structs containing HeapData when returning from functions
-  /// (since the containing struct's postblit won't automatically fix nested HeapData).
+  /// For heap data: increments ref count to account for the new copy.
+  /// For small buffer: data is already copied by blit, nothing to do.
   this(this) @trusted @nogc nothrow {
-    if (_refCount) {
-      (*_refCount)++;
+    if (isHeap() && _payload.heap) {
+      _payload.heap.refCount++;
     }
   }
 
-  /// Assignment operator for lvalues (properly handles ref counting).
-  void opAssign(ref HeapData rhs) @trusted @nogc nothrow {
-    // Handle self-assignment: if same underlying data, nothing to do
-    if (_data is rhs._data) {
+  /// Assignment operator (properly handles ref counting).
+  void opAssign(HeapData rhs) @trusted @nogc nothrow {
+    // rhs is a copy (postblit already incremented refCount if heap)
+    // So we just need to release our old data and take rhs's data
+
+    // Release old data
+    if (isHeap() && _payload.heap) {
+      if (--_payload.heap.refCount == 0) {
+        static if (isHeapData) {
+          foreach (ref item; dataPtr()[0 .. _length]) {
+            destroy(item);
+          }
+        }
+        free(_payload.heap);
+      }
+    }
+
+    // Take data from rhs
+    _length = rhs._length;
+    _flags = rhs._flags;
+    _payload = rhs._payload;
+
+    // Prevent rhs destructor from releasing
+    rhs._payload.heap = null;
+    rhs._flags = 0;
+    rhs._length = 0;
+  }
+
+  /// Destructor (decrements ref count for heap, frees when zero).
+  ~this() @trusted @nogc nothrow {
+    if (!isHeap()) {
+      return;  // Small buffer - nothing to free
+    }
+
+    if (_payload.heap is null) {
       return;
     }
 
-    // Decrement old ref count and free if needed
-    if (_refCount && --(*_refCount) == 0) {
-      static if (isHeapData) {
-        foreach (ref item; _data[0 .. _length]) {
-          destroy(item);
-        }
-      }
-      free(_data);
-      free(_refCount);
-    }
-
-    // Copy new data
-    _data = rhs._data;
-    _length = rhs._length;
-    _capacity = rhs._capacity;
-    _refCount = rhs._refCount;
-
-    // Increment new ref count
-    if (_refCount) {
-      (*_refCount)++;
-    }
-  }
-
-  /// Assignment operator for rvalues (takes ownership, no ref count change needed).
-  void opAssign(HeapData rhs) @trusted @nogc nothrow {
-    // For rvalues, D has already blitted the data to rhs.
-    // We take ownership without incrementing ref count,
-    // because rhs will be destroyed after this and decrement.
-
-    // Decrement old ref count and free if needed
-    if (_refCount && --(*_refCount) == 0) {
-      static if (isHeapData) {
-        foreach (ref item; _data[0 .. _length]) {
-          destroy(item);
-        }
-      }
-      free(_data);
-      free(_refCount);
-    }
-
-    // Take ownership of rhs's data
-    _data = rhs._data;
-    _length = rhs._length;
-    _capacity = rhs._capacity;
-    _refCount = rhs._refCount;
-
-    // Don't increment - rhs's destructor will decrement, balancing the original count
-    // Actually, we need to prevent rhs's destructor from running.
-    // Clear rhs's pointers so its destructor does nothing.
-    rhs._data = null;
-    rhs._refCount = null;
-    rhs._length = 0;
-    rhs._capacity = 0;
-  }
-
-  /// Destructor (decrements ref count, frees when zero).
-  ~this() @trusted @nogc nothrow {
     version (DebugHeapData) {
-      // Detect potential double-free or corruption
-      if (_refCount !is null && *_refCount == 0) {
-        // This indicates a double-free - ref count already zero
-        assert(false, "HeapData: Double-free detected! Ref count already zero.");
+      if (_payload.heap.refCount == 0) {
+        assert(false, "HeapData: Double-free detected!");
       }
-      if (_refCount !is null && *_refCount > 1_000_000) {
-        // Likely garbage/corrupted pointer - ref count impossibly high
-        assert(false, "HeapData: Corrupted ref count detected! Did you forget prepareForBlit()?");
+      if (_payload.heap.refCount > 1_000_000) {
+        assert(false, "HeapData: Corrupted ref count detected!");
       }
     }
 
-    if (_refCount && --(*_refCount) == 0) {
-      // If T is HeapData, destroy each nested HeapData
+    if (--_payload.heap.refCount == 0) {
       static if (isHeapData) {
-        foreach (ref item; _data[0 .. _length]) {
+        foreach (ref item; dataPtr()[0 .. _length]) {
           destroy(item);
         }
       }
-      free(_data);
-      free(_refCount);
+      free(_payload.heap);
+    }
+  }
+
+  /// Concatenation operator - creates new HeapData with combined contents.
+  HeapData opBinary(string op : "~")(const(T)[] rhs) @trusted @nogc nothrow const {
+    HeapData result;
+    result.reserve(_length + rhs.length);
+
+    auto ptr = dataPtr();
+    foreach (i; 0 .. _length) {
+      result.put(ptr[i]);
+    }
+    foreach (item; rhs) {
+      result.put(item);
+    }
+
+    return result;
+  }
+
+  /// Concatenation operator with another HeapData.
+  HeapData opBinary(string op : "~")(ref const HeapData rhs) @trusted @nogc nothrow const {
+    HeapData result;
+    result.reserve(_length + rhs._length);
+
+    auto ptr = dataPtr();
+    foreach (i; 0 .. _length) {
+      result.put(ptr[i]);
+    }
+
+    auto rhsPtr = rhs.dataPtr();
+    foreach (i; 0 .. rhs._length) {
+      result.put(rhsPtr[i]);
+    }
+
+    return result;
+  }
+
+  /// Append operator - appends to this HeapData in place.
+  void opOpAssign(string op : "~")(const(T)[] rhs) @trusted @nogc nothrow {
+    reserve(rhs.length);
+    auto ptr = dataPtr();
+    foreach (item; rhs) {
+      ptr[_length++] = item;
+    }
+  }
+
+  /// Append operator with another HeapData.
+  void opOpAssign(string op : "~")(ref const HeapData rhs) @trusted @nogc nothrow {
+    reserve(rhs._length);
+    auto ptr = dataPtr();
+    auto rhsPtr = rhs.dataPtr();
+    foreach (i; 0 .. rhs._length) {
+      ptr[_length++] = rhsPtr[i];
     }
   }
 
@@ -420,10 +487,10 @@ struct HeapData(T) {
   static if (is(T == char)) {
     /// Returns the current contents as a string slice.
     const(char)[] toString() @nogc nothrow @trusted const {
-      if (_data is null) {
+      if (_length == 0) {
         return null;
       }
-      return _data[0 .. _length];
+      return dataPtr()[0 .. _length];
     }
   }
 }
@@ -640,5 +707,95 @@ version (unittest) {
     h1.put([1, 2, 3]);
     auto h2 = h1;  // Copy shares same data
     assert(h1 == h2, "copies sharing same data should be equal");
+  }
+
+  @("small buffer optimization stores short strings inline")
+  unittest {
+    auto h = HeapData!char.create();
+    h.put("short");
+    assert(h[] == "short", "short string should be stored");
+    assert(h.refCount() == 0, "small buffer should not use ref counting");
+  }
+
+  @("small buffer transitions to heap when capacity exceeded")
+  unittest {
+    auto h = HeapData!char.create();
+    // Add enough data to exceed SBO threshold (varies by arch: ~47 on x86-64, ~111 on ARM64)
+    // Use a large enough value to exceed any architecture's SBO
+    foreach (i; 0 .. 200) {
+      h.put('x');
+    }
+    assert(h.length == 200, "should store all chars");
+    assert(h.refCount() == 1, "heap allocation should have ref count of 1");
+  }
+
+  @("concatenation operator creates new HeapData with combined content")
+  unittest {
+    auto h = HeapData!char.create();
+    h.put("hello");
+    auto result = h ~ " world";
+    assert(result[] == "hello world", "concatenation should combine strings");
+    assert(h[] == "hello", "original should be unchanged");
+  }
+
+  @("concatenation of two HeapData instances")
+  unittest {
+    auto h1 = HeapData!char.create();
+    h1.put("hello");
+    auto h2 = HeapData!char.create();
+    h2.put(" world");
+    auto result = h1 ~ h2;
+    assert(result[] == "hello world", "concatenation should combine HeapData instances");
+  }
+
+  @("append operator modifies HeapData in place")
+  unittest {
+    auto h = HeapData!char.create();
+    h.put("hello");
+    h ~= " world";
+    assert(h[] == "hello world", "append should modify in place");
+  }
+
+  @("append HeapData to another HeapData")
+  unittest {
+    auto h1 = HeapData!char.create();
+    h1.put("hello");
+    auto h2 = HeapData!char.create();
+    h2.put(" world");
+    h1 ~= h2;
+    assert(h1[] == "hello world", "append should combine HeapData instances");
+  }
+
+  @("copy of heap-allocated data shares reference")
+  unittest {
+    auto h1 = HeapData!char.create();
+    // Force heap allocation with long string (200 chars exceeds any arch's SBO)
+    foreach (i; 0 .. 200) {
+      h1.put('x');
+    }
+    auto h2 = h1;
+    assert(h1.refCount() == 2, "copy should share reference");
+    assert(h2.refCount() == 2, "both should see same ref count");
+  }
+
+  @("copy of small buffer data is independent")
+  unittest {
+    auto h1 = HeapData!char.create();
+    h1.put("short");
+    auto h2 = h1;
+    h2.put("!");  // Modify copy
+    assert(h1[] == "short", "original should be unchanged");
+    assert(h2[] == "short!", "copy should be modified");
+  }
+
+  @("combined allocation reduces malloc calls")
+  unittest {
+    // Create heap-allocated data (200 exceeds any arch's SBO)
+    auto h = HeapData!char.create(200);
+    h.put("test");
+    // With combined allocation, refCount is stored with data
+    // so only one malloc was needed (vs two in old implementation)
+    assert(h.refCount() == 1, "heap data should have ref count");
+    assert(h.isValid(), "data should be valid");
   }
 }
