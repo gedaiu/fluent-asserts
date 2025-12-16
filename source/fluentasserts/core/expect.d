@@ -483,8 +483,8 @@ import std.conv;
     static if(Params.length > 0) {
       auto expectedValue = params[0].evaluate.evaluation;
 
-      foreach(key, value; _evaluation.expectedValue.meta) {
-        expectedValue.meta[key] = value;
+      foreach(kv; _evaluation.expectedValue.meta.byKeyValue) {
+        expectedValue.meta[kv.key] = kv.value;
       }
 
       _evaluation.expectedValue = expectedValue;
@@ -504,8 +504,8 @@ import std.conv;
   void setExpectedValue(T)(T value) @trusted {
     auto expectedValue = value.evaluate.evaluation;
 
-    foreach(key, metaValue; _evaluation.expectedValue.meta) {
-      expectedValue.meta[key] = metaValue;
+    foreach(kv; _evaluation.expectedValue.meta.byKeyValue) {
+      expectedValue.meta[kv.key] = kv.value;
     }
 
     _evaluation.expectedValue = expectedValue;

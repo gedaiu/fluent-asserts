@@ -46,7 +46,7 @@ void approximately(ref Evaluation evaluation) @trusted nothrow {
   real expected = expectedParsed.value;
   real delta = deltaParsed.value;
 
-  string strExpected = evaluation.expectedValue.strValue[].idup ~ "±" ~ evaluation.expectedValue.meta["1"];
+  string strExpected = evaluation.expectedValue.strValue[].idup ~ "±" ~ evaluation.expectedValue.meta["1"].idup;
   string strCurrent = evaluation.currentValue.strValue[].idup;
 
   auto result = isClose(current, expected, 0, delta);
@@ -80,7 +80,7 @@ void approximately(ref Evaluation evaluation) @trusted nothrow {
 
 /// Asserts that each element in a numeric list is within a given delta range of its expected value.
 void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
-  evaluation.result.addValue("±" ~ evaluation.expectedValue.meta["1"]);
+  evaluation.result.addValue("±" ~ evaluation.expectedValue.meta["1"].idup);
   evaluation.result.addText(".");
 
   double maxRelDiff;
@@ -103,7 +103,7 @@ void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
       expectedPieces[i] = expectedParsed[i][].to!real;
     }
 
-    maxRelDiff = evaluation.expectedValue.meta["1"].to!double;
+    maxRelDiff = evaluation.expectedValue.meta["1"].idup.to!double;
   } catch (Exception e) {
     evaluation.result.expected = "valid numeric list";
     evaluation.result.actual = "conversion error";

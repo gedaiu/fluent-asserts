@@ -3,6 +3,7 @@
 module fluentasserts.core.memory.heapmap;
 
 import core.stdc.stdlib : malloc, free;
+import core.stdc.stdio : fprintf, stderr;
 
 import fluentasserts.core.memory.heapstring : HeapString, HeapData;
 
@@ -11,6 +12,9 @@ import fluentasserts.core.memory.heapstring : HeapString, HeapData;
 struct HeapMap {
   private enum size_t INITIAL_CAPACITY = 16;
   private enum size_t DELETED_HASH = size_t.max;
+
+  /// Magic number to detect uninitialized/corrupted structs
+  private enum uint MAGIC = 0xDEADBEEF;
 
   private struct Entry {
     HeapString key;
@@ -23,6 +27,26 @@ struct HeapMap {
     Entry[] _entries = null;
     size_t _count = 0;
     size_t _capacity = 0;
+
+    version (DebugHeapMap) {
+      uint _magic = 0;
+      size_t _instanceId = 0;
+      bool _destroyed = false;
+      static size_t _nextInstanceId = 1;
+      static size_t _activeInstances = 0;
+    }
+  }
+
+  version (DebugHeapMap) {
+    /// Check if this instance appears valid
+    bool isValidInstance() @trusted @nogc nothrow const {
+      return _magic == MAGIC && !_destroyed;
+    }
+
+    /// Log debug info
+    private void debugLog(const(char)[] msg) @trusted @nogc nothrow const {
+      fprintf(stderr, "[HeapMap #%zu] %.*s\n", _instanceId, cast(int) msg.length, msg.ptr);
+    }
   }
 
   /// Creates a new HeapMap with the given initial capacity.
@@ -38,40 +62,100 @@ struct HeapMap {
       }
     }
 
+    version (DebugHeapMap) {
+      map._magic = MAGIC;
+      map._instanceId = _nextInstanceId++;
+      map._destroyed = false;
+      _activeInstances++;
+      map.debugLog("create() - new instance");
+    }
+
     return map;
   }
 
-  /// Postblit - creates a deep copy when struct is copied.
-  this(this) @trusted nothrow @nogc {
-    if (_entries.ptr is null || _capacity == 0) {
+  /// Disable postblit - use copy constructor instead
+  @disable this(this);
+
+  /// Copy constructor - creates a deep copy from the source.
+  /// Using `ref return scope` to satisfy D's copy constructor requirements.
+  this(ref return scope inout HeapMap rhs) @trusted nothrow {
+    version (DebugHeapMap) {
+      auto oldId = rhs._instanceId;
+      // Check for invalid source
+      if (rhs._magic != MAGIC && rhs._magic != 0) {
+        fprintf(stderr, "[HeapMap] COPY CTOR ERROR: source has invalid magic (0x%X != 0x%X), id=%zu\n",
+                rhs._magic, MAGIC, rhs._instanceId);
+      }
+      if (rhs._destroyed) {
+        fprintf(stderr, "[HeapMap] COPY CTOR ERROR: source was already destroyed, id=%zu\n", rhs._instanceId);
+      }
+    }
+
+    // Handle empty/uninitialized source
+    if (rhs._entries.ptr is null || rhs._capacity == 0) {
+      _entries = null;
+      _count = 0;
+      _capacity = 0;
+
+      version (DebugHeapMap) {
+        _magic = 0;
+        _instanceId = _nextInstanceId++;
+        _destroyed = false;
+        _activeInstances++;
+        fprintf(stderr, "[HeapMap #%zu] copy ctor from #%zu - empty map\n", _instanceId, oldId);
+      }
       return;
     }
 
-    // Save old entries reference
-    auto oldEntries = _entries;
-    auto oldCapacity = _capacity;
+    // Copy metadata
+    _count = rhs._count;
+    _capacity = rhs._capacity;
 
     // Allocate new entries
-    _entries = (cast(Entry*) malloc(Entry.sizeof * oldCapacity))[0 .. oldCapacity];
+    _entries = (cast(Entry*) malloc(Entry.sizeof * _capacity))[0 .. _capacity];
 
     if (_entries.ptr !is null) {
-      foreach (i; 0 .. oldCapacity) {
-        if (oldEntries[i].occupied) {
-          _entries[i].key = HeapString.create(oldEntries[i].key.length);
-          _entries[i].key.put(oldEntries[i].key[]);
-          _entries[i].value = HeapString.create(oldEntries[i].value.length);
-          _entries[i].value.put(oldEntries[i].value[]);
-          _entries[i].hash = oldEntries[i].hash;
+      foreach (i; 0 .. _capacity) {
+        if (rhs._entries[i].occupied) {
+          _entries[i].key = HeapString.create(rhs._entries[i].key.length);
+          _entries[i].key.put(rhs._entries[i].key[]);
+          _entries[i].value = HeapString.create(rhs._entries[i].value.length);
+          _entries[i].value.put(rhs._entries[i].value[]);
+          _entries[i].hash = rhs._entries[i].hash;
           _entries[i].occupied = true;
         } else {
           _entries[i] = Entry.init;
         }
       }
     }
+
+    version (DebugHeapMap) {
+      _magic = MAGIC;
+      _instanceId = _nextInstanceId++;
+      _destroyed = false;
+      _activeInstances++;
+      fprintf(stderr, "[HeapMap #%zu] copy ctor from #%zu - deep copy, %zu entries\n",
+              _instanceId, oldId, _count);
+    }
   }
 
   /// Destructor - frees all entries.
   ~this() @trusted nothrow @nogc {
+    version (DebugHeapMap) {
+      // Check for invalid destructor call
+      if (_magic != MAGIC && _magic != 0) {
+        fprintf(stderr, "[HeapMap] DESTRUCTOR ERROR: invalid magic 0x%X (expected 0x%X or 0), id=%zu, this=%p\n",
+                _magic, MAGIC, _instanceId, cast(void*)&this);
+        return;  // Don't free corrupted data
+      }
+      if (_destroyed) {
+        fprintf(stderr, "[HeapMap #%zu] DESTRUCTOR ERROR: double-free detected!\n", _instanceId);
+        return;
+      }
+      fprintf(stderr, "[HeapMap #%zu] ~this() - destroying, %zu entries, ptr=%p\n",
+              _instanceId, _count, cast(void*) _entries.ptr);
+    }
+
     if (_capacity > 0 && _entries.ptr !is null) {
       foreach (ref entry; _entries) {
         if (entry.occupied) {
@@ -80,6 +164,13 @@ struct HeapMap {
         }
       }
       free(_entries.ptr);
+    }
+
+    version (DebugHeapMap) {
+      _destroyed = true;
+      _activeInstances--;
+      fprintf(stderr, "[HeapMap #%zu] ~this() - done, active instances: %zu\n",
+              _instanceId, _activeInstances);
     }
   }
 
@@ -250,7 +341,7 @@ struct HeapMap {
   }
 
   /// Gets the value for a key, returns empty string if not found.
-  const(char)[] opIndex(const(char)[] key) @nogc nothrow const {
+  const(char)[] opIndex(const(char)[] key) @trusted @nogc nothrow const {
     if (_capacity == 0) {
       return null;
     }
@@ -277,7 +368,7 @@ struct HeapMap {
   }
 
   /// Checks if a key exists in the map.
-  bool opBinaryRight(string op : "in")(const(char)[] key) @nogc nothrow const {
+  bool opBinaryRight(string op : "in")(const(char)[] key) @trusted @nogc nothrow const {
     if (_capacity == 0) {
       return false;
     }
@@ -341,12 +432,12 @@ struct HeapMap {
   }
 
   /// Returns true if the map is empty.
-  bool empty() @nogc nothrow const {
+  bool empty() @trusted @nogc nothrow const {
     return _count == 0;
   }
 
   /// Range for iterating over key-value pairs.
-  auto byKeyValue() @nogc nothrow const {
+  auto byKeyValue() @trusted @nogc nothrow const {
     return KeyValueRange(&this);
   }
 
@@ -354,13 +445,13 @@ struct HeapMap {
     private const(HeapMap)* map;
     private size_t index;
 
-    this(const(HeapMap)* m) @nogc nothrow {
+    this(const(HeapMap)* m) @trusted @nogc nothrow {
       map = m;
       index = 0;
       advance();
     }
 
-    private void advance() @nogc nothrow {
+    private void advance() @trusted @nogc nothrow {
       if (map is null || map._entries.ptr is null) {
         index = size_t.max;
         return;
@@ -371,11 +462,11 @@ struct HeapMap {
       }
     }
 
-    bool empty() @nogc nothrow const {
+    bool empty() @trusted @nogc nothrow const {
       return map is null || map._entries.ptr is null || index >= map._capacity;
     }
 
-    auto front() @nogc nothrow const {
+    auto front() @trusted @nogc nothrow const {
       struct KV {
         const(char)[] key;
         const(char)[] value;
@@ -383,7 +474,7 @@ struct HeapMap {
       return KV(map._entries[index].key[], map._entries[index].value[]);
     }
 
-    void popFront() @nogc nothrow {
+    void popFront() @trusted @nogc nothrow {
       index++;
       advance();
     }
@@ -492,5 +583,108 @@ version (unittest) {
     assert(map2["foo"] == "bar");
     assert(map2["baz"] == "qux");
     assert(map2.length == 2);
+  }
+
+  @("HeapMap in struct with exception")
+  unittest {
+    // This test simulates the scenario where HeapMap is inside a struct
+    // and an exception is thrown - testing copy semantics during unwinding
+    struct Container {
+      HeapMap map;
+      int value;
+    }
+
+    Container makeContainer() {
+      Container c;
+      c.map = HeapMap.create();
+      c.map["key"] = "value";
+      c.value = 42;
+      return c;
+    }
+
+    // Test normal return (involves copy)
+    {
+      auto c = makeContainer();
+      assert(c.map["key"] == "value");
+      assert(c.value == 42);
+    }
+
+    // Test copy in array
+    {
+      Container[] arr;
+      arr ~= makeContainer();
+      arr ~= makeContainer();
+      assert(arr[0].map["key"] == "value");
+      assert(arr[1].map["key"] == "value");
+    }
+
+    // Test exception scenario
+    {
+      bool caught = false;
+      try {
+        auto c = makeContainer();
+        throw new Exception("test exception");
+      } catch (Exception e) {
+        caught = true;
+      }
+      assert(caught);
+    }
+  }
+
+  @("HeapMap nested copy stress test")
+  unittest {
+    // Stress test with multiple nested copies
+    HeapMap original = HeapMap.create();
+    original["a"] = "1";
+    original["b"] = "2";
+
+    HeapMap copy1 = original;
+    HeapMap copy2 = copy1;
+    HeapMap copy3 = copy2;
+
+    // Modify each independently
+    copy1["a"] = "modified1";
+    copy2["a"] = "modified2";
+    copy3["a"] = "modified3";
+
+    assert(original["a"] == "1");
+    assert(copy1["a"] == "modified1");
+    assert(copy2["a"] == "modified2");
+    assert(copy3["a"] == "modified3");
+  }
+
+  @("HeapMap default-initialized can be used with opIndexAssign")
+  unittest {
+    // This tests the scenario where HeapMap is a field in a struct
+    // and is never explicitly initialized with HeapMap.create()
+    HeapMap map;  // Default-initialized, not created
+    map["key"] = "value";  // Should auto-grow and work
+    assert(map["key"] == "value");
+    assert(map.length == 1);
+  }
+
+  @("HeapMap in ValueEvaluation-like struct")
+  unittest {
+    // Test that HeapMap works with direct usage (not in struct)
+    // Copying structs containing HeapMap requires explicit copy constructors
+    // but this is tested in evaluation.d where ValueEvaluation has proper copy semantics
+    HeapMap meta;
+    meta["1"] = "0.01";
+
+    assert(meta["1"] == "0.01");
+
+    // Copy the HeapMap itself
+    HeapMap meta2 = meta;
+    assert(meta2["1"] == "0.01");
+
+    // Assign to another HeapMap
+    HeapMap meta3;
+    meta3 = meta;
+    assert(meta3["1"] == "0.01");
+
+    // Modify copy doesn't affect original
+    meta2["1"] = "modified";
+    assert(meta["1"] == "0.01");
+    assert(meta2["1"] == "modified");
   }
 }
