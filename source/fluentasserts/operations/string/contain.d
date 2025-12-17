@@ -225,8 +225,8 @@ void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
 
     if(!isSuccess) {
       evaluation.result.expected.put("to contain only ");
-      evaluation.result.expected.put(expectedPieces.niceJoin(evaluation.currentValue.typeName));
-      evaluation.result.actual.put(testData.niceJoin(evaluation.currentValue.typeName));
+      evaluation.result.expected.put(expectedPieces.niceJoin(evaluation.currentValue.typeName.idup));
+      evaluation.result.actual.put(testData.niceJoin(evaluation.currentValue.typeName.idup));
 
       foreach(e; extra) {
         evaluation.result.extra ~= e.getSerialized.cleanString;
@@ -241,8 +241,8 @@ void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
 
     if(!isSuccess) {
       evaluation.result.expected.put("not to contain only ");
-      evaluation.result.expected.put(expectedPieces.niceJoin(evaluation.currentValue.typeName));
-      evaluation.result.actual.put(testData.niceJoin(evaluation.currentValue.typeName));
+      evaluation.result.expected.put(expectedPieces.niceJoin(evaluation.currentValue.typeName.idup));
+      evaluation.result.actual.put(testData.niceJoin(evaluation.currentValue.typeName.idup));
       evaluation.result.negated = true;
     }
   }
@@ -290,7 +290,7 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
     evaluation.result.addValue(missingValues[0]);
     evaluation.result.addText(" is missing from ");
   } else {
-    evaluation.result.addValue(missingValues.niceJoin(evaluation.currentValue.typeName));
+    evaluation.result.addValue(missingValues.niceJoin(evaluation.currentValue.typeName.idup));
     evaluation.result.addText(" are missing from ");
   }
 
@@ -321,7 +321,7 @@ void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValue
     evaluation.result.addValue(presentValues[0]);
     evaluation.result.addText(" is present in ");
   } else {
-    evaluation.result.addValue(presentValues.niceJoin(evaluation.currentValue.typeName));
+    evaluation.result.addValue(presentValues.niceJoin(evaluation.currentValue.typeName.idup));
     evaluation.result.addText(" are present in ");
   }
 

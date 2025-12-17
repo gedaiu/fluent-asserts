@@ -174,6 +174,41 @@ struct HeapMap {
     }
   }
 
+  /// Called after a blit (memcpy) to ensure this HeapMap has its own copy of data.
+  /// Since HeapMap doesn't use ref counting, this creates a deep copy.
+  void incrementRefCount() @trusted nothrow {
+    if (_entries.ptr is null || _capacity == 0) {
+      return;
+    }
+
+    // Save current data pointers
+    auto oldEntries = _entries;
+    auto oldCount = _count;
+    auto oldCapacity = _capacity;
+
+    // Allocate new storage
+    _entries = (cast(Entry*) malloc(Entry.sizeof * oldCapacity))[0 .. oldCapacity];
+    if (_entries.ptr is null) {
+      _capacity = 0;
+      _count = 0;
+      return;
+    }
+    _capacity = oldCapacity;
+    _count = 0;
+
+    // Initialize new entries
+    foreach (ref entry; _entries) {
+      entry.occupied = false;
+    }
+
+    // Deep copy occupied entries
+    foreach (ref entry; oldEntries[0 .. oldCapacity]) {
+      if (entry.occupied) {
+        this[entry.key[]] = entry.value[];
+      }
+    }
+  }
+
   /// Assignment operator.
   void opAssign(ref HeapMap rhs) @trusted nothrow @nogc {
     if (&this is &rhs) {

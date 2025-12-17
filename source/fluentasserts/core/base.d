@@ -436,8 +436,8 @@ void fluentHandler(string file, size_t line, string msg) @system nothrow {
   Evaluation evaluation;
   evaluation.source = SourceResult.create(file, line);
   evaluation.addOperationName("assert");
-  evaluation.currentValue.typeNames = ["assert state"];
-  evaluation.expectedValue.typeNames = ["assert state"];
+  evaluation.currentValue.typeNames.put("assert state");
+  evaluation.expectedValue.typeNames.put("assert state");
   evaluation.isEvaluated = true;
   evaluation.result.expected.put("true");
   evaluation.result.actual.put("false");

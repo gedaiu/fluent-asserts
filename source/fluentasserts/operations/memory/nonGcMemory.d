@@ -10,8 +10,8 @@ version(unittest) {
 
 void allocateNonGCMemory(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(". ");
-  evaluation.currentValue.typeNames = ["event"];
-  evaluation.expectedValue.typeNames = ["event"];
+  evaluation.currentValue.typeNames.put("event");
+  evaluation.expectedValue.typeNames.put("event");
 
   auto isSuccess = evaluation.currentValue.nonGCMemoryUsed > 0;
 

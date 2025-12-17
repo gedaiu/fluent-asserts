@@ -3,7 +3,6 @@
 module fluentasserts.core.evaluation;
 
 import std.datetime;
-import std.typecons;
 import std.traits;
 import std.conv;
 import std.range;
@@ -47,8 +46,8 @@ struct ValueEvaluation {
   /// Human readable value
   HeapString niceValue;
 
-  /// The name of the type before it was converted to string
-  string[] typeNames;
+  /// The name of the type before it was converted to string (using TypeNameList for @nogc compatibility)
+  TypeNameList typeNames;
 
   /// Other info about the value (using HeapMap for @nogc compatibility)
   HeapMap meta;
@@ -74,7 +73,7 @@ struct ValueEvaluation {
     strValue = rhs.strValue;
     proxyValue = cast(EquableValue) rhs.proxyValue;
     niceValue = rhs.niceValue;
-    typeNames = cast(string[]) rhs.typeNames;
+    typeNames = rhs.typeNames;
     meta = rhs.meta;
     fileName = rhs.fileName;
     line = rhs.line;
@@ -90,7 +89,7 @@ struct ValueEvaluation {
     strValue = rhs.strValue;
     proxyValue = cast(EquableValue) rhs.proxyValue;
     niceValue = rhs.niceValue;
-    typeNames = cast(string[]) rhs.typeNames;
+    typeNames = rhs.typeNames;
     meta = rhs.meta;
     fileName = rhs.fileName;
     line = rhs.line;
@@ -103,11 +102,11 @@ struct ValueEvaluation {
   }
 
   /// Returns the primary type name of the evaluated value.
-  string typeName() @safe nothrow @nogc {
+  const(char)[] typeName() @safe nothrow @nogc {
     if (typeNames.length == 0) {
       return "unknown";
     }
-    return typeNames[0];
+    return typeNames[0][];
   }
 }
 
@@ -255,14 +254,14 @@ struct Evaluation {
 
     printer.info("  ACTUAL: ");
     printer.primary("<");
-    printer.primary(currentValue.typeName);
+    printer.primary(currentValue.typeName.idup);
     printer.primary("> ");
     printer.primary(result.actual[].idup);
     printer.newLine;
 
     printer.info("EXPECTED: ");
     printer.primary("<");
-    printer.primary(expectedValue.typeName);
+    printer.primary(expectedValue.typeName.idup);
     printer.primary("> ");
     printer.primary(result.expected[].idup);
     printer.newLine;
@@ -281,6 +280,35 @@ struct Evaluation {
   }
 }
 
+/// Result of evaluating a value, containing both the value and its evaluation metadata.
+/// Replaces Tuple to avoid deprecation warnings with copy constructors.
+struct EvaluationResult(T) {
+  import std.traits : Unqual;
+
+  Unqual!T value;
+  ValueEvaluation evaluation;
+
+  /// Postblit - increment ref counts for all memory-managed fields in evaluation.
+  /// This is needed because ValueEvaluation disables postblit but EvaluationResult
+  /// needs to support return value optimization which uses blit.
+  this(this) @trusted nothrow {
+    // After blit, manually increment ref counts for all HeapString fields
+    evaluation.strValue.incrementRefCount();
+    evaluation.niceValue.incrementRefCount();
+    evaluation.fileName.incrementRefCount();
+    evaluation.prependText.incrementRefCount();
+    // TypeNameList contains HeapStrings that need ref count increment
+    evaluation.typeNames.incrementRefCount();
+    // HeapMap needs to create its own copy of data
+    evaluation.meta.incrementRefCount();
+  }
+
+  void opAssign(ref const EvaluationResult rhs) @trusted nothrow {
+    value = cast(Unqual!T) rhs.value;
+    evaluation = rhs.evaluation;
+  }
+}
+
 /// Evaluates a lazy input range value and captures the result.
 /// Converts the range to an array and delegates to the primary evaluate function.
 /// Params:
@@ -288,7 +316,7 @@ struct Evaluation {
 ///   file = Source file (auto-captured)
 ///   line = Source line (auto-captured)
 ///   prependText = Optional text to prepend to the value display
-/// Returns: A tuple containing the evaluated value and its ValueEvaluation.
+/// Returns: An EvaluationResult containing the evaluated value and its ValueEvaluation.
 auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(isInputRange!T && !isArray!T && !isAssociativeArray!T) {
   return evaluate(testData.array, file, line, prependText);
 }
@@ -301,7 +329,7 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 ///   file = Source file (auto-captured)
 ///   line = Source line (auto-captured)
 ///   prependText = Optional text to prepend to the value display
-/// Returns: A tuple containing the evaluated value and its ValueEvaluation.
+/// Returns: An EvaluationResult containing the evaluated value and its ValueEvaluation.
 auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(!isInputRange!T || isArray!T || isAssociativeArray!T) {
   GC.collect();
   GC.minimize();
@@ -309,7 +337,7 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
   scope(exit) GC.enable();
 
   auto begin = Clock.currTime;
-  alias Result = Tuple!(T, "value", ValueEvaluation, "evaluation");
+  alias Result = EvaluationResult!T;
   size_t gcMemoryUsed = 0;
   size_t nonGCMemoryUsed = 0;
 
@@ -335,44 +363,46 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 
     // Avoid struct literal initialization with HeapString fields.
     // Struct literals use blit which doesn't call opAssign, causing ref count issues.
-    ValueEvaluation valueEvaluation;
-    valueEvaluation.throwable = null;
-    valueEvaluation.duration = duration;
-    valueEvaluation.gcMemoryUsed = gcMemoryUsed;
-    valueEvaluation.nonGCMemoryUsed = nonGCMemoryUsed;
-    valueEvaluation.strValue = toHeapString(serializedValue);
-    valueEvaluation.proxyValue = equableValue(value, niceValueStr);
-    valueEvaluation.niceValue = toHeapString(niceValueStr);
-    valueEvaluation.typeNames = extractTypes!TT;
-    valueEvaluation.fileName = toHeapString(file);
-    valueEvaluation.line = line;
-    valueEvaluation.prependText = toHeapString(prependText);
+    Result result;
+    result.value = value;
+    result.evaluation.throwable = null;
+    result.evaluation.duration = duration;
+    result.evaluation.gcMemoryUsed = gcMemoryUsed;
+    result.evaluation.nonGCMemoryUsed = nonGCMemoryUsed;
+    result.evaluation.strValue = toHeapString(serializedValue);
+    result.evaluation.proxyValue = equableValue(value, niceValueStr);
+    result.evaluation.niceValue = toHeapString(niceValueStr);
+    result.evaluation.typeNames = extractTypes!TT;
+    result.evaluation.fileName = toHeapString(file);
+    result.evaluation.line = line;
+    result.evaluation.prependText = toHeapString(prependText);
 
-    return Result(value, valueEvaluation);
+    return result;
   } catch(Throwable t) {
-    T result;
+    T resultValue;
 
     static if(isCallable!T) {
-      result = testData;
+      resultValue = testData;
     }
 
-    auto resultStr = result.to!string;
+    auto resultStr = resultValue.to!string;
 
     // Avoid struct literal initialization with HeapString fields
-    ValueEvaluation valueEvaluation;
-    valueEvaluation.throwable = t;
-    valueEvaluation.duration = Clock.currTime - begin;
-    valueEvaluation.gcMemoryUsed = 0;
-    valueEvaluation.nonGCMemoryUsed = 0;
-    valueEvaluation.strValue = toHeapString(resultStr);
-    valueEvaluation.proxyValue = equableValue(result, resultStr);
-    valueEvaluation.niceValue = toHeapString(resultStr);
-    valueEvaluation.typeNames = extractTypes!T;
-    valueEvaluation.fileName = toHeapString(file);
-    valueEvaluation.line = line;
-    valueEvaluation.prependText = toHeapString(prependText);
+    Result result;
+    result.value = resultValue;
+    result.evaluation.throwable = t;
+    result.evaluation.duration = Clock.currTime - begin;
+    result.evaluation.gcMemoryUsed = 0;
+    result.evaluation.nonGCMemoryUsed = 0;
+    result.evaluation.strValue = toHeapString(resultStr);
+    result.evaluation.proxyValue = equableValue(resultValue, resultStr);
+    result.evaluation.niceValue = toHeapString(resultStr);
+    result.evaluation.typeNames = extractTypes!T;
+    result.evaluation.fileName = toHeapString(file);
+    result.evaluation.line = line;
+    result.evaluation.prependText = toHeapString(prependText);
 
-    return Result(result, valueEvaluation);
+    return result;
   }
 }
 
@@ -410,21 +440,21 @@ unittest {
 /// For classes, includes base classes and implemented interfaces.
 /// Params:
 ///   T = The type to extract names from
-/// Returns: An array of fully qualified type names.
-string[] extractTypes(T)() if((!isArray!T && !isAssociativeArray!T) || isSomeString!T) {
-  string[] types;
+/// Returns: A TypeNameList of fully qualified type names.
+TypeNameList extractTypes(T)() if((!isArray!T && !isAssociativeArray!T) || isSomeString!T) {
+  TypeNameList types;
 
-  types ~= unqualString!T;
+  types.put(unqualString!T);
 
   static if(is(T == class)) {
     static foreach(Type; BaseClassesTuple!T) {
-      types ~= unqualString!Type;
+      types.put(unqualString!Type);
     }
   }
 
   static if(is(T == interface) || is(T == class)) {
     static foreach(Type; InterfacesTuple!T) {
-      types ~= unqualString!Type;
+      types.put(unqualString!Type);
     }
   }
 
@@ -436,9 +466,17 @@ string[] extractTypes(T)() if((!isArray!T && !isAssociativeArray!T) || isSomeStr
 /// Params:
 ///   T = The array type
 ///   U = The element type
-/// Returns: An array of type names with "[]" suffix.
-string[] extractTypes(T: U[], U)() if(isArray!T && !isSomeString!T) {
-  return extractTypes!(U).map!(a => a ~ "[]").array;
+/// Returns: A TypeNameList of type names with "[]" suffix.
+TypeNameList extractTypes(T: U[], U)() if(isArray!T && !isSomeString!T) {
+  auto elementTypes = extractTypes!(U);
+  TypeNameList types;
+
+  foreach (i; 0 .. elementTypes.length) {
+    auto name = elementTypes[i][] ~ "[]";
+    types.put(name);
+  }
+
+  return types;
 }
 
 /// Extracts the type names for an associative array type.
@@ -447,34 +485,42 @@ string[] extractTypes(T: U[], U)() if(isArray!T && !isSomeString!T) {
 ///   T = The associative array type
 ///   U = The value type
 ///   K = The key type
-/// Returns: An array of type names in associative array format.
-string[] extractTypes(T: U[K], U, K)() {
+/// Returns: A TypeNameList of type names in associative array format.
+TypeNameList extractTypes(T: U[K], U, K)() {
   string k = unqualString!(K);
-  return extractTypes!(U).map!(a => a ~ "[" ~ k ~ "]").array;
+  auto valueTypes = extractTypes!(U);
+  TypeNameList types;
+
+  foreach (i; 0 .. valueTypes.length) {
+    auto name = valueTypes[i][] ~ "[" ~ k ~ "]";
+    types.put(name);
+  }
+
+  return types;
 }
 
 @("extractTypes returns [string] for string")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = extractTypes!string;
-  import std.conv : to;
-  assert(result == ["string"], "Expected [\"string\"], got " ~ result.to!string);
+  assert(result.length == 1, "Expected length 1");
+  assert(result[0][] == "string", "Expected \"string\"");
 }
 
 @("extractTypes returns [string[]] for string[]")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = extractTypes!(string[]);
-  import std.conv : to;
-  assert(result == ["string[]"], "Expected [\"string[]\"], got " ~ result.to!string);
+  assert(result.length == 1, "Expected length 1");
+  assert(result[0][] == "string[]", "Expected \"string[]\"");
 }
 
 @("extractTypes returns [string[string]] for string[string]")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
   auto result = extractTypes!(string[string]);
-  import std.conv : to;
-  assert(result == ["string[string]"], "Expected [\"string[string]\"], got " ~ result.to!string);
+  assert(result.length == 1, "Expected length 1");
+  assert(result[0][] == "string[string]", "Expected \"string[string]\"");
 }
 
 version(unittest) {
@@ -488,9 +534,9 @@ unittest {
 
   auto result = extractTypes!(ExtractTypesTestClass[]);
 
-  assert(result[0] == "fluentasserts.core.evaluation.ExtractTypesTestClass[]", `Expected: "fluentasserts.core.evaluation.ExtractTypesTestClass[]" got "` ~ result[0] ~ `"`);
-  assert(result[1] == "object.Object[]", `Expected: ` ~ result[1]);
-  assert(result[2] == "fluentasserts.core.evaluation.ExtractTypesTestInterface[]", `Expected: ` ~ result[2]);
+  assert(result[0][] == "fluentasserts.core.evaluation.ExtractTypesTestClass[]", `Expected: "fluentasserts.core.evaluation.ExtractTypesTestClass[]"`);
+  assert(result[1][] == "object.Object[]", `Expected: "object.Object[]"`);
+  assert(result[2][] == "fluentasserts.core.evaluation.ExtractTypesTestInterface[]", `Expected: "fluentasserts.core.evaluation.ExtractTypesTestInterface[]"`);
 }
 
 /// A proxy interface for comparing values of different types.

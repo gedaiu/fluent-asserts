@@ -23,14 +23,14 @@ static immutable instanceOfDescription = "Asserts that the tested value is relat
 /// Asserts that a value is an instance of a specific type or inherits from it.
 void instanceOf(ref Evaluation evaluation) @safe nothrow @nogc {
   const(char)[] expectedType = evaluation.expectedValue.strValue[][1 .. $-1];
-  string currentType = evaluation.currentValue.typeNames[0];
+  const(char)[] currentType = evaluation.currentValue.typeNames[0][];
 
   evaluation.result.addText(". ");
 
   // Check if expectedType is in typeNames (replaces findAmong for @nogc)
   bool found = false;
-  foreach (typeName; evaluation.currentValue.typeNames) {
-    if (typeName == expectedType) {
+  foreach (ref typeName; evaluation.currentValue.typeNames) {
+    if (typeName[] == expectedType) {
       found = true;
       break;
     }

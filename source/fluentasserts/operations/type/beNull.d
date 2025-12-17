@@ -21,8 +21,8 @@ void beNull(ref Evaluation evaluation) @safe nothrow @nogc {
 
   // Check if "null" is in typeNames (replaces canFind for @nogc)
   bool hasNullType = false;
-  foreach (typeName; evaluation.currentValue.typeNames) {
-    if (typeName == "null") {
+  foreach (ref typeName; evaluation.currentValue.typeNames) {
+    if (typeName[] == "null") {
       hasNullType = true;
       break;
     }
@@ -44,7 +44,7 @@ void beNull(ref Evaluation evaluation) @safe nothrow @nogc {
     evaluation.result.expected.put("null");
   }
 
-  evaluation.result.actual.put(evaluation.currentValue.typeNames.length ? evaluation.currentValue.typeNames[0] : "unknown");
+  evaluation.result.actual.put(evaluation.currentValue.typeNames.length ? evaluation.currentValue.typeNames[0][] : "unknown");
   evaluation.result.negated = evaluation.isNegated;
 }
 

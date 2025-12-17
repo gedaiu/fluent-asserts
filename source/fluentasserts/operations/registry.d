@@ -34,9 +34,12 @@ class Registry {
 
   /// Register a new assert operation
   Registry register(T, U)(string name, Operation operation) {
-    foreach(valueType; extractTypes!T) {
-      foreach(expectedValueType; extractTypes!U) {
-        register(valueType, expectedValueType, name, operation);
+    auto valueTypes = extractTypes!T;
+    auto expectedValueTypes = extractTypes!U;
+
+    foreach (i; 0 .. valueTypes.length) {
+      foreach (j; 0 .. expectedValueTypes.length) {
+        register(valueTypes[i][].idup, expectedValueTypes[j][].idup, name, operation);
       }
     }
 
@@ -91,8 +94,8 @@ class Registry {
     }
 
     auto operation = this.get(
-      evaluation.currentValue.typeName,
-      evaluation.expectedValue.typeName,
+      evaluation.currentValue.typeName.idup,
+      evaluation.expectedValue.typeName.idup,
       evaluation.operationName);
 
     operation(evaluation);

@@ -42,8 +42,8 @@ private string format(string fmt, Args...)(Args args) @safe nothrow {
 
 void allocateGCMemory(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(". ");
-  evaluation.currentValue.typeNames = ["event"];
-  evaluation.expectedValue.typeNames = ["event"];
+  evaluation.currentValue.typeNames.put("event");
+  evaluation.expectedValue.typeNames.put("event");
 
   auto isSuccess = evaluation.currentValue.gcMemoryUsed > 0;
 

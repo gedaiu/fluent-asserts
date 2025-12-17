@@ -376,7 +376,7 @@ import std.conv;
   /// Asserts that the value is an instance of the specified type.
   Evaluator instanceOf(Type)() {
     addOperationName("instanceOf");
-    this._evaluation.expectedValue.typeNames = [fullyQualifiedName!Type];
+    this._evaluation.expectedValue.typeNames.put(fullyQualifiedName!Type);
     this._evaluation.expectedValue.strValue = toHeapString("\"" ~ fullyQualifiedName!Type ~ "\"");
     finalizeMessage();
     inhibit();
@@ -517,13 +517,14 @@ import std.conv;
 /// Executes the delegate and captures any thrown exception.
 Expect expect(void delegate() callable, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
   ValueEvaluation value;
-  value.typeNames = [ "callable" ];
+  value.typeNames.put("callable");
 
   try {
     if(callable !is null) {
       callable();
     } else {
-      value.typeNames = ["null"];
+      value.typeNames.clear();
+      value.typeNames.put("null");
     }
   } catch(Exception e) {
     value.throwable = e;
