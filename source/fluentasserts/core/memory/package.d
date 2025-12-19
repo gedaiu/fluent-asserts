@@ -6,4 +6,5 @@ module fluentasserts.core.memory;
 public import fluentasserts.core.memory.heapstring;
 public import fluentasserts.core.memory.heapmap;
 public import fluentasserts.core.memory.typenamelist;
+public import fluentasserts.core.memory.heapequable;
 public import fluentasserts.core.memory.process;

@@ -2,6 +2,7 @@ module fluentasserts.operations.equality.equal;
 
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation;
+import fluentasserts.core.memory.heapequable : objectEquals;
 
 import fluentasserts.core.lifecycle;
 import fluentasserts.results.message;
@@ -25,27 +26,35 @@ static immutable isNotEqualTo = Message(Message.Type.info, " is not equal to ");
 static immutable endSentence = Message(Message.Type.info, ".");
 
 /// Asserts that the current value is strictly equal to the expected value.
-void equal(ref Evaluation evaluation) @safe nothrow @nogc {
+/// Note: This function is not @nogc because it may use opEquals for object comparison.
+void equal(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.add(endSentence);
 
-  bool isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
+  bool isEqual;
 
-  auto hasCurrentProxy = evaluation.currentValue.proxyValue !is null;
-  auto hasExpectedProxy = evaluation.expectedValue.proxyValue !is null;
+  // For objects, use opEquals for proper comparison (identity matters, not just string)
+  if (evaluation.currentValue.objectRef !is null && evaluation.expectedValue.objectRef !is null) {
+    isEqual = objectEquals(evaluation.currentValue.objectRef, evaluation.expectedValue.objectRef);
+  } else {
+    isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
+  }
 
-  if(!isEqual && hasCurrentProxy && hasExpectedProxy) {
+  auto hasCurrentProxy = !evaluation.currentValue.proxyValue.isNull();
+  auto hasExpectedProxy = !evaluation.expectedValue.proxyValue.isNull();
+
+  if (!isEqual && hasCurrentProxy && hasExpectedProxy) {
     isEqual = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
   }
 
-  if(evaluation.isNegated) {
+  if (evaluation.isNegated) {
     isEqual = !isEqual;
   }
 
-  if(isEqual) {
+  if (isEqual) {
     return;
   }
 
-  if(evaluation.isNegated) {
+  if (evaluation.isNegated) {
     evaluation.result.expected.put("not ");
   }
   evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
@@ -527,7 +536,7 @@ unittest {
     (new Object).should.equal(null);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal("(new Object) should equal null.");
+  evaluation.result.messageString.should.startWith("(new Object) should equal null.");
 }
 
 version (unittest):

@@ -1,0 +1,337 @@
+/// Heap-allocated equable value for @nogc contexts.
+/// Note: Object comparison uses serialized string representation only.
+/// For opEquals-based object comparison, use non-@nogc expect/should API.
+module fluentasserts.core.memory.heapequable;
+
+import core.stdc.stdlib : malloc, free;
+import core.stdc.string : memset;
+
+import fluentasserts.core.memory.heapstring;
+import fluentasserts.core.toNumeric : parseDouble;
+
+@safe:
+
+/// A heap-allocated wrapper for comparing values without GC.
+struct HeapEquableValue {
+  enum Kind : ubyte { empty, scalar, array, assocArray }
+
+  HeapString _serialized;
+  Kind _kind;
+  HeapEquableValue* _elements;
+  size_t _elementCount;
+
+  // --- Factory methods ---
+
+  static HeapEquableValue create() @nogc nothrow {
+    HeapEquableValue result;
+    result._kind = Kind.empty;
+    return result;
+  }
+
+  static HeapEquableValue createScalar(const(char)[] serialized) @nogc nothrow {
+    HeapEquableValue result;
+    result._kind = Kind.scalar;
+    result._serialized = toHeapString(serialized);
+    return result;
+  }
+
+  static HeapEquableValue createArray(const(char)[] serialized) @nogc nothrow {
+    HeapEquableValue result;
+    result._kind = Kind.array;
+    result._serialized = toHeapString(serialized);
+    return result;
+  }
+
+  static HeapEquableValue createAssocArray(const(char)[] serialized) @nogc nothrow {
+    HeapEquableValue result;
+    result._kind = Kind.assocArray;
+    result._serialized = toHeapString(serialized);
+    return result;
+  }
+
+  // --- Accessors ---
+
+  Kind kind() @nogc nothrow const { return _kind; }
+  const(char)[] getSerialized() @nogc nothrow const { return _serialized[]; }
+  const(char)[] opSlice() @nogc nothrow const { return _serialized[]; }
+  bool isNull() @nogc nothrow const { return _kind == Kind.empty; }
+  bool isArray() @nogc nothrow const { return _kind == Kind.array; }
+  size_t elementCount() @nogc nothrow const { return _elementCount; }
+
+  // --- Comparison ---
+
+  bool isEqualTo(ref const HeapEquableValue other) @nogc nothrow const {
+    return _serialized == other._serialized;
+  }
+
+  bool isEqualTo(const HeapEquableValue other) @nogc nothrow const {
+    return _serialized == other._serialized;
+  }
+
+  bool isLessThan(ref const HeapEquableValue other) @nogc nothrow const @trusted {
+    if (_kind == Kind.array || _kind == Kind.assocArray) {
+      return false;
+    }
+
+    bool thisIsNum, otherIsNum;
+    double thisVal = parseDouble(_serialized[], thisIsNum);
+    double otherVal = parseDouble(other._serialized[], otherIsNum);
+
+    if (thisIsNum && otherIsNum) {
+      return thisVal < otherVal;
+    }
+
+    return _serialized[] < other._serialized[];
+  }
+
+  // --- Array operations ---
+
+  void addElement(HeapEquableValue element) @trusted @nogc nothrow {
+    if (_kind != Kind.array && _kind != Kind.assocArray) {
+      return;
+    }
+
+    auto newCount = _elementCount + 1;
+    auto newElements = allocateHeapEquableArray(newCount);
+    if (newElements is null) {
+      return;
+    }
+
+    copyHeapEquableArray(_elements, newElements, _elementCount);
+    copyHeapEquableElement(&newElements[_elementCount], element);
+    freeHeapEquableArray(_elements, _elementCount);
+
+    _elements = newElements;
+    _elementCount = newCount;
+  }
+
+  ref const(HeapEquableValue) getElement(size_t index) @nogc nothrow const @trusted {
+    static HeapEquableValue empty;
+
+    if (_elements is null || index >= _elementCount) {
+      return empty;
+    }
+
+    return _elements[index];
+  }
+
+  int opApply(scope int delegate(ref const HeapEquableValue) @safe nothrow dg) @trusted nothrow const {
+    foreach (i; 0 .. _elementCount) {
+      auto result = dg(_elements[i]);
+      if (result) {
+        return result;
+      }
+    }
+    return 0;
+  }
+
+  HeapEquableValue[] toArray() @trusted nothrow {
+    if (_kind == Kind.scalar || _kind == Kind.empty) {
+      return allocateSingleGCElement(this);
+    }
+
+    if (_elements is null || _elementCount == 0) {
+      return [];
+    }
+
+    return copyToGCArray(_elements, _elementCount);
+  }
+
+  // --- Copy semantics ---
+
+  @disable this(this);
+
+  this(ref return scope const HeapEquableValue rhs) @trusted nothrow {
+    _serialized = rhs._serialized;
+    _kind = rhs._kind;
+    _elements = duplicateHeapEquableArray(rhs._elements, rhs._elementCount);
+    _elementCount = (_elements !is null) ? rhs._elementCount : 0;
+  }
+
+  void opAssign(ref const HeapEquableValue rhs) @trusted nothrow {
+    freeHeapEquableArray(_elements, _elementCount);
+
+    _serialized = rhs._serialized;
+    _kind = rhs._kind;
+    _elements = duplicateHeapEquableArray(rhs._elements, rhs._elementCount);
+    _elementCount = (_elements !is null) ? rhs._elementCount : 0;
+  }
+
+  void opAssign(HeapEquableValue rhs) @trusted nothrow {
+    freeHeapEquableArray(_elements, _elementCount);
+
+    _serialized = rhs._serialized;
+    _kind = rhs._kind;
+    _elementCount = rhs._elementCount;
+    _elements = rhs._elements;
+
+    rhs._elements = null;
+    rhs._elementCount = 0;
+  }
+
+  ~this() @trusted @nogc nothrow {
+    freeHeapEquableArray(_elements, _elementCount);
+    _elements = null;
+    _elementCount = 0;
+  }
+
+  void incrementRefCount() @trusted @nogc nothrow {
+    _serialized.incrementRefCount();
+  }
+}
+
+// --- Module-level memory helpers ---
+
+HeapEquableValue* allocateHeapEquableArray(size_t count) @trusted @nogc nothrow {
+  auto ptr = cast(HeapEquableValue*) malloc(count * HeapEquableValue.sizeof);
+
+  if (ptr !is null) {
+    memset(ptr, 0, count * HeapEquableValue.sizeof);
+  }
+
+  return ptr;
+}
+
+void copyHeapEquableArray(
+  const HeapEquableValue* src,
+  HeapEquableValue* dst,
+  size_t count
+) @trusted @nogc nothrow {
+  if (src is null || count == 0) {
+    return;
+  }
+
+  foreach (i; 0 .. count) {
+    dst[i]._serialized = src[i]._serialized;
+    dst[i]._kind = src[i]._kind;
+    dst[i]._elementCount = src[i]._elementCount;
+    dst[i]._elements = cast(HeapEquableValue*) src[i]._elements;
+    dst[i]._serialized.incrementRefCount();
+  }
+}
+
+void copyHeapEquableElement(HeapEquableValue* dst, ref HeapEquableValue src) @trusted @nogc nothrow {
+  dst._serialized = src._serialized;
+  dst._kind = src._kind;
+  dst._elementCount = src._elementCount;
+  dst._elements = src._elements;
+  dst._serialized.incrementRefCount();
+}
+
+HeapEquableValue* duplicateHeapEquableArray(
+  const HeapEquableValue* src,
+  size_t count
+) @trusted @nogc nothrow {
+  if (src is null || count == 0) {
+    return null;
+  }
+
+  auto dst = allocateHeapEquableArray(count);
+
+  if (dst !is null) {
+    copyHeapEquableArray(src, dst, count);
+  }
+
+  return dst;
+}
+
+void freeHeapEquableArray(HeapEquableValue* elements, size_t count) @trusted @nogc nothrow {
+  if (elements is null) {
+    return;
+  }
+
+  foreach (i; 0 .. count) {
+    destroy(elements[i]);
+  }
+  free(elements);
+}
+
+HeapEquableValue[] allocateSingleGCElement(ref const HeapEquableValue value) @trusted nothrow {
+  try {
+    auto result = new HeapEquableValue[1];
+    result[0] = value;
+    return result;
+  } catch (Exception) {
+    return [];
+  }
+}
+
+HeapEquableValue[] copyToGCArray(const HeapEquableValue* elements, size_t count) @trusted nothrow {
+  try {
+    auto result = new HeapEquableValue[count];
+    foreach (i; 0 .. count) {
+      result[i] = elements[i];
+    }
+    return result;
+  } catch (Exception) {
+    return [];
+  }
+}
+
+HeapEquableValue toHeapEquableValue(const(char)[] serialized) @nogc nothrow {
+  return HeapEquableValue.createScalar(serialized);
+}
+
+/// Compares two objects using opEquals.
+/// Returns false if opEquals throws an exception.
+bool objectEquals(Object a, Object b) @trusted nothrow {
+  try {
+    return a.opEquals(b);
+  } catch (Exception) {
+    return false;
+  } catch (Error) {
+    return false;
+  }
+}
+
+version (unittest) {
+  @("createScalar stores serialized value")
+  unittest {
+    auto v = HeapEquableValue.createScalar("test");
+    assert(v.getSerialized() == "test");
+    assert(v.kind() == HeapEquableValue.Kind.scalar);
+  }
+
+  @("isEqualTo compares serialized values")
+  unittest {
+    auto v1 = HeapEquableValue.createScalar("hello");
+    auto v2 = HeapEquableValue.createScalar("hello");
+    auto v3 = HeapEquableValue.createScalar("world");
+
+    assert(v1.isEqualTo(v2));
+    assert(!v1.isEqualTo(v3));
+  }
+
+  @("array type stores elements")
+  unittest {
+    auto arr = HeapEquableValue.createArray("[1, 2, 3]");
+    arr.addElement(HeapEquableValue.createScalar("1"));
+    arr.addElement(HeapEquableValue.createScalar("2"));
+    arr.addElement(HeapEquableValue.createScalar("3"));
+
+    assert(arr.elementCount() == 3);
+    assert(arr.getElement(0).getSerialized() == "1");
+    assert(arr.getElement(1).getSerialized() == "2");
+    assert(arr.getElement(2).getSerialized() == "3");
+  }
+
+  @("copy creates independent copy")
+  unittest {
+    auto v1 = HeapEquableValue.createScalar("test");
+    auto v2 = v1;
+    assert(v2.getSerialized() == "test");
+  }
+
+  @("array copy creates independent copy")
+  unittest {
+    auto arr1 = HeapEquableValue.createArray("[1, 2]");
+    arr1.addElement(HeapEquableValue.createScalar("1"));
+    arr1.addElement(HeapEquableValue.createScalar("2"));
+
+    auto arr2 = arr1;
+    arr2.addElement(HeapEquableValue.createScalar("3"));
+
+    assert(arr1.elementCount() == 2);
+    assert(arr2.elementCount() == 3);
+  }
+}

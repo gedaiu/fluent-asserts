@@ -151,24 +151,51 @@ void arrayContain(ref Evaluation evaluation) @trusted nothrow {
   auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
   auto testData = evaluation.currentValue.proxyValue.toArray;
 
-  if(!evaluation.isNegated) {
-    auto missingValues = expectedPieces.filter!(a => testData.filter!(b => b.isEqualTo(a)).empty).array;
+  if (!evaluation.isNegated) {
+    auto missingValues = filterHeapEquableValues(expectedPieces, testData, false);
 
-    if(missingValues.length > 0) {
+    if (missingValues.length > 0) {
       addLifecycleMessage(evaluation, missingValues);
       evaluation.result.expected = createResultMessage(evaluation.expectedValue, expectedPieces);
       evaluation.result.actual = evaluation.currentValue.strValue[];
     }
   } else {
-    auto presentValues = expectedPieces.filter!(a => !testData.filter!(b => b.isEqualTo(a)).empty).array;
+    auto presentValues = filterHeapEquableValues(expectedPieces, testData, true);
 
-    if(presentValues.length > 0) {
+    if (presentValues.length > 0) {
       addNegatedLifecycleMessage(evaluation, presentValues);
       evaluation.result.expected = createNegatedResultMessage(evaluation.expectedValue, expectedPieces);
       evaluation.result.actual = evaluation.currentValue.strValue[];
       evaluation.result.negated = true;
     }
   }
+}
+
+/// Filters elements from `source` based on whether they exist in `searchIn`.
+/// When `keepFound` is true, returns elements that ARE in searchIn.
+/// When `keepFound` is false, returns elements that are NOT in searchIn.
+HeapEquableValue[] filterHeapEquableValues(
+  HeapEquableValue[] source,
+  HeapEquableValue[] searchIn,
+  bool keepFound
+) @trusted nothrow {
+  HeapEquableValue[] result;
+
+  foreach (ref a; source) {
+    bool found = false;
+    foreach (ref b; searchIn) {
+      if (b.isEqualTo(a)) {
+        found = true;
+        break;
+      }
+    }
+
+    if (found == keepFound) {
+      result ~= a;
+    }
+  }
+
+  return result;
 }
 
 @("array contains a value")
@@ -214,7 +241,7 @@ void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
   auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
   auto testData = evaluation.currentValue.proxyValue.toArray;
 
-  auto comparison = ListComparison!EquableValue(testData, expectedPieces);
+  auto comparison = ListComparison!HeapEquableValue(testData, expectedPieces);
 
   auto missing = comparison.missing;
   auto extra = comparison.extra;
@@ -229,11 +256,11 @@ void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
       evaluation.result.actual.put(testData.niceJoin(evaluation.currentValue.typeName.idup));
 
       foreach(e; extra) {
-        evaluation.result.extra ~= e.getSerialized.cleanString;
+        evaluation.result.extra ~= e.getSerialized.idup.cleanString;
       }
 
       foreach(m; missing) {
-        evaluation.result.missing ~= m.getSerialized.cleanString;
+        evaluation.result.missing ~= m.getSerialized.idup.cleanString;
       }
     }
   } else {
@@ -298,13 +325,13 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
   evaluation.result.addText(".");
 }
 
-/// Adds a failure message to evaluation.result describing missing EquableValue elements.
-void addLifecycleMessage(ref Evaluation evaluation, EquableValue[] missingValues) @safe nothrow {
+/// Adds a failure message to evaluation.result describing missing HeapEquableValue elements.
+void addLifecycleMessage(ref Evaluation evaluation, HeapEquableValue[] missingValues) @safe nothrow {
   string[] missing;
   try {
     missing = new string[missingValues.length];
-    foreach (i, val; missingValues) {
-      missing[i] = val.getSerialized.cleanString;
+    foreach (i, ref val; missingValues) {
+      missing[i] = val.getSerialized.idup.cleanString;
     }
   } catch (Exception) {
     return;
@@ -329,9 +356,17 @@ void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValue
   evaluation.result.addText(".");
 }
 
-/// Adds a negated failure message to evaluation.result describing unexpectedly present EquableValue elements.
-void addNegatedLifecycleMessage(ref Evaluation evaluation, EquableValue[] missingValues) @safe nothrow {
-  auto missing = missingValues.map!(a => a.getSerialized).array;
+/// Adds a negated failure message to evaluation.result describing unexpectedly present HeapEquableValue elements.
+void addNegatedLifecycleMessage(ref Evaluation evaluation, HeapEquableValue[] missingValues) @safe nothrow {
+  string[] missing;
+  try {
+    missing = new string[missingValues.length];
+    foreach (i, ref val; missingValues) {
+      missing[i] = val.getSerialized.idup;
+    }
+  } catch (Exception) {
+    return;
+  }
 
   addNegatedLifecycleMessage(evaluation, missing);
 }
@@ -348,9 +383,17 @@ string createResultMessage(ValueEvaluation expectedValue, string[] expectedPiece
   return message;
 }
 
-/// Creates an expected result message from EquableValue array.
-string createResultMessage(ValueEvaluation expectedValue, EquableValue[] missingValues) @safe nothrow {
-  auto missing = missingValues.map!(a => a.getSerialized).array;
+/// Creates an expected result message from HeapEquableValue array.
+string createResultMessage(ValueEvaluation expectedValue, HeapEquableValue[] missingValues) @safe nothrow {
+  string[] missing;
+  try {
+    missing = new string[missingValues.length];
+    foreach (i, ref val; missingValues) {
+      missing[i] = val.getSerialized.idup;
+    }
+  } catch (Exception) {
+    return "";
+  }
 
   return createResultMessage(expectedValue, missing);
 }
@@ -367,9 +410,17 @@ string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expect
   return message;
 }
 
-/// Creates a negated expected result message from EquableValue array.
-string createNegatedResultMessage(ValueEvaluation expectedValue, EquableValue[] missingValues) @safe nothrow {
-  auto missing = missingValues.map!(a => a.getSerialized).array;
+/// Creates a negated expected result message from HeapEquableValue array.
+string createNegatedResultMessage(ValueEvaluation expectedValue, HeapEquableValue[] missingValues) @safe nothrow {
+  string[] missing;
+  try {
+    missing = new string[missingValues.length];
+    foreach (i, ref val; missingValues) {
+      missing[i] = val.getSerialized.idup;
+    }
+  } catch (Exception) {
+    return "";
+  }
 
   return createNegatedResultMessage(expectedValue, missing);
 }
@@ -384,12 +435,12 @@ string niceJoin(string[] values, string typeName = "") @trusted nothrow {
   return result;
 }
 
-string niceJoin(EquableValue[] values, string typeName = "") @trusted nothrow {
+string niceJoin(HeapEquableValue[] values, string typeName = "") @trusted nothrow {
   string[] strValues;
   try {
     strValues = new string[values.length];
-    foreach (i, val; values) {
-      strValues[i] = val.getSerialized.cleanString;
+    foreach (i, ref val; values) {
+      strValues[i] = val.getSerialized.idup.cleanString;
     }
   } catch (Exception) {
     return "";

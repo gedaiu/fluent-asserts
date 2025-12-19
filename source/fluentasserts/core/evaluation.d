@@ -7,7 +7,7 @@ import std.traits;
 import std.conv;
 import std.range;
 import std.array;
-import std.algorithm : map, sort;
+import std.algorithm : map, move, sort;
 
 import core.memory : GC;
 
@@ -41,7 +41,7 @@ struct ValueEvaluation {
   HeapString strValue;
 
   /// Proxy object holding the evaluated value to help doing better comparisions
-  EquableValue proxyValue;
+  HeapEquableValue proxyValue;
 
   /// Human readable value
   HeapString niceValue;
@@ -61,23 +61,27 @@ struct ValueEvaluation {
   /// a custom text to be prepended to the value
   HeapString prependText;
 
+  /// Object reference for opEquals comparison (non-@nogc contexts only)
+  Object objectRef;
+
   /// Disable postblit - use copy constructor instead
   @disable this(this);
 
   /// Copy constructor - creates a deep copy from the source.
-  this(ref return scope inout ValueEvaluation rhs) @trusted nothrow {
+  this(ref return scope const ValueEvaluation rhs) @trusted nothrow {
     throwable = cast(Throwable) rhs.throwable;
     duration = rhs.duration;
     gcMemoryUsed = rhs.gcMemoryUsed;
     nonGCMemoryUsed = rhs.nonGCMemoryUsed;
     strValue = rhs.strValue;
-    proxyValue = cast(EquableValue) rhs.proxyValue;
+    proxyValue = rhs.proxyValue; // Use HeapEquableValue's copy constructor
     niceValue = rhs.niceValue;
     typeNames = rhs.typeNames;
     meta = rhs.meta;
     fileName = rhs.fileName;
     line = rhs.line;
     prependText = rhs.prependText;
+    objectRef = cast(Object) rhs.objectRef;
   }
 
   /// Assignment operator - creates a deep copy from the source.
@@ -87,13 +91,14 @@ struct ValueEvaluation {
     gcMemoryUsed = rhs.gcMemoryUsed;
     nonGCMemoryUsed = rhs.nonGCMemoryUsed;
     strValue = rhs.strValue;
-    proxyValue = cast(EquableValue) rhs.proxyValue;
+    proxyValue = rhs.proxyValue;
     niceValue = rhs.niceValue;
     typeNames = rhs.typeNames;
     meta = rhs.meta;
     fileName = rhs.fileName;
     line = rhs.line;
     prependText = rhs.prependText;
+    objectRef = cast(Object) rhs.objectRef;
   }
 
   /// Returns true if this ValueEvaluation's HeapString fields are valid.
@@ -148,7 +153,7 @@ struct Evaluation {
   @disable this(this);
 
   /// Copy constructor - creates a deep copy from the source.
-  this(ref return scope inout Evaluation rhs) @trusted nothrow {
+  this(ref return scope const Evaluation rhs) @trusted nothrow {
     id = rhs.id;
     currentValue = rhs.currentValue;
     expectedValue = rhs.expectedValue;
@@ -288,19 +293,13 @@ struct EvaluationResult(T) {
   Unqual!T value;
   ValueEvaluation evaluation;
 
-  /// Postblit - increment ref counts for all memory-managed fields in evaluation.
-  /// This is needed because ValueEvaluation disables postblit but EvaluationResult
-  /// needs to support return value optimization which uses blit.
-  this(this) @trusted nothrow {
-    // After blit, manually increment ref counts for all HeapString fields
-    evaluation.strValue.incrementRefCount();
-    evaluation.niceValue.incrementRefCount();
-    evaluation.fileName.incrementRefCount();
-    evaluation.prependText.incrementRefCount();
-    // TypeNameList contains HeapStrings that need ref count increment
-    evaluation.typeNames.incrementRefCount();
-    // HeapMap needs to create its own copy of data
-    evaluation.meta.incrementRefCount();
+  /// Disable postblit - use copy constructor instead
+  @disable this(this);
+
+  /// Copy constructor - creates a deep copy from the source.
+  this(ref return scope const EvaluationResult rhs) @trusted nothrow {
+    value = cast(Unqual!T) rhs.value;
+    evaluation = rhs.evaluation; // Uses ValueEvaluation's copy constructor
   }
 
   void opAssign(ref const EvaluationResult rhs) @trusted nothrow {
@@ -321,15 +320,67 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
   return evaluate(testData.array, file, line, prependText);
 }
 
+/// Populates a ValueEvaluation with common fields.
+void populateEvaluation(T)(
+  ref ValueEvaluation eval,
+  T value,
+  Duration duration,
+  size_t gcMemoryUsed,
+  size_t nonGCMemoryUsed,
+  Throwable throwable,
+  string file,
+  size_t line,
+  string prependText
+) @trusted {
+  auto serializedValue = SerializerRegistry.instance.serialize(value);
+  auto niceValueStr = SerializerRegistry.instance.niceValue(value);
+
+  eval.throwable = throwable;
+  eval.duration = duration;
+  eval.gcMemoryUsed = gcMemoryUsed;
+  eval.nonGCMemoryUsed = nonGCMemoryUsed;
+  eval.strValue = toHeapString(serializedValue);
+  eval.proxyValue = equableValue(value, niceValueStr);
+  eval.niceValue = toHeapString(niceValueStr);
+  eval.typeNames = extractTypes!T;
+  eval.fileName = toHeapString(file);
+  eval.line = line;
+  eval.prependText = toHeapString(prependText);
+
+  static if (is(T == class)) {
+    eval.objectRef = cast(Object) value;
+  }
+}
+
+/// Measures memory usage of a callable value.
+/// Returns: tuple of (gcMemoryUsed, nonGCMemoryUsed, newBeginTime)
+auto measureCallable(T)(T value, SysTime begin) @trusted {
+  struct MeasureResult {
+    size_t gcMemoryUsed;
+    size_t nonGCMemoryUsed;
+    SysTime newBegin;
+  }
+
+  MeasureResult r;
+  r.newBegin = begin;
+
+  static if (isCallable!T) {
+    if (value is null) {
+      return r;
+    }
+
+    r.newBegin = Clock.currTime;
+    r.nonGCMemoryUsed = getNonGCMemory();
+    auto gcBefore = GC.allocatedInCurrentThread();
+    cast(void) value();
+    r.gcMemoryUsed = GC.allocatedInCurrentThread() - gcBefore;
+    r.nonGCMemoryUsed = getNonGCMemory() - r.nonGCMemoryUsed;
+  }
+
+  return r;
+}
+
 /// Evaluates a lazy value and captures the result along with timing and exception info.
-/// This is the primary evaluation function that serializes values and wraps them
-/// for comparison operations.
-/// Params:
-///   testData = The lazy value to evaluate
-///   file = Source file (auto-captured)
-///   line = Source line (auto-captured)
-///   prependText = Optional text to prepend to the value display
-/// Returns: An EvaluationResult containing the evaluated value and its ValueEvaluation.
 auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(!isInputRange!T || isArray!T || isAssociativeArray!T) {
   GC.collect();
   GC.minimize();
@@ -338,71 +389,25 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 
   auto begin = Clock.currTime;
   alias Result = EvaluationResult!T;
-  size_t gcMemoryUsed = 0;
-  size_t nonGCMemoryUsed = 0;
 
   try {
     auto value = testData;
-    alias TT = typeof(value);
+    auto measured = measureCallable(value, begin);
 
-    static if(isCallable!T) {
-      if(value !is null) {
-        begin = Clock.currTime;
-        nonGCMemoryUsed = getNonGCMemory();
-        // Use allocatedInCurrentThread for accurate per-thread allocation tracking
-        auto gcBefore = GC.allocatedInCurrentThread();
-        cast(void) value();
-        gcMemoryUsed = GC.allocatedInCurrentThread() - gcBefore;
-        nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryUsed;
-      }
-    }
-
-    auto duration = Clock.currTime - begin;
-    auto serializedValue = SerializerRegistry.instance.serialize(value);
-    auto niceValueStr = SerializerRegistry.instance.niceValue(value);
-
-    // Avoid struct literal initialization with HeapString fields.
-    // Struct literals use blit which doesn't call opAssign, causing ref count issues.
     Result result;
     result.value = value;
-    result.evaluation.throwable = null;
-    result.evaluation.duration = duration;
-    result.evaluation.gcMemoryUsed = gcMemoryUsed;
-    result.evaluation.nonGCMemoryUsed = nonGCMemoryUsed;
-    result.evaluation.strValue = toHeapString(serializedValue);
-    result.evaluation.proxyValue = equableValue(value, niceValueStr);
-    result.evaluation.niceValue = toHeapString(niceValueStr);
-    result.evaluation.typeNames = extractTypes!TT;
-    result.evaluation.fileName = toHeapString(file);
-    result.evaluation.line = line;
-    result.evaluation.prependText = toHeapString(prependText);
-
-    return result;
-  } catch(Throwable t) {
+    populateEvaluation(result.evaluation, value, Clock.currTime - measured.newBegin, measured.gcMemoryUsed, measured.nonGCMemoryUsed, null, file, line, prependText);
+    return move(result);
+  } catch (Throwable t) {
     T resultValue;
-
-    static if(isCallable!T) {
+    static if (isCallable!T) {
       resultValue = testData;
     }
 
-    auto resultStr = resultValue.to!string;
-
-    // Avoid struct literal initialization with HeapString fields
     Result result;
     result.value = resultValue;
-    result.evaluation.throwable = t;
-    result.evaluation.duration = Clock.currTime - begin;
-    result.evaluation.gcMemoryUsed = 0;
-    result.evaluation.nonGCMemoryUsed = 0;
-    result.evaluation.strValue = toHeapString(resultStr);
-    result.evaluation.proxyValue = equableValue(resultValue, resultStr);
-    result.evaluation.niceValue = toHeapString(resultStr);
-    result.evaluation.typeNames = extractTypes!T;
-    result.evaluation.fileName = toHeapString(file);
-    result.evaluation.line = line;
-    result.evaluation.prependText = toHeapString(prependText);
-
-    return result;
+    populateEvaluation(result.evaluation, resultValue, Clock.currTime - begin, 0, 0, t, file, line, prependText);
+    return move(result);
   }
 }
 
@@ -565,82 +570,122 @@ interface EquableValue {
     Object getObjectValue() @trusted nothrow @nogc;
 }
 
-/// Wraps a value into an EquableValue for comparison operations.
-/// Automatically selects the appropriate wrapper class based on the value type.
+/// Wraps a value into a HeapEquableValue for comparison operations.
+/// Automatically selects the appropriate kind based on the value type.
 /// Params:
 ///   value = The value to wrap
 ///   serialized = The serialized string representation of the value
-/// Returns: An EquableValue wrapping the given value.
-EquableValue equableValue(T)(T value, string serialized) {
-  static if(isArray!T && !isSomeString!T) {
-    return new ArrayEquable!T(value, serialized);
+/// Returns: A HeapEquableValue wrapping the given value.
+HeapEquableValue equableValue(T)(T value, string serialized) {
+  static if(is(T == void[])) {
+    // Special case for void[] - can't iterate over it
+    return HeapEquableValue.createArray(serialized);
+  } else static if(isArray!T && !isSomeString!T) {
+    auto result = HeapEquableValue.createArray(serialized);
+    foreach(ref elem; value) {
+      auto elemSerialized = SerializerRegistry.instance.niceValue(elem);
+      result.addElement(equableValue(elem, elemSerialized));
+    }
+    return result;
   } else static if(isInputRange!T && !isSomeString!T) {
-    return new ArrayEquable!T(value.array, serialized);
+    auto arr = value.array;
+    auto result = HeapEquableValue.createArray(serialized);
+    foreach(ref elem; arr) {
+      auto elemSerialized = SerializerRegistry.instance.niceValue(elem);
+      result.addElement(equableValue(elem, elemSerialized));
+    }
+    return result;
   } else static if(isAssociativeArray!T) {
-    return new AssocArrayEquable!T(value, serialized);
+    auto result = HeapEquableValue.createAssocArray(serialized);
+    auto sortedKeys = value.keys.sort;
+    foreach(key; sortedKeys) {
+      auto keyStr = SerializerRegistry.instance.niceValue(key);
+      auto valStr = SerializerRegistry.instance.niceValue(value[key]);
+      auto entryStr = keyStr ~ ": " ~ valStr;
+      result.addElement(HeapEquableValue.createScalar(entryStr));
+    }
+    return result;
+  } else static if(__traits(hasMember, T, "byValue") && !__traits(hasMember, T, "byKeyValue")) {
+    // Objects with byValue (but not byKeyValue, which is for assoc arrays) return array of values
+    if (value is null) {
+      return HeapEquableValue.createScalar(serialized);
+    }
+    auto result = HeapEquableValue.createArray(serialized);
+    try {
+      foreach(elem; value.byValue) {
+        auto elemSerialized = SerializerRegistry.instance.niceValue(elem);
+        result.addElement(equableValue(elem, elemSerialized));
+      }
+    } catch (Exception) {
+      return HeapEquableValue.createScalar(serialized);
+    }
+    return result;
   } else {
-    return new ObjectEquable!T(value, serialized);
+    return HeapEquableValue.createScalar(serialized);
   }
 }
 
 /// An EquableValue wrapper for scalar and object types.
 /// Provides equality and ordering comparisons for non-collection values.
 class ObjectEquable(T) : EquableValue {
-  private {
-    T value;
-    string serialized;
-  }
+  private T value;
+  private string serialized;
 
-  /// Constructs an ObjectEquable wrapping the given value.
   this(T value, string serialized) @trusted nothrow {
     this.value = value;
     this.serialized = serialized;
   }
 
-  /// Checks equality with another EquableValue.
   bool isEqualTo(EquableValue otherEquable) @trusted nothrow @nogc {
     auto other = cast(ObjectEquable) otherEquable;
 
-    if(other !is null) {
-      static if (is(T == class)) {
-        // For classes, call opEquals directly to avoid non-@nogc runtime dispatch
-        static if (__traits(compiles, () nothrow @nogc { T a; if (a !is null) a.opEquals(a); })) {
-          if (value is null) {
-            return other.value is null;
-          }
-          if (other.value is null) {
-            return false;
-          }
-          return value.opEquals(other.value);
-        } else {
-          return serialized == otherEquable.getSerialized;
-        }
-      } else {
-        static if (__traits(compiles, value == other.value)) {
-          return value == other.value;
-        } else {
-          return serialized == otherEquable.getSerialized;
-        }
-      }
+    if (other !is null) {
+      return compareWithSameType(other);
     }
 
-    // Cast failed - for class types with @nogc opEquals, try comparing via Object
+    return compareWithDifferentType(otherEquable);
+  }
+
+  private bool compareWithSameType(ObjectEquable other) @trusted nothrow @nogc {
     static if (is(T == class)) {
-      static if (__traits(compiles, () nothrow @nogc { T a; if (a !is null) a.opEquals(cast(Object) null); })) {
-        auto otherObj = otherEquable.getObjectValue();
-        if (value is null && otherObj is null) {
-          return true;
-        }
-        if (value is null || otherObj is null) {
-          return false;
-        }
-        return value.opEquals(otherObj);
-      } else {
-        return serialized == otherEquable.getSerialized;
-      }
+      return compareClassValues(value, other.value, serialized, other.serialized);
+    } else static if (__traits(compiles, value == other.value)) {
+      return value == other.value;
+    } else {
+      return serialized == other.serialized;
+    }
+  }
+
+  private bool compareWithDifferentType(EquableValue otherEquable) @trusted nothrow @nogc {
+    static if (is(T == class) && __traits(compiles, () nothrow @nogc { T a; if (a !is null) a.opEquals(cast(Object) null); })) {
+      return compareClassWithObject(value, otherEquable.getObjectValue());
     } else {
       return serialized == otherEquable.getSerialized;
     }
+  }
+
+  private static bool compareClassValues(T a, T b, string serializedA, string serializedB) @trusted nothrow @nogc {
+    static if (__traits(compiles, () nothrow @nogc { T x; if (x !is null) x.opEquals(x); })) {
+      if (a is null) {
+        return b is null;
+      }
+      if (b is null) {
+        return false;
+      }
+      return a.opEquals(b);
+    } else {
+      return serializedA == serializedB;
+    }
+  }
+
+  private static bool compareClassWithObject(T a, Object b) @trusted nothrow @nogc {
+    if (a is null && b is null) {
+      return true;
+    }
+    if (a is null || b is null) {
+      return false;
+    }
+    return a.opEquals(b);
   }
 
   /// Checks if this value is less than another EquableValue.
@@ -712,8 +757,8 @@ unittest {
 
   auto value = equableValue(new TestObject(), "[1, 2]").toArray;
   assert(value.length == 2, "invalid length");
-  assert(value[0].toString == "1", value[0].toString ~ " != 1");
-  assert(value[1].toString == "2", value[1].toString ~ " != 2");
+  assert(value[0].getSerialized == "1", value[0].getSerialized.idup ~ " != 1");
+  assert(value[1].getSerialized == "2", value[1].getSerialized.idup ~ " != 2");
 }
 
 @("isLessThan returns true when value is less than other")

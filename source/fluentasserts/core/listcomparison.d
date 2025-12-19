@@ -5,7 +5,7 @@ import std.array;
 import std.traits;
 import std.math;
 
-import fluentasserts.core.evaluation : EquableValue;
+import fluentasserts.core.memory.heapequable : HeapEquableValue;
 
 U[] toValueList(U, V)(V expectedValueList) @trusted {
   import std.range : isInputRange, ElementType;
@@ -57,8 +57,8 @@ struct ListComparison(Type) {
   private long findIndex(T[] list, T element) nothrow {
     static if(std.traits.isNumeric!(T)) {
         return list.countUntil!(a => approxEqual(element, a, maxRelDiff));
-      } else static if(is(T == EquableValue)) {
-        foreach(index, a; list) {
+      } else static if(is(T == HeapEquableValue)) {
+        foreach(index, ref a; list) {
           if(a.isEqualTo(element)) {
             return index;
           }

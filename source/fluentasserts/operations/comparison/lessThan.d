@@ -88,7 +88,7 @@ void lessThanGeneric(ref Evaluation evaluation) @safe nothrow @nogc {
 
   bool result = false;
 
-  if (evaluation.currentValue.proxyValue !is null && evaluation.expectedValue.proxyValue !is null) {
+  if (!evaluation.currentValue.proxyValue.isNull() && !evaluation.expectedValue.proxyValue.isNull()) {
     result = evaluation.currentValue.proxyValue.isLessThan(evaluation.expectedValue.proxyValue);
   }
 

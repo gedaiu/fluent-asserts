@@ -143,6 +143,62 @@ bool isDigit(char c) @safe nothrow @nogc {
   return c >= '0' && c <= '9';
 }
 
+/// Parses a string as a double value.
+///
+/// A simple parser for numeric strings that handles integers and decimals.
+/// Does not support scientific notation.
+///
+/// Params:
+///   s = The string to parse
+///   success = Output parameter set to true if parsing succeeded
+///
+/// Returns:
+///   The parsed double value, or 0.0 if parsing failed.
+double parseDouble(const(char)[] s, out bool success) @nogc nothrow pure @safe {
+  success = false;
+  if (s.length == 0) {
+    return 0.0;
+  }
+
+  double result = 0.0;
+  double fraction = 0.1;
+  bool negative = false;
+  bool seenDot = false;
+  bool seenDigit = false;
+  size_t i = 0;
+
+  if (s[0] == '-') {
+    negative = true;
+    i = 1;
+  } else if (s[0] == '+') {
+    i = 1;
+  }
+
+  for (; i < s.length; i++) {
+    char c = s[i];
+    if (c >= '0' && c <= '9') {
+      seenDigit = true;
+      if (seenDot) {
+        result += (c - '0') * fraction;
+        fraction *= 0.1;
+      } else {
+        result = result * 10 + (c - '0');
+      }
+    } else if (c == '.' && !seenDot) {
+      seenDot = true;
+    } else {
+      return 0.0;
+    }
+  }
+
+  if (!seenDigit) {
+    return 0.0;
+  }
+
+  success = true;
+  return negative ? -result : result;
+}
+
 // ---------------------------------------------------------------------------
 // Sign parsing
 // ---------------------------------------------------------------------------
