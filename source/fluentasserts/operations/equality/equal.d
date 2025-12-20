@@ -2,7 +2,6 @@ module fluentasserts.operations.equality.equal;
 
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation;
-import fluentasserts.core.memory.heapequable : objectEquals;
 
 import fluentasserts.core.lifecycle;
 import fluentasserts.results.message;
@@ -32,18 +31,15 @@ void equal(ref Evaluation evaluation) @safe nothrow {
 
   bool isEqual;
 
-  // For objects, use opEquals for proper comparison (identity matters, not just string)
-  if (evaluation.currentValue.objectRef !is null && evaluation.expectedValue.objectRef !is null) {
-    isEqual = objectEquals(evaluation.currentValue.objectRef, evaluation.expectedValue.objectRef);
-  } else {
-    isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
-  }
-
+  // Use proxyValue for all comparisons (now supports opEquals via object references)
   auto hasCurrentProxy = !evaluation.currentValue.proxyValue.isNull();
   auto hasExpectedProxy = !evaluation.expectedValue.proxyValue.isNull();
 
-  if (!isEqual && hasCurrentProxy && hasExpectedProxy) {
+  if (hasCurrentProxy && hasExpectedProxy) {
     isEqual = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
+  } else {
+    // Default string comparison
+    isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
   }
 
   if (evaluation.isNegated) {

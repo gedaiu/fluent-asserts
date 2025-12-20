@@ -1,6 +1,5 @@
-/// Heap-allocated equable value for @nogc contexts.
-/// Note: Object comparison uses serialized string representation only.
-/// For opEquals-based object comparison, use non-@nogc expect/should API.
+/// Heap-allocated equable value supporting both string and opEquals comparison.
+/// Stores object references for proper opEquals-based comparison when available.
 module fluentasserts.core.memory.heapequable;
 
 import core.stdc.stdlib : malloc, free;
@@ -11,7 +10,8 @@ import fluentasserts.core.toNumeric : parseDouble;
 
 @safe:
 
-/// A heap-allocated wrapper for comparing values without GC.
+/// A heap-allocated wrapper for comparing values.
+/// Supports both string-based comparison and opEquals for objects.
 struct HeapEquableValue {
   enum Kind : ubyte { empty, scalar, array, assocArray }
 
@@ -19,6 +19,7 @@ struct HeapEquableValue {
   Kind _kind;
   HeapEquableValue* _elements;
   size_t _elementCount;
+  Object _objectRef;  // For opEquals comparison
 
   // --- Factory methods ---
 
@@ -49,6 +50,14 @@ struct HeapEquableValue {
     return result;
   }
 
+  static HeapEquableValue createObject(const(char)[] serialized, Object obj) nothrow {
+    HeapEquableValue result;
+    result._kind = Kind.scalar;
+    result._serialized = toHeapString(serialized);
+    result._objectRef = obj;
+    return result;
+  }
+
   // --- Accessors ---
 
   Kind kind() @nogc nothrow const { return _kind; }
@@ -57,14 +66,37 @@ struct HeapEquableValue {
   bool isNull() @nogc nothrow const { return _kind == Kind.empty; }
   bool isArray() @nogc nothrow const { return _kind == Kind.array; }
   size_t elementCount() @nogc nothrow const { return _elementCount; }
+  Object getObjectRef() @nogc nothrow const @trusted { return cast(Object)_objectRef; }
 
   // --- Comparison ---
 
-  bool isEqualTo(ref const HeapEquableValue other) @nogc nothrow const {
+  bool isEqualTo(ref const HeapEquableValue other) nothrow const @trusted {
+    // If both have object references, use opEquals
+    if (_objectRef !is null && other._objectRef !is null) {
+      return objectEquals(cast(Object)_objectRef, cast(Object)other._objectRef);
+    }
+
+    // If only one has object reference, not equal
+    if (_objectRef !is null || other._objectRef !is null) {
+      return false;
+    }
+
+    // Otherwise fall back to string comparison
     return _serialized == other._serialized;
   }
 
-  bool isEqualTo(const HeapEquableValue other) @nogc nothrow const {
+  bool isEqualTo(const HeapEquableValue other) nothrow const @trusted {
+    // If both have object references, use opEquals
+    if (_objectRef !is null && other._objectRef !is null) {
+      return objectEquals(cast(Object)_objectRef, cast(Object)other._objectRef);
+    }
+
+    // If only one has object reference, not equal
+    if (_objectRef !is null || other._objectRef !is null) {
+      return false;
+    }
+
+    // Otherwise fall back to string comparison
     return _serialized == other._serialized;
   }
 
@@ -146,6 +178,7 @@ struct HeapEquableValue {
     _kind = rhs._kind;
     _elements = duplicateHeapEquableArray(rhs._elements, rhs._elementCount);
     _elementCount = (_elements !is null) ? rhs._elementCount : 0;
+    _objectRef = cast(Object) rhs._objectRef;
   }
 
   void opAssign(ref const HeapEquableValue rhs) @trusted nothrow {
@@ -155,6 +188,7 @@ struct HeapEquableValue {
     _kind = rhs._kind;
     _elements = duplicateHeapEquableArray(rhs._elements, rhs._elementCount);
     _elementCount = (_elements !is null) ? rhs._elementCount : 0;
+    _objectRef = cast(Object) rhs._objectRef;
   }
 
   void opAssign(HeapEquableValue rhs) @trusted nothrow {
@@ -164,9 +198,11 @@ struct HeapEquableValue {
     _kind = rhs._kind;
     _elementCount = rhs._elementCount;
     _elements = rhs._elements;
+    _objectRef = rhs._objectRef;
 
     rhs._elements = null;
     rhs._elementCount = 0;
+    rhs._objectRef = null;
   }
 
   ~this() @trusted @nogc nothrow {

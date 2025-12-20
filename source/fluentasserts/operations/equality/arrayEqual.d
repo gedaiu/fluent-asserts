@@ -17,11 +17,19 @@ version(unittest) {
 static immutable arrayEqualDescription = "Asserts that the target is strictly == equal to the given val.";
 
 /// Asserts that two arrays are strictly equal element by element.
-/// Uses serialized string comparison via isEqualTo.
-void arrayEqual(ref Evaluation evaluation) @safe nothrow @nogc {
+/// Uses proxyValue which now supports both string comparison and opEquals.
+void arrayEqual(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(".");
 
-  bool result = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
+  bool result;
+
+  // Use proxyValue for all comparisons (now supports opEquals via object references)
+  if (!evaluation.currentValue.proxyValue.isNull() && !evaluation.expectedValue.proxyValue.isNull()) {
+    result = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
+  } else {
+    // Fallback to string comparison
+    result = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
+  }
 
   if(evaluation.isNegated) {
     result = !result;

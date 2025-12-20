@@ -44,6 +44,7 @@ alias StringTypes = AliasSeq!(string, wstring, dstring, const(char)[]);
 /// Registers all built-in operations, serializers, and sets up the lifecycle.
 static this() {
   SerializerRegistry.instance = new SerializerRegistry;
+  HeapSerializerRegistry.instance = new HeapSerializerRegistry;
   Lifecycle.instance = new Lifecycle;
 
   ResultGlyphs.resetDefaults;

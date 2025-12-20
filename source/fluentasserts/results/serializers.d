@@ -11,6 +11,7 @@ import std.datetime;
 import std.functional;
 
 import fluentasserts.core.memory;
+import fluentasserts.core.evaluation.constraints : isPrimitiveType, isScalarOrString;
 
 version(unittest) {
   import fluent.asserts;
@@ -181,7 +182,7 @@ class SerializerRegistry {
   /// Serializes a primitive type (string, char, number) to a string.
   /// Strings are quoted with double quotes, chars with single quotes.
   /// Special characters are replaced with their visual representations.
-  string serialize(T)(T value) @trusted if(!is(T == enum) && (isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T))) {
+  string serialize(T)(T value) @trusted if(!is(T == enum) && isPrimitiveType!T) {
     static if(isSomeString!T) {
       static if (is(T == string) || is(T == const(char)[])) {
         auto result = replaceSpecialChars(value);
@@ -399,7 +400,8 @@ class HeapSerializerRegistry {
   /// Serializes a primitive type (string, char, number) to a HeapString.
   /// Strings are quoted with double quotes, chars with single quotes.
   /// Special characters are replaced with their visual representations.
-  HeapString serialize(T)(T value) @trusted nothrow @nogc if(!is(T == enum) && (isSomeString!T || (!isArray!T && !isAssociativeArray!T && !isAggregateType!T))) {
+  /// Note: Only string types are @nogc. Numeric types use .to!string which allocates.
+  HeapString serialize(T)(T value) @trusted nothrow if(!is(T == enum) && isPrimitiveType!T) {
     static if(isSomeString!T) {
       static if (is(T == string) || is(T == const(char)[])) {
         return replaceSpecialChars(value);
@@ -858,7 +860,7 @@ string unqualString(T: V[K], V, K)() pure @safe if(isAssociativeArray!T) {
 
 /// Returns the unqualified type name for a non-array type.
 /// Uses fully qualified names for classes, structs, and interfaces.
-string unqualString(T)() pure @safe if(isSomeString!T || (!isArray!T && !isAssociativeArray!T)) {
+string unqualString(T)() pure @safe if(isScalarOrString!T) {
   static if(is(T == class) || is(T == struct) || is(T == interface)) {
     return fullyQualifiedName!(Unqual!(T));
   } else {
