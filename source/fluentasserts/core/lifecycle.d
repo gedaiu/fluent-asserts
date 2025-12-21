@@ -10,7 +10,8 @@ import std.datetime;
 import std.meta;
 
 import fluentasserts.core.base;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
+import fluentasserts.core.evaluation.value : ValueEvaluation;
 
 import fluentasserts.results.message;
 import fluentasserts.results.serializers;

@@ -5,7 +5,7 @@ version (unittest) {
     import fluentasserts.core.base;
     import fluentasserts.core.expect;
     import fluentasserts.core.lifecycle;
-    import fluentasserts.core.evaluation;
+    import fluentasserts.core.evaluation.eval : Evaluation;
     import std.stdio;
     import std.file;
     import std.array;

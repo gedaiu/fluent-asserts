@@ -1,7 +1,7 @@
 module fluentasserts.operations.equality.equal;
 
 import fluentasserts.results.printer;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
 
 import fluentasserts.core.lifecycle;
 import fluentasserts.results.message;
@@ -27,24 +27,18 @@ static immutable endSentence = Message(Message.Type.info, ".");
 /// Asserts that the current value is strictly equal to the expected value.
 /// Note: This function is not @nogc because it may use opEquals for object comparison.
 void equal(ref Evaluation evaluation) @safe nothrow {
-  bool isEqual;
-
-  // Use proxyValue for all comparisons (now supports opEquals via object references)
   auto hasCurrentProxy = !evaluation.currentValue.proxyValue.isNull();
   auto hasExpectedProxy = !evaluation.expectedValue.proxyValue.isNull();
 
+  bool isEqual;
   if (hasCurrentProxy && hasExpectedProxy) {
     isEqual = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
   } else {
-    // Default string comparison
     isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
   }
 
-  if (evaluation.isNegated) {
-    isEqual = !isEqual;
-  }
-
-  if (isEqual) {
+  bool passed = evaluation.isNegated ? !isEqual : isEqual;
+  if (passed) {
     return;
   }
 

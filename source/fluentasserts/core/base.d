@@ -5,7 +5,10 @@ module fluentasserts.core.base;
 
 public import fluentasserts.core.lifecycle;
 public import fluentasserts.core.expect;
-public import fluentasserts.core.evaluation;
+public import fluentasserts.core.evaluation.eval : Evaluation;
+public import fluentasserts.core.evaluation.value : ValueEvaluation;
+public import fluentasserts.core.evaluation.equable : HeapEquableValue;
+public import fluentasserts.core.evaluation.types : EvaluateResult;
 
 public import fluentasserts.results.message;
 public import fluentasserts.results.printer;

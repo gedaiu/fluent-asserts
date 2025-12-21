@@ -1,9 +1,9 @@
 module fluentasserts.operations.comparison.between;
 
 import fluentasserts.results.printer;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.core.toNumeric;
-import fluentasserts.core.memory : toHeapString;
+import fluentasserts.core.memory.heapstring : toHeapString;
 
 import fluentasserts.core.lifecycle;
 

@@ -1,7 +1,7 @@
 module fluentasserts.operations.comparison.lessOrEqualTo;
 
 import fluentasserts.results.printer;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.core.toNumeric;
 
 import fluentasserts.core.lifecycle;
@@ -37,16 +37,10 @@ void lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow @nogc {
 }
 
 void lessOrEqualToDuration(ref Evaluation evaluation) @safe nothrow @nogc {
-  auto expected = toNumeric!ulong(evaluation.expectedValue.strValue);
-  auto current = toNumeric!ulong(evaluation.currentValue.strValue);
-
-  if (!expected.success || !current.success) {
-    evaluation.conversionError("Duration");
+  Duration currentDur, expectedDur;
+  if (!evaluation.parseDurations(currentDur, expectedDur)) {
     return;
   }
-
-  Duration expectedDur = dur!"nsecs"(expected.value);
-  Duration currentDur = dur!"nsecs"(current.value);
 
   evaluation.check(
     currentDur <= expectedDur,
@@ -57,14 +51,8 @@ void lessOrEqualToDuration(ref Evaluation evaluation) @safe nothrow @nogc {
 }
 
 void lessOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
-  SysTime expectedTime;
-  SysTime currentTime;
-
-  try {
-    expectedTime = SysTime.fromISOExtString(evaluation.expectedValue.strValue[]);
-    currentTime = SysTime.fromISOExtString(evaluation.currentValue.strValue[]);
-  } catch (Exception e) {
-    evaluation.conversionError("SysTime");
+  SysTime currentTime, expectedTime;
+  if (!evaluation.parseSysTimes(currentTime, expectedTime)) {
     return;
   }
 

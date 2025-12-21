@@ -1,7 +1,7 @@
 module fluentasserts.operations.equality.arrayEqual;
 
 import fluentasserts.results.printer;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
 
 import fluentasserts.core.lifecycle;
 
@@ -19,25 +19,20 @@ static immutable arrayEqualDescription = "Asserts that the target is strictly ==
 /// Asserts that two arrays are strictly equal element by element.
 /// Uses proxyValue which now supports both string comparison and opEquals.
 void arrayEqual(ref Evaluation evaluation) @safe nothrow {
-  bool result;
+  bool isEqual;
 
-  // Use proxyValue for all comparisons (now supports opEquals via object references)
   if (!evaluation.currentValue.proxyValue.isNull() && !evaluation.expectedValue.proxyValue.isNull()) {
-    result = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
+    isEqual = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
   } else {
-    // Fallback to string comparison
-    result = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
+    isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
   }
 
-  if(evaluation.isNegated) {
-    result = !result;
-  }
-
-  if(result) {
+  bool passed = evaluation.isNegated ? !isEqual : isEqual;
+  if (passed) {
     return;
   }
 
-  if(evaluation.isNegated) {
+  if (evaluation.isNegated) {
     evaluation.result.expected.put("not ");
   }
   evaluation.result.expected.put(evaluation.expectedValue.strValue[]);

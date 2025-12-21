@@ -45,29 +45,19 @@ void allocateGCMemory(ref Evaluation evaluation) @safe nothrow {
   evaluation.currentValue.typeNames.put("event");
   evaluation.expectedValue.typeNames.put("event");
 
-  auto isSuccess = evaluation.currentValue.gcMemoryUsed > 0;
+  auto didAllocate = evaluation.currentValue.gcMemoryUsed > 0;
+  auto passed = evaluation.isNegated ? !didAllocate : didAllocate;
 
-  if(evaluation.isNegated) {
-    isSuccess = !isSuccess;
+  if (passed) {
+    return;
   }
 
-  if(!isSuccess && !evaluation.isNegated) {
-    evaluation.result.addValue(evaluation.currentValue.strValue[]);
-    evaluation.result.addText(" allocated GC memory.");
+  evaluation.result.addValue(evaluation.currentValue.strValue[]);
+  evaluation.result.addText(evaluation.isNegated ? " did not allocate GC memory." : " allocated GC memory.");
 
-    evaluation.result.expected.put("to allocate GC memory");
-    evaluation.result.actual.put("allocated ");
-    evaluation.result.actual.put(evaluation.currentValue.gcMemoryUsed.formatBytes);
-  }
-
-  if(!isSuccess && evaluation.isNegated) {
-    evaluation.result.addValue(evaluation.currentValue.strValue[]);
-    evaluation.result.addText(" did not allocated GC memory.");
-
-    evaluation.result.expected.put("not to allocate GC memory");
-    evaluation.result.actual.put("allocated ");
-    evaluation.result.actual.put(evaluation.currentValue.gcMemoryUsed.formatBytes);
-  }
+  evaluation.result.expected.put(evaluation.isNegated ? "not to allocate GC memory" : "to allocate GC memory");
+  evaluation.result.actual.put("allocated ");
+  evaluation.result.actual.put(evaluation.currentValue.gcMemoryUsed.formatBytes);
 }
 
 @("it does not fail when a callable allocates memory and it is expected to")

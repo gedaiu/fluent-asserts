@@ -8,9 +8,11 @@ import std.conv;
 import fluentasserts.core.listcomparison;
 import fluentasserts.results.printer;
 import fluentasserts.results.asserts : AssertResult;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
+import fluentasserts.core.evaluation.value : ValueEvaluation;
+import fluentasserts.core.evaluation.equable : HeapEquableValue;
 import fluentasserts.results.serializers;
-import fluentasserts.core.memory;
+import fluentasserts.core.memory.heapstring : HeapString, HeapStringList;
 
 import fluentasserts.core.lifecycle;
 

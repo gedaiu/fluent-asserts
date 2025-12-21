@@ -3,9 +3,10 @@
 module fluentasserts.core.expect;
 
 import fluentasserts.core.lifecycle;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation, evaluate, evaluateObject;
+import fluentasserts.core.evaluation.value : ValueEvaluation;
 import fluentasserts.core.evaluator;
-import fluentasserts.core.memory : toHeapString;
+import fluentasserts.core.memory.heapstring : toHeapString;
 
 import fluentasserts.results.printer;
 import fluentasserts.results.formatting : toNiceOperation;

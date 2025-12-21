@@ -13,29 +13,19 @@ void allocateNonGCMemory(ref Evaluation evaluation) @safe nothrow {
   evaluation.currentValue.typeNames.put("event");
   evaluation.expectedValue.typeNames.put("event");
 
-  auto isSuccess = evaluation.currentValue.nonGCMemoryUsed > 0;
+  auto didAllocate = evaluation.currentValue.nonGCMemoryUsed > 0;
+  auto passed = evaluation.isNegated ? !didAllocate : didAllocate;
 
-  if(evaluation.isNegated) {
-    isSuccess = !isSuccess;
+  if (passed) {
+    return;
   }
 
-  if(!isSuccess && !evaluation.isNegated) {
-    evaluation.result.addValue(evaluation.currentValue.strValue[]);
-    evaluation.result.addText(" allocated non-GC memory.");
+  evaluation.result.addValue(evaluation.currentValue.strValue[]);
+  evaluation.result.addText(evaluation.isNegated ? " did not allocate non-GC memory." : " allocated non-GC memory.");
 
-    evaluation.result.expected.put("to allocate non-GC memory");
-    evaluation.result.actual.put("allocated ");
-    evaluation.result.actual.put(evaluation.currentValue.nonGCMemoryUsed.formatBytes);
-  }
-
-  if(!isSuccess && evaluation.isNegated) {
-    evaluation.result.addValue(evaluation.currentValue.strValue[]);
-    evaluation.result.addText(" did not allocate non-GC memory.");
-
-    evaluation.result.expected.put("not to allocate non-GC memory");
-    evaluation.result.actual.put("allocated ");
-    evaluation.result.actual.put(evaluation.currentValue.nonGCMemoryUsed.formatBytes);
-  }
+  evaluation.result.expected.put(evaluation.isNegated ? "not to allocate non-GC memory" : "to allocate non-GC memory");
+  evaluation.result.actual.put("allocated ");
+  evaluation.result.actual.put(evaluation.currentValue.nonGCMemoryUsed.formatBytes);
 }
 
 // Non-GC memory tracking for large allocations works on Linux (using mallinfo).

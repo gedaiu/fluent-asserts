@@ -37,16 +37,10 @@ void greaterOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow @nogc {
 }
 
 void greaterOrEqualToDuration(ref Evaluation evaluation) @safe nothrow @nogc {
-  auto expected = toNumeric!ulong(evaluation.expectedValue.strValue);
-  auto current = toNumeric!ulong(evaluation.currentValue.strValue);
-
-  if (!expected.success || !current.success) {
-    evaluation.conversionError("Duration");
+  Duration currentDur, expectedDur;
+  if (!evaluation.parseDurations(currentDur, expectedDur)) {
     return;
   }
-
-  Duration expectedDur = dur!"nsecs"(expected.value);
-  Duration currentDur = dur!"nsecs"(current.value);
 
   evaluation.check(
     currentDur >= expectedDur,
@@ -57,14 +51,8 @@ void greaterOrEqualToDuration(ref Evaluation evaluation) @safe nothrow @nogc {
 }
 
 void greaterOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
-  SysTime expectedTime;
-  SysTime currentTime;
-
-  try {
-    expectedTime = SysTime.fromISOExtString(evaluation.expectedValue.strValue[]);
-    currentTime = SysTime.fromISOExtString(evaluation.currentValue.strValue[]);
-  } catch (Exception e) {
-    evaluation.conversionError("SysTime");
+  SysTime currentTime, expectedTime;
+  if (!evaluation.parseSysTimes(currentTime, expectedTime)) {
     return;
   }
 

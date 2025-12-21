@@ -11,6 +11,7 @@ import std.algorithm : move;
 import core.memory : GC;
 
 import fluentasserts.core.memory : getNonGCMemory, toHeapString, HeapString;
+import fluentasserts.core.toNumeric : toNumeric;
 import fluentasserts.core.evaluation.value;
 import fluentasserts.core.evaluation.types;
 import fluentasserts.core.evaluation.equable;
@@ -201,6 +202,66 @@ struct Evaluation {
     result.expected.put(typeName);
     result.expected.put(" values");
     result.actual.put("conversion error");
+  }
+
+  /// Parses Duration values from current and expected string values.
+  /// Returns: true if parsing succeeded, false if conversion error was reported.
+  bool parseDurations(out Duration currentDur, out Duration expectedDur) nothrow @safe @nogc {
+    auto expected = toNumeric!ulong(expectedValue.strValue);
+    auto current = toNumeric!ulong(currentValue.strValue);
+
+    if (!expected.success || !current.success) {
+      conversionError("Duration");
+      return false;
+    }
+
+    expectedDur = dur!"nsecs"(expected.value);
+    currentDur = dur!"nsecs"(current.value);
+    return true;
+  }
+
+  /// Parses SysTime values from current and expected string values.
+  /// Returns: true if parsing succeeded, false if conversion error was reported.
+  bool parseSysTimes(out SysTime currentTime, out SysTime expectedTime) nothrow @safe {
+    try {
+      expectedTime = SysTime.fromISOExtString(expectedValue.strValue[]);
+      currentTime = SysTime.fromISOExtString(currentValue.strValue[]);
+      return true;
+    } catch (Exception e) {
+      conversionError("SysTime");
+      return false;
+    }
+  }
+
+  /// Reports a string prefix/suffix check failure with proper message formatting.
+  /// Params:
+  ///   matches = whether the string matches the expected prefix/suffix
+  ///   positiveVerb = verb for positive case (e.g., "start with", "end with")
+  ///   negativeVerb = verb for negative case (e.g., "starts with", "ends with")
+  void reportStringCheck(bool matches, const(char)[] positiveVerb, const(char)[] negativeVerb) nothrow @safe @nogc {
+    bool failed = isNegated ? matches : !matches;
+
+    if (!failed) {
+      return;
+    }
+
+    result.addText(" ");
+    result.addValue(currentValue.strValue[]);
+    result.addText(isNegated ? " " : " does not ");
+    result.addText(negativeVerb);
+    result.addText(" ");
+    result.addValue(expectedValue.strValue[]);
+
+    if (isNegated) {
+      result.expected.put("not to ");
+    } else {
+      result.expected.put("to ");
+    }
+    result.expected.put(positiveVerb);
+    result.expected.put(" ");
+    result.expected.put(expectedValue.strValue[]);
+    result.actual.put(currentValue.strValue[]);
+    result.negated = isNegated;
   }
 
   /// Prints the assertion result using the provided printer.

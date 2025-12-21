@@ -2,7 +2,7 @@
 /// Provides lifetime management and result handling for assertions.
 module fluentasserts.core.evaluator;
 
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.core.lifecycle;
 import fluentasserts.results.printer;
 import fluentasserts.core.base : TestException;
