@@ -6,7 +6,6 @@ import fluentasserts.core.toNumeric;
 
 import fluentasserts.core.lifecycle;
 
-import std.conv;
 import std.datetime;
 
 version(unittest) {
@@ -14,6 +13,7 @@ version(unittest) {
   import fluentasserts.core.expect;
   import fluentasserts.core.base : should, TestException;
   import fluentasserts.core.lifecycle;
+  import std.conv : to;
 }
 
 static immutable lessThanDescription = "Asserts that the tested value is less than the tested value. However, it's often best to assert that the target is equal to its expected value.";

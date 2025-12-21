@@ -5,9 +5,6 @@ import fluentasserts.core.evaluation.eval : Evaluation;
 
 import fluentasserts.core.lifecycle;
 
-import std.conv;
-import std.datetime;
-import std.algorithm;
 
 version (unittest) {
   import fluent.asserts;

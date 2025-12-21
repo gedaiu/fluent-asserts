@@ -37,8 +37,7 @@ void approximately(ref Evaluation evaluation) @trusted nothrow {
   auto deltaParsed = toNumeric!real(toHeapString(evaluation.expectedValue.meta["1"]));
 
   if (!currentParsed.success || !expectedParsed.success || !deltaParsed.success) {
-    evaluation.result.expected = "valid numeric values";
-    evaluation.result.actual = "conversion error";
+    evaluation.conversionError("numeric");
     return;
   }
 
@@ -103,8 +102,7 @@ void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
 
     maxRelDiff = evaluation.expectedValue.meta["1"].idup.to!double;
   } catch (Exception e) {
-    evaluation.result.expected = "valid numeric list";
-    evaluation.result.actual = "conversion error";
+    evaluation.conversionError("numeric list");
     return;
   }
 

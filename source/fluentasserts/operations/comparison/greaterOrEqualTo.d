@@ -6,13 +6,13 @@ import fluentasserts.core.toNumeric;
 
 import fluentasserts.core.lifecycle;
 
-import std.conv;
 import std.datetime;
 
 version (unittest) {
   import fluent.asserts;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
+  import std.conv : to;
   import std.meta;
   import std.string;
 }

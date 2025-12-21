@@ -8,8 +8,6 @@ import fluentasserts.results.serializers;
 
 import std.string;
 import std.conv;
-import std.algorithm;
-import std.array;
 
 static immutable throwAnyDescription = "Tests that the tested callable throws an exception.";
 
