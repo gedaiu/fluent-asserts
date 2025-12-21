@@ -10,7 +10,7 @@ import fluentasserts.results.printer;
 import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.core.evaluation.value : ValueEvaluation;
-import fluentasserts.core.evaluation.equable : HeapEquableValue;
+import fluentasserts.core.memory.heapequable : HeapEquableValue;
 import fluentasserts.results.serializers;
 import fluentasserts.core.memory.heapstring : HeapString, HeapStringList;
 

@@ -7,7 +7,7 @@ import std.conv;
 import ddmp.diff;
 
 import fluentasserts.results.message : Message, ResultGlyphs;
-import fluentasserts.core.memory : HeapString;
+import fluentasserts.core.memory.heapstring : HeapString;
 public import fluentasserts.core.array : FixedArray, FixedAppender, FixedStringArray;
 
 @safe:

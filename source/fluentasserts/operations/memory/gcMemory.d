@@ -1,6 +1,6 @@
 module fluentasserts.operations.memory.gcMemory;
 
-import fluentasserts.core.evaluation : Evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
 import std.conv;
 
 version(unittest) {

@@ -1,7 +1,7 @@
 module fluentasserts.operations.type.beNull;
 
 import fluentasserts.results.printer;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
 
 import fluentasserts.core.lifecycle;
 import std.algorithm;

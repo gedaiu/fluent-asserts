@@ -4,7 +4,7 @@ module fluentasserts.results.message;
 
 import std.string;
 
-import fluentasserts.core.memory : HeapString, toHeapString;
+import fluentasserts.core.memory.heapstring : HeapString, toHeapString;
 
 @safe:
 

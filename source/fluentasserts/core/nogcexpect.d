@@ -5,7 +5,8 @@ module fluentasserts.core.nogcexpect;
 
 import fluentasserts.core.evaluation.constraints : isPrimitiveType;
 import fluentasserts.core.evaluation.equable : equableValue;
-import fluentasserts.core.memory : HeapString, HeapEquableValue;
+import fluentasserts.core.memory.heapstring : HeapString;
+import fluentasserts.core.memory.heapequable : HeapEquableValue;
 import fluentasserts.results.serializers : HeapSerializerRegistry;
 
 import std.traits;

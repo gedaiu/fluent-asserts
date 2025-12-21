@@ -1,12 +1,13 @@
 module fluentasserts.operations.comparison.approximately;
 
 import fluentasserts.results.printer;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
+import fluentasserts.core.memory.heapequable : HeapEquableValue;
 import fluentasserts.core.listcomparison;
 import fluentasserts.results.serializers;
 import fluentasserts.operations.string.contain;
 import fluentasserts.core.toNumeric;
-import fluentasserts.core.memory;
+import fluentasserts.core.memory.heapstring : HeapString, toHeapString;
 
 import fluentasserts.core.lifecycle;
 

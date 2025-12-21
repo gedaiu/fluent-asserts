@@ -1,6 +1,6 @@
 module fluentasserts.operations.memory.nonGcMemory;
 
-import fluentasserts.core.evaluation : Evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.operations.memory.gcMemory : formatBytes;
 
 version(unittest) {

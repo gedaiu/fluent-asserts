@@ -10,7 +10,7 @@ import std.conv;
 import std.datetime;
 import std.functional;
 
-import fluentasserts.core.memory;
+import fluentasserts.core.memory.heapstring : HeapString, HeapStringList, toHeapString;
 import fluentasserts.core.evaluation.constraints : isPrimitiveType, isScalarOrString;
 
 version(unittest) {

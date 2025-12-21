@@ -188,7 +188,7 @@ import std.conv;
 
   /// Asserts that the callable throws a specific exception type.
   ThrowableEvaluator throwException(Type)() @trusted {
-    import fluentasserts.core.memory : toHeapString;
+    import fluentasserts.core.memory.heapstring : toHeapString;
     this._evaluation.expectedValue.meta["exceptionType"] = fullyQualifiedName!Type;
     this._evaluation.expectedValue.meta["throwableType"] = fullyQualifiedName!Type;
     this._evaluation.expectedValue.strValue = toHeapString("\"" ~ fullyQualifiedName!Type ~ "\"");

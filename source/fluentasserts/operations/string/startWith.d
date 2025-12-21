@@ -3,7 +3,7 @@ module fluentasserts.operations.string.startWith;
 import std.string;
 
 import fluentasserts.results.printer;
-import fluentasserts.core.evaluation;
+import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.results.serializers;
 
 import fluentasserts.core.lifecycle;

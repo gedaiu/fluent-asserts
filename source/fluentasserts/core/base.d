@@ -7,8 +7,7 @@ public import fluentasserts.core.lifecycle;
 public import fluentasserts.core.expect;
 public import fluentasserts.core.evaluation.eval : Evaluation;
 public import fluentasserts.core.evaluation.value : ValueEvaluation;
-public import fluentasserts.core.evaluation.equable : HeapEquableValue;
-public import fluentasserts.core.evaluation.types : EvaluateResult;
+public import fluentasserts.core.memory.heapequable : HeapEquableValue;
 
 public import fluentasserts.results.message;
 public import fluentasserts.results.printer;
@@ -431,7 +430,7 @@ unittest {
 /// Replaces the default D runtime assert handler to show fluent-asserts style output.
 void fluentHandler(string file, size_t line, string msg) @system nothrow {
   import core.exception;
-  import fluentasserts.core.evaluation : Evaluation;
+  import fluentasserts.core.evaluation.eval : Evaluation;
   import fluentasserts.results.asserts : AssertResult;
   import fluentasserts.results.source : SourceResult;
   import fluentasserts.results.message : Message;
