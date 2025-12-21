@@ -25,24 +25,19 @@ static immutable betweenDescription = "Asserts that the target is a number or a 
 void between(T)(ref Evaluation evaluation) @safe nothrow {
   evaluation.result.addText(" and ");
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
-  evaluation.result.addText(". ");
 
   auto currentParsed = toNumeric!T(evaluation.currentValue.strValue);
   auto limit1Parsed = toNumeric!T(evaluation.expectedValue.strValue);
   auto limit2Parsed = toNumeric!T(toHeapString(evaluation.expectedValue.meta["1"]));
 
   if (!currentParsed.success || !limit1Parsed.success || !limit2Parsed.success) {
-    evaluation.result.expected.put("valid ");
-    evaluation.result.expected.put(T.stringof);
-    evaluation.result.expected.put(" values");
-    evaluation.result.actual.put("conversion error");
+    evaluation.conversionError(T.stringof);
     return;
   }
 
   betweenResults(currentParsed.value, limit1Parsed.value, limit2Parsed.value,
       evaluation.expectedValue.strValue[], evaluation.expectedValue.meta["1"], evaluation);
 }
-
 
 /// Asserts that a Duration value is strictly between two bounds (exclusive).
 void betweenDuration(ref Evaluation evaluation) @safe nothrow {
@@ -53,8 +48,7 @@ void betweenDuration(ref Evaluation evaluation) @safe nothrow {
   auto limit2Parsed = toNumeric!ulong(toHeapString(evaluation.expectedValue.meta["1"]));
 
   if (!currentParsed.success || !limit1Parsed.success || !limit2Parsed.success) {
-    evaluation.result.expected.put("valid Duration values");
-    evaluation.result.actual.put("conversion error");
+    evaluation.conversionError("Duration");
     return;
   }
 
@@ -68,13 +62,11 @@ void betweenDuration(ref Evaluation evaluation) @safe nothrow {
     strLimit1 = limit1.to!string;
     strLimit2 = limit2.to!string;
   } catch (Exception) {
-    evaluation.result.expected.put("valid Duration values");
-    evaluation.result.actual.put("conversion error");
+    evaluation.conversionError("Duration");
     return;
   }
 
   evaluation.result.addValue(strLimit2);
-  evaluation.result.addText(". ");
 
   betweenResultsDuration(currentValue, limit1, limit2, strLimit1, strLimit2, evaluation);
 }
@@ -93,13 +85,10 @@ void betweenSysTime(ref Evaluation evaluation) @safe nothrow {
     limit2 = SysTime.fromISOExtString(evaluation.expectedValue.meta["1"]);
 
     evaluation.result.addValue(limit2.toISOExtString);
-  } catch(Exception e) {
-    evaluation.result.expected.put("valid SysTime values");
-    evaluation.result.actual.put("conversion error");
+  } catch (Exception e) {
+    evaluation.conversionError("SysTime");
     return;
   }
-
-  evaluation.result.addText(". ");
 
   betweenResults(currentValue, limit1, limit2,
       evaluation.expectedValue.strValue[], evaluation.expectedValue.meta["1"], evaluation);
@@ -131,8 +120,6 @@ private void betweenResultsDuration(Duration currentValue, Duration limit1, Dura
         evaluation.result.addText(" is less than or equal to ");
         evaluation.result.addValue(minStr);
       }
-
-      evaluation.result.addText(".");
 
       evaluation.result.expected.put("a value inside (");
       evaluation.result.expected.put(minStr);
@@ -178,8 +165,6 @@ private void betweenResults(T)(T currentValue, T limit1, T limit2,
         evaluation.result.addText(" is less than or equal to ");
         evaluation.result.addValue(minStr);
       }
-
-      evaluation.result.addText(".");
 
       evaluation.result.expected.put("a value inside (");
       evaluation.result.expected.put(minStr);

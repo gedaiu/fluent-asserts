@@ -247,6 +247,20 @@ struct HeapData(T) {
     _length = 0;
   }
 
+  /// Removes the last element (if any).
+  void popBack() @nogc nothrow {
+    if (_length > 0) {
+      _length--;
+    }
+  }
+
+  /// Truncates to a specific length (if shorter than current).
+  void truncate(size_t newLength) @nogc nothrow {
+    if (newLength < _length) {
+      _length = newLength;
+    }
+  }
+
   /// Returns the current length (for $ in slices).
   size_t opDollar() @nogc nothrow const {
     return _length;

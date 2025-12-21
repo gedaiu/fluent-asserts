@@ -21,8 +21,6 @@ static immutable endWithDescription = "Tests that the tested string ends with th
 
 /// Asserts that a string ends with the expected suffix.
 void endWith(ref Evaluation evaluation) @safe nothrow @nogc {
-  evaluation.result.addText(".");
-
   auto current = evaluation.currentValue.strValue[].cleanString;
   auto expected = evaluation.expectedValue.strValue[].cleanString;
 
@@ -35,7 +33,6 @@ void endWith(ref Evaluation evaluation) @safe nothrow @nogc {
       evaluation.result.addValue(evaluation.currentValue.strValue[]);
       evaluation.result.addText(" ends with ");
       evaluation.result.addValue(evaluation.expectedValue.strValue[]);
-      evaluation.result.addText(".");
 
       evaluation.result.expected.put("not to end with ");
       evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
@@ -48,7 +45,6 @@ void endWith(ref Evaluation evaluation) @safe nothrow @nogc {
       evaluation.result.addValue(evaluation.currentValue.strValue[]);
       evaluation.result.addText(" does not end with ");
       evaluation.result.addValue(evaluation.expectedValue.strValue[]);
-      evaluation.result.addText(".");
 
       evaluation.result.expected.put("to end with ");
       evaluation.result.expected.put(evaluation.expectedValue.strValue[]);

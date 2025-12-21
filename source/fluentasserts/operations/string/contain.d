@@ -28,8 +28,6 @@ static immutable containDescription = "When the tested value is a string, it ass
 
 /// Asserts that a string contains specified substrings.
 void contain(ref Evaluation evaluation) @trusted nothrow @nogc {
-  evaluation.result.addText(".");
-
   auto expectedPieces = evaluation.expectedValue.strValue[].parseList;
   cleanString(expectedPieces);
   auto testData = evaluation.currentValue.strValue[].cleanString;
@@ -49,7 +47,6 @@ void contain(ref Evaluation evaluation) @trusted nothrow @nogc {
     ? (result.count == 1 ? " is present in " : " are present in ")
     : (result.count == 1 ? " is missing from " : " are missing from "));
   evaluation.result.addValue(evaluation.currentValue.strValue[]);
-  evaluation.result.addText(".");
 
   if (negated) {
     evaluation.result.expected.put("not ");
@@ -146,8 +143,6 @@ unittest {
 /// Asserts that an array contains specified elements.
 /// Sets evaluation.result with missing values if the assertion fails.
 void arrayContain(ref Evaluation evaluation) @trusted nothrow {
-  evaluation.result.addText(".");
-
   auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
   auto testData = evaluation.currentValue.proxyValue.toArray;
 
@@ -236,8 +231,6 @@ unittest {
 /// Asserts that an array contains only the specified elements (no extras, no missing).
 /// Sets evaluation.result with extra/missing arrays if the assertion fails.
 void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
-  evaluation.result.addText(".");
-
   auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
   auto testData = evaluation.currentValue.proxyValue.toArray;
 
@@ -311,7 +304,7 @@ unittest {
 
 /// Adds a failure message to evaluation.result describing missing string values.
 void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @safe nothrow {
-  evaluation.result.addText(" ");
+  evaluation.result.addText(". ");
 
   if(missingValues.length == 1) {
     evaluation.result.addValue(missingValues[0]);
@@ -322,7 +315,6 @@ void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @saf
   }
 
   evaluation.result.addValue(evaluation.currentValue.strValue[]);
-  evaluation.result.addText(".");
 }
 
 /// Adds a failure message to evaluation.result describing missing HeapEquableValue elements.
@@ -342,7 +334,7 @@ void addLifecycleMessage(ref Evaluation evaluation, HeapEquableValue[] missingVa
 
 /// Adds a negated failure message to evaluation.result describing unexpectedly present string values.
 void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValues) @safe nothrow {
-  evaluation.result.addText(" ");
+  evaluation.result.addText(". ");
 
   if(presentValues.length == 1) {
     evaluation.result.addValue(presentValues[0]);
@@ -353,7 +345,6 @@ void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValue
   }
 
   evaluation.result.addValue(evaluation.currentValue.strValue[]);
-  evaluation.result.addText(".");
 }
 
 /// Adds a negated failure message to evaluation.result describing unexpectedly present HeapEquableValue elements.

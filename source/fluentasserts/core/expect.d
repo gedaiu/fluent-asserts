@@ -61,18 +61,18 @@ import std.conv;
     try {
       auto sourceValue = _evaluation.source.getValue;
 
-      if(sourceValue == "") {
+      if (sourceValue == "") {
         _evaluation.result.startWith(_evaluation.currentValue.niceValue[].idup);
       } else {
         _evaluation.result.startWith(sourceValue);
       }
-    } catch(Exception) {
+    } catch (Exception) {
       _evaluation.result.startWith(_evaluation.currentValue.strValue[].idup);
     }
 
     _evaluation.result.addText(" should");
 
-    if(value.prependText.length > 0) {
+    if (value.prependText.length > 0) {
       _evaluation.result.addText(value.prependText[].idup);
     }
   }

@@ -161,17 +161,27 @@ enum enableEvaluationRecording = q{
 
 /// Executes an assertion and captures its evaluation result.
 /// Use this to test assertion behavior without throwing on failure.
+/// Thread-safe: saves and restores state on the existing Lifecycle instance.
 Evaluation recordEvaluation(void delegate() assertion) @trusted {
-  Lifecycle.instance.keepLastEvaluation = true;
-  Lifecycle.instance.disableFailureHandling = true;
+  if (Lifecycle.instance is null) {
+    Lifecycle.instance = new Lifecycle();
+  }
+
+  auto instance = Lifecycle.instance;
+  auto previousKeepLastEvaluation = instance.keepLastEvaluation;
+  auto previousDisableFailureHandling = instance.disableFailureHandling;
+
+  instance.keepLastEvaluation = true;
+  instance.disableFailureHandling = true;
+
   scope(exit) {
-    Lifecycle.instance.keepLastEvaluation = false;
-    Lifecycle.instance.disableFailureHandling = false;
+    instance.keepLastEvaluation = previousKeepLastEvaluation;
+    instance.disableFailureHandling = previousDisableFailureHandling;
   }
 
   assertion();
 
-  return Lifecycle.instance.lastEvaluation;
+  return instance.lastEvaluation;
 }
 
 /// Manages the assertion evaluation lifecycle.

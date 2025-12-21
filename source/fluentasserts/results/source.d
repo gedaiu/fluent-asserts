@@ -93,80 +93,94 @@ unittest {
   cleanMixinPath("source/test.d-mixin-").should.equal("source/test.d-mixin-");
 }
 
+// Thread-local cache to avoid races when running tests in parallel.
+// Module-level static variables in D are TLS by default.
+private const(Token)[][string] fileTokensCache;
+
 /// Source code location and token-based source retrieval.
 /// Provides methods to extract and format source code context for assertion failures.
+/// Uses lazy initialization to avoid expensive source parsing until actually needed.
 struct SourceResult {
-  static private {
-    const(Token)[][string] fileTokens;
-  }
-
   /// The source file path
   string file;
 
   /// The line number in the source file
   size_t line;
 
-  /// Tokens representing the relevant source code
-  const(Token)[] tokens;
+  /// Internal storage for tokens (lazy-loaded)
+  private const(Token)[] _tokens;
+  private bool _tokensLoaded;
 
-  /// Creates a SourceResult by parsing the source file and extracting relevant tokens.
-  /// Params:
-  ///   fileName = Path to the source file
-  ///   line = Line number to extract context for
-  /// Returns: A SourceResult with the extracted source context
+  /// Tokens representing the relevant source code (lazy-loaded)
+  const(Token)[] tokens() nothrow @trusted {
+    ensureTokensLoaded();
+    return _tokens;
+  }
+
+  /// Creates a SourceResult with lazy token loading.
+  /// Parsing is deferred until tokens are actually accessed.
   static SourceResult create(string fileName, size_t line) nothrow @trusted {
     SourceResult data;
     auto cleanedPath = fileName.cleanMixinPath;
     data.file = cleanedPath;
     data.line = line;
+    data._tokensLoaded = false;
+    return data;
+  }
 
-    // Try original path first, fall back to cleaned path for mixin files
-    string pathToUse = fileName.exists ? fileName : (cleanedPath.exists ? cleanedPath : fileName);
+  /// Loads tokens if not already loaded (lazy initialization)
+  private void ensureTokensLoaded() nothrow @trusted {
+    if (_tokensLoaded) {
+      return;
+    }
+
+    _tokensLoaded = true;
+
+    string pathToUse = file.exists ? file : file;
 
     if (!pathToUse.exists) {
-      return data;
+      return;
     }
 
     try {
       updateFileTokens(pathToUse);
-      auto result = getScope(fileTokens[pathToUse], line);
+      auto result = getScope(fileTokensCache[pathToUse], line);
 
-      auto begin = getPreviousIdentifier(fileTokens[pathToUse], result.begin);
-      begin = extendToLineStart(fileTokens[pathToUse], begin);
-      auto end = getFunctionEnd(fileTokens[pathToUse], begin) + 1;
+      auto begin = getPreviousIdentifier(fileTokensCache[pathToUse], result.begin);
+      begin = extendToLineStart(fileTokensCache[pathToUse], begin);
+      auto end = getFunctionEnd(fileTokensCache[pathToUse], begin) + 1;
 
-      data.tokens = fileTokens[pathToUse][begin .. end];
+      _tokens = fileTokensCache[pathToUse][begin .. end];
     } catch (Throwable t) {
     }
-
-    return data;
   }
 
   /// Updates the token cache for a file if not already cached.
   static void updateFileTokens(string fileName) {
-    if (fileName !in fileTokens) {
-      fileTokens[fileName] = [];
-      splitMultilinetokens(fileToDTokens(fileName), fileTokens[fileName]);
+    if (fileName !in fileTokensCache) {
+      fileTokensCache[fileName] = [];
+      splitMultilinetokens(fileToDTokens(fileName), fileTokensCache[fileName]);
     }
   }
 
   /// Extracts the value expression from the source tokens.
   /// Returns: The value expression as a string
   string getValue() {
+    auto toks = tokens;
     size_t begin;
-    size_t end = getShouldIndex(tokens, line);
+    size_t end = getShouldIndex(toks, line);
 
     if (end != 0) {
-      begin = tokens.getPreviousIdentifier(end - 1);
-      return tokens[begin .. end - 1].tokensToString.strip;
+      begin = toks.getPreviousIdentifier(end - 1);
+      return toks[begin .. end - 1].tokensToString.strip;
     }
 
-    auto beginAssert = getAssertIndex(tokens, line);
+    auto beginAssert = getAssertIndex(toks, line);
 
     if (beginAssert > 0) {
       begin = beginAssert + 4;
-      end = getParameter(tokens, begin);
-      return tokens[begin .. end].tokensToString.strip;
+      end = getParameter(toks, begin);
+      return toks[begin .. end].tokensToString.strip;
     }
 
     return "";
@@ -177,15 +191,17 @@ struct SourceResult {
     auto separator = leftJustify("", 20, '-');
     string result = "\n" ~ separator ~ "\n" ~ file ~ ":" ~ line.to!string ~ "\n" ~ separator;
 
-    if (tokens.length == 0) {
+    auto toks = tokens;
+
+    if (toks.length == 0) {
       return result ~ "\n";
     }
 
-    size_t currentLine = tokens[0].line - 1;
+    size_t currentLine = toks[0].line - 1;
     size_t column = 1;
     bool afterErrorLine = false;
 
-    foreach (token; tokens.filter!(token => token != tok!"whitespace")) {
+    foreach (token; toks.filter!(token => token != tok!"whitespace")) {
       string prefix = "";
 
       foreach (lineNumber; currentLine .. token.line) {
@@ -226,18 +242,20 @@ struct SourceResult {
 
   /// Prints the source result using the provided printer.
   void print(ResultPrinter printer) @safe nothrow {
-    if (tokens.length == 0) {
+    auto toks = tokens;
+
+    if (toks.length == 0) {
       return;
     }
 
     printer.primary("\n");
     printer.info(file ~ ":" ~ line.to!string);
 
-    size_t currentLine = tokens[0].line - 1;
+    size_t currentLine = toks[0].line - 1;
     size_t column = 1;
     bool afterErrorLine = false;
 
-    foreach (token; tokens.filter!(token => token != tok!"whitespace")) {
+    foreach (token; toks.filter!(token => token != tok!"whitespace")) {
       foreach (lineNumber; currentLine .. token.line) {
         printer.primary("\n");
 

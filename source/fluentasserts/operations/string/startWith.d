@@ -21,8 +21,6 @@ static immutable startWithDescription = "Tests that the tested string starts wit
 
 /// Asserts that a string starts with the expected prefix.
 void startWith(ref Evaluation evaluation) @safe nothrow @nogc {
-  evaluation.result.addText(".");
-
   auto current = evaluation.currentValue.strValue[].cleanString;
   auto expected = evaluation.expectedValue.strValue[].cleanString;
 
@@ -35,7 +33,6 @@ void startWith(ref Evaluation evaluation) @safe nothrow @nogc {
       evaluation.result.addValue(evaluation.currentValue.strValue[]);
       evaluation.result.addText(" starts with ");
       evaluation.result.addValue(evaluation.expectedValue.strValue[]);
-      evaluation.result.addText(".");
 
       evaluation.result.expected.put("not to start with ");
       evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
@@ -48,7 +45,6 @@ void startWith(ref Evaluation evaluation) @safe nothrow @nogc {
       evaluation.result.addValue(evaluation.currentValue.strValue[]);
       evaluation.result.addText(" does not start with ");
       evaluation.result.addValue(evaluation.expectedValue.strValue[]);
-      evaluation.result.addText(".");
 
       evaluation.result.expected.put("to start with ");
       evaluation.result.expected.put(evaluation.expectedValue.strValue[]);

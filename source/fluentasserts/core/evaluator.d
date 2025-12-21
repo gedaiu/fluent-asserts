@@ -88,6 +88,7 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         }
 
         operation(_evaluation);
+        _evaluation.result.addText(".");
 
         if (Lifecycle.instance.keepLastEvaluation) {
             Lifecycle.instance.lastEvaluation = _evaluation;
@@ -164,6 +165,7 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         _evaluation.isEvaluated = true;
 
         operation(_evaluation);
+        _evaluation.result.addText(".");
 
         if (_evaluation.currentValue.throwable !is null) {
             throw _evaluation.currentValue.throwable;
@@ -318,6 +320,7 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         _evaluation.isEvaluated = true;
 
         op(_evaluation);
+        _evaluation.result.addText(".");
 
         if (_evaluation.currentValue.throwable !is null) {
             throw _evaluation.currentValue.throwable;

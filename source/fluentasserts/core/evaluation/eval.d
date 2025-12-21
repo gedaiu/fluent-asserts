@@ -135,6 +135,74 @@ struct Evaluation {
     return result.hasContent();
   }
 
+  /// Records a failed assertion with expected prefix and value.
+  /// Automatically handles negation and sets actual from currentValue.niceValue.
+  /// Params:
+  ///   prefix = The prefix for expected (e.g., "greater than ")
+  ///   value = The value part (e.g., "5")
+  ///   negatedPrefix = The prefix to use when negated (e.g., "less than or equal to ")
+  void fail(const(char)[] prefix, const(char)[] value, const(char)[] negatedPrefix = null) nothrow @safe @nogc {
+    if (isNegated && negatedPrefix !is null) {
+      result.expected.put(negatedPrefix);
+    } else if (isNegated) {
+      result.expected.put("not ");
+      result.expected.put(prefix);
+    } else {
+      result.expected.put(prefix);
+    }
+
+    result.expected.put(value);
+    result.negated = isNegated;
+
+    if (!currentValue.niceValue.empty) {
+      result.actual.put(currentValue.niceValue[]);
+    } else {
+      result.actual.put(currentValue.strValue[]);
+    }
+  }
+
+  /// Checks a condition and records failure if needed.
+  /// Handles negation automatically.
+  /// Params:
+  ///   condition = The assertion condition (true = pass, false = fail)
+  ///   prefix = The prefix for expected (e.g., "greater than ")
+  ///   value = The value part (e.g., "5")
+  ///   negatedPrefix = The prefix to use when negated (optional)
+  /// Returns: true if the assertion passed, false if it failed
+  bool check(bool condition, const(char)[] prefix, const(char)[] value, const(char)[] negatedPrefix = null) nothrow @safe @nogc {
+    bool passed = isNegated ? !condition : condition;
+
+    if (passed) {
+      return true;
+    }
+
+    fail(prefix, value, negatedPrefix);
+    return false;
+  }
+
+  /// Checks a condition and sets expected only (caller sets actual).
+  /// Returns: true if the assertion passed, false if it failed
+  bool checkCustomActual(bool condition, const(char)[] expected, const(char)[] negatedExpected) nothrow @safe @nogc {
+    bool passed = isNegated ? !condition : condition;
+
+    if (passed) {
+      return true;
+    }
+
+    result.expected.put(isNegated ? negatedExpected : expected);
+    result.negated = isNegated;
+    return false;
+  }
+
+  /// Reports a conversion error with the expected type name.
+  /// Sets expected to "valid {typeName} values" and actual to "conversion error".
+  void conversionError(const(char)[] typeName) nothrow @safe @nogc {
+    result.expected.put("valid ");
+    result.expected.put(typeName);
+    result.expected.put(" values");
+    result.actual.put("conversion error");
+  }
+
   /// Prints the assertion result using the provided printer.
   /// Params:
   ///   printer = The ResultPrinter to use for output formatting
@@ -267,8 +335,6 @@ auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t lin
 
 /// Evaluates a lazy value and captures the result along with timing and exception info.
 auto evaluate(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted if(isNotRangeOrIsCollection!T) {
-  GC.collect();
-  GC.minimize();
   GC.disable();
   scope(exit) GC.enable();
 

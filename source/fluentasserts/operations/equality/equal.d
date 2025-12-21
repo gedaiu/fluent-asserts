@@ -27,8 +27,6 @@ static immutable endSentence = Message(Message.Type.info, ".");
 /// Asserts that the current value is strictly equal to the expected value.
 /// Note: This function is not @nogc because it may use opEquals for object comparison.
 void equal(ref Evaluation evaluation) @safe nothrow {
-  evaluation.result.add(endSentence);
-
   bool isEqual;
 
   // Use proxyValue for all comparisons (now supports opEquals via object references)

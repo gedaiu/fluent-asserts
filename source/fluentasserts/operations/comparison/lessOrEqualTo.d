@@ -19,95 +19,61 @@ version (unittest) {
 
 static immutable lessOrEqualToDescription = "Asserts that the tested value is less or equal than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
-/// Asserts that a value is less than or equal to the expected value.
 void lessOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow @nogc {
-  evaluation.result.addText(".");
+  auto expected = toNumeric!T(evaluation.expectedValue.strValue);
+  auto current = toNumeric!T(evaluation.currentValue.strValue);
 
-  auto expectedParsed = toNumeric!T(evaluation.expectedValue.strValue);
-  auto currentParsed = toNumeric!T(evaluation.currentValue.strValue);
-
-  if (!expectedParsed.success || !currentParsed.success) {
-    evaluation.result.expected.put("valid ");
-    evaluation.result.expected.put(T.stringof);
-    evaluation.result.expected.put(" values");
-    evaluation.result.actual.put("conversion error");
+  if (!expected.success || !current.success) {
+    evaluation.conversionError(T.stringof);
     return;
   }
 
-  auto result = currentParsed.value <= expectedParsed.value;
-
-  lessOrEqualToResults(result, evaluation.expectedValue.strValue[], evaluation.currentValue.strValue[], evaluation);
+  evaluation.check(
+    current.value <= expected.value,
+    "less or equal to ",
+    evaluation.expectedValue.strValue[],
+    "greater than "
+  );
 }
 
-/// Asserts that a Duration value is less than or equal to the expected Duration.
 void lessOrEqualToDuration(ref Evaluation evaluation) @safe nothrow @nogc {
-  evaluation.result.addText(".");
+  auto expected = toNumeric!ulong(evaluation.expectedValue.strValue);
+  auto current = toNumeric!ulong(evaluation.currentValue.strValue);
 
-  auto expectedParsed = toNumeric!ulong(evaluation.expectedValue.strValue);
-  auto currentParsed = toNumeric!ulong(evaluation.currentValue.strValue);
-
-  if (!expectedParsed.success || !currentParsed.success) {
-    evaluation.result.expected.put("valid Duration values");
-    evaluation.result.actual.put("conversion error");
+  if (!expected.success || !current.success) {
+    evaluation.conversionError("Duration");
     return;
   }
 
-  Duration expectedValue = dur!"nsecs"(expectedParsed.value);
-  Duration currentValue = dur!"nsecs"(currentParsed.value);
+  Duration expectedDur = dur!"nsecs"(expected.value);
+  Duration currentDur = dur!"nsecs"(current.value);
 
-  auto result = currentValue <= expectedValue;
-
-  lessOrEqualToResults(result, evaluation.expectedValue.niceValue[], evaluation.currentValue.niceValue[], evaluation);
+  evaluation.check(
+    currentDur <= expectedDur,
+    "less or equal to ",
+    evaluation.expectedValue.niceValue[],
+    "greater than "
+  );
 }
 
-/// Asserts that a SysTime value is less than or equal to the expected SysTime.
 void lessOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
-  evaluation.result.addText(".");
-
-  SysTime expectedValue;
-  SysTime currentValue;
+  SysTime expectedTime;
+  SysTime currentTime;
 
   try {
-    expectedValue = SysTime.fromISOExtString(evaluation.expectedValue.strValue[]);
-    currentValue = SysTime.fromISOExtString(evaluation.currentValue.strValue[]);
-  } catch(Exception e) {
-    evaluation.result.expected.put("valid SysTime values");
-    evaluation.result.actual.put("conversion error");
+    expectedTime = SysTime.fromISOExtString(evaluation.expectedValue.strValue[]);
+    currentTime = SysTime.fromISOExtString(evaluation.currentValue.strValue[]);
+  } catch (Exception e) {
+    evaluation.conversionError("SysTime");
     return;
   }
 
-  auto result = currentValue <= expectedValue;
-
-  lessOrEqualToResults(result, evaluation.expectedValue.strValue[], evaluation.currentValue.strValue[], evaluation);
-}
-
-private void lessOrEqualToResults(bool result, const(char)[] niceExpectedValue, const(char)[] niceCurrentValue, ref Evaluation evaluation) @safe nothrow @nogc {
-  if(evaluation.isNegated) {
-    result = !result;
-  }
-
-  if(result) {
-    return;
-  }
-
-  evaluation.result.addText(" ");
-  evaluation.result.addValue(evaluation.currentValue.niceValue[]);
-
-  if(evaluation.isNegated) {
-    evaluation.result.addText(" is less or equal to ");
-    evaluation.result.expected.put("greater than ");
-    evaluation.result.expected.put(niceExpectedValue);
-  } else {
-    evaluation.result.addText(" is greater than ");
-    evaluation.result.expected.put("less or equal to ");
-    evaluation.result.expected.put(niceExpectedValue);
-  }
-
-  evaluation.result.actual.put(niceCurrentValue);
-  evaluation.result.negated = evaluation.isNegated;
-
-  evaluation.result.addValue(niceExpectedValue);
-  evaluation.result.addText(".");
+  evaluation.check(
+    currentTime <= expectedTime,
+    "less or equal to ",
+    evaluation.expectedValue.strValue[],
+    "greater than "
+  );
 }
 
 // ---------------------------------------------------------------------------

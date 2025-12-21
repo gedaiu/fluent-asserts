@@ -6,7 +6,7 @@ import std.datetime;
 import std.traits;
 
 import fluentasserts.core.memory.heapstring;
-import fluentasserts.core.memory.heapmap;
+import fluentasserts.core.memory.fixedmeta;
 import fluentasserts.core.memory.typenamelist;
 import fluentasserts.core.memory.heapequable;
 import fluentasserts.core.evaluation.equable;
@@ -36,8 +36,8 @@ struct ValueEvaluation {
   /// The name of the type before it was converted to string (using TypeNameList for @nogc compatibility)
   TypeNameList typeNames;
 
-  /// Other info about the value (using HeapMap for @nogc compatibility)
-  HeapMap meta;
+  /// Other info about the value (using FixedMeta for @nogc compatibility)
+  FixedMeta meta;
 
   /// The file name containing the evaluated value
   HeapString fileName;

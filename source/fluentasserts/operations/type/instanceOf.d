@@ -25,8 +25,6 @@ void instanceOf(ref Evaluation evaluation) @safe nothrow @nogc {
   const(char)[] expectedType = evaluation.expectedValue.strValue[][1 .. $-1];
   const(char)[] currentType = evaluation.currentValue.typeNames[0][];
 
-  evaluation.result.addText(". ");
-
   // Check if expectedType is in typeNames (replaces findAmong for @nogc)
   bool found = false;
   foreach (ref typeName; evaluation.currentValue.typeNames) {
@@ -46,10 +44,10 @@ void instanceOf(ref Evaluation evaluation) @safe nothrow @nogc {
     return;
   }
 
+  evaluation.result.addText(". ");
   evaluation.result.addValue(evaluation.currentValue.strValue[]);
   evaluation.result.addText(" is instance of ");
   evaluation.result.addValue(currentType);
-  evaluation.result.addText(".");
 
   if (evaluation.isNegated) {
     evaluation.result.expected.put("not typeof ");

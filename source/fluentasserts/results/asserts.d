@@ -123,6 +123,13 @@ struct AssertResult {
     }
   }
 
+  /// Removes the last message (if any).
+  void popMessage() nothrow @safe @nogc {
+    if (_messageCount > 0) {
+      _messageCount--;
+    }
+  }
+
   /// Adds text to the result, optionally as a value type.
   void add(bool isValue, string text) nothrow {
     add(Message(isValue ? Message.Type.value : Message.Type.info, text));

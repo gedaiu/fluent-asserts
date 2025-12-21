@@ -19,8 +19,6 @@ static immutable arrayEqualDescription = "Asserts that the target is strictly ==
 /// Asserts that two arrays are strictly equal element by element.
 /// Uses proxyValue which now supports both string comparison and opEquals.
 void arrayEqual(ref Evaluation evaluation) @safe nothrow {
-  evaluation.result.addText(".");
-
   bool result;
 
   // Use proxyValue for all comparisons (now supports opEquals via object references)

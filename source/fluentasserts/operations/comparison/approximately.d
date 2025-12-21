@@ -30,7 +30,6 @@ static immutable approximatelyDescription = "Asserts that the target is a number
 void approximately(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addValue("±");
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
-  evaluation.result.addText(".");
 
   auto currentParsed = toNumeric!real(evaluation.currentValue.strValue);
   auto expectedParsed = toNumeric!real(evaluation.expectedValue.strValue);
@@ -70,7 +69,6 @@ void approximately(ref Evaluation evaluation) @trusted nothrow {
     }
 
     evaluation.result.addValue(strExpected);
-    evaluation.result.addText(".");
   }
 
   evaluation.result.expected = strExpected;
@@ -81,7 +79,6 @@ void approximately(ref Evaluation evaluation) @trusted nothrow {
 /// Asserts that each element in a numeric list is within a given delta range of its expected value.
 void approximatelyList(ref Evaluation evaluation) @trusted nothrow {
   evaluation.result.addValue("±" ~ evaluation.expectedValue.meta["1"].idup);
-  evaluation.result.addText(".");
 
   double maxRelDiff;
   real[] testData;

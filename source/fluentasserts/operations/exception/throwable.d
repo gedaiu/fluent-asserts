@@ -13,6 +13,30 @@ import std.array;
 
 static immutable throwAnyDescription = "Tests that the tested callable throws an exception.";
 
+private void addThrownMessage(ref Evaluation evaluation, Throwable thrown, string message) @trusted nothrow {
+  evaluation.result.addText(". `");
+  evaluation.result.addValue(thrown.classinfo.name);
+  evaluation.result.addText("` saying `");
+  evaluation.result.addValue(message);
+  evaluation.result.addText("` was thrown.");
+}
+
+private void setThrownActual(ref Evaluation evaluation, Throwable thrown, string message) @trusted nothrow {
+  evaluation.result.actual.put("`");
+  evaluation.result.actual.put(thrown.classinfo.name);
+  evaluation.result.actual.put("` saying `");
+  evaluation.result.actual.put(message);
+  evaluation.result.actual.put("`");
+}
+
+private string getThrowableMessage(Throwable thrown) @trusted nothrow {
+  string message;
+  try {
+    message = thrown.message.to!string;
+  } catch (Exception) {}
+  return message;
+}
+
 version(unittest) {
   import fluentasserts.core.lifecycle;
 
@@ -25,42 +49,26 @@ version(unittest) {
 
 ///
 void throwAnyException(ref Evaluation evaluation) @trusted nothrow {
-  evaluation.result.addText(". ");
   auto thrown = evaluation.currentValue.throwable;
 
-  if(evaluation.currentValue.throwable && evaluation.isNegated) {
-    string message;
-    try message = thrown.message.to!string; catch(Exception) {}
-
-    evaluation.result.addText("`");
-    evaluation.result.addValue(thrown.classinfo.name);
-    evaluation.result.addText("` saying `");
-    evaluation.result.addValue(message);
-    evaluation.result.addText("` was thrown.");
-
+  if (thrown && evaluation.isNegated) {
+    string message = getThrowableMessage(thrown);
+    addThrownMessage(evaluation, thrown, message);
     evaluation.result.expected.put("No exception to be thrown");
-    evaluation.result.actual.put("`");
-    evaluation.result.actual.put(thrown.classinfo.name);
-    evaluation.result.actual.put("` saying `");
-    evaluation.result.actual.put(message);
-    evaluation.result.actual.put("`");
+    setThrownActual(evaluation, thrown, message);
   }
 
-  if(!thrown && !evaluation.isNegated) {
-    evaluation.result.addText("No exception was thrown.");
-
+  if (!thrown && !evaluation.isNegated) {
+    evaluation.result.addText(". No exception was thrown.");
     evaluation.result.expected.put("Any exception to be thrown");
     evaluation.result.actual.put("Nothing was thrown");
   }
 
-  if(thrown && !evaluation.isNegated && "Throwable" in evaluation.currentValue.meta) {
-    string message;
-    try message = thrown.message.to!string; catch(Exception) {}
-
-    evaluation.result.addText("A `Throwable` saying `");
+  if (thrown && !evaluation.isNegated && "Throwable" in evaluation.currentValue.meta) {
+    string message = getThrowableMessage(thrown);
+    evaluation.result.addText(". A `Throwable` saying `");
     evaluation.result.addValue(message);
     evaluation.result.addText("` was thrown.");
-
     evaluation.result.expected.put("Any exception to be thrown");
     evaluation.result.actual.put("A `Throwable` with message `");
     evaluation.result.actual.put(message);
@@ -122,40 +130,24 @@ unittest {
 void throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
   auto thrown = evaluation.currentValue.throwable;
 
-
-  if(thrown !is null && evaluation.isNegated) {
-    string message;
-    try message = thrown.message.to!string; catch(Exception) {}
-
-    evaluation.result.addText("`");
-    evaluation.result.addValue(thrown.classinfo.name);
-    evaluation.result.addText("` saying `");
-    evaluation.result.addValue(message);
-    evaluation.result.addText("` was thrown.");
-
+  if (thrown && evaluation.isNegated) {
+    string message = getThrowableMessage(thrown);
+    addThrownMessage(evaluation, thrown, message);
     evaluation.result.expected.put("No exception to be thrown");
-    evaluation.result.actual.put("`");
-    evaluation.result.actual.put(thrown.classinfo.name);
-    evaluation.result.actual.put("` saying `");
-    evaluation.result.actual.put(message);
-    evaluation.result.actual.put("`");
+    setThrownActual(evaluation, thrown, message);
   }
 
-  if(thrown is null && !evaluation.isNegated) {
-    evaluation.result.addText("Nothing was thrown.");
-
+  if (!thrown && !evaluation.isNegated) {
+    evaluation.result.addText(". Nothing was thrown.");
     evaluation.result.expected.put("Any exception to be thrown");
     evaluation.result.actual.put("Nothing was thrown");
   }
 
-  if(thrown && !evaluation.isNegated && "Throwable" in evaluation.currentValue.meta) {
-    string message;
-    try message = thrown.message.to!string; catch(Exception) {}
-
+  if (thrown && !evaluation.isNegated && "Throwable" in evaluation.currentValue.meta) {
+    string message = getThrowableMessage(thrown);
     evaluation.result.addText(". A `Throwable` saying `");
     evaluation.result.addValue(message);
     evaluation.result.addText("` was thrown.");
-
     evaluation.result.expected.put("Any throwable with the message `");
     evaluation.result.expected.put(message);
     evaluation.result.expected.put("` to be thrown");
@@ -172,30 +164,17 @@ void throwAnyExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
 
 /// throwSomething - accepts any Throwable including Error/AssertError
 void throwSomething(ref Evaluation evaluation) @trusted nothrow {
-  evaluation.result.addText(". ");
   auto thrown = evaluation.currentValue.throwable;
 
   if (thrown && evaluation.isNegated) {
-    string message;
-    try message = thrown.message.to!string; catch (Exception) {}
-
-    evaluation.result.addText("`");
-    evaluation.result.addValue(thrown.classinfo.name);
-    evaluation.result.addText("` saying `");
-    evaluation.result.addValue(message);
-    evaluation.result.addText("` was thrown.");
-
+    string message = getThrowableMessage(thrown);
+    addThrownMessage(evaluation, thrown, message);
     evaluation.result.expected.put("No throwable to be thrown");
-    evaluation.result.actual.put("`");
-    evaluation.result.actual.put(thrown.classinfo.name);
-    evaluation.result.actual.put("` saying `");
-    evaluation.result.actual.put(message);
-    evaluation.result.actual.put("`");
+    setThrownActual(evaluation, thrown, message);
   }
 
   if (!thrown && !evaluation.isNegated) {
-    evaluation.result.addText("Nothing was thrown.");
-
+    evaluation.result.addText(". Nothing was thrown.");
     evaluation.result.expected.put("Any throwable to be thrown");
     evaluation.result.actual.put("Nothing was thrown");
   }
@@ -208,27 +187,15 @@ void throwSomething(ref Evaluation evaluation) @trusted nothrow {
 void throwSomethingWithMessage(ref Evaluation evaluation) @trusted nothrow {
   auto thrown = evaluation.currentValue.throwable;
 
-  if (thrown !is null && evaluation.isNegated) {
-    string message;
-    try message = thrown.message.to!string; catch (Exception) {}
-
-    evaluation.result.addText("`");
-    evaluation.result.addValue(thrown.classinfo.name);
-    evaluation.result.addText("` saying `");
-    evaluation.result.addValue(message);
-    evaluation.result.addText("` was thrown.");
-
+  if (thrown && evaluation.isNegated) {
+    string message = getThrowableMessage(thrown);
+    addThrownMessage(evaluation, thrown, message);
     evaluation.result.expected.put("No throwable to be thrown");
-    evaluation.result.actual.put("`");
-    evaluation.result.actual.put(thrown.classinfo.name);
-    evaluation.result.actual.put("` saying `");
-    evaluation.result.actual.put(message);
-    evaluation.result.actual.put("`");
+    setThrownActual(evaluation, thrown, message);
   }
 
-  if (thrown is null && !evaluation.isNegated) {
-    evaluation.result.addText("Nothing was thrown.");
-
+  if (!thrown && !evaluation.isNegated) {
+    evaluation.result.addText(". Nothing was thrown.");
     evaluation.result.expected.put("Any throwable to be thrown");
     evaluation.result.actual.put("Nothing was thrown");
   }
@@ -255,8 +222,6 @@ unittest {
 
 ///
 void throwException(ref Evaluation evaluation) @trusted nothrow {
-  evaluation.result.addText(".");
-
   string exceptionType;
 
   if ("exceptionType" in evaluation.expectedValue.meta) {
@@ -265,47 +230,24 @@ void throwException(ref Evaluation evaluation) @trusted nothrow {
 
   auto thrown = evaluation.currentValue.throwable;
 
-  if(thrown && evaluation.isNegated && thrown.classinfo.name == exceptionType) {
-    string message;
-    try message = thrown.message.to!string; catch(Exception) {}
-
-    evaluation.result.addText("`");
-    evaluation.result.addValue(thrown.classinfo.name);
-    evaluation.result.addText("` saying `");
-    evaluation.result.addValue(message);
-    evaluation.result.addText("` was thrown.");
-
+  if (thrown && evaluation.isNegated && thrown.classinfo.name == exceptionType) {
+    string message = getThrowableMessage(thrown);
+    addThrownMessage(evaluation, thrown, message);
     evaluation.result.expected.put("no `");
     evaluation.result.expected.put(exceptionType);
     evaluation.result.expected.put("` to be thrown");
-    evaluation.result.actual.put("`");
-    evaluation.result.actual.put(thrown.classinfo.name);
-    evaluation.result.actual.put("` saying `");
-    evaluation.result.actual.put(message);
-    evaluation.result.actual.put("`");
+    setThrownActual(evaluation, thrown, message);
   }
 
-  if(thrown && !evaluation.isNegated && thrown.classinfo.name != exceptionType) {
-    string message;
-    try message = thrown.message.to!string; catch(Exception) {}
-
-    evaluation.result.addText("`");
-    evaluation.result.addValue(thrown.classinfo.name);
-    evaluation.result.addText("` saying `");
-    evaluation.result.addValue(message);
-    evaluation.result.addText("` was thrown.");
-
+  if (thrown && !evaluation.isNegated && thrown.classinfo.name != exceptionType) {
+    string message = getThrowableMessage(thrown);
+    addThrownMessage(evaluation, thrown, message);
     evaluation.result.expected.put(exceptionType);
-    evaluation.result.actual.put("`");
-    evaluation.result.actual.put(thrown.classinfo.name);
-    evaluation.result.actual.put("` saying `");
-    evaluation.result.actual.put(message);
-    evaluation.result.actual.put("`");
+    setThrownActual(evaluation, thrown, message);
   }
 
-  if(!thrown && !evaluation.isNegated) {
-    evaluation.result.addText(" No exception was thrown.");
-
+  if (!thrown && !evaluation.isNegated) {
+    evaluation.result.addText(". No exception was thrown.");
     evaluation.result.expected.put("`");
     evaluation.result.expected.put(exceptionType);
     evaluation.result.expected.put("` to be thrown");
@@ -373,8 +315,6 @@ unittest {
 }
 
 void throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
-  evaluation.result.addText(". ");
-
   string exceptionType;
   string message;
   string expectedMessage = evaluation.expectedValue.strValue[].idup;
@@ -391,13 +331,12 @@ void throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
   evaluation.throwable = thrown;
   evaluation.currentValue.throwable = null;
 
-  if(thrown) {
-    try message = thrown.message.to!string; catch(Exception) {}
+  if (thrown) {
+    message = getThrowableMessage(thrown);
   }
 
-  if(!thrown && !evaluation.isNegated) {
-    evaluation.result.addText("No exception was thrown.");
-
+  if (!thrown && !evaluation.isNegated) {
+    evaluation.result.addText(". No exception was thrown.");
     evaluation.result.expected.put("`");
     evaluation.result.expected.put(exceptionType);
     evaluation.result.expected.put("` with message `");
@@ -406,40 +345,22 @@ void throwExceptionWithMessage(ref Evaluation evaluation) @trusted nothrow {
     evaluation.result.actual.put("nothing was thrown");
   }
 
-  if(thrown && !evaluation.isNegated && thrown.classinfo.name != exceptionType) {
-    evaluation.result.addText("`");
-    evaluation.result.addValue(thrown.classinfo.name);
-    evaluation.result.addText("` saying `");
-    evaluation.result.addValue(message);
-    evaluation.result.addText("` was thrown.");
-
+  if (thrown && !evaluation.isNegated && thrown.classinfo.name != exceptionType) {
+    addThrownMessage(evaluation, thrown, message);
     evaluation.result.expected.put("`");
     evaluation.result.expected.put(exceptionType);
     evaluation.result.expected.put("` to be thrown");
-    evaluation.result.actual.put("`");
-    evaluation.result.actual.put(thrown.classinfo.name);
-    evaluation.result.actual.put("` saying `");
-    evaluation.result.actual.put(message);
-    evaluation.result.actual.put("`");
+    setThrownActual(evaluation, thrown, message);
   }
 
-  if(thrown && !evaluation.isNegated && thrown.classinfo.name == exceptionType && message != expectedMessage) {
-    evaluation.result.addText("`");
-    evaluation.result.addValue(thrown.classinfo.name);
-    evaluation.result.addText("` saying `");
-    evaluation.result.addValue(message);
-    evaluation.result.addText("` was thrown.");
-
+  if (thrown && !evaluation.isNegated && thrown.classinfo.name == exceptionType && message != expectedMessage) {
+    addThrownMessage(evaluation, thrown, message);
     evaluation.result.expected.put("`");
     evaluation.result.expected.put(exceptionType);
     evaluation.result.expected.put("` saying `");
     evaluation.result.expected.put(message);
     evaluation.result.expected.put("` to be thrown");
-    evaluation.result.actual.put("`");
-    evaluation.result.actual.put(thrown.classinfo.name);
-    evaluation.result.actual.put("` saying `");
-    evaluation.result.actual.put(message);
-    evaluation.result.actual.put("`");
+    setThrownActual(evaluation, thrown, message);
   }
 }
 
