@@ -1,19 +1,21 @@
 ---
 title: Contributing
-description: How to contribute to fluent-asserts
+description: How you can contribute to fluent-asserts.
 ---
 
 Thank you for your interest in contributing to fluent-asserts! This guide will help you get started.
 
 ## Getting Started
 
-### Prerequisites
+### What You Need
 
-- D compiler (DMD, LDC, or GDC)
-- DUB package manager
+- A D compiler (like DMD, LDC, or GDC)
+- The DUB package manager
 - Git
 
 ### Clone the Repository
+
+First, get a copy of the project on your computer.
 
 ```bash
 git clone https://github.com/gedaiu/fluent-asserts.git
@@ -21,6 +23,8 @@ cd fluent-asserts
 ```
 
 ### Build and Test
+
+Next, build the library and run the tests to make sure everything is working.
 
 ```bash
 # Build the library
@@ -32,80 +36,84 @@ dub test
 
 ## Project Structure
 
+Here is how the project is organized:
+
 ```
 fluent-asserts/
   source/
     fluent/
-      asserts.d         # Public import module
+      asserts.d         # The main file you import in your project.
     fluentasserts/
-      core/             # Core functionality
-        base.d          # Base assertion infrastructure
-        expect.d        # Main Expect struct
-        evaluation.d    # Evaluation data structures
-        evaluator.d     # Evaluation execution
-        lifecycle.d     # Assertion lifecycle management
-        memory.d        # Memory tracking utilities
-        listcomparison.d # List comparison helpers
-      operations/       # Assertion operations
-        registry.d      # Operation registry
-        snapshot.d      # Snapshot testing
-        comparison/     # greaterThan, lessThan, between, approximately
-        equality/       # equal, arrayEqual
-        exception/      # throwException
-        memory/         # allocateGCMemory, allocateNonGCMemory
-        string/         # contain, startWith, endWith
-        type/           # beNull, instanceOf
-      results/          # Result formatting and output
-        formatting.d    # Value formatting
-        message.d       # Error message building
-        printer.d       # Output printing
-        serializers.d   # Type serialization
-  docs/                 # Documentation (Starlight)
+      core/             # The core logic of the library.
+        base.d          # Basic assertion tools.
+        expect.d        # The main `Expect` struct.
+        evaluation.d    # How assertion data is structured.
+        evaluator.d     # How assertions are executed.
+        lifecycle.d     # Management of the assertion process.
+        memory.d        # Tools for tracking memory.
+        listcomparison.d # Helpers for comparing lists.
+      operations/       # All the different assertion checks.
+        registry.d      # A list of all operations.
+        snapshot.d      # For snapshot testing.
+        comparison/     # `greaterThan`, `lessThan`, etc.
+        equality/       # `equal`, `arrayEqual`.
+        exception/      # `throwException`.
+        memory/         # `allocateGCMemory`, etc.
+        string/         # `contain`, `startWith`, `endWith`.
+        type/           # `beNull`, `instanceOf`.
+      results/          # Formatting and showing results.
+        formatting.d    # How values are formatted.
+        message.d       # Building error messages.
+        printer.d       # Printing output to the console.
+        serializers.d   # Turning types into strings.
+  docs/                 # The documentation website.
 ```
 
 ## Adding a New Operation
 
-1. **Create the operation file** in the appropriate `operations/` subdirectory
-2. **Implement the operation function** following the pattern:
+To add a new assertion:
+
+1.  **Create a new file** in the correct `operations/` subfolder.
+2.  **Write the function for the operation**. It should look something like this:
 
 ```d
 void myOperation(ref Evaluation evaluation) @safe nothrow {
-    // 1. Extract values
+    // 1. Get the actual and expected values.
     auto actual = evaluation.currentValue.strValue;
     auto expected = evaluation.expectedValue.strValue;
 
-    // 2. Check success
-    auto isSuccess = /* your logic */;
+    // 2. Check if the assertion is successful.
+    auto isSuccess = /* your logic here */;
 
-    // 3. Handle negation
+    // 3. Handle `.not` if it is used.
     if (evaluation.isNegated) {
         isSuccess = !isSuccess;
     }
 
-    // 4. Set error messages
+    // 4. Set error messages if it fails.
     if (!isSuccess) {
-        evaluation.result.expected = /* expected description */;
-        evaluation.result.actual = /* actual value */;
+        evaluation.result.expected = "a description of what was expected";
+        evaluation.result.actual = "the actual value";
     }
 }
 ```
 
-3. **Add the operation to `expect.d`** as a method on the `Expect` struct
-4. **Write unit tests** with `@("description")` annotations
+3.  **Add the operation to `expect.d`** as a new method on the `Expect` struct.
+4.  **Write unit tests** for your new operation.
 
 ## Writing Tests
 
-Follow these conventions:
+Use this format for your tests:
 
 ```d
-@("describes what is being tested")
+@("a description of the test")
 unittest {
-    // Use recordEvaluation for testing assertion behavior
+    // recordEvaluation helps test the assertion's behavior.
     auto evaluation = ({
         expect(actualValue).to.myOperation(expectedValue);
     }).recordEvaluation;
 
-    // Check the results
+    // Check if the results are correct.
     expect(evaluation.result.expected).to.equal("...");
     expect(evaluation.result.actual).to.equal("...");
 }
@@ -113,7 +121,7 @@ unittest {
 
 ## Documentation
 
-Documentation is built with [Starlight](https://starlight.astro.build/). To work on docs:
+The documentation website is built with [Starlight](https://starlight.astro.build/). To work on the documentation:
 
 ```bash
 cd docs
@@ -121,25 +129,25 @@ npm install
 npm run dev
 ```
 
-The site will be available at `http://localhost:4321`.
+You can then see the website at `http://localhost:4321`.
 
 ## Code Style
 
-- Use `@safe nothrow` where possible
-- Follow D naming conventions (camelCase for functions, PascalCase for types)
-- Include ddoc comments (`///`) for public APIs
-- Keep operations focused and single-purpose
+- Use `@safe nothrow` whenever you can.
+- Follow D's naming style (e.g., `camelCase` for functions, `PascalCase` for types).
+- Add comments (`///`) to explain public functions and types.
+- Keep each operation focused on a single task.
 
-## Submitting Changes
+## Submitting Your Changes
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/my-feature`
-3. Make your changes
-4. Run tests: `dub test`
-5. Commit with a clear message
-6. Push and create a Pull Request
+1.  Create a copy (fork) of the repository.
+2.  Create a new branch for your feature: `git checkout -b feature/my-feature`.
+3.  Make your changes.
+4.  Run the tests to make sure everything still works: `dub test`.
+5.  Commit your changes with a clear message.
+6.  Push your branch and create a Pull Request.
 
 ## Questions?
 
-- Open an issue on [GitHub](https://github.com/gedaiu/fluent-asserts/issues)
-- Check existing issues for similar questions
+- If you have questions, open an issue on [GitHub](https://github.com/gedaiu/fluent-asserts/issues).
+- You can also check if someone has already asked a similar question.

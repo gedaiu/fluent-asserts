@@ -7,6 +7,7 @@ import fluentasserts.core.toNumeric;
 import fluentasserts.core.lifecycle;
 
 import std.datetime;
+import std.meta : AliasSeq;
 
 version (unittest) {
   import fluent.asserts;

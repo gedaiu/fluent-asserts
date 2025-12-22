@@ -1,10 +1,12 @@
 module fluentasserts.operations.string.startWith;
 
+import std.meta : AliasSeq;
 import std.string;
 
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation.eval : Evaluation;
-import fluentasserts.results.serializers;
+import fluentasserts.results.serializers.string_registry;
+import fluentasserts.results.serializers.helpers : cleanString;
 
 import fluentasserts.core.lifecycle;
 

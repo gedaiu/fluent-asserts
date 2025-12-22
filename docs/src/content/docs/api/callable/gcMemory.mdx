@@ -1,14 +1,18 @@
 ---
 title: allocateGCMemory
-description: The allocateGCMemory assertion
+description: Checks if a function call allocates memory on the garbage collector (GC).
 ---
 
 # .allocateGCMemory()
+
+The `.allocateGCMemory()` assertion checks if a function call allocates memory that is managed by the garbage collector.
+
+This is useful for performance testing to ensure that functions are memory-efficient and do not create unnecessary GC pressure.
 
 ## Modifiers
 
 This assertion supports the following modifiers:
 
-- `.not` - Negates the assertion
-- `.to` - Language chain (no effect)
-- `.be` - Language chain (no effect)
+- `.not` - Negates the assertion, checking that no GC memory is allocated.
+- `.to` - Language chain (no effect).
+- `.be` - Language chain (no effect).

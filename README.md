@@ -169,26 +169,7 @@ core.exception.assertHandler = null;
 
 ## Built in operations
 
-- [above](api/above.md)
-- [approximately](api/approximately.md)
-- [beNull](api/beNull.md)
-- [below](api/below.md)
-- [between](api/between.md)
-- [contain](api/contain.md)
-- [containOnly](api/containOnly.md)
-- [endWith](api/endWith.md)
-- [equal](api/equal.md)
-- [greaterOrEqualTo](api/greaterOrEqualTo.md)
-- [greaterThan](api/greaterThan.md)
-- [instanceOf](api/instanceOf.md)
-- [lessOrEqualTo](api/lessOrEqualTo.md)
-- [lessThan](api/lessThan.md)
-- [startWith](api/startWith.md)
-- [throwAnyException](api/throwAnyException.md)
-- [throwException](api/throwException.md)
-- [throwSomething](api/throwSomething.md)
-- [withMessage](api/withMessage.md)
-- [within](api/within.md)
+
 
 # Extend the library
 
@@ -227,7 +208,7 @@ In order to setup an `Evaluation`, the actual and expected values need to be con
 
 ```d
 static this() {
-    SerializerRegistry.instance.register(&jsonToString);
+    HeapSerializerRegistry.instance.register(&jsonToString);
 }
 
 string jsonToString(Json value) {

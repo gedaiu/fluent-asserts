@@ -1,14 +1,18 @@
 ---
 title: allocateNonGCMemory
-description: The allocateNonGCMemory assertion
+description: Checks if a function call allocates memory outside of the garbage collector (GC).
 ---
 
 # .allocateNonGCMemory()
+
+The `.allocateNonGCMemory()` assertion checks if a function call allocates memory that is **not** managed by the garbage collector.
+
+This is useful for tracking manual memory allocations.
 
 ## Modifiers
 
 This assertion supports the following modifiers:
 
-- `.not` - Negates the assertion
-- `.to` - Language chain (no effect)
-- `.be` - Language chain (no effect)
+- `.not` - Negates the assertion, checking that no non-GC memory is allocated.
+- `.to` - Language chain (no effect).
+- `.be` - Language chain (no effect).

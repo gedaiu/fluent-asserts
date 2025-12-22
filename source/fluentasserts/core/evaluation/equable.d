@@ -10,7 +10,8 @@ import std.array;
 import std.algorithm : map, sort;
 
 import fluentasserts.core.memory.heapequable;
-import fluentasserts.results.serializers : SerializerRegistry, HeapSerializerRegistry;
+import fluentasserts.core.memory.heapstring : HeapData;
+import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 import fluentasserts.core.evaluation.constraints;
 
 version(unittest) {
@@ -26,7 +27,7 @@ HeapEquableValue equableValue(T)(T value, string serialized) if(is(T == void[]))
 HeapEquableValue equableValue(T)(T value, string serialized) if(isRegularArray!T) {
   auto result = HeapEquableValue.createArray(serialized);
   foreach(ref elem; value) {
-    auto elemSerialized = SerializerRegistry.instance.niceValue(elem);
+    auto elemSerialized = HeapSerializerRegistry.instance.niceValue(elem);
     result.addElement(equableValue(elem, elemSerialized));
   }
   return result;
@@ -37,7 +38,7 @@ HeapEquableValue equableValue(T)(T value, string serialized) if(isNonArrayRange!
   auto arr = value.array;
   auto result = HeapEquableValue.createArray(serialized);
   foreach(ref elem; arr) {
-    auto elemSerialized = SerializerRegistry.instance.niceValue(elem);
+    auto elemSerialized = HeapSerializerRegistry.instance.niceValue(elem);
     result.addElement(equableValue(elem, elemSerialized));
   }
   return result;
@@ -48,8 +49,8 @@ HeapEquableValue equableValue(T)(T value, string serialized) if(isAssociativeArr
   auto result = HeapEquableValue.createAssocArray(serialized);
   auto sortedKeys = value.keys.sort;
   foreach(key; sortedKeys) {
-    auto keyStr = SerializerRegistry.instance.niceValue(key);
-    auto valStr = SerializerRegistry.instance.niceValue(value[key]);
+    auto keyStr = HeapSerializerRegistry.instance.niceValue(key);
+    auto valStr = HeapSerializerRegistry.instance.niceValue(value[key]);
     auto entryStr = keyStr ~ ": " ~ valStr;
     result.addElement(HeapEquableValue.createScalar(entryStr));
   }
@@ -64,7 +65,7 @@ HeapEquableValue equableValue(T)(T value, string serialized) if(isObjectWithByVa
   auto result = HeapEquableValue.createArray(serialized);
   try {
     foreach(elem; value.byValue) {
-      auto elemSerialized = SerializerRegistry.instance.niceValue(elem);
+      auto elemSerialized = HeapSerializerRegistry.instance.niceValue(elem);
       result.addElement(equableValue(elem, elemSerialized));
     }
   } catch (Exception) {
@@ -147,4 +148,102 @@ HeapEquableValue equableValue(T)(T value) @trusted nothrow @nogc if(isSomeString
 HeapEquableValue equableValue(T)(T value) @trusted nothrow if(isSimpleValue!T && !isSomeString!T) {
   auto serialized = HeapSerializerRegistry.instance.serialize(value);
   return HeapEquableValue.createScalar(serialized[]);
+}
+
+// --- HeapData!char (HeapString) overloads ---
+// These mirror the string overloads above but work with HeapString serialization
+
+/// Wraps a void array into a HeapEquableValue (HeapString version).
+HeapEquableValue equableValue(T, U)(T value, U serialized) @trusted nothrow @nogc
+  if(is(T == void[]) && is(U == HeapData!char))
+{
+  return HeapEquableValue.createArray(serialized[]);
+}
+
+/// Wraps an array into a HeapEquableValue with recursive element conversion (HeapString version).
+HeapEquableValue equableValue(T, U)(T value, U serialized) @trusted
+  if(isRegularArray!T && is(U == HeapData!char))
+{
+  auto result = HeapEquableValue.createArray(serialized[]);
+  foreach(ref elem; value) {
+    auto elemSerialized = HeapSerializerRegistry.instance.niceValue(elem);
+    result.addElement(equableValue(elem, elemSerialized));
+  }
+  return result;
+}
+
+/// Wraps an input range into a HeapEquableValue by converting to array first (HeapString version).
+HeapEquableValue equableValue(T, U)(T value, U serialized) @trusted
+  if(isNonArrayRange!T && is(U == HeapData!char))
+{
+  auto arr = value.array;
+  auto result = HeapEquableValue.createArray(serialized[]);
+  foreach(ref elem; arr) {
+    auto elemSerialized = HeapSerializerRegistry.instance.niceValue(elem);
+    result.addElement(equableValue(elem, elemSerialized));
+  }
+  return result;
+}
+
+/// Wraps an associative array into a HeapEquableValue with sorted keys (HeapString version).
+HeapEquableValue equableValue(T, U)(T value, U serialized) @trusted
+  if(isAssociativeArray!T && is(U == HeapData!char))
+{
+  auto result = HeapEquableValue.createAssocArray(serialized[]);
+  auto sortedKeys = value.keys.sort;
+  foreach(key; sortedKeys) {
+    auto keyStr = HeapSerializerRegistry.instance.niceValue(key);
+    auto valStr = HeapSerializerRegistry.instance.niceValue(value[key]);
+    auto entryStr = keyStr ~ ": " ~ valStr;
+    result.addElement(HeapEquableValue.createScalar(entryStr[]));
+  }
+  return result;
+}
+
+/// Wraps an object with byValue into a HeapEquableValue (HeapString version).
+HeapEquableValue equableValue(T, U)(T value, U serialized) @trusted
+  if(isObjectWithByValue!T && is(U == HeapData!char))
+{
+  if (value is null) {
+    return HeapEquableValue.createScalar(serialized[]);
+  }
+  auto result = HeapEquableValue.createArray(serialized[]);
+  try {
+    foreach(elem; value.byValue) {
+      auto elemSerialized = HeapSerializerRegistry.instance.niceValue(elem);
+      result.addElement(equableValue(elem, elemSerialized));
+    }
+  } catch (Exception) {
+    return HeapEquableValue.createScalar(serialized[]);
+  }
+  return result;
+}
+
+/// Wraps a string into a HeapEquableValue (HeapString version).
+HeapEquableValue equableValue(T, U)(T value, U serialized) @trusted nothrow @nogc
+  if(isSomeString!T && is(U == HeapData!char))
+{
+  return HeapEquableValue.createScalar(serialized[]);
+}
+
+/// Wraps a scalar value into a HeapEquableValue (HeapString version).
+HeapEquableValue equableValue(T, U)(T value, U serialized) @trusted nothrow @nogc
+  if(isSimpleValue!T && !isCallable!T && !is(T == class) && !is(T : Object) && is(U == HeapData!char))
+{
+  return HeapEquableValue.createScalar(serialized[]);
+}
+
+/// Wraps a callable into a HeapEquableValue using a wrapper object (HeapString version).
+HeapEquableValue equableValue(T, U)(T value, U serialized) @trusted
+  if(isCallable!T && !isObjectWithByValue!T && is(U == HeapData!char))
+{
+  auto wrapper = new CallableWrapper!T(value);
+  return HeapEquableValue.createObject(serialized[], wrapper);
+}
+
+/// Wraps an object into a HeapEquableValue with object reference for opEquals comparison (HeapString version).
+HeapEquableValue equableValue(T, U)(T value, U serialized) @trusted
+  if((is(T == class) || is(T : Object)) && !isCallable!T && !isObjectWithByValue!T && is(U == HeapData!char))
+{
+  return HeapEquableValue.createObject(serialized[], cast(Object)value);
 }

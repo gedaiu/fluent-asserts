@@ -5,13 +5,15 @@ import fluentasserts.core.evaluation.eval : Evaluation;
 
 import fluentasserts.core.lifecycle;
 import fluentasserts.results.message;
+import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
+import std.meta : AliasSeq;
 
 version (unittest) {
   import fluent.asserts;
   import fluentasserts.core.base;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
-  import fluentasserts.results.serializers;
+  import fluentasserts.results.serializers.string_registry;
   import std.conv;
   import std.datetime;
   import std.meta;
@@ -272,8 +274,8 @@ unittest {
 unittest {
   Object testValue = new Object();
   Object otherTestValue = new Object();
-  string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
-  string niceOtherTestValue = SerializerRegistry.instance.niceValue(otherTestValue);
+  string niceTestValue = HeapSerializerRegistry.instance.niceValue(testValue)[].idup;
+  string niceOtherTestValue = HeapSerializerRegistry.instance.niceValue(otherTestValue)[].idup;
 
   auto evaluation = ({
     expect(testValue).to.equal(otherTestValue);
@@ -286,7 +288,7 @@ unittest {
 @("object not equal itself reports error with expected and negated")
 unittest {
   Object testValue = new Object();
-  string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
+  string niceTestValue = HeapSerializerRegistry.instance.niceValue(testValue)[].idup;
 
   auto evaluation = ({
     expect(testValue).to.not.equal(testValue);
@@ -348,8 +350,8 @@ unittest {
 unittest {
   auto testValue = new EqualThing(1);
   auto otherTestValue = new EqualThing(2);
-  string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
-  string niceOtherTestValue = SerializerRegistry.instance.niceValue(otherTestValue);
+  string niceTestValue = HeapSerializerRegistry.instance.niceValue(testValue)[].idup;
+  string niceOtherTestValue = HeapSerializerRegistry.instance.niceValue(otherTestValue)[].idup;
 
   auto evaluation = ({
     expect(testValue).to.equal(otherTestValue);
@@ -362,7 +364,7 @@ unittest {
 @("EqualThing(1) not equal itself reports error with expected and negated")
 unittest {
   auto testValue = new EqualThing(1);
-  string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
+  string niceTestValue = HeapSerializerRegistry.instance.niceValue(testValue)[].idup[].idup;
 
   auto evaluation = ({
     expect(testValue).to.not.equal(testValue);
@@ -412,8 +414,8 @@ unittest {
 unittest {
   string[string] testValue = ["b": "2", "a": "1", "c": "3"];
   string[string] otherTestValue = ["a": "3", "b": "2", "c": "1"];
-  string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
-  string niceOtherTestValue = SerializerRegistry.instance.niceValue(otherTestValue);
+  string niceTestValue = HeapSerializerRegistry.instance.niceValue(testValue)[].idup;
+  string niceOtherTestValue = HeapSerializerRegistry.instance.niceValue(otherTestValue)[].idup;
 
   auto evaluation = ({
     expect(testValue).to.equal(otherTestValue);
@@ -426,7 +428,7 @@ unittest {
 @("assoc array not equal itself reports error with expected and negated")
 unittest {
   string[string] testValue = ["b": "2", "a": "1", "c": "3"];
-  string niceTestValue = SerializerRegistry.instance.niceValue(testValue);
+  string niceTestValue = HeapSerializerRegistry.instance.niceValue(testValue)[].idup;
 
   auto evaluation = ({
     expect(testValue).to.not.equal(testValue);

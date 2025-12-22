@@ -1,13 +1,13 @@
 ---
 title: approximately
-description: Asserts that the target is a number that's within a given +/- `delta` range of the given number expected. However, it's often best to assert that the target is equal to its expected value.
+description: Checks if a number is close to an expected value, within a specified range (delta).
 ---
 
 # .approximately()
 
-Asserts that the target is a number that's within a given +/- `delta` range of the given number expected. However, it's often best to assert that the target is equal to its expected value.
+The `.approximately()` assertion checks if a numeric value is close to an expected value. You must provide a `delta` to define the acceptable range.
 
-Asserts that a numeric value is within a given delta range of the expected value.
+For example, `expect(1.5).to.be.approximately(1.4, 0.1)` will pass because 1.5 is within 0.1 of 1.4.
 
 ## Modifiers
 

@@ -4,7 +4,8 @@ public import fluentasserts.core.base;
 import fluentasserts.results.printer;
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.expect;
-import fluentasserts.results.serializers;
+import fluentasserts.results.serializers.string_registry;
+import fluentasserts.results.serializers.helpers : cleanString;
 
 import std.string;
 import std.conv;

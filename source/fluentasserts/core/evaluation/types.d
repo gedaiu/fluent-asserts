@@ -4,7 +4,7 @@ module fluentasserts.core.evaluation.types;
 
 import std.traits;
 import fluentasserts.core.memory.typenamelist;
-import fluentasserts.results.serializers : unqualString;
+import fluentasserts.results.serializers.typenames : unqualString;
 import fluentasserts.core.evaluation.constraints;
 
 /// Extracts the type names for a non-array, non-associative-array type.

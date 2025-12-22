@@ -432,7 +432,7 @@ void fluentHandler(string file, size_t line, string msg) @system nothrow {
   import core.exception;
   import fluentasserts.core.evaluation.eval : Evaluation;
   import fluentasserts.results.asserts : AssertResult;
-  import fluentasserts.results.source : SourceResult;
+  import fluentasserts.results.source.result : SourceResult;
   import fluentasserts.results.message : Message;
 
   Evaluation evaluation;

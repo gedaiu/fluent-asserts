@@ -10,7 +10,8 @@ import fluentasserts.core.memory.heapstring : toHeapString;
 
 import fluentasserts.results.printer;
 import fluentasserts.results.formatting : toNiceOperation;
-import fluentasserts.results.serializers;
+import fluentasserts.results.serializers.string_registry;
+import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 
 import fluentasserts.operations.equality.equal : equalOp = equal;
 import fluentasserts.operations.equality.arrayEqual : arrayEqualOp = arrayEqual;
@@ -390,7 +391,7 @@ import std.conv;
 
     addOperationName("approximately");
     setExpectedValue(value);
-    () @trusted { _evaluation.expectedValue.meta["1"] = SerializerRegistry.instance.serialize(range); } ();
+    () @trusted { _evaluation.expectedValue.meta["1"] = HeapSerializerRegistry.instance.serialize(range); } ();
     finalizeMessage();
     inhibit();
 
@@ -405,7 +406,7 @@ import std.conv;
   Evaluator between(T, U)(T value, U range) {
     addOperationName("between");
     setExpectedValue(value);
-    () @trusted { _evaluation.expectedValue.meta["1"] = SerializerRegistry.instance.serialize(range); } ();
+    () @trusted { _evaluation.expectedValue.meta["1"] = HeapSerializerRegistry.instance.serialize(range); } ();
     finalizeMessage();
     inhibit();
 
@@ -422,7 +423,7 @@ import std.conv;
   Evaluator within(T, U)(T value, U range) {
     addOperationName("within");
     setExpectedValue(value);
-    () @trusted { _evaluation.expectedValue.meta["1"] = SerializerRegistry.instance.serialize(range); } ();
+    () @trusted { _evaluation.expectedValue.meta["1"] = HeapSerializerRegistry.instance.serialize(range); } ();
     finalizeMessage();
     inhibit();
 
@@ -493,7 +494,7 @@ import std.conv;
 
     static if(Params.length >= 1) {
       static foreach (i, Param; Params) {
-        () @trusted { _evaluation.expectedValue.meta[i.to!string] = SerializerRegistry.instance.serialize(params[i]); } ();
+        () @trusted { _evaluation.expectedValue.meta[i.to!string] = HeapSerializerRegistry.instance.serialize(params[i]); } ();
       }
     }
 
@@ -510,7 +511,7 @@ import std.conv;
     }
 
     _evaluation.expectedValue = expectedValue;
-    _evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(value);
+    _evaluation.expectedValue.meta["0"] = HeapSerializerRegistry.instance.serialize(value);
   }
 }
 

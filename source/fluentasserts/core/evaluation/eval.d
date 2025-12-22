@@ -17,8 +17,8 @@ import fluentasserts.core.evaluation.value;
 import fluentasserts.core.evaluation.types;
 import fluentasserts.core.evaluation.equable;
 import fluentasserts.core.evaluation.constraints;
-import fluentasserts.results.serializers : SerializerRegistry;
-import fluentasserts.results.source : SourceResult;
+import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
+import fluentasserts.results.source.result : SourceResult;
 import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.results.printer : ResultPrinter, StringResultPrinter;
 
@@ -338,16 +338,16 @@ void populateEvaluation(T)(
 ) @trusted {
   import std.traits : Unqual;
 
-  auto serializedValue = SerializerRegistry.instance.serialize(value);
-  auto niceValueStr = SerializerRegistry.instance.niceValue(value);
+  auto serializedValue = HeapSerializerRegistry.instance.serialize(value);
+  auto niceValueStr = HeapSerializerRegistry.instance.niceValue(value);
 
   eval.throwable = throwable;
   eval.duration = duration;
   eval.gcMemoryUsed = gcMemoryUsed;
   eval.nonGCMemoryUsed = nonGCMemoryUsed;
-  eval.strValue = toHeapString(serializedValue);
+  eval.strValue = serializedValue;
   eval.proxyValue = equableValue(value, niceValueStr);
-  eval.niceValue = toHeapString(niceValueStr);
+  eval.niceValue = niceValueStr;
   eval.typeNames = extractTypes!T;
   eval.fileName = toHeapString(file);
   eval.line = line;
@@ -436,8 +436,8 @@ auto evaluateObject(T)(T obj, const string file = __FILE__, const size_t line = 
   import std.traits : Unqual;
   alias Result = EvaluationResult!T;
 
-  auto serializedValue = SerializerRegistry.instance.serialize(obj);
-  auto niceValueStr = SerializerRegistry.instance.niceValue(obj);
+  auto serializedValue = HeapSerializerRegistry.instance.serialize(obj);
+  auto niceValueStr = HeapSerializerRegistry.instance.niceValue(obj);
 
   Result result;
   result.value = obj;
@@ -445,9 +445,9 @@ auto evaluateObject(T)(T obj, const string file = __FILE__, const size_t line = 
   result.evaluation.duration = Duration.zero;
   result.evaluation.gcMemoryUsed = 0;
   result.evaluation.nonGCMemoryUsed = 0;
-  result.evaluation.strValue = toHeapString(serializedValue);
+  result.evaluation.strValue = serializedValue;
   result.evaluation.proxyValue = equableValue(obj, niceValueStr);
-  result.evaluation.niceValue = toHeapString(niceValueStr);
+  result.evaluation.niceValue = niceValueStr;
   result.evaluation.typeNames = extractTypes!T;
   result.evaluation.fileName = toHeapString(file);
   result.evaluation.line = line;

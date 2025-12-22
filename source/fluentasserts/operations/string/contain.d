@@ -11,7 +11,8 @@ import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.core.evaluation.value : ValueEvaluation;
 import fluentasserts.core.memory.heapequable : HeapEquableValue;
-import fluentasserts.results.serializers;
+import fluentasserts.results.serializers.string_registry;
+import fluentasserts.results.serializers.helpers : parseList, cleanString;
 import fluentasserts.core.memory.heapstring : HeapString, HeapStringList;
 
 import fluentasserts.core.lifecycle;

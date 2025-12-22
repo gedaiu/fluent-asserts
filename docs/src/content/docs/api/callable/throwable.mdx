@@ -1,35 +1,35 @@
 ---
 title: throwAnyException
-description: Tests that the tested callable throws an exception.
+description: Checks if a function call throws any type of exception.
 ---
 
 # .throwAnyException()
 
-Tests that the tested callable throws an exception.
+The `.throwAnyException()` assertion checks if a function call throws any kind of `Throwable`, which includes `Exception` and `Error` types.
 
-throwSomething - accepts any Throwable including Error/AssertError
+This is useful when you want to confirm that a function fails under certain conditions, without checking for a specific error type.
 
 ## Examples
 
-### With Negation
+### Basic Usage
+
+To check if a function throws any exception:
 
 ```d
-expect({}).not.to.throwException!Exception.withMessage.equal("test");
+expect(() => myThrowingFunction()).to.throwAnyException();
 ```
 
-### What Failures Look Like
+### With Negation
 
-When the assertion fails, you'll see a clear error message:
+To check that a function does **not** throw any exception:
 
 ```d
-// This would fail:
-expect({}).to.throwException!Exception.withMessage.equal("test");
+expect(() => mySafeFunction()).not.to.throwAnyException();
 ```
 
 ## Modifiers
 
 This assertion supports the following modifiers:
 
-- `.not` - Negates the assertion
-- `.to` - Language chain (no effect)
-- `.be` - Language chain (no effect)
+- `.not` - Negates the assertion.
+- `.to` - Language chain (no effect).

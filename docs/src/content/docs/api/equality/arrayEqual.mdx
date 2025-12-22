@@ -1,44 +1,43 @@
 ---
 title: arrayEqual
-description: Asserts that the target is strictly == equal to the given val.
+description: Checks if two arrays are strictly equal, element by element.
 ---
 
 # .arrayEqual()
 
-Asserts that the target is strictly == equal to the given val.
-
-Asserts that two arrays are strictly equal element by element. Uses serialized string comparison via isEqualTo.
+The `.arrayEqual()` assertion checks if two arrays are strictly equal. It compares each element in the arrays using the `==` operator.
 
 ## Examples
 
 ### Basic Usage
 
 ```d
-expect([1, 2, 3]).to.equal([1, 2, 3]);
-expect(["a", "b", "c"]).to.equal(["a", "b", "c"]);
-expect(empty1).to.equal(empty2);
+expect([1, 2, 3]).to.arrayEqual([1, 2, 3]);
+expect(["a", "b", "c"]).to.arrayEqual(["a", "b", "c"]);
 ```
 
 ### With Negation
 
+You can use `.not` to check that two arrays are not equal.
+
 ```d
-expect([1, 2, 3]).to.not.equal([1, 2, 4]);
-expect(["a", "b", "c"]).to.not.equal(["a", "b", "d"]);
+expect([1, 2, 3]).not.to.arrayEqual([1, 2, 4]);
+expect(["a", "b", "c"]).not.to.arrayEqual(["a", "b", "d"]);
 ```
 
-### What Failures Look Like
+### How Failures Are Displayed
 
-When the assertion fails, you'll see a clear error message:
+If the assertion fails, you will see a clear error message indicating the differences between the arrays.
 
 ```d
-// This would fail:
-expect([1, 2, 3]).to.equal([1, 2, 4]);
+// This will fail:
+expect([1, 2, 3]).to.arrayEqual([1, 2, 4]);
 ```
 
 ## Modifiers
 
 This assertion supports the following modifiers:
 
-- `.not` - Negates the assertion
-- `.to` - Language chain (no effect)
-- `.be` - Language chain (no effect)
+- `.not` - Negates the assertion.
+- `.to` - Language chain (no effect).
+- `.be` - Language chain (no effect).

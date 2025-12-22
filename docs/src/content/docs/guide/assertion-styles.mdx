@@ -1,31 +1,29 @@
 ---
 title: Assertion Styles
-description: BDD-style assertions with fluent-asserts
+description: Learn about BDD-style assertions in fluent-asserts.
 ---
 
-fluent-asserts provides a **BDD-style** (Behavior-Driven Development) assertion syntax. This style makes your tests read like natural language.
+fluent-asserts uses a **BDD (Behavior-Driven Development)** style for writing tests. This makes your tests easy to read, like plain English.
 
 ## The `expect` Function
 
-All assertions start with the `expect` function:
+All assertions start with the `expect` function. It takes the value you want to test.
 
 ```d
 expect(actualValue).to.equal(expectedValue);
 ```
 
-The `expect` function accepts any value and returns an `Expect` struct that provides fluent assertion methods.
-
 ## The `Assert` Struct
 
-As an alternative to the fluent `expect` syntax, fluent-asserts provides a traditional assertion API through the `Assert` struct:
+You can also use the `Assert` struct for a more traditional style.
 
 ```d
-// These are equivalent:
+// These two lines do the same thing:
 expect(testedValue).to.equal(42);
 Assert.equal(testedValue, 42);
 ```
 
-To negate an assertion, prefix the method name with `not`:
+To check for the opposite, add `not` to the beginning of the method name.
 
 ```d
 Assert.notEqual(testedValue, 42);
@@ -33,14 +31,14 @@ Assert.notContain(text, "error");
 Assert.notNull(value);
 ```
 
-All assertions support an optional reason parameter:
+You can add an optional message to explain the assertion.
 
 ```d
-Assert.equal(user.age, 18, "user must be an adult");
-Assert.greaterThan(balance, 0, "balance cannot be negative");
+Assert.equal(user.age, 18, "The user must be an adult.");
+Assert.greaterThan(balance, 0, "The balance cannot be negative.");
 ```
 
-For operations with multiple arguments:
+For assertions with multiple arguments:
 
 ```d
 Assert.between(score, 0, 100);
@@ -50,7 +48,7 @@ Assert.approximately(pi, 3.14, 0.01);
 
 ## Language Chains
 
-fluent-asserts provides several language chains that have no effect on the assertion but improve readability:
+fluent-asserts includes words that make assertions more readable but don't change the result. These are called "language chains."
 
 - `.to`
 - `.be`
@@ -65,10 +63,10 @@ fluent-asserts provides several language chains that have no effect on the asser
 - `.of`
 - `.same`
 
-These are purely for readability:
+You can use them to make your code read more naturally.
 
 ```d
-// All of these are equivalent:
+// All of these are the same:
 expect(value).to.equal(42);
 expect(value).to.be.equal(42);
 expect(value).equal(42);
@@ -76,7 +74,7 @@ expect(value).equal(42);
 
 ## Negation with `.not`
 
-Use `.not` to negate any assertion:
+Use `.not` to reverse any assertion.
 
 ```d
 expect(42).to.not.equal(0);
@@ -84,16 +82,16 @@ expect("hello").to.not.contain("xyz");
 expect([1, 2, 3]).to.not.beEmpty();
 ```
 
-## Common Assertion Patterns
+## Common Assertion Examples
 
 ### Equality
 
 ```d
-// Exact equality
+// Check for exact equality
 expect(value).to.equal(42);
 expect(name).to.equal("Alice");
 
-// Approximate equality for floating point
+// Check for approximate equality for numbers
 expect(pi).to.be.approximately(3.14, 0.01);
 ```
 
@@ -133,17 +131,17 @@ expect(obj).to.be.instanceOf!MyClass;
 ### Exceptions
 
 ```d
-// Expect specific exception
+// Check for a specific exception
 expect({
     throw new CustomException("error");
 }).to.throwException!CustomException;
 
-// Expect any exception
+// Check for any exception
 expect({
     riskyOperation();
 }).to.throwAnyException();
 
-// Expect no exception
+// Check that no exception is thrown
 expect({
     safeOperation();
 }).to.not.throwAnyException();
@@ -152,13 +150,13 @@ expect({
 ### Callables
 
 ```d
-// Memory allocation
+// Check memory allocation
 expect({
     auto arr = new int[1000];
     return arr.length;
 }).to.allocateGCMemory();
 
-// Execution time
+// Check execution time
 expect({
     fastOperation();
 }).to.haveExecutionTime.lessThan(100.msecs);
@@ -166,7 +164,7 @@ expect({
 
 ## Custom Error Messages
 
-When an assertion fails, fluent-asserts provides detailed error messages:
+When an assertion fails, fluent-asserts provides a clear error message:
 
 ```
 ASSERTION FAILED: expect(value) should equal 42
@@ -176,6 +174,6 @@ ASSERTION FAILED: expect(value) should equal 42
 
 ## Next Steps
 
-- See the full [API Reference](/api/) for all available assertions
-- Learn about [Core Concepts](/guide/core-concepts/)
-- Discover how to [Extend](/guide/extending/) fluent-asserts
+- See the full [API Reference](/api/) for all available assertions.
+- Learn about [Core Concepts](/guide/core-concepts/).
+- Discover how to [Extend](/guide/extending/) fluent-asserts.

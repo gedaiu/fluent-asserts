@@ -6,7 +6,8 @@ import fluentasserts.core.evaluation.eval : Evaluation, evaluate;
 import fluentasserts.core.lifecycle;
 import fluentasserts.results.printer;
 import fluentasserts.core.base : TestException;
-import fluentasserts.results.serializers;
+import fluentasserts.results.serializers.string_registry;
+import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 import fluentasserts.results.formatting : toNiceOperation;
 
 import std.functional : toDelegate;
@@ -237,7 +238,7 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
             expectedValue.meta[kv.key] = kv.value;
         }
         _evaluation.expectedValue = expectedValue;
-        () @trusted { _evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(message); }();
+        () @trusted { _evaluation.expectedValue.meta["0"] = HeapSerializerRegistry.instance.serialize(message); }();
 
         if (!_evaluation.expectedValue.niceValue.empty) {
             _evaluation.result.addText(" ");
@@ -261,7 +262,7 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
             expectedValue.meta[kv.key] = kv.value;
         }
         _evaluation.expectedValue = expectedValue;
-        () @trusted { _evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(value); }();
+        () @trusted { _evaluation.expectedValue.meta["0"] = HeapSerializerRegistry.instance.serialize(value); }();
 
         _evaluation.result.addText(" equal");
         if (!_evaluation.expectedValue.niceValue.empty) {

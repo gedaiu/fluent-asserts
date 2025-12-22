@@ -9,7 +9,7 @@ import std.range;
 import std.string;
 
 public import fluentasserts.results.message;
-public import fluentasserts.results.source : SourceResult;
+public import fluentasserts.results.source.result : SourceResult;
 
 @safe:
 

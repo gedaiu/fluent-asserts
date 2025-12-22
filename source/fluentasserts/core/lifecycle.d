@@ -14,7 +14,8 @@ import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.core.evaluation.value : ValueEvaluation;
 
 import fluentasserts.results.message;
-import fluentasserts.results.serializers;
+import fluentasserts.results.serializers.string_registry;
+import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 
 import fluentasserts.operations.registry;
 import fluentasserts.operations.comparison.approximately;
@@ -44,7 +45,6 @@ alias StringTypes = AliasSeq!(string, wstring, dstring, const(char)[]);
 /// Module constructor that initializes all fluent-asserts components.
 /// Registers all built-in operations, serializers, and sets up the lifecycle.
 static this() {
-  SerializerRegistry.instance = new SerializerRegistry;
   HeapSerializerRegistry.instance = new HeapSerializerRegistry;
   Lifecycle.instance = new Lifecycle;
 
