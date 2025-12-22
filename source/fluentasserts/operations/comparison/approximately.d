@@ -7,7 +7,7 @@ import fluentasserts.core.listcomparison;
 import fluentasserts.results.serializers.string_registry;
 import fluentasserts.results.serializers.helpers : parseList, cleanString;
 import fluentasserts.operations.string.contain;
-import fluentasserts.core.toNumeric;
+import fluentasserts.core.conversion.tonumeric : toNumeric;
 import fluentasserts.core.memory.heapstring : HeapString, toHeapString;
 
 import fluentasserts.core.lifecycle;

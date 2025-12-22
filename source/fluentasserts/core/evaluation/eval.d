@@ -12,7 +12,7 @@ import core.memory : GC;
 
 import fluentasserts.core.memory.heapstring : toHeapString, HeapString;
 import fluentasserts.core.memory.process : getNonGCMemory;
-import fluentasserts.core.toNumeric : toNumeric;
+import fluentasserts.core.conversion.tonumeric : toNumeric;
 import fluentasserts.core.evaluation.value;
 import fluentasserts.core.evaluation.types;
 import fluentasserts.core.evaluation.equable;

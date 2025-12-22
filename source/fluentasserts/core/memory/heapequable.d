@@ -6,7 +6,7 @@ import core.stdc.stdlib : malloc, free;
 import core.stdc.string : memset;
 
 import fluentasserts.core.memory.heapstring;
-import fluentasserts.core.toNumeric : parseDouble;
+import fluentasserts.core.conversion.floats : parseDouble;
 
 @safe:
 

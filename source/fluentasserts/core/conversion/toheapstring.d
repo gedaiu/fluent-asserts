@@ -1,4 +1,4 @@
-module fluentasserts.core.toString;
+module fluentasserts.core.conversion.toheapstring;
 
 import fluentasserts.core.memory.heapstring : HeapString;
 
@@ -16,7 +16,7 @@ version (unittest) {
 ///
 /// Supports implicit conversion to bool for convenient use in conditions:
 /// ---
-/// if (auto result = toString(42)) {
+/// if (auto result = toHeapString(42)) {
 ///   writeln(result.value[]); // "42"
 /// }
 /// ---
@@ -58,19 +58,19 @@ struct StringResult {
 ///
 /// Example:
 /// ---
-/// auto s1 = toString(42);
+/// auto s1 = toHeapString(42);
 /// assert(s1.success && s1.value[] == "42");
 ///
-/// auto s2 = toString(-123);
+/// auto s2 = toHeapString(-123);
 /// assert(s2.success && s2.value[] == "-123");
 ///
-/// auto s3 = toString(true);
+/// auto s3 = toHeapString(true);
 /// assert(s3.success && s3.value[] == "true");
 ///
-/// auto s4 = toString(3.14);
+/// auto s4 = toHeapString(3.14);
 /// assert(s4.success);
 /// ---
-StringResult toString(T)(T value) @safe nothrow @nogc
+StringResult toHeapString(T)(T value) @safe nothrow @nogc
 if (__traits(isIntegral, T) || __traits(isFloating, T)) {
   static if (is(T == bool)) {
     return StringResult(toBoolString(value), true);
@@ -257,16 +257,16 @@ if (__traits(isFloating, T)) {
 // Unit tests - bool conversion
 // ---------------------------------------------------------------------------
 
-@("toString converts true to 'true'")
+@("toHeapString converts true to 'true'")
 unittest {
-  auto result = toString(true);
+  auto result = toHeapString(true);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("true");
 }
 
-@("toString converts false to 'false'")
+@("toHeapString converts false to 'false'")
 unittest {
-  auto result = toString(false);
+  auto result = toHeapString(false);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("false");
 }
@@ -275,101 +275,101 @@ unittest {
 // Unit tests - integral conversion
 // ---------------------------------------------------------------------------
 
-@("toString converts zero")
+@("toHeapString converts zero")
 unittest {
-  auto result = toString(0);
+  auto result = toHeapString(0);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("0");
 }
 
-@("toString converts positive int")
+@("toHeapString converts positive int")
 unittest {
-  auto result = toString(42);
+  auto result = toHeapString(42);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("42");
 }
 
-@("toString converts negative int")
+@("toHeapString converts negative int")
 unittest {
-  auto result = toString(-42);
+  auto result = toHeapString(-42);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("-42");
 }
 
-@("toString converts large number")
+@("toHeapString converts large number")
 unittest {
-  auto result = toString(123456789);
+  auto result = toHeapString(123456789);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("123456789");
 }
 
-@("toString converts byte max")
+@("toHeapString converts byte max")
 unittest {
-  auto result = toString(cast(byte)127);
+  auto result = toHeapString(cast(byte)127);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("127");
 }
 
-@("toString converts byte min")
+@("toHeapString converts byte min")
 unittest {
-  auto result = toString(cast(byte)-128);
+  auto result = toHeapString(cast(byte)-128);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("-128");
 }
 
-@("toString converts ubyte max")
+@("toHeapString converts ubyte max")
 unittest {
-  auto result = toString(cast(ubyte)255);
+  auto result = toHeapString(cast(ubyte)255);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("255");
 }
 
-@("toString converts short max")
+@("toHeapString converts short max")
 unittest {
-  auto result = toString(cast(short)32767);
+  auto result = toHeapString(cast(short)32767);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("32767");
 }
 
-@("toString converts short min")
+@("toHeapString converts short min")
 unittest {
-  auto result = toString(cast(short)-32768);
+  auto result = toHeapString(cast(short)-32768);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("-32768");
 }
 
-@("toString converts int max")
+@("toHeapString converts int max")
 unittest {
-  auto result = toString(2147483647);
+  auto result = toHeapString(2147483647);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("2147483647");
 }
 
-@("toString converts int min")
+@("toHeapString converts int min")
 unittest {
-  auto result = toString(-2147483648);
+  auto result = toHeapString(-2147483648);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("-2147483648");
 }
 
-@("toString converts long")
+@("toHeapString converts long")
 unittest {
-  auto result = toString(9223372036854775807L);
+  auto result = toHeapString(9223372036854775807L);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("9223372036854775807");
 }
 
-@("toString converts long min")
+@("toHeapString converts long min")
 unittest {
   long minValue = long.min;
-  auto result = toString(minValue);
+  auto result = toHeapString(minValue);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("-9223372036854775808");
 }
 
-@("toString converts ulong max")
+@("toHeapString converts ulong max")
 unittest {
-  auto result = toString(18446744073709551615UL);
+  auto result = toHeapString(18446744073709551615UL);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("18446744073709551615");
 }
@@ -378,72 +378,72 @@ unittest {
 // Unit tests - floating point conversion
 // ---------------------------------------------------------------------------
 
-@("toString converts float zero")
+@("toHeapString converts float zero")
 unittest {
-  auto result = toString(0.0f);
+  auto result = toHeapString(0.0f);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("0");
 }
 
-@("toString converts double zero")
+@("toHeapString converts double zero")
 unittest {
-  auto result = toString(0.0);
+  auto result = toHeapString(0.0);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("0");
 }
 
-@("toString converts positive float")
+@("toHeapString converts positive float")
 unittest {
-  auto result = toString(3.14f);
+  auto result = toHeapString(3.14f);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.startWith("3.14");
 }
 
-@("toString converts negative float")
+@("toHeapString converts negative float")
 unittest {
-  auto result = toString(-2.5f);
+  auto result = toHeapString(-2.5f);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.startWith("-2.5");
 }
 
-@("toString converts float with no fractional part")
+@("toHeapString converts float with no fractional part")
 unittest {
-  auto result = toString(42.0f);
+  auto result = toHeapString(42.0f);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("42");
 }
 
-@("toString converts double")
+@("toHeapString converts double")
 unittest {
-  auto result = toString(1.5);
+  auto result = toHeapString(1.5);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.startWith("1.5");
 }
 
-@("toString converts float NaN")
+@("toHeapString converts float NaN")
 unittest {
-  auto result = toString(float.nan);
+  auto result = toHeapString(float.nan);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("nan");
 }
 
-@("toString converts float infinity")
+@("toHeapString converts float infinity")
 unittest {
-  auto result = toString(float.infinity);
+  auto result = toHeapString(float.infinity);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("inf");
 }
 
-@("toString converts float negative infinity")
+@("toHeapString converts float negative infinity")
 unittest {
-  auto result = toString(-float.infinity);
+  auto result = toHeapString(-float.infinity);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("-inf");
 }
 
-@("toString converts large float")
+@("toHeapString converts large float")
 unittest {
-  auto result = toString(123456.789f);
+  auto result = toHeapString(123456.789f);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.startWith("123456.78");
 }
@@ -452,23 +452,23 @@ unittest {
 // Unit tests - character types
 // ---------------------------------------------------------------------------
 
-@("toString converts char")
+@("toHeapString converts char")
 unittest {
-  auto result = toString(cast(char)65);
+  auto result = toHeapString(cast(char)65);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("65");
 }
 
-@("toString converts wchar")
+@("toHeapString converts wchar")
 unittest {
-  auto result = toString(cast(wchar)65);
+  auto result = toHeapString(cast(wchar)65);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("65");
 }
 
-@("toString converts dchar")
+@("toHeapString converts dchar")
 unittest {
-  auto result = toString(cast(dchar)65);
+  auto result = toHeapString(cast(dchar)65);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("65");
 }

@@ -11,7 +11,7 @@ import std.functional;
 
 import fluentasserts.core.memory.heapstring : HeapString, HeapStringList, toHeapString;
 import fluentasserts.core.evaluation.constraints : isPrimitiveType;
-import fluentasserts.core.toHeapString : StringResult, toHeapString;
+import fluentasserts.core.conversion.toheapstring : StringResult, toHeapString;
 import fluentasserts.results.serializers.helpers : replaceSpecialChars;
 
 version(unittest) {
