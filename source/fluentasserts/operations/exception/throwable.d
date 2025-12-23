@@ -5,7 +5,7 @@ import fluentasserts.results.printer;
 import fluentasserts.core.lifecycle;
 import fluentasserts.core.expect;
 import fluentasserts.results.serializers.string_registry;
-import fluentasserts.results.serializers.helpers : cleanString;
+import fluentasserts.results.serializers.stringprocessing : cleanString;
 
 import std.string;
 import std.conv;

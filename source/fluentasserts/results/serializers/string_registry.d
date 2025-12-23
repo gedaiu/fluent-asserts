@@ -10,7 +10,7 @@ import std.datetime;
 import std.functional;
 
 import fluentasserts.core.evaluation.constraints : isPrimitiveType;
-import fluentasserts.results.serializers.helpers : replaceSpecialChars;
+import fluentasserts.results.serializers.stringprocessing : replaceSpecialChars;
 
 version(unittest) {
   import fluent.asserts;

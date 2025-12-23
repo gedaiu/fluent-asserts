@@ -1,5 +1,5 @@
-/// Helper functions for string processing and list parsing.
-module fluentasserts.results.serializers.helpers;
+/// String processing and list parsing functions for serializers.
+module fluentasserts.results.serializers.stringprocessing;
 
 import std.array;
 import std.string;

@@ -6,7 +6,7 @@ import std.string;
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.results.serializers.string_registry;
-import fluentasserts.results.serializers.helpers : cleanString;
+import fluentasserts.results.serializers.stringprocessing : cleanString;
 
 import fluentasserts.core.lifecycle;
 

@@ -12,7 +12,7 @@ import std.functional;
 import fluentasserts.core.memory.heapstring : HeapString, HeapStringList, toHeapString;
 import fluentasserts.core.evaluation.constraints : isPrimitiveType;
 import fluentasserts.core.conversion.toheapstring : StringResult, toHeapString;
-import fluentasserts.results.serializers.helpers : replaceSpecialChars;
+import fluentasserts.results.serializers.stringprocessing : replaceSpecialChars;
 
 version(unittest) {
   import fluent.asserts;

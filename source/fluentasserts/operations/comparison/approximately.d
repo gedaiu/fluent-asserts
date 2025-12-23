@@ -5,7 +5,7 @@ import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.core.memory.heapequable : HeapEquableValue;
 import fluentasserts.core.listcomparison;
 import fluentasserts.results.serializers.string_registry;
-import fluentasserts.results.serializers.helpers : parseList, cleanString;
+import fluentasserts.results.serializers.stringprocessing : parseList, cleanString;
 import fluentasserts.operations.string.contain;
 import fluentasserts.core.conversion.tonumeric : toNumeric;
 import fluentasserts.core.memory.heapstring : HeapString, toHeapString;

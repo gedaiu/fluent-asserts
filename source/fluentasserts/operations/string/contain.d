@@ -2,20 +2,16 @@ module fluentasserts.operations.string.contain;
 
 import std.algorithm;
 import std.array;
-import std.exception : assumeWontThrow;
-import std.conv;
 
-import fluentasserts.core.listcomparison;
 import fluentasserts.results.printer;
 import fluentasserts.results.asserts : AssertResult;
 import fluentasserts.core.evaluation.eval : Evaluation;
-import fluentasserts.core.evaluation.value : ValueEvaluation;
-import fluentasserts.core.memory.heapequable : HeapEquableValue;
-import fluentasserts.results.serializers.string_registry;
-import fluentasserts.results.serializers.helpers : parseList, cleanString;
+import fluentasserts.results.serializers.stringprocessing : parseList, cleanString;
 import fluentasserts.core.memory.heapstring : HeapString, HeapStringList;
 
-import fluentasserts.core.lifecycle;
+// Re-export array operations
+public import fluentasserts.operations.string.arraycontain : arrayContain;
+public import fluentasserts.operations.string.arraycontainonly : arrayContainOnly;
 
 version(unittest) {
   import fluent.asserts;
@@ -143,305 +139,7 @@ unittest {
   expect(evaluation.result.negated).to.equal(true);
 }
 
-/// Asserts that an array contains specified elements.
-/// Sets evaluation.result with missing values if the assertion fails.
-void arrayContain(ref Evaluation evaluation) @trusted nothrow {
-  auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
-  auto testData = evaluation.currentValue.proxyValue.toArray;
-
-  if (!evaluation.isNegated) {
-    auto missingValues = filterHeapEquableValues(expectedPieces, testData, false);
-
-    if (missingValues.length > 0) {
-      addLifecycleMessage(evaluation, missingValues);
-      evaluation.result.expected = createResultMessage(evaluation.expectedValue, expectedPieces);
-      evaluation.result.actual = evaluation.currentValue.strValue[];
-    }
-  } else {
-    auto presentValues = filterHeapEquableValues(expectedPieces, testData, true);
-
-    if (presentValues.length > 0) {
-      addNegatedLifecycleMessage(evaluation, presentValues);
-      evaluation.result.expected = createNegatedResultMessage(evaluation.expectedValue, expectedPieces);
-      evaluation.result.actual = evaluation.currentValue.strValue[];
-      evaluation.result.negated = true;
-    }
-  }
-}
-
-/// Filters elements from `source` based on whether they exist in `searchIn`.
-/// When `keepFound` is true, returns elements that ARE in searchIn.
-/// When `keepFound` is false, returns elements that are NOT in searchIn.
-HeapEquableValue[] filterHeapEquableValues(
-  HeapEquableValue[] source,
-  HeapEquableValue[] searchIn,
-  bool keepFound
-) @trusted nothrow {
-  HeapEquableValue[] result;
-
-  foreach (ref a; source) {
-    bool found = false;
-    foreach (ref b; searchIn) {
-      if (b.isEqualTo(a)) {
-        found = true;
-        break;
-      }
-    }
-
-    if (found == keepFound) {
-      result ~= a;
-    }
-  }
-
-  return result;
-}
-
-@("array contains a value")
-unittest {
-  expect([1, 2, 3]).to.contain(2);
-}
-
-@("array contains multiple values")
-unittest {
-  expect([1, 2, 3, 4, 5]).to.contain([2, 4]);
-}
-
-@("array does not contain a value")
-unittest {
-  expect([1, 2, 3]).to.not.contain(5);
-}
-
-@("array [1,2,3] contain 5 reports error with expected and actual")
-unittest {
-  auto evaluation = ({
-    expect([1, 2, 3]).to.contain(5);
-  }).recordEvaluation;
-
-  expect(evaluation.result.expected[]).to.equal("to contain 5");
-  expect(evaluation.result.actual[]).to.equal("[1, 2, 3]");
-}
-
-@("array [1,2,3] not contain 2 reports error with expected and actual")
-unittest {
-  auto evaluation = ({
-    expect([1, 2, 3]).to.not.contain(2);
-  }).recordEvaluation;
-
-  expect(evaluation.result.expected[]).to.equal("not to contain 2");
-  expect(evaluation.result.negated).to.equal(true);
-}
-
-/// Asserts that an array contains only the specified elements (no extras, no missing).
-/// Sets evaluation.result with extra/missing arrays if the assertion fails.
-void arrayContainOnly(ref Evaluation evaluation) @safe nothrow {
-  auto expectedPieces = evaluation.expectedValue.proxyValue.toArray;
-  auto testData = evaluation.currentValue.proxyValue.toArray;
-
-  auto comparison = ListComparison!HeapEquableValue(testData, expectedPieces);
-
-  auto missing = comparison.missing;
-  auto extra = comparison.extra;
-  auto common = comparison.common;
-
-  if(!evaluation.isNegated) {
-    auto isSuccess = missing.length == 0 && extra.length == 0 && common.length == testData.length;
-
-    if(!isSuccess) {
-      evaluation.result.expected.put("to contain only ");
-      evaluation.result.expected.put(expectedPieces.niceJoin(evaluation.currentValue.typeName.idup));
-      evaluation.result.actual.put(testData.niceJoin(evaluation.currentValue.typeName.idup));
-
-      foreach(e; extra) {
-        evaluation.result.extra ~= e.getSerialized.idup.cleanString;
-      }
-
-      foreach(m; missing) {
-        evaluation.result.missing ~= m.getSerialized.idup.cleanString;
-      }
-    }
-  } else {
-    auto isSuccess = (missing.length != 0 || extra.length != 0) || common.length != testData.length;
-
-    if(!isSuccess) {
-      evaluation.result.expected.put("not to contain only ");
-      evaluation.result.expected.put(expectedPieces.niceJoin(evaluation.currentValue.typeName.idup));
-      evaluation.result.actual.put(testData.niceJoin(evaluation.currentValue.typeName.idup));
-      evaluation.result.negated = true;
-    }
-  }
-}
-
-@("array containOnly passes when elements match exactly")
-unittest {
-  expect([1, 2, 3]).to.containOnly([1, 2, 3]);
-  expect([1, 2, 3]).to.containOnly([3, 2, 1]);
-}
-
-@("array [1,2,3,4] containOnly [1,2,3] reports error with actual")
-unittest {
-  auto evaluation = ({
-    expect([1, 2, 3, 4]).to.containOnly([1, 2, 3]);
-  }).recordEvaluation;
-
-  expect(evaluation.result.actual[]).to.equal("[1, 2, 3, 4]");
-}
-
-@("array [1,2] containOnly [1,2,3] reports error with extra")
-unittest {
-  auto evaluation = ({
-    expect([1, 2]).to.containOnly([1, 2, 3]);
-  }).recordEvaluation;
-
-  expect(evaluation.result.extra.length).to.equal(1);
-  expect(evaluation.result.extra[0]).to.equal("3");
-}
-
-@("array containOnly negated passes when elements differ")
-unittest {
-  expect([1, 2, 3, 4]).to.not.containOnly([1, 2, 3]);
-}
-
-// ---------------------------------------------------------------------------
-// Helper functions
-// ---------------------------------------------------------------------------
-
-/// Adds a failure message to evaluation.result describing missing string values.
-void addLifecycleMessage(ref Evaluation evaluation, string[] missingValues) @safe nothrow {
-  evaluation.result.addText(". ");
-
-  if(missingValues.length == 1) {
-    evaluation.result.addValue(missingValues[0]);
-    evaluation.result.addText(" is missing from ");
-  } else {
-    evaluation.result.addValue(missingValues.niceJoin(evaluation.currentValue.typeName.idup));
-    evaluation.result.addText(" are missing from ");
-  }
-
-  evaluation.result.addValue(evaluation.currentValue.strValue[]);
-}
-
-/// Adds a failure message to evaluation.result describing missing HeapEquableValue elements.
-void addLifecycleMessage(ref Evaluation evaluation, HeapEquableValue[] missingValues) @safe nothrow {
-  string[] missing;
-  try {
-    missing = new string[missingValues.length];
-    foreach (i, ref val; missingValues) {
-      missing[i] = val.getSerialized.idup.cleanString;
-    }
-  } catch (Exception) {
-    return;
-  }
-
-  addLifecycleMessage(evaluation, missing);
-}
-
-/// Adds a negated failure message to evaluation.result describing unexpectedly present string values.
-void addNegatedLifecycleMessage(ref Evaluation evaluation, string[] presentValues) @safe nothrow {
-  evaluation.result.addText(". ");
-
-  if(presentValues.length == 1) {
-    evaluation.result.addValue(presentValues[0]);
-    evaluation.result.addText(" is present in ");
-  } else {
-    evaluation.result.addValue(presentValues.niceJoin(evaluation.currentValue.typeName.idup));
-    evaluation.result.addText(" are present in ");
-  }
-
-  evaluation.result.addValue(evaluation.currentValue.strValue[]);
-}
-
-/// Adds a negated failure message to evaluation.result describing unexpectedly present HeapEquableValue elements.
-void addNegatedLifecycleMessage(ref Evaluation evaluation, HeapEquableValue[] missingValues) @safe nothrow {
-  string[] missing;
-  try {
-    missing = new string[missingValues.length];
-    foreach (i, ref val; missingValues) {
-      missing[i] = val.getSerialized.idup;
-    }
-  } catch (Exception) {
-    return;
-  }
-
-  addNegatedLifecycleMessage(evaluation, missing);
-}
-
-string createResultMessage(ValueEvaluation expectedValue, string[] expectedPieces) @safe nothrow {
-  string message = "to contain ";
-
-  if(expectedPieces.length > 1) {
-    message ~= "all ";
-  }
-
-  message ~= expectedValue.strValue[].idup;
-
-  return message;
-}
-
-/// Creates an expected result message from HeapEquableValue array.
-string createResultMessage(ValueEvaluation expectedValue, HeapEquableValue[] missingValues) @safe nothrow {
-  string[] missing;
-  try {
-    missing = new string[missingValues.length];
-    foreach (i, ref val; missingValues) {
-      missing[i] = val.getSerialized.idup;
-    }
-  } catch (Exception) {
-    return "";
-  }
-
-  return createResultMessage(expectedValue, missing);
-}
-
-string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expectedPieces) @safe nothrow {
-  string message = "not to contain ";
-
-  if(expectedPieces.length > 1) {
-    message ~= "any ";
-  }
-
-  message ~= expectedValue.strValue[].idup;
-
-  return message;
-}
-
-/// Creates a negated expected result message from HeapEquableValue array.
-string createNegatedResultMessage(ValueEvaluation expectedValue, HeapEquableValue[] missingValues) @safe nothrow {
-  string[] missing;
-  try {
-    missing = new string[missingValues.length];
-    foreach (i, ref val; missingValues) {
-      missing[i] = val.getSerialized.idup;
-    }
-  } catch (Exception) {
-    return "";
-  }
-
-  return createNegatedResultMessage(expectedValue, missing);
-}
-
-string niceJoin(string[] values, string typeName = "") @trusted nothrow {
-  string result = values.to!string.assumeWontThrow;
-
-  if(!typeName.canFind("string")) {
-    result = result.replace(`"`, "");
-  }
-
-  return result;
-}
-
-string niceJoin(HeapEquableValue[] values, string typeName = "") @trusted nothrow {
-  string[] strValues;
-  try {
-    strValues = new string[values.length];
-    foreach (i, ref val; values) {
-      strValues[i] = val.getSerialized.idup.cleanString;
-    }
-  } catch (Exception) {
-    return "";
-  }
-  return strValues.niceJoin(typeName);
-}
-
+// Re-export range/immutable tests from backup
 @("range contain array succeeds")
 unittest {
   [1, 2, 3].map!"a".should.contain([2, 1]);
@@ -486,6 +184,7 @@ unittest {
 
 @("const range contain array succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
   data.map!"a".should.contain([2, 1]);
@@ -493,6 +192,7 @@ unittest {
 
 @("const range contain const range succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
   data.map!"a".should.contain(data);
@@ -500,6 +200,7 @@ unittest {
 
 @("array contain const array succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
   [1, 2, 3].should.contain(data);
@@ -507,6 +208,7 @@ unittest {
 
 @("const range not contain transformed data succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
 
@@ -517,6 +219,7 @@ unittest {
 
 @("immutable range contain array succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
   data.map!"a".should.contain([2, 1]);
@@ -524,6 +227,7 @@ unittest {
 
 @("immutable range contain immutable range succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
   data.map!"a".should.contain(data);
@@ -531,6 +235,7 @@ unittest {
 
 @("array contain immutable array succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
   [1, 2, 3].should.contain(data);
@@ -538,6 +243,7 @@ unittest {
 
 @("immutable range not contain transformed data succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
 
@@ -548,6 +254,7 @@ unittest {
 
 @("empty array containOnly empty array succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   int[] list;
   list.should.containOnly([]);
@@ -555,6 +262,7 @@ unittest {
 
 @("const range containOnly reordered array succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
   data.map!"a".should.containOnly([3, 2, 1]);
@@ -562,6 +270,7 @@ unittest {
 
 @("const range containOnly const range succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
   data.map!"a".should.containOnly(data);
@@ -569,6 +278,7 @@ unittest {
 
 @("array containOnly const array succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
   [1, 2, 3].should.containOnly(data);
@@ -576,6 +286,7 @@ unittest {
 
 @("const range not containOnly transformed data succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   const(int)[] data = [1, 2, 3];
 
@@ -586,6 +297,7 @@ unittest {
 
 @("immutable range containOnly reordered array succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
   data.map!"a".should.containOnly([2, 1, 3]);
@@ -593,6 +305,7 @@ unittest {
 
 @("immutable range containOnly immutable range succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
   data.map!"a".should.containOnly(data);
@@ -600,6 +313,7 @@ unittest {
 
 @("array containOnly immutable array succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
   [1, 2, 3].should.containOnly(data);
@@ -607,6 +321,7 @@ unittest {
 
 @("immutable range not containOnly transformed data succeeds")
 unittest {
+  import fluentasserts.core.lifecycle : Lifecycle;
   Lifecycle.instance.disableFailureHandling = false;
   immutable(int)[] data = [1, 2, 3];
 
