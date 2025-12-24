@@ -4,7 +4,10 @@ import fluentasserts.results.printer;
 import fluentasserts.core.evaluation.eval : Evaluation;
 
 import fluentasserts.core.lifecycle;
-import fluentasserts.results.message;
+import fluentasserts.core.diff.diff : computeDiff;
+import fluentasserts.core.diff.types : EditOp;
+import fluentasserts.core.memory.heapstring : HeapString, toHeapString;
+import fluentasserts.results.message : Message;
 import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 import std.meta : AliasSeq;
 
@@ -21,6 +24,30 @@ version (unittest) {
 }
 
 static immutable equalDescription = "Asserts that the target is strictly == equal to the given val.";
+
+/// Default width for line number padding in output.
+enum DEFAULT_LINE_NUMBER_WIDTH = 5;
+
+/// Formats a line number with right-aligned padding.
+/// Returns a HeapString containing the padded number followed by ": ".
+HeapString formatLineNumber(size_t lineNum, size_t width = DEFAULT_LINE_NUMBER_WIDTH) @trusted nothrow {
+  import fluentasserts.core.conversion.toheapstring : toHeapString;
+
+  auto numStr = toHeapString(lineNum);
+  auto result = HeapString.create(width + 2); // width + ": "
+
+  // Add leading spaces for right-alignment
+  size_t numLen = numStr.value.length;
+  if (numLen < width) {
+    foreach (_; 0 .. width - numLen) {
+      result.put(' ');
+    }
+  }
+
+  result.put(numStr.value[]);
+  result.put(": ");
+  return result;
+}
 
 static immutable isEqualTo = Message(Message.Type.info, " is equal to ");
 static immutable isNotEqualTo = Message(Message.Type.info, " is not equal to ");
@@ -44,12 +71,400 @@ void equal(ref Evaluation evaluation) @safe nothrow {
     return;
   }
 
-  if (evaluation.isNegated) {
-    evaluation.result.expected.put("not ");
-  }
-  evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
-  evaluation.result.actual.put(evaluation.currentValue.strValue[]);
   evaluation.result.negated = evaluation.isNegated;
+
+  bool isMultilineComparison = isMultilineString(evaluation.currentValue.strValue) ||
+                               isMultilineString(evaluation.expectedValue.strValue);
+
+  if (isMultilineComparison) {
+    setMultilineResult(evaluation);
+  } else {
+    if (evaluation.isNegated) {
+      evaluation.result.expected.put("not ");
+    }
+    evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
+    evaluation.result.actual.put(evaluation.currentValue.strValue[]);
+  }
+}
+
+/// Sets the result for multiline string comparisons.
+/// Shows the actual multiline values formatted with line prefixes for readability.
+void setMultilineResult(ref Evaluation evaluation) @trusted nothrow {
+  auto actualUnescaped = unescapeString(evaluation.currentValue.strValue);
+  auto expectedUnescaped = unescapeString(evaluation.expectedValue.strValue);
+
+  if (evaluation.isNegated) {
+    evaluation.result.expected.put("not\n");
+    formatMultilineValue(evaluation.result.expected, expectedUnescaped);
+  } else {
+    formatMultilineValue(evaluation.result.expected, expectedUnescaped);
+  }
+
+  formatMultilineValue(evaluation.result.actual, actualUnescaped);
+
+  if (!evaluation.isNegated) {
+    setMultilineDiff(evaluation);
+  }
+}
+
+/// Formats a multiline string value with line prefixes for display.
+/// Uses right-aligned line numbers to align with source code display format.
+void formatMultilineValue(T)(ref T output, ref const HeapString str) @trusted nothrow {
+  auto slice = str[];
+  size_t lineStart = 0;
+  size_t lineNum = 1;
+
+  foreach (i; 0 .. str.length) {
+    if (str[i] == '\n') {
+      auto numStr = formatLineNumber(lineNum);
+      output.put(numStr[]);
+      output.put(slice[lineStart .. i]);
+      output.put("\n");
+      lineStart = i + 1;
+      lineNum++;
+    }
+  }
+
+  if (lineStart < str.length) {
+    auto numStr = formatLineNumber(lineNum);
+    output.put(numStr[]);
+    output.put(slice[lineStart .. str.length]);
+  }
+}
+
+/// Checks if a HeapString contains multiple lines.
+/// Detects both raw newlines and escaped newlines (\n as two characters).
+bool isMultilineString(ref const HeapString str) @safe @nogc nothrow {
+  if (str.length < 2) {
+    return false;
+  }
+
+  foreach (i; 0 .. str.length) {
+    // Check for raw newline
+    if (str[i] == '\n') {
+      return true;
+    }
+
+    // Check for escaped newline (\n as two chars)
+    if (str[i] == '\\' && i + 1 < str.length && str[i + 1] == 'n') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/// Unescapes a HeapString by converting escaped sequences back to actual characters.
+/// Handles \n, \t, \r, \0.
+HeapString unescapeString(ref const HeapString str) @safe @nogc nothrow {
+  auto result = HeapString.create(str.length);
+  size_t i = 0;
+
+  while (i < str.length) {
+    if (str[i] == '\\' && i + 1 < str.length) {
+      char next = str[i + 1];
+
+      switch (next) {
+        case 'n':
+          result.put('\n');
+          i += 2;
+          continue;
+
+        case 't':
+          result.put('\t');
+          i += 2;
+          continue;
+
+        case 'r':
+          result.put('\r');
+          i += 2;
+          continue;
+
+        case '0':
+          result.put('\0');
+          i += 2;
+          continue;
+
+        case '\\':
+          result.put('\\');
+          i += 2;
+          continue;
+
+        default:
+          break;
+      }
+    }
+
+    result.put(str[i]);
+    i++;
+  }
+
+  return result;
+}
+
+/// Number of context lines to show around changes.
+enum CONTEXT_LINES = 2;
+
+/// Tracks state while rendering diff output.
+struct DiffRenderState {
+  size_t currentLine = size_t.max;
+  size_t lastShownLine = size_t.max;
+  bool[size_t] visibleLines;
+}
+
+/// Sets a user-friendly line-by-line diff on the evaluation result.
+/// Shows lines that differ between expected and actual values.
+void setMultilineDiff(ref Evaluation evaluation) @trusted nothrow {
+  // Unescape the serialized strings before diffing
+  auto expectedUnescaped = unescapeString(evaluation.expectedValue.strValue);
+  auto actualUnescaped = unescapeString(evaluation.currentValue.strValue);
+
+  // Split into lines
+  auto expectedLines = splitLines(expectedUnescaped);
+  auto actualLines = splitLines(actualUnescaped);
+
+  if (expectedLines.length == 0 && actualLines.length == 0) {
+    return;
+  }
+
+  // Build the diff output
+  auto diffBuffer = HeapString.create(4096);
+  diffBuffer.put("\n\nDiff:\n");
+
+  size_t maxLines = expectedLines.length > actualLines.length ? expectedLines.length : actualLines.length;
+  bool hasChanges = false;
+
+  foreach (i; 0 .. maxLines) {
+    bool hasExpected = i < expectedLines.length;
+    bool hasActual = i < actualLines.length;
+
+    if (hasExpected && hasActual) {
+      // Both have this line - check if different
+      if (!linesEqual(expectedLines[i], actualLines[i])) {
+        hasChanges = true;
+        auto lineNum = formatLineNumber(i + 1);
+        diffBuffer.put(lineNum[]);
+        diffBuffer.put("[-");
+        diffBuffer.put(expectedLines[i][]);
+        diffBuffer.put("-]\n");
+        diffBuffer.put(lineNum[]);
+        diffBuffer.put("[+");
+        diffBuffer.put(actualLines[i][]);
+        diffBuffer.put("+]\n");
+      }
+    } else if (hasExpected) {
+      // Line only in expected (removed)
+      hasChanges = true;
+      auto lineNum = formatLineNumber(i + 1);
+      diffBuffer.put(lineNum[]);
+      diffBuffer.put("[-");
+      diffBuffer.put(expectedLines[i][]);
+      diffBuffer.put("-]\n");
+    } else if (hasActual) {
+      // Line only in actual (added)
+      hasChanges = true;
+      auto lineNum = formatLineNumber(i + 1);
+      diffBuffer.put(lineNum[]);
+      diffBuffer.put("[+");
+      diffBuffer.put(actualLines[i][]);
+      diffBuffer.put("+]\n");
+    }
+  }
+
+  if (hasChanges) {
+    diffBuffer.put("\n");
+    evaluation.result.addText(diffBuffer[]);
+  }
+}
+
+/// Splits a HeapString into lines.
+HeapString[] splitLines(ref const HeapString str) @trusted nothrow {
+  HeapString[] lines;
+  size_t lineStart = 0;
+
+  foreach (i; 0 .. str.length) {
+    if (str[i] == '\n') {
+      auto line = HeapString.create(i - lineStart);
+      foreach (j; lineStart .. i) {
+        line.put(str[j]);
+      }
+      lines ~= line;
+      lineStart = i + 1;
+    }
+  }
+
+  // Add last line if there's remaining content
+  if (lineStart < str.length) {
+    auto line = HeapString.create(str.length - lineStart);
+    foreach (j; lineStart .. str.length) {
+      line.put(str[j]);
+    }
+    lines ~= line;
+  }
+
+  return lines;
+}
+
+/// Compares two HeapStrings for equality.
+bool linesEqual(ref const HeapString a, ref const HeapString b) @trusted nothrow {
+  if (a.length != b.length) {
+    return false;
+  }
+
+  foreach (i; 0 .. a.length) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/// Renders a single diff segment to a buffer, handling line transitions.
+void renderSegmentToBuffer(T, B)(ref B buffer, ref T seg, ref DiffRenderState state) @trusted nothrow {
+  if ((seg.line in state.visibleLines) is null) {
+    return;
+  }
+
+  if (seg.line != state.currentLine) {
+    handleLineTransitionToBuffer(buffer, seg.line, state);
+  }
+
+  addSegmentTextToBuffer(buffer, seg);
+}
+
+/// Handles the transition to a new line in diff output (buffer version).
+void handleLineTransitionToBuffer(B)(ref B buffer, size_t newLine, ref DiffRenderState state) @trusted nothrow {
+  bool isFirstLine = state.currentLine == size_t.max;
+  bool hasGap = !isFirstLine && newLine > state.lastShownLine + 1;
+
+  if (!isFirstLine) {
+    buffer.put("\n");
+  }
+
+  if (hasGap) {
+    buffer.put("    ...\n");
+  }
+
+  state.currentLine = newLine;
+  state.lastShownLine = newLine;
+
+  // Add line number with proper padding
+  auto lineNum = formatLineNumber(newLine + 1);
+  buffer.put(lineNum[]);
+}
+
+/// Adds segment text with diff markers to a buffer.
+void addSegmentTextToBuffer(T, B)(ref B buffer, ref T seg) @trusted nothrow {
+  auto text = formatDiffText(seg.text);
+
+  final switch (seg.op) {
+    case EditOp.equal:
+      buffer.put(text);
+      break;
+
+    case EditOp.remove:
+      buffer.put("[-");
+      buffer.put(text);
+      buffer.put("-]");
+      break;
+
+    case EditOp.insert:
+      buffer.put("[+");
+      buffer.put(text);
+      buffer.put("+]");
+      break;
+  }
+}
+
+/// Finds all line numbers that contain changes (insert or remove).
+size_t[] findChangedLines(T)(ref T diffResult) @trusted nothrow {
+  size_t[] changedLines;
+  size_t lastLine = size_t.max;
+
+  foreach (i; 0 .. diffResult.length) {
+    if (diffResult[i].op != EditOp.equal && diffResult[i].line != lastLine) {
+      changedLines ~= diffResult[i].line;
+      lastLine = diffResult[i].line;
+    }
+  }
+
+  return changedLines;
+}
+
+/// Expands changed lines with context lines before and after.
+bool[size_t] expandWithContext(size_t[] changedLines, size_t context) @trusted nothrow {
+  bool[size_t] visibleLines;
+
+  foreach (i; 0 .. changedLines.length) {
+    addLineRange(visibleLines, changedLines[i], context);
+  }
+
+  return visibleLines;
+}
+
+/// Adds a range of lines centered on the given line to the visible set.
+void addLineRange(ref bool[size_t] visibleLines, size_t centerLine, size_t context) @trusted nothrow {
+  size_t start = centerLine > context ? centerLine - context : 0;
+  size_t end = centerLine + context + 1;
+
+  foreach (line; start .. end) {
+    visibleLines[line] = true;
+  }
+}
+
+/// Adds a formatted line number prefix to the result.
+void addLineNumber(ref Evaluation evaluation, size_t line) @trusted nothrow {
+  auto lineNum = formatLineNumber(line + 1);
+  evaluation.result.addText(lineNum[]);
+}
+
+/// Adds segment text with diff markers.
+/// Uses [-text-] for removals and [+text+] for insertions.
+void addSegmentText(T)(ref Evaluation evaluation, ref T seg) @trusted nothrow {
+  auto text = formatDiffText(seg.text);
+
+  final switch (seg.op) {
+    case EditOp.equal:
+      evaluation.result.addText(text);
+      break;
+
+    case EditOp.remove:
+      evaluation.result.addText("[-");
+      evaluation.result.add(Message(Message.Type.delete_, text));
+      evaluation.result.addText("-]");
+      break;
+
+    case EditOp.insert:
+      evaluation.result.addText("[+");
+      evaluation.result.add(Message(Message.Type.insert, text));
+      evaluation.result.addText("+]");
+      break;
+  }
+}
+
+/// Formats diff text by replacing special characters with visible representations.
+string formatDiffText(ref const HeapString text) @trusted nothrow {
+  HeapString result;
+
+  foreach (i; 0 .. text.length) {
+    char c = text[i];
+
+    if (c == '\n') {
+      result.put('\\');
+      result.put('n');
+    } else if (c == '\t') {
+      result.put('\\');
+      result.put('t');
+    } else if (c == '\r') {
+      result.put('\\');
+      result.put('r');
+    } else {
+      result.put(c);
+    }
+  }
+
+  return result[].idup;
 }
 
 // ---------------------------------------------------------------------------

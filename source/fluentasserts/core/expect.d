@@ -37,6 +37,31 @@ import std.string;
 import std.uni;
 import std.conv;
 
+/// Maximum length for values displayed in assertion messages.
+/// Longer values are truncated with "...".
+enum MAX_MESSAGE_VALUE_LENGTH = 80;
+
+/// Truncates a string value for display in assertion messages.
+/// Only multiline strings are shortened to keep messages readable.
+/// Long single-line values are kept intact to preserve type names and other identifiers.
+string truncateForMessage(const(char)[] value) @trusted nothrow {
+  if (value.length == 0) {
+    return "";
+  }
+
+  foreach (i, c; value) {
+    if (c == '\n') {
+      return "(multiline string)";
+    }
+
+    if (c == '\\' && i + 1 < value.length && value[i + 1] == 'n') {
+      return "(multiline string)";
+    }
+  }
+
+  return value.idup;
+}
+
 /// The main fluent assertion struct.
 /// Provides a chainable API for building assertions with modifiers like
 /// `not`, `be`, and `to`, and terminal operations like `equal`, `contain`, etc.
@@ -64,12 +89,12 @@ import std.conv;
       auto sourceValue = _evaluation.source.getValue;
 
       if (sourceValue == "") {
-        _evaluation.result.startWith(_evaluation.currentValue.niceValue[].idup);
+        _evaluation.result.startWith(truncateForMessage(_evaluation.currentValue.niceValue[]));
       } else {
         _evaluation.result.startWith(sourceValue);
       }
     } catch (Exception) {
-      _evaluation.result.startWith(_evaluation.currentValue.strValue[].idup);
+      _evaluation.result.startWith(truncateForMessage(_evaluation.currentValue.strValue[]));
     }
 
     _evaluation.result.addText(" should");
@@ -100,10 +125,10 @@ import std.conv;
 
       if(!_evaluation.expectedValue.niceValue.empty) {
         _evaluation.result.addText(" ");
-        _evaluation.result.addValue(_evaluation.expectedValue.niceValue[]);
+        _evaluation.result.addValue(truncateForMessage(_evaluation.expectedValue.niceValue[]));
       } else if(!_evaluation.expectedValue.strValue.empty) {
         _evaluation.result.addText(" ");
-        _evaluation.result.addValue(_evaluation.expectedValue.strValue[]);
+        _evaluation.result.addValue(truncateForMessage(_evaluation.expectedValue.strValue[]));
       }
 
       Lifecycle.instance.endEvaluation(_evaluation);
@@ -118,10 +143,10 @@ import std.conv;
 
     if(!_evaluation.expectedValue.niceValue.empty) {
       _evaluation.result.addText(" ");
-      _evaluation.result.addValue(_evaluation.expectedValue.niceValue[]);
+      _evaluation.result.addValue(truncateForMessage(_evaluation.expectedValue.niceValue[]));
     } else if(!_evaluation.expectedValue.strValue.empty) {
       _evaluation.result.addText(" ");
-      _evaluation.result.addValue(_evaluation.expectedValue.strValue[]);
+      _evaluation.result.addValue(truncateForMessage(_evaluation.expectedValue.strValue[]));
     }
   }
 
