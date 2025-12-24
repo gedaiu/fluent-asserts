@@ -91,7 +91,8 @@ Evaluation recordEvaluation(void delegate() assertion) @trusted {
 
   assertion();
 
-  return instance.lastEvaluation;
+  import std.algorithm : move;
+  return move(instance.lastEvaluation);
 }
 
 /// Manages the assertion evaluation lifecycle.
