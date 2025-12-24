@@ -11,6 +11,7 @@ Here are the examples of how you can use the `should` function with [exceptions]
 - [Throw something](#throw-something)
 - [Execution time](#execution-time)
 - [Be null](#be-null)
+- [Memory allocations](#memory-allocations)
 
 ## Examples
 
@@ -137,4 +138,49 @@ Failing expectations
     action.should.not.beNull;
 
     ({ }).should.beNull;
+```
+
+### Memory allocations
+
+You can check if a callable allocates memory.
+
+#### GC Memory
+
+Check if a callable allocates memory managed by the garbage collector:
+
+```D
+    // Success expectations
+    ({ auto arr = new int[100]; }).should.allocateGCMemory();
+    ({ int x = 5; }).should.not.allocateGCMemory();
+
+    // Failing expectations
+    ({ int x = 5; }).should.allocateGCMemory();
+    ({ auto arr = new int[100]; }).should.not.allocateGCMemory();
+```
+
+#### Non-GC Memory
+
+Check if a callable allocates memory outside the garbage collector (malloc, C allocators, etc.):
+
+```D
+    import core.stdc.stdlib : malloc, free;
+
+    // Success expectations
+    ({
+        auto p = malloc(1024);
+        free(p);
+    }).should.allocateNonGCMemory();
+
+    ({ int x = 5; }).should.not.allocateNonGCMemory();
+```
+
+**Note:** Non-GC memory measurement uses process-wide metrics:
+- **Linux**: `mallinfo()` for malloc arena statistics
+- **macOS**: `phys_footprint` from `TASK_VM_INFO`
+- **Windows**: Falls back to process memory estimation
+
+This is inherently unreliable during parallel test execution because allocations from other threads are included in the measurement. For accurate non-GC memory testing, run tests single-threaded:
+
+```bash
+dub test -- -j1
 ```

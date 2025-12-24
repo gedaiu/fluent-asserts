@@ -7,7 +7,7 @@ description: Checks if a function call allocates memory outside of the garbage c
 
 The `.allocateNonGCMemory()` assertion checks if a function call allocates memory that is **not** managed by the garbage collector.
 
-This is useful for tracking manual memory allocations.
+This is useful for tracking manual memory allocations (malloc, C allocators, etc.).
 
 ## Modifiers
 
@@ -16,3 +16,23 @@ This assertion supports the following modifiers:
 - `.not` - Negates the assertion, checking that no non-GC memory is allocated.
 - `.to` - Language chain (no effect).
 - `.be` - Language chain (no effect).
+
+## Platform Notes
+
+Non-GC memory measurement uses process-wide metrics:
+
+- **Linux**: Uses `mallinfo()` for malloc arena statistics
+- **macOS**: Uses `phys_footprint` from `TASK_VM_INFO`
+- **Windows**: Falls back to process memory estimation
+
+## Parallel Execution Warning
+
+Non-GC memory measurement is **inherently unreliable during parallel test execution**. The metrics are process-wide, meaning allocations from other threads running concurrently will be included in the measurement.
+
+For accurate non-GC memory testing, run tests single-threaded:
+
+```bash
+dub test -- -j1
+```
+
+Or use a test runner that supports sequential execution for memory-sensitive tests.

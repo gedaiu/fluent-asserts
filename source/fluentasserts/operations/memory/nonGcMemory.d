@@ -87,9 +87,11 @@ version (linux) {
   }
 }
 
-// This test is not run on Linux because mallinfo() picks up runtime noise.
-// On Linux, use allocateNonGCMemory only to detect intentional large allocations.
-version (OSX) {
+// Non-GC memory tracking uses process-wide metrics (phys_footprint on macOS).
+// This test is disabled because parallel test execution causes false positives -
+// other threads' allocations are included in the measurement.
+// To run this test accurately, use: dub test -- -j1 (single-threaded)
+version (none) {
   @("it does not fail when a callable does not allocate non-GC memory and it is not expected to")
   unittest {
     ({

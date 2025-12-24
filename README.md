@@ -169,7 +169,24 @@ core.exception.assertHandler = null;
 
 ## Built in operations
 
+### Memory Assertions
 
+The library provides assertions for checking memory allocations:
+
+```D
+// Check GC allocations
+({ auto arr = new int[100]; }).should.allocateGCMemory();
+({ int x = 5; }).should.not.allocateGCMemory();
+
+// Check non-GC allocations (malloc, etc.)
+({
+    import core.stdc.stdlib : malloc, free;
+    auto p = malloc(1024);
+    free(p);
+}).should.allocateNonGCMemory();
+```
+
+**Note:** Non-GC memory measurement uses process-wide metrics (`mallinfo` on Linux, `phys_footprint` on macOS). This is inherently unreliable during parallel test execution because allocations from other threads are included. For accurate non-GC memory testing, run tests single-threaded with `dub test -- -j1`.
 
 # Extend the library
 

@@ -354,8 +354,11 @@ void populateEvaluation(T)(
   eval.prependText = toHeapString(prependText);
 }
 
+
 /// Measures memory usage of a callable value.
 /// Returns: tuple of (gcMemoryUsed, nonGCMemoryUsed, newBeginTime)
+/// Note: Non-GC memory measurement uses process-wide metrics which may be
+/// affected by other threads during parallel test execution.
 auto measureCallable(T)(T value, SysTime begin) @trusted {
   struct MeasureResult {
     size_t gcMemoryUsed;
@@ -372,6 +375,7 @@ auto measureCallable(T)(T value, SysTime begin) @trusted {
     }
 
     r.newBegin = Clock.currTime;
+
     r.nonGCMemoryUsed = getNonGCMemory();
     auto gcBefore = GC.allocatedInCurrentThread();
     cast(void) value();
