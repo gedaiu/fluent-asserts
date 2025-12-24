@@ -3,9 +3,9 @@
 module fluentasserts.results.asserts;
 
 import std.string;
-import std.conv;
-import ddmp.diff;
 
+import fluentasserts.core.diff.diff : computeDiff;
+import fluentasserts.core.diff.types : EditOp;
 import fluentasserts.results.message : Message, ResultGlyphs;
 import fluentasserts.core.memory.heapstring : HeapString;
 public import fluentasserts.core.array : FixedArray, FixedAppender, FixedStringArray;
@@ -186,25 +186,28 @@ struct AssertResult {
   }
 
   /// Computes the diff between expected and actual values.
-  void computeDiff(string expectedVal, string actualVal) nothrow @trusted {
-    import ddmp.diff : diff_main, Operation;
+  void setDiff(string expectedVal, string actualVal) nothrow @trusted {
+    import fluentasserts.core.memory.heapstring : toHeapString;
 
-    try {
-      auto diffResult = diff_main(expectedVal, actualVal);
-      DiffSegment[] segments;
+    auto a = toHeapString(expectedVal);
+    auto b = toHeapString(actualVal);
+    auto diffResult = computeDiff(a, b);
 
-      foreach (d; diffResult) {
-        DiffSegment.Operation op;
-        final switch (d.operation) {
-          case Operation.EQUAL: op = DiffSegment.Operation.equal; break;
-          case Operation.INSERT: op = DiffSegment.Operation.insert; break;
-          case Operation.DELETE: op = DiffSegment.Operation.delete_; break;
-        }
-        segments ~= DiffSegment(op, d.text.to!string);
+    DiffSegment[] segments;
+
+    foreach (i; 0 .. diffResult.length) {
+      auto d = diffResult[i];
+      DiffSegment.Operation op;
+
+      final switch (d.op) {
+        case EditOp.equal: op = DiffSegment.Operation.equal; break;
+        case EditOp.insert: op = DiffSegment.Operation.insert; break;
+        case EditOp.remove: op = DiffSegment.Operation.delete_; break;
       }
 
-      diff = cast(immutable(DiffSegment)[]) segments;
-    } catch (Exception) {
+      segments ~= DiffSegment(op, d.text[].idup);
     }
+
+    diff = cast(immutable(DiffSegment)[]) segments;
   }
 }
