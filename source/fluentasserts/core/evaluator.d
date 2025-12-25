@@ -6,7 +6,6 @@ import fluentasserts.core.evaluation.eval : Evaluation, evaluate;
 import fluentasserts.core.lifecycle;
 import fluentasserts.results.printer;
 import fluentasserts.core.base : TestException;
-import fluentasserts.results.serializers.string_registry;
 import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 import fluentasserts.results.formatting : toNiceOperation;
 

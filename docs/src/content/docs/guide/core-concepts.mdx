@@ -25,23 +25,32 @@ Here's what happens internally:
 The `Expect` struct is the main API entry point:
 
 ```d
-struct Expect {
-    Evaluation* evaluation;
+@safe struct Expect {
+    private {
+        Evaluation _evaluation;
+        int refCount;
+        bool _initialized;
+    }
 
     // Language chains (return self)
-    ref Expect to() { return this; }
-    ref Expect be() { return this; }
-    ref Expect not() {
-        evaluation.isNegated = !evaluation.isNegated;
+    ref Expect to() return { return this; }
+    ref Expect be() return { return this; }
+    ref Expect not() return {
+        _evaluation.isNegated = !_evaluation.isNegated;
         return this;
     }
 
-    // Terminal operations
-    void equal(T)(T expected) { /* ... */ }
-    void greaterThan(T)(T value) { /* ... */ }
+    // Terminal operations return Evaluator types
+    auto equal(T)(T expected) { /* ... */ }
+    auto greaterThan(T)(T value) { /* ... */ }
     // ...
 }
 ```
+
+Key design points:
+- The struct uses reference counting to track copies
+- Evaluation runs in the destructor of the last copy
+- All operations are `@safe` compatible
 
 ## The Evaluation Struct
 
@@ -49,14 +58,18 @@ The `Evaluation` struct holds all state for an assertion:
 
 ```d
 struct Evaluation {
-    ValueEvaluation currentValue;    // The actual value
-    ValueEvaluation expectedValue;   // The expected value
-    string operationName;            // e.g., "equal", "greaterThan"
-    bool isNegated;                  // true if .not was used
-    AssertResult result;             // Contains failure details
-    Throwable throwable;             // Captured exception, if any
+    size_t id;                        // Unique evaluation ID
+    ValueEvaluation currentValue;     // The actual value
+    ValueEvaluation expectedValue;    // The expected value
+    bool isNegated;                   // true if .not was used
+    SourceResult source;              // Source location (lazily computed)
+    Throwable throwable;              // Captured exception, if any
+    bool isEvaluated;                 // Whether evaluation is complete
+    AssertResult result;              // Contains failure details
 }
 ```
+
+The operation names are stored internally and joined on access.
 
 ## Value Evaluation
 
@@ -64,13 +77,18 @@ For each value (actual and expected), fluent-asserts captures:
 
 ```d
 struct ValueEvaluation {
-    string strValue;         // String representation
-    string[] typeNames;      // Type information
-    size_t gcMemoryUsed;     // Memory tracking
-    size_t nonGCMemoryUsed;  // Non-GC memory tracking
-    Duration duration;       // Execution time
+    HeapString strValue;       // String representation
+    HeapString niceValue;      // Pretty-printed value
+    TypeNameList typeNames;    // Type information
+    size_t gcMemoryUsed;       // GC memory tracking
+    size_t nonGCMemoryUsed;    // Non-GC memory tracking
+    Duration duration;         // Execution time (for callables)
+    HeapString fileName;       // Source file
+    size_t line;               // Source line
 }
 ```
+
+Note: Values use `HeapString` for `@nogc` compatibility instead of regular D strings.
 
 ## Callable Handling
 
@@ -90,51 +108,60 @@ The callable is:
 
 This enables testing:
 - Exception throwing behavior
-- Memory allocation
+- Memory allocation (GC and non-GC)
 - Execution time
 
 ## Memory Tracking
 
-For memory assertions, fluent-asserts measures:
+For memory assertions, fluent-asserts measures allocations:
 
 ```d
 // Before callable execution
-gcMemoryUsed = GC.stats().usedSize;
-nonGCMemoryUsed = getNonGCMemory();
+gcMemoryBefore = GC.stats().usedSize;
+nonGCMemoryBefore = getNonGCMemory();
 
 // Execute callable
-value();
+callable();
 
 // Calculate delta
-gcMemoryUsed = GC.stats().usedSize - gcMemoryUsed;
-nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryUsed;
+gcMemoryUsed = GC.stats().usedSize - gcMemoryBefore;
+nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryBefore;
 ```
+
+Platform-specific implementations for non-GC memory:
+- **Linux**: Uses `mallinfo()` for malloc arena statistics
+- **macOS**: Uses `phys_footprint` from `TASK_VM_INFO`
+- **Windows**: Falls back to process memory estimation
 
 ## Operations
 
-Each assertion type (equal, greaterThan, contain, etc.) is implemented as an **operation**:
+Each assertion type (equal, greaterThan, contain, etc.) is implemented as an **operation function**:
 
 ```d
 void equal(ref Evaluation evaluation) @safe nothrow {
-    auto isSuccess = evaluation.currentValue.strValue ==
-                     evaluation.expectedValue.strValue;
+    // Compare using HeapEquableValue for type-safe comparison
+    auto actualValue = evaluation.currentValue.getSerialized!T();
+    auto expectedValue = evaluation.expectedValue.getSerialized!T();
+
+    auto isSuccess = actualValue == expectedValue;
 
     if (evaluation.isNegated) {
         isSuccess = !isSuccess;
     }
 
     if (!isSuccess) {
-        evaluation.result.expected = evaluation.expectedValue.strValue;
-        evaluation.result.actual = evaluation.currentValue.strValue;
+        evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
+        evaluation.result.actual.put(evaluation.currentValue.strValue[]);
     }
 }
 ```
 
 Operations:
 - Receive the `Evaluation` struct by reference
+- Are `@safe nothrow` for reliability
 - Check if the assertion passes
 - Handle negation (`.not`)
-- Set error messages on failure
+- Set error messages on failure using `FixedAppender`
 
 ## Error Reporting
 
@@ -142,41 +169,71 @@ When an assertion fails, fluent-asserts builds a detailed error message:
 
 ```d
 struct AssertResult {
-    Message[] message;    // Descriptive parts
-    string expected;      // Expected value
-    string actual;        // Actual value
-    bool negated;         // Was .not used?
-    DiffSegment[] diff;   // For string/array diffs
-    string[] extra;       // Extra items found
-    string[] missing;     // Missing items
+    Message[] messages;                    // Descriptive message parts
+    FixedAppender expected;                // Expected value
+    FixedAppender actual;                  // Actual value
+    bool negated;                          // Was .not used?
+    immutable(DiffSegment)[] diff;         // For string/array diffs
+    FixedStringArray extra;                // Extra items found
+    FixedStringArray missing;              // Missing items
+    HeapString[] contextKeys;              // Context data keys
+    HeapString[] contextValues;            // Context data values
 }
 ```
 
 This produces output like:
 
 ```
-ASSERTION FAILED: expect(value) should equal "hello"
-  ACTUAL: "world"
-  EXPECTED: "hello"
+ASSERTION FAILED: value should equal "hello".
+OPERATION: equal
+
+  ACTUAL: <string> "world"
+EXPECTED: <string> "hello"
+
+source/test.d:42
+>  42:    expect(value).to.equal("hello");
 ```
 
 ## Type Serialization
 
-Values are converted to strings for display using serializers:
+Values are converted to strings for display using `HeapSerializerRegistry`, which provides `@nogc` compatible serialization using `HeapString`.
 
 ```d
-// Built-in serializers handle common types
-string serialize(T)(T value) {
-    static if (is(T == string)) return `"` ~ value ~ `"`;
-    else static if (isNumeric!T) return value.to!string;
-    else static if (isArray!T) return "[" ~ /* ... */ ~ "]";
-    // ...
-}
+// Register a custom serializer
+HeapSerializerRegistry.instance.register!MyType((value) {
+    return toHeapString(format!"MyType(%s)"(value.field));
+});
 ```
 
-Custom serializers can be registered for domain types.
+Built-in serializers handle common types like strings, numbers, arrays, and objects.
+
+## Lifecycle Management
+
+The `Lifecycle` singleton manages assertion state:
+
+```d
+class Lifecycle {
+    static Lifecycle instance;
+
+    // Begin a new evaluation
+    size_t beginEvaluation(ValueEvaluation value);
+
+    // Complete an evaluation
+    void endEvaluation(ref Evaluation evaluation);
+
+    // Handle assertion failure
+    void handleFailure(ref Evaluation evaluation);
+
+    // Statistics tracking
+    AssertionStatistics statistics;
+
+    // Custom failure handling
+    void setFailureHandler(FailureHandlerDelegate handler);
+}
+```
 
 ## Next Steps
 
 - Learn how to [Extend](/guide/extending/) fluent-asserts with custom operations
 - Browse the [API Reference](/api/) for all built-in operations
+- Understand [Memory Management](/guide/memory-management/) for `@nogc` contexts

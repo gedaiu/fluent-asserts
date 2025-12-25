@@ -10,7 +10,6 @@ import fluentasserts.core.memory.heapstring : toHeapString;
 
 import fluentasserts.results.printer;
 import fluentasserts.results.formatting : toNiceOperation;
-import fluentasserts.results.serializers.string_registry;
 import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 
 import fluentasserts.operations.equality.equal : equalOp = equal;

@@ -1,0 +1,202 @@
+---
+title: Upgrading to v2.0.0
+description: A friendly guide to the new features in fluent-asserts 2.0 and how to migrate from v1.x
+---
+
+## Welcome to fluent-asserts v2.0!
+
+This release is a major milestone. We have completely rewritten the internal engine to be faster, lighter, and more flexible. While the public API remains largely familiar, the internal architecture has shifted significantly to support `@nogc` and manual memory management.
+
+This guide covers everything you need to know to upgrade your projects.
+
+## The Big Architectural Shifts
+
+Before diving into the code, it helps to understand why things changed.
+
+### 1. Memory Management Overhaul
+
+The most significant change in v2 is the move from D's Garbage Collector (GC) to manual memory management. While version 1 relied on the GC for dynamic allocations and assertion strings, version 2 utilizes `HeapString` and `HeapData` with Reference Counting.
+
+This shift brings several key benefits:
+
+- **@nogc contexts**: Use fluent-asserts throughout `@nogc` code
+- **Performance**: Small Buffer Optimization (SBO) avoids allocations entirely for short strings
+- **Lazy parsing**: Source code parsing only happens if an assertion fails, keeping your passing tests fast
+
+:::note
+For most users, this is invisible. If you are extending the library, check out the [Memory Management](/guide/memory-management/) guide.
+:::
+
+### 2. The New Evaluation Pipeline
+
+We moved from a class-based evaluation system to a lightweight struct-based system. `Evaluation` is now a struct, and results use `AssertResult` instead of the old interface-based system.
+
+## Breaking Changes
+
+If you are upgrading an existing codebase, watch out for these structural changes.
+
+### Module Restructuring
+
+We cleaned up the module hierarchy to be more logical.
+
+| Old Location (v1) | New Location (v2) |
+|-------------------|-------------------|
+| `fluentasserts.core.operations.equal` | `fluentasserts.operations.equality.equal` |
+| `fluentasserts.core.operations.contain` | `fluentasserts.operations.string.contain` |
+| `fluentasserts.core.operations.greaterThan` | `fluentasserts.operations.comparison.greaterThan` |
+| `fluentasserts.core.operations.throwable` | `fluentasserts.operations.exception.throwable` |
+| `fluentasserts.core.operations.registry` | `fluentasserts.operations.registry` |
+
+:::tip
+If you import `fluent.asserts` or `fluentasserts.core.base`, you likely don't need to change anything!
+:::
+
+### Serializers
+
+v2 uses `HeapSerializerRegistry` for `@nogc` compatible serialization.
+
+## New Features
+
+### 1. Centralized Configuration
+
+You now have a unified `FluentAssertsConfig` for both compile-time and runtime settings.
+
+```d
+import fluentasserts.core.config;
+
+// Compile-time check
+static if (fluentAssertsEnabled) { /* ... */ }
+
+// Runtime configuration
+config.output.setFormat(OutputFormat.compact);
+```
+
+### 2. Output Formats
+
+Three output formats let you tailor assertion messages for your audience:
+
+- **Verbose** (default) - Human-friendly format with full context and source snippets
+- **TAP** - Universal machine-readable format for CI/CD pipelines and test harnesses
+- **Compact** - Token-optimized format for AI coding assistants like Claude Code
+
+```bash
+# Use compact format for AI-assisted development
+CLAUDECODE=1 dub test
+```
+
+See [Configuration](/guide/configuration/) for all the ways to set output formats.
+
+### 3. Context Data & Formatted Messages
+
+When debugging loops, you can now add context directly to the assertion chain.
+
+```d
+// Formatted "Because"
+foreach (i; 0 .. 100) {
+    result.should.equal(expected).because("iteration %s", i);
+}
+
+// Key-Value Context
+result.should.equal(expected)
+    .withContext("userId", userId)
+    .withContext("email", user.email);
+```
+
+See [Context Data](/guide/context-data/) for more examples.
+
+### 4. Memory Assertions
+
+You can strictly test your memory allocation behavior to ensure code uses the GC or remains `@nogc` compliant.
+
+```d
+// Ensure code uses GC
+expect({ auto arr = new int[100]; }).to.allocateGCMemory();
+
+// Ensure code is @nogc compliant
+expect({ int x = 42; }).not.to.allocateGCMemory();
+```
+
+See [Memory Assertions](/api/callable/gcMemory/) for platform notes.
+
+## Migration Guide
+
+Follow these steps to upgrade your application to v2.0.
+
+### Step 1: Update Imports
+
+Most users will not need to take any action. Advanced users who import internal modules will need to update them to the new paths found in the breaking changes section.
+
+### Step 2: Update Custom Serializers
+
+If you registered custom serializers in v1, use `HeapSerializerRegistry`:
+
+```d
+HeapSerializerRegistry.instance.register!MyType(&mySerializer);
+```
+
+### Step 3: Update Custom Operations
+
+If you wrote custom operations, note that the signature has changed. Operations now modify the `Evaluation` struct directly instead of returning `IResult[]`.
+
+See [Extending fluent-asserts](/guide/extending/) for the new patterns and examples.
+
+### Step 4: Verify @nogc
+
+If you use fluent-asserts in `@nogc` code, it should now work out of the box! Just ensure your custom extensions are also `@nogc` safe.
+
+## More New Features
+
+### Assertion Statistics
+
+Track how many assertions pass and fail across your test suite:
+
+```d
+auto stats = Lifecycle.instance.statistics;
+writeln("Passed: ", stats.passedAssertions);
+writeln("Failed: ", stats.failedAssertions);
+```
+
+See [Assertion Statistics](/guide/statistics/) for detailed usage.
+
+### Recording Evaluations
+
+Capture assertion results programmatically without throwing:
+
+```d
+auto evaluation = ({
+    expect(5).to.equal(10);
+}).recordEvaluation;
+
+// Inspect without failing
+assert(evaluation.result.expected[] == "10");
+```
+
+See [Recording Evaluations](/guide/introduction/#recording-evaluations) for more details.
+
+### Release Build Behavior
+
+Like D's built-in `assert`, fluent-asserts becomes a no-op in release builds for zero runtime overhead. You can override this with version flags.
+
+See [Release Build Configuration](/guide/configuration/#release-build-configuration) for details.
+
+## Getting Help
+
+If you get stuck:
+
+- Check the [API Reference](/api/) for current method signatures
+- Examine the source code in `source/fluentasserts/operations/` for examples
+- Open a ticket at [fluent-asserts/issues](https://github.com/gedaiu/fluent-asserts/issues)
+
+## Learn More
+
+Explore the documentation to get the most out of fluent-asserts v2:
+
+- [Installation](/guide/installation/) - Get started with fluent-asserts
+- [Assertion Styles](/guide/assertion-styles/) - Learn the fluent API
+- [Configuration](/guide/configuration/) - Output formats and build settings
+- [Context Data](/guide/context-data/) - Debug assertions in loops
+- [Assertion Statistics](/guide/statistics/) - Track pass/fail metrics
+- [Memory Management](/guide/memory-management/) - Understand the `@nogc` internals
+- [Core Concepts](/guide/core-concepts/) - How the evaluation pipeline works
+- [Extending](/guide/extending/) - Create custom operations and serializers
+- [API Reference](/api/) - Complete operation reference

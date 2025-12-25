@@ -7,11 +7,11 @@ fluent-asserts provides configurable output formats for assertion failure messag
 
 ## Output Formats
 
-Three output formats are available:
+Three output formats are available, each designed for a specific audience:
 
 ### Verbose (Default)
 
-The verbose format provides detailed, human-readable output with full context:
+The **human-friendly** format. Provides detailed, readable output with full context including source code snippets. Perfect for local development and debugging when you need to understand exactly what went wrong.
 
 ```
 ASSERTION FAILED: 5 should equal 3.
@@ -24,17 +24,9 @@ source/mytest.d:42
 >  42:    expect(5).to.equal(3);
 ```
 
-### Compact
-
-A single-line format optimized for minimal token usage, useful for AI-assisted development:
-
-```
-FAIL: 5 should equal 3. | actual=5 expected=3 | source/mytest.d:42
-```
-
 ### TAP (Test Anything Protocol)
 
-Standard TAP format for integration with CI/CD tools and test harnesses:
+The **universal machine-readable** format. [TAP](https://testanything.org/) is a standard protocol understood by CI/CD systems, test harnesses, and reporting tools worldwide. Use this when integrating with automated pipelines or generating test reports.
 
 ```
 not ok - 5 should equal 3.
@@ -43,6 +35,14 @@ not ok - 5 should equal 3.
   expected: 3
   at: source/mytest.d:42
   ...
+```
+
+### Compact
+
+The **token-optimized** format for AI-assisted development. Delivers all essential information in a single line, minimizing token usage when working with AI coding assistants like Claude Code. Every character counts when you're paying per token.
+
+```
+FAIL: 5 should equal 3. | actual=5 expected=3 | source/mytest.d:42
 ```
 
 ## Setting the Output Format
@@ -93,11 +93,11 @@ unittest {
 
 ## Format Comparison
 
-| Format | Use Case | Output Size |
-|--------|----------|-------------|
-| `verbose` | Development, debugging | Large |
-| `compact` | AI tools, log aggregation | Small |
-| `tap` | CI/CD, test harnesses | Medium |
+| Format | Audience | Use Case | Output Size |
+|--------|----------|----------|-------------|
+| `verbose` | Humans | Local development, debugging | Large |
+| `tap` | Machines | CI/CD pipelines, test harnesses, reporting tools | Medium |
+| `compact` | AI assistants | Claude Code, token-limited contexts | Small |
 
 ## Example Outputs
 

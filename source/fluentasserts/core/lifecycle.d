@@ -14,7 +14,6 @@ import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.core.evaluation.value : ValueEvaluation;
 
 import fluentasserts.results.message;
-import fluentasserts.results.serializers.string_registry;
 import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 
 import fluentasserts.operations.registry;

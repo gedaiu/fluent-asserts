@@ -17,7 +17,6 @@ version (unittest) {
   import fluentasserts.core.base;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
-  import fluentasserts.results.serializers.string_registry;
   import std.conv;
   import std.datetime;
   import std.meta;

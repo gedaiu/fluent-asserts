@@ -12,14 +12,14 @@ The easiest way to use fluent-asserts is through [DUB](https://code.dlang.org/),
 <Tabs>
   <TabItem label="dub.sdl">
 ```sdl
-dependency "fluent-asserts" version="~>1.0.1"
+dependency "fluent-asserts" version="~>2.0"
 ```
   </TabItem>
   <TabItem label="dub.json">
 ```json
 {
     "dependencies": {
-        "fluent-asserts": "~>1.0.1"
+        "fluent-asserts": "~>2.0"
     }
 }
 ```
@@ -97,7 +97,7 @@ Add trial to your project:
 <Tabs>
   <TabItem label="dub.sdl">
 ```sdl
-dependency "fluent-asserts" version="~>1.0.1"
+dependency "fluent-asserts" version="~>2.0"
 dependency "trial" version="~>0.8.0-beta.7"
 ```
   </TabItem>
@@ -105,7 +105,7 @@ dependency "trial" version="~>0.8.0-beta.7"
 ```json
 {
     "dependencies": {
-        "fluent-asserts": "~>1.0.1",
+        "fluent-asserts": "~>2.0",
         "trial": "~>0.8.0-beta.7"
     }
 }
@@ -211,6 +211,10 @@ unittest {
     expect(calculate(2, 3)).to.equal(5);
 }
 ```
+
+## Upgrading from v1.x
+
+If you're upgrading from fluent-asserts v1.x, see the [Upgrading to v2.0.0](/guide/upgrading-v2/) guide for migration steps and breaking changes.
 
 ## Next Steps
 

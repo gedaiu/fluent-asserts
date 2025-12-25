@@ -173,9 +173,10 @@ void validateOrder(Order order) {
 
 ## Limits
 
-- Context is limited to 8 key-value pairs per assertion
+- Context is limited to 8 key-value pairs per assertion (defined by `MAX_CONTEXT_ENTRIES`)
 - Keys and values are converted to strings using `std.conv.to!string`
 - Context is cleared between assertions
+- If you exceed 8 context entries, a warning is displayed in the output indicating that additional entries were dropped
 
 ## Next Steps
 

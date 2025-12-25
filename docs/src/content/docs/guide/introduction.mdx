@@ -33,6 +33,111 @@ Run the tests:
 dub test
 ```
 
+## Features
+
+fluent-asserts is packed with capabilities to make your tests expressive, fast, and easy to debug.
+
+### Readable Assertions
+
+Write tests that read like sentences. The fluent API chains naturally, making your test intent crystal clear.
+
+```d
+expect(user.age).to.be.greaterThan(18);
+expect(response.status).to.equal(200);
+expect(items).to.contain("apple").and.not.beEmpty();
+```
+
+### Rich Assertion Library
+
+A comprehensive set of built-in assertions for all common scenarios:
+
+- **Equality**: `equal`, `approximately`
+- **Comparison**: `greaterThan`, `lessThan`, `between`, `within`
+- **Strings**: `contain`, `startWith`, `endWith`, `match`
+- **Collections**: `contain`, `containOnly`, `beEmpty`, `beSorted`
+- **Types**: `beNull`, `instanceOf`
+- **Exceptions**: `throwException`, `throwAnyException`
+- **Memory**: `allocateGCMemory`, `allocateNonGCMemory`
+- **Timing**: `haveExecutionTime`
+
+See the [API Reference](/api/) for the complete list.
+
+### Detailed Failure Messages
+
+When assertions fail, you get all the context you need to understand what went wrong:
+
+```
+ASSERTION FAILED: user.age should be greater than 18.
+OPERATION: greaterThan
+
+  ACTUAL: <int> 16
+EXPECTED: <int> greater than 18
+
+source/test.d:42
+>  42:    expect(user.age).to.be.greaterThan(18);
+```
+
+### Multiple Output Formats
+
+Choose the right format for your environment:
+
+- **Verbose** - Human-friendly with full context for local development
+- **TAP** - Universal machine-readable format for CI/CD pipelines
+- **Compact** - Token-optimized for AI coding assistants
+
+See [Configuration](/guide/configuration/) for details.
+
+### Context Data for Debugging
+
+When testing in loops or complex scenarios, attach context to pinpoint failures:
+
+```d
+foreach (i, user; users) {
+    user.isValid.should.beTrue
+        .withContext("index", i)
+        .withContext("userId", user.id)
+        .because("user %s failed validation", user.name);
+}
+```
+
+See [Context Data](/guide/context-data/) for more examples.
+
+### Memory Allocation Testing
+
+Verify that your code behaves correctly with respect to memory:
+
+```d
+// Ensure code allocates GC memory
+expect({ auto arr = new int[100]; }).to.allocateGCMemory();
+
+// Ensure code is @nogc compliant
+expect({ int x = 42; }).not.to.allocateGCMemory();
+```
+
+### @nogc Compatible
+
+The entire library works in `@nogc` contexts. Use fluent-asserts in performance-critical code without triggering garbage collection.
+
+### Zero Overhead in Release Builds
+
+Like D's built-in `assert`, fluent-asserts becomes a complete no-op in release builds. Use it freely in production code with zero runtime cost.
+
+### Assertion Statistics
+
+Track how your tests are performing:
+
+```d
+auto stats = Lifecycle.instance.statistics;
+writeln("Passed: ", stats.passedAssertions);
+writeln("Failed: ", stats.failedAssertions);
+```
+
+See [Assertion Statistics](/guide/statistics/) for details.
+
+### Extensible
+
+Create custom assertions for your domain and register custom serializers for your types. See [Extending](/guide/extending/) for how to build on top of fluent-asserts.
+
 ## The API
 
 The library provides three ways to write assertions: `expect`, `should`, and `Assert`.
@@ -88,18 +193,19 @@ unittest {
         expect(5).to.equal(10);
     }).recordEvaluation;
 
-    // Inspect the evaluation result
-    assert(evaluation.result.expected == "10");
-    assert(evaluation.result.actual == "5");
+    // Inspect the evaluation result (use [] to access FixedAppender content)
+    assert(evaluation.result.expected[] == "10");
+    assert(evaluation.result.actual[] == "5");
 }
 ```
 
 The `Evaluation.result` provides access to:
-- `expected` - the expected value as a string
-- `actual` - the actual value as a string
+- `expected` - the expected value (use `[]` to get the string)
+- `actual` - the actual value (use `[]` to get the string)
 - `negated` - whether the assertion was negated with `.not`
 - `missing` - array of missing elements (for collection comparisons)
 - `extra` - array of extra elements (for collection comparisons)
+- `messages` - the assertion message segments
 
 ## Release Builds
 
@@ -140,3 +246,4 @@ core.exception.assertHandler = null;
 - Learn about [Assertion Styles](/guide/assertion-styles/) in depth
 - Explore the [API Reference](/api/) for all available operations
 - Understand the [Philosophy](/guide/philosophy/) behind fluent-asserts
+- Upgrading from v1? See [Upgrading to v2.0.0](/guide/upgrading-v2/)
