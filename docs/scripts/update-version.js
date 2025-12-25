@@ -2,11 +2,12 @@
 /**
  * Updates the version information in the documentation.
  * Reads the latest git tag and writes to src/content/version.json
+ * Also updates version references in all markdown files.
  */
 
 import { execSync } from 'child_process';
-import { writeFileSync, readFileSync, mkdirSync } from 'fs';
-import { dirname, join } from 'path';
+import { writeFileSync, readFileSync, mkdirSync, readdirSync, statSync } from 'fs';
+import { dirname, join, extname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -63,11 +64,38 @@ function getGitInfo() {
   return { commitHash, commitDate };
 }
 
+/**
+ * Recursively find all markdown files in a directory
+ */
+function findMarkdownFiles(dir, files = []) {
+  const entries = readdirSync(dir);
+  for (const entry of entries) {
+    const fullPath = join(dir, entry);
+    const stat = statSync(fullPath);
+    if (stat.isDirectory()) {
+      findMarkdownFiles(fullPath, files);
+    } else if (['.md', '.mdx'].includes(extname(entry))) {
+      files.push(fullPath);
+    }
+  }
+  return files;
+}
+
+/**
+ * Get the major.minor version for DUB dependency format (e.g., "2.0" from "2.0.0-beta.1")
+ */
+function getMajorMinorVersion(version) {
+  const match = version.match(/^(\d+\.\d+)/);
+  return match ? match[1] : version;
+}
+
 const version = getLatestVersion();
+const majorMinor = getMajorMinorVersion(version);
 const { commitHash, commitDate } = getGitInfo();
 
 const versionInfo = {
   version,
+  majorMinor,
   commitHash,
   commitDate,
   generatedAt: new Date().toISOString(),
@@ -78,19 +106,46 @@ const outputPath = join(docsRoot, 'public', 'version.json');
 mkdirSync(dirname(outputPath), { recursive: true });
 writeFileSync(outputPath, JSON.stringify(versionInfo, null, 2));
 
-// Update version in index.mdx tagline
-const indexPath = join(docsRoot, 'src', 'content', 'docs', 'index.mdx');
-try {
-  let indexContent = readFileSync(indexPath, 'utf-8');
-  // Update the version in the tagline
-  indexContent = indexContent.replace(
-    /Current version v[\d.]+/,
-    `Current version v${version}`
-  );
-  writeFileSync(indexPath, indexContent);
-  console.log(`Updated index.mdx tagline to v${version}`);
-} catch (err) {
-  console.warn('Could not update index.mdx:', err.message);
+// Find all markdown files in the docs
+const contentDir = join(docsRoot, 'src', 'content', 'docs');
+const markdownFiles = findMarkdownFiles(contentDir);
+
+let updatedFiles = 0;
+
+for (const filePath of markdownFiles) {
+  try {
+    let content = readFileSync(filePath, 'utf-8');
+    let modified = false;
+    const originalContent = content;
+
+    // Update "Current version vX.X.X" pattern (index.mdx tagline)
+    content = content.replace(
+      /Current version v[\d.]+([-\w.]*)/g,
+      `Current version v${version}`
+    );
+
+    // Update DUB SDL dependency version: version="~>X.X"
+    content = content.replace(
+      /version="~>[\d.]+"/g,
+      `version="~>${majorMinor}"`
+    );
+
+    // Update DUB JSON dependency version: "~>X.X"
+    content = content.replace(
+      /"fluent-asserts":\s*"~>[\d.]+"/g,
+      `"fluent-asserts": "~>${majorMinor}"`
+    );
+
+    if (content !== originalContent) {
+      writeFileSync(filePath, content);
+      modified = true;
+      updatedFiles++;
+      console.log(`Updated: ${filePath.replace(docsRoot, '')}`);
+    }
+  } catch (err) {
+    console.warn(`Could not update ${filePath}:`, err.message);
+  }
 }
 
-console.log(`Version info updated: v${version} (${commitHash})`);
+console.log(`\nVersion info updated: v${version} (${commitHash})`);
+console.log(`Updated ${updatedFiles} markdown file(s)`);
