@@ -83,12 +83,14 @@ unittest {
   expect([1, 2, 3, 4]).to.not.containOnly([1, 2, 3]);
 }
 
+// Issue #96: Object[] and nested arrays should work with containOnly
 @("Object array containOnly itself passes")
 unittest {
   Object[] l = [new Object(), new Object()];
   l.should.containOnly(l);
 }
 
+// Issue #96: Object[] and nested arrays should work with containOnly
 @("nested int array containOnly passes")
 unittest {
   import std.range : iota;

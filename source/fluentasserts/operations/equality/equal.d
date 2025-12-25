@@ -1016,6 +1016,7 @@ unittest {
   a1.should.not.equal(a2);
 }
 
+// Issue #96: Object[] and nested arrays should work with equal
 @("Object array equal itself passes")
 unittest {
   Object[] l = [new Object(), new Object()];
@@ -1028,6 +1029,7 @@ unittest {
   al.should.equal(al);
 }
 
+// Issue #96: Object[] and nested arrays should work with equal
 @("nested int array equal passes")
 unittest {
   import std.range : iota;
