@@ -83,7 +83,6 @@ expect(testedValue).to.not.equal(42);
     /// On failure, displays: CONTEXT: userId = 42, input = ...
 ```
 
-
 ## Should
 
 `should` is designed to be used in combination with [Uniform Function Call Syntax (UFCS)](https://dlang.org/spec/function.html#pseudo-member), and

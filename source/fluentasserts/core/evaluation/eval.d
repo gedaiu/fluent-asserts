@@ -322,6 +322,10 @@ struct Evaluation {
         printer.primary(result.contextValue(i).idup);
         printer.newLine;
       }
+      if (result.hasContextOverflow) {
+        printer.danger("  (additional context entries were dropped)");
+        printer.newLine;
+      }
     }
 
     printer.newLine;
@@ -363,6 +367,9 @@ struct Evaluation {
         printer.primary("=");
         printer.primary(result.contextValue(i).idup);
       }
+      if (result.hasContextOverflow) {
+        printer.primary(", ...(truncated)");
+      }
     }
 
     printer.primary(" | actual=");
@@ -399,6 +406,10 @@ struct Evaluation {
         printer.primary(result.contextKey(i).idup);
         printer.primary(": ");
         printer.primary(result.contextValue(i).idup);
+        printer.newLine;
+      }
+      if (result.hasContextOverflow) {
+        printer.primary("    # additional context entries were dropped");
         printer.newLine;
       }
     }

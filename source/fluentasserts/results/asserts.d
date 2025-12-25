@@ -58,11 +58,15 @@ struct AssertResult {
     size_t _messageCount;
   }
 
+  /// Maximum number of context entries per assertion
+  enum MAX_CONTEXT_ENTRIES = 8;
+
   /// Context data for debugging (Issue #79)
   private {
-    HeapString[8] _contextKeys;
-    HeapString[8] _contextValues;
+    HeapString[MAX_CONTEXT_ENTRIES] _contextKeys;
+    HeapString[MAX_CONTEXT_ENTRIES] _contextValues;
     size_t _contextCount;
+    bool _contextOverflow;
   }
 
   /// Returns the active message segments as a slice
@@ -229,19 +233,27 @@ struct AssertResult {
 
   /// Adds context data for debugging (Issue #79).
   /// Context is displayed alongside the assertion failure message.
+  /// Limited to MAX_CONTEXT_ENTRIES entries; additional entries are dropped with a warning.
   void addContext(string key, string value) @trusted nothrow {
     import fluentasserts.core.memory.heapstring : toHeapString;
 
-    if (_contextCount < 8) {
+    if (_contextCount < MAX_CONTEXT_ENTRIES) {
       _contextKeys[_contextCount] = toHeapString(key);
       _contextValues[_contextCount] = toHeapString(value);
       _contextCount++;
+    } else {
+      _contextOverflow = true;
     }
   }
 
   /// Returns true if context data has been added.
   bool hasContext() const @safe nothrow @nogc {
     return _contextCount > 0;
+  }
+
+  /// Returns true if context entries were dropped due to overflow.
+  bool hasContextOverflow() const @safe nothrow @nogc {
+    return _contextOverflow;
   }
 
   /// Returns the number of context entries.
