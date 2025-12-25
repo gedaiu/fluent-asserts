@@ -969,3 +969,41 @@ class EqualThing {
     return this.x == b.x;
   }
 }
+
+class Thing {
+  int x;
+  this(int x) {
+    this.x = x;
+  }
+
+  override bool opEquals(Object o) {
+    if (typeid(this) != typeid(o)) {
+      return false;
+    }
+    auto b = cast(typeof(this)) o;
+    return this.x == b.x;
+  }
+}
+
+@("opEquals honored for class objects with same field value")
+unittest {
+  auto a1 = new Thing(1);
+  auto b1 = new Thing(1);
+
+  assert(a1 == b1, "D's == operator should use opEquals");
+
+  auto evaluation = ({
+    a1.should.equal(b1);
+  }).recordEvaluation;
+
+  assert(evaluation.result.expected.length == 0, "opEquals should return true for objects with same x value, but got expected: " ~ evaluation.result.expected[]);
+}
+
+@("opEquals honored for class objects with different field values")
+unittest {
+  auto a1 = new Thing(1);
+  auto a2 = new Thing(2);
+
+  assert(a1 != a2, "D's != operator should use opEquals");
+  a1.should.not.equal(a2);
+}
