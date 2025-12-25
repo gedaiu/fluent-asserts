@@ -141,6 +141,53 @@ The `Evaluation.result` provides access to:
 
 This is particularly useful when writing tests for custom assertion operations or when you need to verify that assertions produce the correct error messages.
 
+## Release Build Configuration
+
+By default, fluent-asserts behaves like D's built-in `assert`: assertions are enabled in debug builds and disabled (become no-ops) in release builds. This allows you to use fluent-asserts as a replacement for `assert` in your production code without any runtime overhead in release builds.
+
+**Default behavior:**
+- Debug build: assertions enabled
+- Release build (`dub build -b release` or `-release` flag): assertions disabled (no-op)
+
+**Force enable in release builds:**
+
+dub.sdl:
+```sdl
+versions "FluentAssertsDebug"
+```
+
+dub.json:
+```json
+{
+    "versions": ["FluentAssertsDebug"]
+}
+```
+
+**Force disable in all builds:**
+
+dub.sdl:
+```sdl
+versions "D_Disable_FluentAsserts"
+```
+
+dub.json:
+```json
+{
+    "versions": ["D_Disable_FluentAsserts"]
+}
+```
+
+**Check at compile-time:**
+```D
+import fluent.asserts;
+
+static if (fluentAssertsEnabled) {
+    // assertions are active
+} else {
+    // assertions are disabled (release build)
+}
+```
+
 ## Custom Assert Handler
 
 During unittest builds, the library automatically installs a custom handler for D's built-in `assert` statements. This provides fluent-asserts style error messages even when using standard `assert`:

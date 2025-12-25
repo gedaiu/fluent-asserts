@@ -171,6 +171,17 @@ size_t getAssertIndex(const(Token)[] tokens, size_t startLine) {
   return assertTokens[assertTokens.length - 1].index;
 }
 
+/// Finds the index of the first opening parenthesis after a given start index.
+/// Skips whitespace and other tokens to find the '('.
+size_t findOpenParen(const(Token)[] tokens, size_t startIndex) {
+  foreach (i; startIndex .. tokens.length) {
+    if (str(tokens[i].type) == "(") {
+      return i;
+    }
+  }
+  return 0;
+}
+
 /// Gets the end index of a parameter in the token list.
 auto getParameter(const(Token)[] tokens, size_t startToken) {
   size_t paranthesisCount;

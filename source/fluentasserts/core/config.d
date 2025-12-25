@@ -11,6 +11,39 @@ enum OutputFormat {
   tap
 }
 
+/// Compile-time check for whether assertions are enabled.
+///
+/// By default, assertions are enabled in debug builds and disabled in release builds.
+/// This allows using fluent-asserts as a replacement for D's built-in assert
+/// while maintaining the same release-build behavior.
+///
+/// Build configurations:
+/// - Debug build (default): assertions enabled
+/// - Release build (`-release` or `dub build -b release`): assertions disabled (no-op)
+/// - Force disable: add version `D_Disable_FluentAsserts` to disable even in debug
+/// - Force enable in release: add version `FluentAssertsDebug` to enable in release builds
+///
+/// Example dub.sdl configuration to force enable in release:
+/// ---
+/// versions "FluentAssertsDebug"
+/// ---
+///
+/// Example dub.sdl configuration to always disable:
+/// ---
+/// versions "D_Disable_FluentAsserts"
+/// ---
+version (D_Disable_FluentAsserts) {
+  enum fluentAssertsEnabled = false;
+} else version (release) {
+  version (FluentAssertsDebug) {
+    enum fluentAssertsEnabled = true;
+  } else {
+    enum fluentAssertsEnabled = false;
+  }
+} else {
+  enum fluentAssertsEnabled = true;
+}
+
 /// Singleton configuration struct for fluent-asserts.
 /// Provides centralized access to all configurable settings.
 struct FluentAssertsConfig {

@@ -3,12 +3,19 @@ title: Installation
 description: How to install fluent-asserts in your D project
 ---
 
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
 ## Using DUB (Recommended)
 
 The easiest way to use fluent-asserts is through [DUB](https://code.dlang.org/), the D package manager.
 
-### Add to dub.json
-
+<Tabs>
+  <TabItem label="dub.sdl">
+```sdl
+dependency "fluent-asserts" version="~>1.0.1"
+```
+  </TabItem>
+  <TabItem label="dub.json">
 ```json
 {
     "dependencies": {
@@ -16,12 +23,8 @@ The easiest way to use fluent-asserts is through [DUB](https://code.dlang.org/),
     }
 }
 ```
-
-### Or add to dub.sdl
-
-```sdl
-dependency "fluent-asserts" version="~>1.0.1"
-```
+  </TabItem>
+</Tabs>
 
 Then run:
 
@@ -75,6 +78,12 @@ dub test
 dub test --compiler=ldc2
 ```
 
+## Release Builds
+
+By default, fluent-asserts assertions are disabled in release builds (similar to D's built-in `assert`). This means you can use fluent-asserts in production code without runtime overhead in release builds.
+
+See [Configuration](/guide/configuration/#release-build-configuration) for details on how to control this behavior.
+
 ## Integration with Test Frameworks
 
 fluent-asserts integrates seamlessly with D test frameworks.
@@ -85,6 +94,14 @@ fluent-asserts integrates seamlessly with D test frameworks.
 
 Add trial to your project:
 
+<Tabs>
+  <TabItem label="dub.sdl">
+```sdl
+dependency "fluent-asserts" version="~>1.0.1"
+dependency "trial" version="~>0.8.0-beta.7"
+```
+  </TabItem>
+  <TabItem label="dub.json">
 ```json
 {
     "dependencies": {
@@ -93,6 +110,8 @@ Add trial to your project:
     }
 }
 ```
+  </TabItem>
+</Tabs>
 
 Run your tests with:
 

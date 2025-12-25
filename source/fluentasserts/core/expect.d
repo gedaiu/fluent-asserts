@@ -29,7 +29,7 @@ import fluentasserts.operations.comparison.approximately : approximatelyOp = app
 import fluentasserts.operations.exception.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage, throwSomethingOp = throwSomething, throwSomethingWithMessageOp = throwSomethingWithMessage;
 import fluentasserts.operations.memory.gcMemory : allocateGCMemoryOp = allocateGCMemory;
 import fluentasserts.operations.memory.nonGcMemory : allocateNonGCMemoryOp = allocateNonGCMemory;
-import fluentasserts.core.config : config = FluentAssertsConfig;
+import fluentasserts.core.config : config = FluentAssertsConfig, fluentAssertsEnabled;
 
 import std.datetime : Duration, SysTime;
 
@@ -67,6 +67,13 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
   private {
     Evaluation _evaluation;
     int refCount;
+    bool _initialized;
+  }
+
+  /// Returns true if this Expect was properly initialized.
+  /// Used to skip processing for no-op assertions in release builds.
+  bool isInitialized() const @nogc nothrow {
+    return _initialized;
   }
 
   /// Returns a reference to the underlying evaluation.
@@ -79,6 +86,7 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
   /// Initializes the evaluation state and sets up the initial message.
   /// Source parsing is deferred until assertion failure for performance.
   this(ValueEvaluation value) @trusted {
+    _initialized = true;
     _evaluation.id = Lifecycle.instance.beginEvaluation(value);
     _evaluation.currentValue = value;
     _evaluation.source = SourceResult.create(value.fileName[].idup, value.line);
@@ -105,12 +113,18 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
   /// Increments the source's refCount so only the last copy triggers finalization.
   this(ref return scope Expect another) @trusted nothrow {
     this._evaluation = another._evaluation;
+    this._initialized = another._initialized;
     this.refCount = 0;  // New copy starts with 0
     another.refCount++;  // Prevent source from finalizing
   }
 
   /// Destructor. Finalizes the evaluation when reference count reaches zero.
+  /// Does nothing if the Expect was never initialized (e.g., in release builds).
   ~this() {
+    if (!_initialized) {
+      return;
+    }
+
     refCount--;
 
     if(refCount < 0) {
@@ -536,31 +550,36 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
 
 /// Creates an Expect from a callable delegate.
 /// Executes the delegate and captures any thrown exception.
+/// In release builds (unless FluentAssertsDebug is set), this is a no-op.
 Expect expect(void delegate() callable, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
-  ValueEvaluation value;
-  value.typeNames.put("callable");
+  static if (!fluentAssertsEnabled) {
+    return Expect.init;
+  } else {
+    ValueEvaluation value;
+    value.typeNames.put("callable");
 
-  try {
-    if(callable !is null) {
-      callable();
-    } else {
-      value.typeNames.clear();
-      value.typeNames.put("null");
+    try {
+      if(callable !is null) {
+        callable();
+      } else {
+        value.typeNames.clear();
+        value.typeNames.put("null");
+      }
+    } catch(Exception e) {
+      value.throwable = e;
+      value.meta["Exception"] = "yes";
+    } catch(Throwable t) {
+      value.throwable = t;
+      value.meta["Throwable"] = "yes";
     }
-  } catch(Exception e) {
-    value.throwable = e;
-    value.meta["Exception"] = "yes";
-  } catch(Throwable t) {
-    value.throwable = t;
-    value.meta["Throwable"] = "yes";
+
+    value.fileName = toHeapString(file);
+    value.line = line;
+    value.prependText = toHeapString(prependText);
+
+    auto result = Expect(value);
+    return result;
   }
-
-  value.fileName = toHeapString(file);
-  value.line = line;
-  value.prependText = toHeapString(prependText);
-
-  auto result = Expect(value);
-  return result;
 }
 
 /// Creates an Expect struct from a lazy value.
@@ -570,7 +589,12 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
 ///   line = Source line (auto-filled)
 ///   prependText = Optional text to prepend to the value display
 /// Returns: An Expect struct for fluent assertions
+/// In release builds (unless FluentAssertsDebug is set), this is a no-op.
 Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t line = __LINE__, string prependText = null) @trusted {
-  auto result = Expect(testedValue.evaluate(file, line, prependText).evaluation);
-  return result;
+  static if (!fluentAssertsEnabled) {
+    return Expect.init;
+  } else {
+    auto result = Expect(testedValue.evaluate(file, line, prependText).evaluation);
+    return result;
+  }
 }

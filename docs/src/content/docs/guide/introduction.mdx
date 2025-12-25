@@ -101,6 +101,18 @@ The `Evaluation.result` provides access to:
 - `missing` - array of missing elements (for collection comparisons)
 - `extra` - array of extra elements (for collection comparisons)
 
+## Release Builds
+
+Like D's built-in `assert`, fluent-asserts assertions are disabled in release builds. This means you can use them in production code without runtime overhead:
+
+```d
+// In debug builds: assertion is checked
+// In release builds: this is a no-op
+expect(value).to.be.greaterThan(0);
+```
+
+See [Configuration](/guide/configuration/#release-build-configuration) for how to control this behavior.
+
 ## Custom Assert Handler
 
 During unittest builds, the library automatically installs a custom handler for D's built-in `assert` statements. This provides fluent-asserts style error messages even when using standard `assert`:

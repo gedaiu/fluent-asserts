@@ -130,6 +130,75 @@ not ok - [1, 2, 3] should contain 5. 5 is missing from [1, 2, 3].
   ...
 ```
 
+## Release Build Configuration
+
+By default, fluent-asserts behaves like D's built-in `assert`: assertions are enabled in debug builds and disabled (become no-ops) in release builds. This allows you to use fluent-asserts as a replacement for `assert` in your production code without any runtime overhead in release builds.
+
+### Default Behavior
+
+| Build Type | Assertions |
+|------------|------------|
+| Debug (default) | Enabled |
+| Release (`-release` or `dub build -b release`) | Disabled (no-op) |
+
+### Version Flags
+
+You can override the default behavior using version flags.
+
+**Force enable in release builds:**
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="dub.sdl">
+```sdl
+versions "FluentAssertsDebug"
+```
+  </TabItem>
+  <TabItem label="dub.json">
+```json
+{
+    "versions": ["FluentAssertsDebug"]
+}
+```
+  </TabItem>
+</Tabs>
+
+**Force disable in all builds:**
+
+<Tabs>
+  <TabItem label="dub.sdl">
+```sdl
+versions "D_Disable_FluentAsserts"
+```
+  </TabItem>
+  <TabItem label="dub.json">
+```json
+{
+    "versions": ["D_Disable_FluentAsserts"]
+}
+```
+  </TabItem>
+</Tabs>
+
+### Compile-Time Check
+
+You can check at compile-time whether assertions are enabled:
+
+```d
+import fluent.asserts;
+
+static if (fluentAssertsEnabled) {
+    // assertions are active
+    writeln("Running with assertions enabled");
+} else {
+    // assertions are disabled (release build)
+    writeln("Assertions disabled for performance");
+}
+```
+
+This is useful for conditionally including assertion-related code or logging.
+
 ## Next Steps
 
 - Learn about [Core Concepts](/guide/core-concepts/)
