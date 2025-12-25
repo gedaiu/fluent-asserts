@@ -109,11 +109,49 @@ struct HeapEquableValue {
     double thisVal = parseDouble(_serialized[], thisIsNum);
     double otherVal = parseDouble(other._serialized[], otherIsNum);
 
+    // Try to extract numbers from wrapper types like "Checked!(long, Abort)(5)"
+    if (!thisIsNum) {
+      thisVal = extractWrappedNumber(_serialized[], thisIsNum);
+    }
+    if (!otherIsNum) {
+      otherVal = extractWrappedNumber(other._serialized[], otherIsNum);
+    }
+
     if (thisIsNum && otherIsNum) {
       return thisVal < otherVal;
     }
 
     return _serialized[] < other._serialized[];
+  }
+
+  /// Extracts a number from wrapper type notation like "Type(123)" or "Type(-45.6)"
+  private static double extractWrappedNumber(const(char)[] s, out bool success) @nogc nothrow {
+    success = false;
+    if (s.length == 0) {
+      return 0;
+    }
+
+    // Find the last '(' and matching ')'
+    ptrdiff_t lastParen = -1;
+    foreach_reverse (i, c; s) {
+      if (c == '(') {
+        lastParen = i;
+        break;
+      }
+    }
+
+    if (lastParen < 0 || lastParen >= cast(ptrdiff_t)(s.length - 1)) {
+      return 0;
+    }
+
+    // Check if it ends with ')'
+    if (s[$ - 1] != ')') {
+      return 0;
+    }
+
+    // Extract content between parentheses
+    auto content = s[lastParen + 1 .. $ - 1];
+    return parseDouble(content, success);
   }
 
   // --- Array operations ---

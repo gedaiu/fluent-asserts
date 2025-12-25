@@ -154,3 +154,14 @@ unittest {
 
   expect(evaluation.result.hasContent()).to.equal(true);
 }
+
+@("lessThan works with std.checkedint.Checked")
+unittest {
+  import std.checkedint : Checked, Abort;
+
+  alias SafeLong = Checked!(long, Abort);
+
+  SafeLong(5).should.be.lessThan(SafeLong(10));
+  SafeLong(10).should.not.be.lessThan(SafeLong(5));
+  SafeLong(5).should.not.be.lessThan(SafeLong(5));
+}

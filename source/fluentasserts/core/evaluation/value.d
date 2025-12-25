@@ -98,7 +98,7 @@ struct ValueEvaluation {
 }
 
 struct EvaluationResult(T) {
-  import std.traits : Unqual;
+  import std.traits : Unqual, isCopyable;
 
   Unqual!T value;
   ValueEvaluation evaluation;
@@ -108,12 +108,20 @@ struct EvaluationResult(T) {
 
   /// Copy constructor - creates a deep copy from the source.
   this(ref return scope const EvaluationResult rhs) @trusted nothrow {
-    value = cast(Unqual!T) rhs.value;
+    static if (__traits(compiles, cast(Unqual!T) rhs.value)) {
+      value = cast(Unqual!T) rhs.value;
+    } else static if (isCopyable!(const(Unqual!T))) {
+      value = rhs.value;
+    }
     evaluation = rhs.evaluation; // Uses ValueEvaluation's copy constructor
   }
 
   void opAssign(ref const EvaluationResult rhs) @trusted nothrow {
-    value = cast(Unqual!T) rhs.value;
+    static if (__traits(compiles, cast(Unqual!T) rhs.value)) {
+      value = cast(Unqual!T) rhs.value;
+    } else static if (isCopyable!(const(Unqual!T))) {
+      value = rhs.value;
+    }
     evaluation = rhs.evaluation;
   }
 }
