@@ -126,7 +126,7 @@ unittest {
 
 ### Operation Guidelines
 
-1. **Make operations `@safe nothrow`** - Required for reliability and `@nogc` compatibility
+1. **Make operations `@safe nothrow`** - Required for reliability
 2. **Handle negation** - Always check `evaluation.isNegated`
 3. **Use FixedAppender for results** - Use `evaluation.result.expected.put()` and `evaluation.result.actual.put()`
 4. **Access HeapString with `[]`** - Values are stored as `HeapString`, use the slice operator to access content
@@ -137,7 +137,7 @@ unittest {
 1. **Keep output concise** - Long strings are hard to read in error messages
 2. **Include identifying information** - Show what makes values different
 3. **Handle null/empty cases** - Don't crash on edge cases
-4. **Return HeapString for `@nogc`** - Use `toHeapString()` for compatibility
+4. **Return HeapString** - Use `toHeapString()` for efficient string handling
 
 ## Real-World Examples
 

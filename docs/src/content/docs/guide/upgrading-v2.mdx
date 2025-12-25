@@ -5,7 +5,7 @@ description: A friendly guide to the new features in fluent-asserts 2.0 and how 
 
 ## Welcome to fluent-asserts v2.0!
 
-This release is a major milestone. We have completely rewritten the internal engine to be faster, lighter, and more flexible. While the public API remains largely familiar, the internal architecture has shifted significantly to support `@nogc` and manual memory management.
+This release is a major milestone. We have completely rewritten the internal engine to be faster, lighter, and more flexible. While the public API remains largely familiar, the internal architecture has shifted significantly to use manual memory management and reduce GC pressure.
 
 This guide covers everything you need to know to upgrade your projects.
 
@@ -19,7 +19,7 @@ The most significant change in v2 is the move from D's Garbage Collector (GC) to
 
 This shift brings several key benefits:
 
-- **@nogc contexts**: Use fluent-asserts throughout `@nogc` code
+- **Reduced GC pressure**: Internal operations use `@nogc` data structures, minimizing garbage collection during tests
 - **Performance**: Small Buffer Optimization (SBO) avoids allocations entirely for short strings
 - **Lazy parsing**: Source code parsing only happens if an assertion fails, keeping your passing tests fast
 
@@ -139,10 +139,6 @@ HeapSerializerRegistry.instance.register!MyType(&mySerializer);
 If you wrote custom operations, note that the signature has changed. Operations now modify the `Evaluation` struct directly instead of returning `IResult[]`.
 
 See [Extending fluent-asserts](/guide/extending/) for the new patterns and examples.
-
-### Step 4: Verify @nogc
-
-If you use fluent-asserts in `@nogc` code, it should now work out of the box! Just ensure your custom extensions are also `@nogc` safe.
 
 ## More New Features
 

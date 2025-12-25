@@ -1,13 +1,13 @@
 ---
 title: Memory Management
-description: How fluent-asserts manages memory in @nogc contexts
+description: How fluent-asserts manages memory internally
 ---
 
-This guide explains how fluent-asserts handles memory allocation internally, particularly for `@nogc` compatibility. Understanding these concepts is essential if you're extending the library or debugging memory-related issues.
+This guide explains how fluent-asserts handles memory allocation internally. Understanding these concepts is essential if you're extending the library or debugging memory-related issues.
 
 ## Why Manual Memory Management?
 
-Fluent-asserts aims to work in `@nogc` contexts, which means it cannot use D's garbage collector for dynamic allocations. This is achieved through:
+Fluent-asserts uses manual memory management internally to minimize GC pressure during test execution. While the library itself cannot be called from `@nogc` code (due to exception handling requirements), the internal data structures are designed to avoid triggering garbage collection in hot paths. This is achieved through:
 
 1. **Fixed-size arrays** (`FixedArray`, `FixedAppender`) for bounded data
 2. **Heap-allocated arrays** (`HeapData`, `HeapString`) for unbounded data with reference counting

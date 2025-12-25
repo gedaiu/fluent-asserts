@@ -114,9 +114,9 @@ expect({ auto arr = new int[100]; }).to.allocateGCMemory();
 expect({ int x = 42; }).not.to.allocateGCMemory();
 ```
 
-### @nogc Compatible
+### @nogc Internals
 
-The entire library works in `@nogc` contexts. Use fluent-asserts in performance-critical code without triggering garbage collection.
+The library uses `@nogc` compatible data structures internally (HeapString, FixedAppender) to minimize GC pressure during test execution. This means assertions run efficiently without triggering garbage collection in hot paths.
 
 ### Zero Overhead in Release Builds
 

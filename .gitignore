@@ -11,6 +11,7 @@ docs/public/version.json
 *.obj
 *.lst
 *.a
+.DS_Store
 generated.d
 /fluent-asserts-core-test-library
 /fluent-asserts-test-library

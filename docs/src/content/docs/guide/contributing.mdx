@@ -93,7 +93,7 @@ fluent-asserts/
 
 ### Memory Management
 
-fluent-asserts v2 uses manual memory management for `@nogc` compatibility:
+fluent-asserts v2 uses manual memory management to reduce GC pressure:
 
 - **HeapString** - Reference-counted string type with Small Buffer Optimization
 - **HeapEquableValue** - Stores values for comparison without GC
