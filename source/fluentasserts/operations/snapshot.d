@@ -6,6 +6,7 @@ version (unittest) {
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
   import fluentasserts.core.evaluation.eval : Evaluation;
+  import fluentasserts.core.config : config = FluentAssertsConfig, OutputFormat;
   import std.stdio;
   import std.file;
   import std.array;
@@ -154,5 +155,158 @@ unittest {
   assert(posEval.result.actual[].canFind("1: function test()"));
   assert(posEval.result.negated == false);
   assert(posEval.toString().canFind("Diff:"));
+}
+
+@("snapshot: compact format output")
+unittest {
+  auto previousFormat = config.output.format;
+  scope(exit) config.output.setFormat(previousFormat);
+
+  config.output.setFormat(OutputFormat.compact);
+
+  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+  auto output = eval.toString();
+
+  assert(output.canFind("FAIL:"), "Compact format should start with FAIL:");
+  assert(output.canFind("actual=5"), "Compact format should contain actual=5");
+  assert(output.canFind("expected=3"), "Compact format should contain expected=3");
+  assert(output.canFind("|"), "Compact format should use | as separator");
+  assert(!output.canFind("ASSERTION FAILED:"), "Compact format should not contain ASSERTION FAILED:");
+  assert(!output.canFind("OPERATION:"), "Compact format should not contain OPERATION:");
+}
+
+@("snapshot: tap format output")
+unittest {
+  auto previousFormat = config.output.format;
+  scope(exit) config.output.setFormat(previousFormat);
+
+  config.output.setFormat(OutputFormat.tap);
+
+  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+  auto output = eval.toString();
+
+  assert(output.canFind("not ok"), "TAP format should start with 'not ok'");
+  assert(output.canFind("---"), "TAP format should contain YAML block start '---'");
+  assert(output.canFind("actual:"), "TAP format should contain 'actual:'");
+  assert(output.canFind("expected:"), "TAP format should contain 'expected:'");
+  assert(output.canFind("at:"), "TAP format should contain 'at:'");
+  assert(output.canFind("..."), "TAP format should contain YAML block end '...'");
+  assert(!output.canFind("ASSERTION FAILED:"), "TAP format should not contain ASSERTION FAILED:");
+}
+
+@("snapshot: verbose format output (default)")
+unittest {
+  auto previousFormat = config.output.format;
+  scope(exit) config.output.setFormat(previousFormat);
+
+  config.output.setFormat(OutputFormat.verbose);
+
+  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+  auto output = eval.toString();
+
+  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+}
+
+/// Helper to run a positive test and return output string.
+string runPosAndGetOutput(string code)() {
+  mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
+  return normalizeSnapshot(eval.toString());
+}
+
+/// Helper to run a negated test and return output string.
+string runNegAndGetOutput(string code)() {
+  mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
+  return normalizeSnapshot(eval.toString());
+}
+
+/// Generates snapshot content for a single test at compile time.
+mixin template GenerateSnapshotContent(size_t idx, Appender) {
+  enum test = snapshotTests[idx];
+
+  static void appendContent(ref Appender output) {
+    output.put("\n## ");
+    output.put(test.name);
+    output.put("\n\n### Positive fail\n\n```d\n");
+    output.put(test.posCode);
+    output.put(";\n```\n\n```\n");
+    output.put(runPosAndGetOutput!(test.posCode)());
+    output.put("```\n\n### Negated fail\n\n```d\n");
+    output.put(test.negCode);
+    output.put(";\n```\n\n```\n");
+    output.put(runNegAndGetOutput!(test.negCode)());
+    output.put("```\n");
+  }
+}
+
+/// Generates snapshot markdown files for all output formats.
+void generateSnapshotFiles() {
+  import std.array : Appender;
+
+  auto previousFormat = config.output.format;
+  scope(exit) config.output.setFormat(previousFormat);
+
+  foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
+    config.output.setFormat(format);
+
+    Appender!string output;
+    string formatName;
+    string description;
+
+    final switch (format) {
+      case OutputFormat.verbose:
+        formatName = "verbose";
+        description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
+        break;
+      case OutputFormat.compact:
+        formatName = "compact";
+        description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
+        break;
+      case OutputFormat.tap:
+        formatName = "tap";
+        description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
+        break;
+    }
+
+    output.put("# Operation Snapshots");
+    if (format != OutputFormat.verbose) {
+      output.put(" (");
+      output.put(formatName);
+      output.put(")");
+    }
+    output.put("\n\n");
+    output.put(description);
+    output.put("\n");
+
+    static foreach (i; 0 .. snapshotTests.length) {
+      {
+        enum test = snapshotTests[i];
+        output.put("\n## ");
+        output.put(test.name);
+        output.put("\n\n### Positive fail\n\n```d\n");
+        output.put(test.posCode);
+        output.put(";\n```\n\n```\n");
+        output.put(runPosAndGetOutput!(test.posCode)());
+        output.put("```\n\n### Negated fail\n\n```d\n");
+        output.put(test.negCode);
+        output.put(";\n```\n\n```\n");
+        output.put(runNegAndGetOutput!(test.negCode)());
+        output.put("```\n");
+      }
+    }
+
+    string filename = format == OutputFormat.verbose
+      ? "operation-snapshots.md"
+      : "operation-snapshots-" ~ formatName ~ ".md";
+
+    std.file.write(filename, output[]);
+  }
+}
+
+@("generate snapshot markdown files")
+unittest {
+  generateSnapshotFiles();
 }
 

@@ -1,6 +1,7 @@
 module fluentasserts.operations.memory.gcMemory;
 
 import fluentasserts.core.evaluation.eval : Evaluation;
+import fluentasserts.core.config : config = FluentAssertsConfig;
 import std.conv;
 
 version(unittest) {
@@ -16,8 +17,8 @@ string formatBytes(size_t bytes) @safe nothrow {
   double size = bytes;
   size_t unitIndex = 0;
 
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
+  while (size >= config.numeric.bytesPerKilobyte && unitIndex < units.length - 1) {
+    size /= config.numeric.bytesPerKilobyte;
     unitIndex++;
   }
 

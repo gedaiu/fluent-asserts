@@ -7,6 +7,8 @@
 /// - Stack space is a concern
 module fluentasserts.core.array;
 
+import fluentasserts.core.config : config = FluentAssertsConfig;
+
 @safe:
 
 /// A fixed-size array for storing elements without GC allocation.
@@ -83,11 +85,13 @@ struct FixedArray(T, size_t N = 512) {
   }
 }
 
-/// Alias for backward compatibility - fixed char buffer for string building
-alias FixedAppender(size_t N = 512) = FixedArray!(char, N);
+/// Alias for backward compatibility - fixed char buffer for string building.
+/// Default size from config.buffers.defaultFixedArraySize.
+alias FixedAppender(size_t N = config.buffers.defaultFixedArraySize) = FixedArray!(char, N);
 
-/// Alias for backward compatibility - fixed string reference array
-alias FixedStringArray(size_t N = 32) = FixedArray!(string, N);
+/// Alias for backward compatibility - fixed string reference array.
+/// Default size from config.buffers.defaultStringArraySize.
+alias FixedStringArray(size_t N = config.buffers.defaultStringArraySize) = FixedArray!(string, N);
 
 // Unit tests
 version (unittest) {

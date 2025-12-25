@@ -1,6 +1,7 @@
 module fluentasserts.core.conversion.toheapstring;
 
 import fluentasserts.core.memory.heapstring : HeapString;
+import fluentasserts.core.config : config = FluentAssertsConfig;
 
 version (unittest) {
   import fluent.asserts;
@@ -161,7 +162,7 @@ if (__traits(isIntegral, T) && !is(T == bool)) {
   }
 
   // Convert digits in reverse order, then reverse the string
-  char[20] buffer; // Enough for ulong max (20 digits)
+  char[config.numeric.digitConversionBufferSize] buffer;
   size_t bufferIdx = 0;
 
   temp = absValue;
@@ -240,9 +241,8 @@ if (__traits(isFloating, T)) {
   if (fractional > 0.0) {
     result.put(".");
 
-    // Convert up to 6 decimal places
-    enum maxDecimals = 6;
-    for (size_t i = 0; i < maxDecimals && fractional > 0.0; i++) {
+    // Convert up to configured decimal places
+    for (size_t i = 0; i < config.numeric.floatingPointDecimals && fractional > 0.0; i++) {
       fractional *= 10;
       int digit = cast(int)fractional;
       result.put(cast(char)('0' + digit));

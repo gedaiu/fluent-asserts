@@ -6,6 +6,7 @@ import std.string;
 
 import fluentasserts.core.diff.diff : computeDiff;
 import fluentasserts.core.diff.types : EditOp;
+import fluentasserts.core.config : config = FluentAssertsConfig;
 import fluentasserts.results.message : Message, ResultGlyphs;
 import fluentasserts.core.memory.heapstring : HeapString;
 public import fluentasserts.core.array : FixedArray, FixedAppender, FixedStringArray;
@@ -53,7 +54,7 @@ struct DiffSegment {
 struct AssertResult {
   /// The message segments (stored as fixed array, accessed via messages())
   private {
-    Message[32] _messages;
+    Message[config.buffers.maxMessageSegments] _messages;
     size_t _messageCount;
   }
 
@@ -63,10 +64,10 @@ struct AssertResult {
   }
 
   /// The expected value as a fixed-size buffer
-  FixedAppender!512 expected;
+  FixedAppender!(config.buffers.expectedActualBufferSize) expected;
 
   /// The actual value as a fixed-size buffer
-  FixedAppender!512 actual;
+  FixedAppender!(config.buffers.expectedActualBufferSize) actual;
 
   /// Whether the assertion was negated
   bool negated;
@@ -75,10 +76,10 @@ struct AssertResult {
   immutable(DiffSegment)[] diff;
 
   /// Extra items found (for collection assertions)
-  FixedStringArray!32 extra;
+  FixedStringArray!(config.buffers.defaultStringArraySize) extra;
 
   /// Missing items (for collection assertions)
-  FixedStringArray!32 missing;
+  FixedStringArray!(config.buffers.defaultStringArraySize) missing;
 
   /// Returns true if the result has any content indicating a failure.
   bool hasContent() nothrow @safe @nogc const {

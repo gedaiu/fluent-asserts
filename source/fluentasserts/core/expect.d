@@ -29,6 +29,7 @@ import fluentasserts.operations.comparison.approximately : approximatelyOp = app
 import fluentasserts.operations.exception.throwable : throwAnyExceptionOp = throwAnyException, throwExceptionOp = throwException, throwAnyExceptionWithMessageOp = throwAnyExceptionWithMessage, throwExceptionWithMessageOp = throwExceptionWithMessage, throwSomethingOp = throwSomething, throwSomethingWithMessageOp = throwSomethingWithMessage;
 import fluentasserts.operations.memory.gcMemory : allocateGCMemoryOp = allocateGCMemory;
 import fluentasserts.operations.memory.nonGcMemory : allocateNonGCMemoryOp = allocateNonGCMemory;
+import fluentasserts.core.config : config = FluentAssertsConfig;
 
 import std.datetime : Duration, SysTime;
 
@@ -36,10 +37,6 @@ import std.traits;
 import std.string;
 import std.uni;
 import std.conv;
-
-/// Maximum length for values displayed in assertion messages.
-/// Longer values are truncated with "...".
-enum MAX_MESSAGE_VALUE_LENGTH = 80;
 
 /// Truncates a string value for display in assertion messages.
 /// Only multiline strings are shortened to keep messages readable.

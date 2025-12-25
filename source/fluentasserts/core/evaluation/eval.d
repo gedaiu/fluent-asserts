@@ -13,6 +13,7 @@ import core.memory : GC;
 import fluentasserts.core.memory.heapstring : toHeapString, HeapString;
 import fluentasserts.core.memory.process : getNonGCMemory;
 import fluentasserts.core.conversion.tonumeric : toNumeric;
+import fluentasserts.core.config : config = FluentAssertsConfig, OutputFormat;
 import fluentasserts.core.evaluation.value;
 import fluentasserts.core.evaluation.types;
 import fluentasserts.core.evaluation.equable;
@@ -41,7 +42,7 @@ struct Evaluation {
 
   /// The operation names (stored as array, joined on access)
   private {
-    HeapString[8] _operationNames;
+    HeapString[config.buffers.maxOperationNames] _operationNames;
     size_t _operationCount;
   }
 
@@ -269,16 +270,30 @@ struct Evaluation {
   /// Params:
   ///   printer = The ResultPrinter to use for output formatting
   void printResult(ResultPrinter printer) @safe nothrow {
-    if(!isEvaluated) {
+    if (!isEvaluated) {
       printer.primary("Evaluation not completed.");
       return;
     }
 
-    if(!result.hasContent()) {
+    if (!result.hasContent()) {
       printer.primary("Successful result.");
       return;
     }
 
+    final switch (config.output.format) {
+      case OutputFormat.verbose:
+        printVerbose(printer);
+        break;
+      case OutputFormat.compact:
+        printCompact(printer);
+        break;
+      case OutputFormat.tap:
+        printTap(printer);
+        break;
+    }
+  }
+
+  private void printVerbose(ResultPrinter printer) @safe nothrow {
     printer.info("ASSERTION FAILED: ");
 
     foreach(ref message; result.messages) {
@@ -311,6 +326,54 @@ struct Evaluation {
     printer.newLine;
 
     source.print(printer);
+  }
+
+  private void printCompact(ResultPrinter printer) @safe nothrow {
+    import std.conv : to;
+
+    printer.danger("FAIL: ");
+
+    foreach (ref message; result.messages) {
+      printer.print(message);
+    }
+
+    printer.primary(" | actual=");
+    printer.primary(result.actual[].idup);
+    printer.primary(" expected=");
+    printer.primary(result.expected[].idup);
+    printer.primary(" | ");
+    printer.primary(source.file);
+    printer.primary(":");
+    printer.primary(source.line.to!string);
+    printer.newLine;
+  }
+
+  private void printTap(ResultPrinter printer) @safe nothrow {
+    import std.conv : to;
+
+    printer.danger("not ok ");
+    printer.primary("- ");
+
+    foreach (ref message; result.messages) {
+      printer.print(message);
+    }
+
+    printer.newLine;
+    printer.primary("  ---");
+    printer.newLine;
+    printer.primary("  actual: ");
+    printer.primary(result.actual[].idup);
+    printer.newLine;
+    printer.primary("  expected: ");
+    printer.primary(result.expected[].idup);
+    printer.newLine;
+    printer.primary("  at: ");
+    printer.primary(source.file);
+    printer.primary(":");
+    printer.primary(source.line.to!string);
+    printer.newLine;
+    printer.primary("  ...");
+    printer.newLine;
   }
 
   /// Converts the evaluation to a formatted string for display.

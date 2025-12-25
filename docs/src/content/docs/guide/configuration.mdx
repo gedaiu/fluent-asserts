@@ -1,0 +1,136 @@
+---
+title: Configuration
+description: Configuring fluent-asserts output formats and settings
+---
+
+fluent-asserts provides configurable output formats for assertion failure messages. This is useful for different environments like CI/CD pipelines, AI-assisted development, or custom tooling.
+
+## Output Formats
+
+Three output formats are available:
+
+### Verbose (Default)
+
+The verbose format provides detailed, human-readable output with full context:
+
+```
+ASSERTION FAILED: 5 should equal 3.
+OPERATION: equal
+
+  ACTUAL: <int> 5
+EXPECTED: <int> 3
+
+source/mytest.d:42
+>  42:    expect(5).to.equal(3);
+```
+
+### Compact
+
+A single-line format optimized for minimal token usage, useful for AI-assisted development:
+
+```
+FAIL: 5 should equal 3. | actual=5 expected=3 | source/mytest.d:42
+```
+
+### TAP (Test Anything Protocol)
+
+Standard TAP format for integration with CI/CD tools and test harnesses:
+
+```
+not ok - 5 should equal 3.
+  ---
+  actual: 5
+  expected: 3
+  at: source/mytest.d:42
+  ...
+```
+
+## Setting the Output Format
+
+### Environment Variable
+
+Set the `CLAUDECODE` environment variable to `1` to automatically use compact format:
+
+```bash
+CLAUDECODE=1 dub test
+```
+
+This is useful when running tests in AI-assisted development environments like Claude Code.
+
+### Programmatic Configuration
+
+You can set the output format at runtime:
+
+```d
+import fluentasserts.core.config;
+
+// Set to compact format
+config.output.setFormat(OutputFormat.compact);
+
+// Set to TAP format
+config.output.setFormat(OutputFormat.tap);
+
+// Set to verbose format (default)
+config.output.setFormat(OutputFormat.verbose);
+```
+
+### Per-Test Configuration
+
+You can temporarily change the format for specific tests:
+
+```d
+unittest {
+    // Save current format
+    auto previousFormat = config.output.format;
+    scope(exit) config.output.setFormat(previousFormat);
+
+    // Use TAP format for this test
+    config.output.setFormat(OutputFormat.tap);
+
+    expect(5).to.equal(3);
+}
+```
+
+## Format Comparison
+
+| Format | Use Case | Output Size |
+|--------|----------|-------------|
+| `verbose` | Development, debugging | Large |
+| `compact` | AI tools, log aggregation | Small |
+| `tap` | CI/CD, test harnesses | Medium |
+
+## Example Outputs
+
+For a failing assertion `expect([1,2,3]).to.contain(5)`:
+
+**Verbose:**
+```
+ASSERTION FAILED: [1, 2, 3] should contain 5. 5 is missing from [1, 2, 3].
+OPERATION: contain
+
+  ACTUAL: <int[]> [1, 2, 3]
+EXPECTED: <int> to contain 5
+
+source/test.d:10
+>  10:    expect([1,2,3]).to.contain(5);
+```
+
+**Compact:**
+```
+FAIL: [1, 2, 3] should contain 5. 5 is missing from [1, 2, 3]. | actual=[1, 2, 3] expected=to contain 5 | source/test.d:10
+```
+
+**TAP:**
+```
+not ok - [1, 2, 3] should contain 5. 5 is missing from [1, 2, 3].
+  ---
+  actual: [1, 2, 3]
+  expected: to contain 5
+  at: source/test.d:10
+  ...
+```
+
+## Next Steps
+
+- Learn about [Core Concepts](/guide/core-concepts/)
+- Browse the [API Reference](/api/)

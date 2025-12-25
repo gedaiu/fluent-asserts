@@ -7,6 +7,7 @@ import fluentasserts.core.lifecycle;
 import fluentasserts.core.diff.diff : computeDiff;
 import fluentasserts.core.diff.types : EditOp;
 import fluentasserts.core.memory.heapstring : HeapString, toHeapString;
+import fluentasserts.core.config : config = FluentAssertsConfig;
 import fluentasserts.results.message : Message;
 import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 import std.meta : AliasSeq;
@@ -25,12 +26,9 @@ version (unittest) {
 
 static immutable equalDescription = "Asserts that the target is strictly == equal to the given val.";
 
-/// Default width for line number padding in output.
-enum DEFAULT_LINE_NUMBER_WIDTH = 5;
-
 /// Formats a line number with right-aligned padding.
 /// Returns a HeapString containing the padded number followed by ": ".
-HeapString formatLineNumber(size_t lineNum, size_t width = DEFAULT_LINE_NUMBER_WIDTH) @trusted nothrow {
+HeapString formatLineNumber(size_t lineNum, size_t width = config.display.defaultLineNumberWidth) @trusted nothrow {
   import fluentasserts.core.conversion.toheapstring : toHeapString;
 
   auto numStr = toHeapString(lineNum);
@@ -201,9 +199,6 @@ HeapString unescapeString(ref const HeapString str) @safe @nogc nothrow {
 
   return result;
 }
-
-/// Number of context lines to show around changes.
-enum CONTEXT_LINES = 2;
 
 /// Tracks state while rendering diff output.
 struct DiffRenderState {

@@ -169,6 +169,8 @@ core.exception.assertHandler = null;
 
 ## Built in operations
 
+
+
 ### Memory Assertions
 
 The library provides assertions for checking memory allocations:
