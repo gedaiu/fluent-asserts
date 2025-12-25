@@ -119,8 +119,9 @@ for (const filePath of markdownFiles) {
     const originalContent = content;
 
     // Update "Current version vX.X.X" pattern (index.mdx tagline)
+    // Match full semver including optional prerelease suffix like -beta.1
     content = content.replace(
-      /Current version v[\d.]+([-\w.]*)/g,
+      /Current version v[\d]+\.[\d]+\.[\d]+([-\w.]*)?/g,
       `Current version v${version}`
     );
 
