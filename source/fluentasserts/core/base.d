@@ -88,6 +88,19 @@ unittest {
   arr[].should.equal([1, 2, 3]);
 }
 
+// Issue #88: std.range.interfaces.InputRange should work with should()
+// The unified Expect API handles InputRange interfaces as ranges
+@("issue #88: should works with std.range.interfaces.InputRange")
+unittest {
+  import std.range.interfaces : InputRange, inputRangeObject;
+
+  auto arr = [1, 2, 3];
+  InputRange!int ir = inputRangeObject(arr);
+
+  // InputRange interfaces are treated as ranges and converted to arrays
+  ir.should.equal([1, 2, 3]);
+}
+
 /// Provides a traditional assertion API as an alternative to fluent syntax.
 /// All methods are static and can be called as `Assert.equal(a, b)`.
 /// Supports negation by prefixing with "not": `Assert.notEqual(a, b)`.

@@ -631,3 +631,19 @@ unittest {
   assert(result.evaluation.strValue[] == "[1, 2, 3]",
     "Expected '[1, 2, 3]', got '" ~ result.evaluation.strValue[].idup ~ "'");
 }
+
+// Issue #88: std.range.interfaces.InputRange should be treated as a range
+// The isNonArrayRange constraint correctly identifies InputRange interfaces
+@("issue #88: evaluate works with std.range.interfaces.InputRange")
+unittest {
+  import std.range.interfaces : InputRange, inputRangeObject;
+
+  auto arr = [1, 2, 3];
+  InputRange!int ir = inputRangeObject(arr);
+
+  // InputRange is detected as isNonArrayRange and converted to array
+  auto result = evaluate(ir);
+
+  assert(result.evaluation.strValue[] == "[1, 2, 3]",
+    "Expected '[1, 2, 3]', got '" ~ result.evaluation.strValue[].idup ~ "'");
+}
