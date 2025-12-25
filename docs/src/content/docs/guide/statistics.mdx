@@ -1,0 +1,114 @@
+---
+title: Assertion Statistics
+description: Track assertion counts and pass/fail rates in your tests
+---
+
+fluent-asserts provides built-in statistics tracking for monitoring assertion behavior. This is useful for:
+
+- Monitoring test health in long-running test suites
+- Tracking assertion counts in multi-threaded programs
+- Generating test reports with pass/fail metrics
+- Debugging test behavior
+
+## Accessing Statistics
+
+Statistics are available through the `Lifecycle` singleton:
+
+```d
+import fluentasserts.core.lifecycle : Lifecycle;
+
+// Run some assertions
+expect(1).to.equal(1);
+expect("hello").to.contain("ell");
+
+// Access statistics
+auto stats = Lifecycle.instance.statistics;
+writeln("Total assertions: ", stats.totalAssertions);
+writeln("Passed: ", stats.passedAssertions);
+writeln("Failed: ", stats.failedAssertions);
+```
+
+## AssertionStatistics Struct
+
+The `AssertionStatistics` struct contains:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `totalAssertions` | `int` | Total number of assertions executed |
+| `passedAssertions` | `int` | Number of assertions that passed |
+| `failedAssertions` | `int` | Number of assertions that failed |
+
+## Resetting Statistics
+
+You can reset all counters to zero:
+
+```d
+import fluentasserts.core.lifecycle : Lifecycle;
+
+// Reset all statistics
+Lifecycle.instance.resetStatistics();
+
+// Or reset directly on the struct
+Lifecycle.instance.statistics.reset();
+```
+
+This is useful when you want to track statistics for a specific phase of testing.
+
+## Example: Test Suite Report
+
+```d
+import fluentasserts.core.lifecycle : Lifecycle;
+import fluent.asserts;
+
+void runTestSuite() {
+    // Reset before running suite
+    Lifecycle.instance.resetStatistics();
+
+    // Run tests
+    runAuthenticationTests();
+    runDatabaseTests();
+    runApiTests();
+
+    // Generate report
+    auto stats = Lifecycle.instance.statistics;
+    writefln("Test Suite Complete");
+    writefln("  Total: %d", stats.totalAssertions);
+    writefln("  Passed: %d (%.1f%%)",
+        stats.passedAssertions,
+        100.0 * stats.passedAssertions / stats.totalAssertions);
+    writefln("  Failed: %d", stats.failedAssertions);
+}
+```
+
+## Example: Per-Test Statistics
+
+```d
+import fluentasserts.core.lifecycle : Lifecycle;
+import fluent.asserts;
+
+unittest {
+    // Save current statistics
+    auto savedStats = Lifecycle.instance.statistics;
+    scope(exit) Lifecycle.instance.statistics = savedStats;
+
+    // Reset for this test
+    Lifecycle.instance.resetStatistics();
+
+    // Run assertions
+    expect(computeValue()).to.equal(42);
+    expect(validateInput("test")).to.equal(true);
+
+    // Verify assertion count
+    assert(Lifecycle.instance.statistics.totalAssertions == 2);
+}
+```
+
+## Thread Safety
+
+Statistics are stored in the thread-local `Lifecycle` instance. Each thread maintains its own statistics. If you need aggregate statistics across threads, you'll need to collect and combine them manually.
+
+## Next Steps
+
+- Learn about [Configuration](/guide/configuration/) options
+- Explore [Recording Evaluations](/guide/introduction/#recording-evaluations) for programmatic assertion inspection
+- See [Core Concepts](/guide/core-concepts/) for how the lifecycle works

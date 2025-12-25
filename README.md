@@ -141,6 +141,33 @@ The `Evaluation.result` provides access to:
 
 This is particularly useful when writing tests for custom assertion operations or when you need to verify that assertions produce the correct error messages.
 
+## Assertion Statistics
+
+fluent-asserts tracks assertion counts for monitoring test behavior:
+
+```D
+import fluentasserts.core.lifecycle : Lifecycle;
+
+// Run some assertions
+expect(1).to.equal(1);
+expect("hello").to.contain("ell");
+
+// Access statistics
+auto stats = Lifecycle.instance.statistics;
+writeln("Total: ", stats.totalAssertions);
+writeln("Passed: ", stats.passedAssertions);
+writeln("Failed: ", stats.failedAssertions);
+
+// Reset statistics
+Lifecycle.instance.resetStatistics();
+```
+
+The `AssertionStatistics` struct contains:
+- `totalAssertions` - Total number of assertions executed
+- `passedAssertions` - Number of assertions that passed
+- `failedAssertions` - Number of assertions that failed
+- `reset()` - Resets all counters to zero
+
 ## Release Build Configuration
 
 By default, fluent-asserts behaves like D's built-in `assert`: assertions are enabled in debug builds and disabled (become no-ops) in release builds. This allows you to use fluent-asserts as a replacement for `assert` in your production code without any runtime overhead in release builds.

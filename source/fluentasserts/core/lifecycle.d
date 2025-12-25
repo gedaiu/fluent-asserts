@@ -57,6 +57,27 @@ static this() {
 /// Receives the evaluation that failed and can handle it as needed.
 alias FailureHandlerDelegate = void delegate(ref Evaluation evaluation) @safe;
 
+/// Issue #92: Statistics for assertion execution.
+/// Tracks counts of assertions executed, passed, and failed.
+/// Useful for monitoring assertion behavior in long-running or multi-threaded programs.
+struct AssertionStatistics {
+  /// Total number of assertions executed.
+  int totalAssertions;
+
+  /// Number of assertions that passed.
+  int passedAssertions;
+
+  /// Number of assertions that failed.
+  int failedAssertions;
+
+  /// Resets all statistics to zero.
+  void reset() @safe @nogc nothrow {
+    totalAssertions = 0;
+    passedAssertions = 0;
+    failedAssertions = 0;
+  }
+}
+
 /// String mixin for unit tests that need to capture evaluation results.
 /// Enables keepLastEvaluation and disableFailureHandling, then restores
 /// them in scope(exit).
@@ -117,9 +138,12 @@ Evaluation recordEvaluation(void delegate() assertion) @trusted {
   /// Used by recordEvaluation to prevent test abortion during evaluation capture.
   bool disableFailureHandling;
 
+  /// Issue #92: Statistics for assertion execution.
+  /// Access via Lifecycle.instance.statistics.
+  AssertionStatistics statistics;
 
   private {
-    /// Counter for total assertions executed.
+    /// Counter for total assertions executed (kept for backward compatibility).
     int totalAsserts;
   }
 
@@ -130,6 +154,7 @@ Evaluation recordEvaluation(void delegate() assertion) @trusted {
   /// Returns: The current assertion number.
   int beginEvaluation(ValueEvaluation value) nothrow @nogc {
     totalAsserts++;
+    statistics.totalAssertions++;
 
     return totalAsserts;
   }
@@ -193,14 +218,87 @@ Evaluation recordEvaluation(void delegate() assertion) @trusted {
     }
 
     if(evaluation.currentValue.throwable !is null || evaluation.expectedValue.throwable !is null) {
+      statistics.failedAssertions++;
       this.handleFailure(evaluation);
       return;
     }
 
     if(!evaluation.result.hasContent()) {
+      statistics.passedAssertions++;
       return;
     }
 
+    statistics.failedAssertions++;
     this.handleFailure(evaluation);
   }
+
+  /// Resets all statistics to zero.
+  /// Useful for starting fresh counts in a new test phase.
+  void resetStatistics() @nogc nothrow {
+    statistics.reset();
+  }
+}
+
+// Issue #92: Tests for AssertionStatistics
+version (unittest) {
+  import fluent.asserts;
+}
+
+// Issue #92: AssertionStatistics tracks passed assertions
+@("statistics tracks passed assertions")
+unittest {
+  auto savedStats = Lifecycle.instance.statistics;
+  scope(exit) Lifecycle.instance.statistics = savedStats;
+
+  Lifecycle.instance.resetStatistics();
+  auto initialPassed = Lifecycle.instance.statistics.passedAssertions;
+  auto initialTotal = Lifecycle.instance.statistics.totalAssertions;
+
+  expect(1).to.equal(1);
+
+  assert(Lifecycle.instance.statistics.totalAssertions == initialTotal + 1,
+    "totalAssertions should increment");
+  assert(Lifecycle.instance.statistics.passedAssertions == initialPassed + 1,
+    "passedAssertions should increment for passing assertion");
+}
+
+// Issue #92: AssertionStatistics tracks failed assertions
+@("statistics tracks failed assertions")
+unittest {
+  auto savedStats = Lifecycle.instance.statistics;
+  auto savedDisable = Lifecycle.instance.disableFailureHandling;
+  scope(exit) {
+    Lifecycle.instance.statistics = savedStats;
+    Lifecycle.instance.disableFailureHandling = savedDisable;
+  }
+
+  Lifecycle.instance.resetStatistics();
+  Lifecycle.instance.disableFailureHandling = true;
+
+  auto initialFailed = Lifecycle.instance.statistics.failedAssertions;
+  auto initialTotal = Lifecycle.instance.statistics.totalAssertions;
+
+  expect(1).to.equal(2);
+
+  assert(Lifecycle.instance.statistics.totalAssertions == initialTotal + 1,
+    "totalAssertions should increment");
+  assert(Lifecycle.instance.statistics.failedAssertions == initialFailed + 1,
+    "failedAssertions should increment for failing assertion");
+}
+
+// Issue #92: AssertionStatistics.reset clears all counters
+@("statistics reset clears all counters")
+unittest {
+  auto savedStats = Lifecycle.instance.statistics;
+  scope(exit) Lifecycle.instance.statistics = savedStats;
+
+  Lifecycle.instance.statistics.totalAssertions = 10;
+  Lifecycle.instance.statistics.passedAssertions = 8;
+  Lifecycle.instance.statistics.failedAssertions = 2;
+
+  Lifecycle.instance.resetStatistics();
+
+  assert(Lifecycle.instance.statistics.totalAssertions == 0);
+  assert(Lifecycle.instance.statistics.passedAssertions == 0);
+  assert(Lifecycle.instance.statistics.failedAssertions == 0);
 }

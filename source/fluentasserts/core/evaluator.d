@@ -96,9 +96,11 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         }
 
         if (!_evaluation.hasResult()) {
+            Lifecycle.instance.statistics.passedAssertions++;
             return;
         }
 
+        Lifecycle.instance.statistics.failedAssertions++;
         Lifecycle.instance.handleFailure(_evaluation);
     }
 }
@@ -181,9 +183,11 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         }
 
         if (!_evaluation.hasResult()) {
+            Lifecycle.instance.statistics.passedAssertions++;
             return;
         }
 
+        Lifecycle.instance.statistics.failedAssertions++;
         Lifecycle.instance.handleFailure(_evaluation);
     }
 }
@@ -336,9 +340,11 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         }
 
         if (!_evaluation.hasResult()) {
+            Lifecycle.instance.statistics.passedAssertions++;
             return;
         }
 
+        Lifecycle.instance.statistics.failedAssertions++;
         Lifecycle.instance.handleFailure(_evaluation);
     }
 }
