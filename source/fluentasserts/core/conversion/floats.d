@@ -11,8 +11,8 @@ version (unittest) {
 
 /// Parses a string as a double value.
 ///
-/// A simple parser for numeric strings that handles integers and decimals.
-/// Does not support scientific notation.
+/// A simple parser for numeric strings that handles integers, decimals,
+/// and scientific notation (e.g., "1.0032e+06").
 ///
 /// Params:
 ///   s = The string to parse
@@ -52,6 +52,54 @@ double parseDouble(const(char)[] s, out bool success) @nogc nothrow pure @safe {
       }
     } else if (c == '.' && !seenDot) {
       seenDot = true;
+    } else if ((c == 'e' || c == 'E') && seenDigit) {
+      // Handle scientific notation
+      i++;
+      if (i >= s.length) {
+        return 0.0;
+      }
+
+      bool expNegative = false;
+      if (s[i] == '-') {
+        expNegative = true;
+        i++;
+      } else if (s[i] == '+') {
+        i++;
+      }
+
+      if (i >= s.length) {
+        return 0.0;
+      }
+
+      int exponent = 0;
+      bool seenExpDigit = false;
+      for (; i < s.length; i++) {
+        char ec = s[i];
+        if (ec >= '0' && ec <= '9') {
+          seenExpDigit = true;
+          exponent = exponent * 10 + (ec - '0');
+        } else {
+          return 0.0;
+        }
+      }
+
+      if (!seenExpDigit) {
+        return 0.0;
+      }
+
+      // Apply exponent
+      double multiplier = 1.0;
+      for (int j = 0; j < exponent; j++) {
+        multiplier *= 10.0;
+      }
+
+      if (expNegative) {
+        result /= multiplier;
+      } else {
+        result *= multiplier;
+      }
+
+      break;
     } else {
       return 0.0;
     }
@@ -196,5 +244,23 @@ unittest {
   auto result = parseFraction!double(toHeapString("125"), 0);
   expect(result.hasDigits).to.equal(true);
   expect(result.value).to.be.approximately(0.125, 0.001);
+}
+
+@("parseDouble parses scientific notation 1.0032e+06")
+unittest {
+  import std.math : abs;
+  bool success;
+  double val = parseDouble("1.0032e+06", success);
+  assert(success, "parseDouble should succeed for scientific notation");
+  // Use approximate comparison for floating point
+  assert(abs(val - 1003200.0) < 0.01, "1.0032e+06 should parse to approximately 1003200.0");
+}
+
+@("parseDouble parses integer 1003200")
+unittest {
+  bool success;
+  double val = parseDouble("1003200", success);
+  assert(success, "parseDouble should succeed for integer");
+  assert(val == 1003200.0, "1003200 should parse to 1003200.0");
 }
 

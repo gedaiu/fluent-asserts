@@ -939,6 +939,23 @@ unittest {
   evaluation.result.messageString.should.contain("should equal null.");
 }
 
+@("double equals int with same value passes")
+unittest {
+  // 1003200.0 serializes as "1.0032e+06" and 1003200 as "1003200"
+  // Numeric comparison should still work
+  (1003200.0).should.equal(1003200);
+  (1003200).should.equal(1003200.0);
+}
+
+@("double equals int with different value fails")
+unittest {
+  auto evaluation = ({
+    (1003200.0).should.equal(1003201);
+  }).recordEvaluation;
+
+  evaluation.result.hasContent().should.equal(true);
+}
+
 version (unittest):
 class EqualThing {
   int x;

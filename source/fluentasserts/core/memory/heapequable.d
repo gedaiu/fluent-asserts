@@ -81,8 +81,17 @@ struct HeapEquableValue {
       return false;
     }
 
-    // Otherwise fall back to string comparison
-    return _serialized == other._serialized;
+    // Try string comparison first
+    if (_serialized == other._serialized) {
+      return true;
+    }
+
+    // For scalars, try numeric comparison (handles double vs int, scientific notation)
+    if (_kind == Kind.scalar && other._kind == Kind.scalar) {
+      return numericEquals(_serialized[], other._serialized[]);
+    }
+
+    return false;
   }
 
   bool isEqualTo(const HeapEquableValue other) nothrow const @trusted {
@@ -96,8 +105,52 @@ struct HeapEquableValue {
       return false;
     }
 
-    // Otherwise fall back to string comparison
-    return _serialized == other._serialized;
+    // Try string comparison first
+    if (_serialized == other._serialized) {
+      return true;
+    }
+
+    // For scalars, try numeric comparison (handles double vs int, scientific notation)
+    if (_kind == Kind.scalar && other._kind == Kind.scalar) {
+      return numericEquals(_serialized[], other._serialized[]);
+    }
+
+    return false;
+  }
+
+  /// Compares two string representations as numbers if both are numeric.
+  /// Uses relative epsilon comparison for floating point tolerance.
+  private static bool numericEquals(const(char)[] a, const(char)[] b) @nogc nothrow pure @safe {
+    bool aIsNum, bIsNum;
+    double aVal = parseDouble(a, aIsNum);
+    double bVal = parseDouble(b, bIsNum);
+
+    if (aIsNum && bIsNum) {
+      return approxEqual(aVal, bVal);
+    }
+
+    return false;
+  }
+
+  /// Approximate equality check for floating point numbers.
+  /// Uses relative epsilon for large numbers and absolute epsilon for small numbers.
+  private static bool approxEqual(double a, double b) @nogc nothrow pure @safe {
+    import core.stdc.math : fabs;
+
+    // Handle exact equality (including infinities)
+    if (a == b) {
+      return true;
+    }
+
+    double diff = fabs(a - b);
+    double larger = fabs(a) > fabs(b) ? fabs(a) : fabs(b);
+
+    // Use relative epsilon scaled to the magnitude of the numbers
+    // For numbers around 1e6, epsilon of ~1e-9 relative gives ~1e-3 absolute tolerance
+    enum double relEpsilon = 1e-9;
+    enum double absEpsilon = 1e-9;
+
+    return diff <= larger * relEpsilon || diff <= absEpsilon;
   }
 
   bool isLessThan(ref const HeapEquableValue other) @nogc nothrow const @trusted {
@@ -374,6 +427,18 @@ version (unittest) {
 
     assert(v1.isEqualTo(v2));
     assert(!v1.isEqualTo(v3));
+  }
+
+  @("isEqualTo handles numeric comparison for double vs int")
+  unittest {
+    // 1003200.0 serialized as scientific notation vs integer
+    auto doubleVal = HeapEquableValue.createScalar("1.0032e+06");
+    auto intVal = HeapEquableValue.createScalar("1003200");
+
+    assert(doubleVal.kind() == HeapEquableValue.Kind.scalar);
+    assert(intVal.kind() == HeapEquableValue.Kind.scalar);
+    assert(doubleVal.isEqualTo(intVal), "1.0032e+06 should equal 1003200");
+    assert(intVal.isEqualTo(doubleVal), "1003200 should equal 1.0032e+06");
   }
 
   @("array type stores elements")
