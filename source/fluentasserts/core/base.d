@@ -72,6 +72,22 @@ unittest {
   evaluation.result.messageString.should.equal("Because of test reasons, true should equal false.");
 }
 
+// Issue #90: std.container.array ranges have @system destructors
+// The should function is @trusted so it can handle these ranges
+@("issue #90: should works with std.container.array ranges")
+@system unittest {
+  import std.container.array : Array;
+
+  auto arr = Array!int();
+  arr.insertBack(1);
+  arr.insertBack(2);
+  arr.insertBack(3);
+
+  // This should compile and pass - the range has a @system destructor
+  // but should/expect/evaluate are all @trusted so they can handle it
+  arr[].should.equal([1, 2, 3]);
+}
+
 /// Provides a traditional assertion API as an alternative to fluent syntax.
 /// All methods are static and can be called as `Assert.equal(a, b)`.
 /// Supports negation by prefixing with "not": `Assert.notEqual(a, b)`.

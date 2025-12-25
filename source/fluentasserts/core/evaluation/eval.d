@@ -612,3 +612,22 @@ unittest {
   // Now proxyValue uses opEquals via object references
   assert(result1.evaluation.proxyValue.isEqualTo(result2.evaluation.proxyValue));
 }
+
+// Issue #90: std.container.array Range types have @system destructors
+// The evaluate function is @trusted so it can handle ranges with @system destructors
+@("issue #90: evaluate works with std.container.array ranges")
+@system unittest {
+  import std.container.array : Array;
+
+  auto arr = Array!int();
+  arr.insertBack(1);
+  arr.insertBack(2);
+  arr.insertBack(3);
+
+  // This should compile and work - the range has a @system destructor
+  // but evaluate is @trusted so it can handle it
+  auto result = evaluate(arr[]);
+
+  assert(result.evaluation.strValue[] == "[1, 2, 3]",
+    "Expected '[1, 2, 3]', got '" ~ result.evaluation.strValue[].idup ~ "'");
+}
