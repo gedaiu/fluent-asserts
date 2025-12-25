@@ -450,3 +450,19 @@ unittest {
     throw new Exception("test");
   }).should.throwAnyException.msg.should.equal("test");
 }
+
+// Issue #81: withMessage.equal should show user's source code, not library internals
+@("issue #81: throwException withMessage equal shows correct source location")
+unittest {
+  auto evaluation = ({
+    expect({
+      throw new CustomException("actual message");
+    }).to.throwException!CustomException.withMessage.equal("expected message");
+  }).recordEvaluation;
+
+  // The source location should point to this test file, not library internals
+  expect(evaluation.source.file).to.contain("throwable.d");
+  // Should NOT point to base.d or evaluator.d (library internals)
+  expect(evaluation.source.file).to.not.contain("base.d");
+  expect(evaluation.source.file).to.not.contain("evaluator.d");
+}
