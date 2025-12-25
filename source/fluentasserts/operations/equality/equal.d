@@ -1039,3 +1039,13 @@ unittest {
   auto ll = iota(1, 4).map!iota;
   ll.map!array.array.should.equal([[0], [0, 1], [0, 1, 2]]);
 }
+
+// Issue #85: range of ranges should work with equal without memory exhaustion
+@("issue #85: range of ranges equal passes")
+unittest {
+  import std.range : iota;
+  import std.algorithm : map;
+
+  auto ror = iota(1, 4).map!iota;
+  ror.should.equal([[0], [0, 1], [0, 1, 2]]);
+}
