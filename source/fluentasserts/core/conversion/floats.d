@@ -246,6 +246,7 @@ unittest {
   expect(result.value).to.be.approximately(0.125, 0.001);
 }
 
+// Issue #100: parseDouble supports scientific notation for numeric comparison
 @("parseDouble parses scientific notation 1.0032e+06")
 unittest {
   import std.math : abs;
@@ -256,6 +257,7 @@ unittest {
   assert(abs(val - 1003200.0) < 0.01, "1.0032e+06 should parse to approximately 1003200.0");
 }
 
+// Issue #100: parseDouble supports integer strings for numeric comparison
 @("parseDouble parses integer 1003200")
 unittest {
   bool success;

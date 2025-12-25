@@ -454,6 +454,7 @@ version (unittest) {
     assert(!v1.isEqualTo(v3));
   }
 
+  // Issue #100: double serialized as scientific notation should equal integer
   @("isEqualTo handles numeric comparison for double vs int")
   unittest {
     // 1003200.0 serialized as scientific notation vs integer

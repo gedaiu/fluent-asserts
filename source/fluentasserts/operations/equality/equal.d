@@ -939,6 +939,7 @@ unittest {
   evaluation.result.messageString.should.contain("should equal null.");
 }
 
+// Issue #100: double serialized as scientific notation should equal integer
 @("double equals int with same value passes")
 unittest {
   // 1003200.0 serializes as "1.0032e+06" and 1003200 as "1003200"
@@ -947,6 +948,7 @@ unittest {
   (1003200).should.equal(1003200.0);
 }
 
+// Issue #100: double serialized as scientific notation should equal integer
 @("double equals int with different value fails")
 unittest {
   auto evaluation = ({
