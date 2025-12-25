@@ -103,7 +103,7 @@ struct SourceResult {
     auto beginAssert = getAssertIndex(toks, line);
 
     if (beginAssert > 0) {
-      // Find the opening parenthesis after Assert.operation
+      // Issue #95: Find the opening parenthesis after Assert.operation
       // This handles cases with extra whitespace like "Assert.   lessThan("
       begin = findOpenParen(toks, beginAssert);
       if (begin == 0 || begin >= toks.length) {
