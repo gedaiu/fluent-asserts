@@ -709,6 +709,7 @@ unittest {
   assert(evaluation.result.negated == true, "expected negated to be true");
 }
 
+// Issue #98: opEquals should be honored when asserting equality
 @("objects with custom opEquals compares two exact values")
 unittest {
   auto testValue = new EqualThing(1);
@@ -720,6 +721,7 @@ unittest {
   assert(evaluation.result.expected.length == 0, "equal operation should pass for same object reference");
 }
 
+// Issue #98: opEquals should be honored when asserting equality
 @("objects with custom opEquals compares two objects with same fields")
 unittest {
   auto testValue = new EqualThing(1);
@@ -732,6 +734,7 @@ unittest {
   assert(evaluation.result.expected.length == 0, "equal operation should pass for objects with same fields");
 }
 
+// Issue #98: opEquals should be honored when asserting equality
 @("objects with custom opEquals compares object cast to Object with same fields")
 unittest {
   auto testValue = new EqualThing(1);
@@ -744,6 +747,7 @@ unittest {
   assert(evaluation.result.expected.length == 0, "equal operation should pass for objects with same fields cast to Object");
 }
 
+// Issue #98: opEquals should be honored when asserting equality
 @("objects with custom opEquals checks if two values are not equal")
 unittest {
   auto testValue = new EqualThing(1);
@@ -987,6 +991,7 @@ class Thing {
   }
 }
 
+// Issue #98: opEquals should be honored when asserting equality
 @("opEquals honored for class objects with same field value")
 unittest {
   auto a1 = new Thing(1);
@@ -1001,6 +1006,7 @@ unittest {
   assert(evaluation.result.expected.length == 0, "opEquals should return true for objects with same x value, but got expected: " ~ evaluation.result.expected[]);
 }
 
+// Issue #98: opEquals should be honored when asserting equality
 @("opEquals honored for class objects with different field values")
 unittest {
   auto a1 = new Thing(1);

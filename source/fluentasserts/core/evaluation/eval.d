@@ -583,6 +583,7 @@ unittest {
   assert(result.evaluation.gcMemoryUsed == 0);
 }
 
+// Issue #98: opEquals should be honored when asserting equality
 @("evaluateObject sets proxyValue with object reference for opEquals comparison")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;
