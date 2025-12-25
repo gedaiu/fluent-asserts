@@ -82,3 +82,19 @@ unittest {
 unittest {
   expect([1, 2, 3, 4]).to.not.containOnly([1, 2, 3]);
 }
+
+@("Object array containOnly itself passes")
+unittest {
+  Object[] l = [new Object(), new Object()];
+  l.should.containOnly(l);
+}
+
+@("nested int array containOnly passes")
+unittest {
+  import std.range : iota;
+  import std.algorithm : map;
+  import std.array : array;
+
+  auto ll = iota(1, 4).map!iota;
+  ll.map!array.array.should.containOnly([[0], [0, 1], [0, 1, 2]]);
+}

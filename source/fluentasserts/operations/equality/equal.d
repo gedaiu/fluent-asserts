@@ -1007,3 +1007,25 @@ unittest {
   assert(a1 != a2, "D's != operator should use opEquals");
   a1.should.not.equal(a2);
 }
+
+@("Object array equal itself passes")
+unittest {
+  Object[] l = [new Object(), new Object()];
+  l.should.equal(l);
+}
+
+@("associative array equal itself passes")
+unittest {
+  string[string] al = ["k1": "v1", "k2": "v2"];
+  al.should.equal(al);
+}
+
+@("nested int array equal passes")
+unittest {
+  import std.range : iota;
+  import std.algorithm : map;
+  import std.array : array;
+
+  auto ll = iota(1, 4).map!iota;
+  ll.map!array.array.should.equal([[0], [0, 1], [0, 1, 2]]);
+}

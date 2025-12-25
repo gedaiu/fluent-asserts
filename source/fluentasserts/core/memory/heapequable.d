@@ -331,18 +331,34 @@ void copyHeapEquableArray(
   foreach (i; 0 .. count) {
     dst[i]._serialized = src[i]._serialized;
     dst[i]._kind = src[i]._kind;
-    dst[i]._elementCount = src[i]._elementCount;
-    dst[i]._elements = cast(HeapEquableValue*) src[i]._elements;
     dst[i]._serialized.incrementRefCount();
+    dst[i]._objectRef = cast(Object) src[i]._objectRef;
+
+    // Deep copy nested elements
+    if (src[i]._elements !is null && src[i]._elementCount > 0) {
+      dst[i]._elements = duplicateHeapEquableArray(src[i]._elements, src[i]._elementCount);
+      dst[i]._elementCount = (dst[i]._elements !is null) ? src[i]._elementCount : 0;
+    } else {
+      dst[i]._elements = null;
+      dst[i]._elementCount = 0;
+    }
   }
 }
 
 void copyHeapEquableElement(HeapEquableValue* dst, ref HeapEquableValue src) @trusted @nogc nothrow {
   dst._serialized = src._serialized;
   dst._kind = src._kind;
-  dst._elementCount = src._elementCount;
-  dst._elements = src._elements;
   dst._serialized.incrementRefCount();
+  dst._objectRef = src._objectRef;
+
+  // Deep copy nested elements
+  if (src._elements !is null && src._elementCount > 0) {
+    dst._elements = duplicateHeapEquableArray(src._elements, src._elementCount);
+    dst._elementCount = (dst._elements !is null) ? src._elementCount : 0;
+  } else {
+    dst._elements = null;
+    dst._elementCount = 0;
+  }
 }
 
 HeapEquableValue* duplicateHeapEquableArray(
@@ -377,6 +393,10 @@ HeapEquableValue[] allocateSingleGCElement(ref const HeapEquableValue value) @tr
   try {
     auto result = new HeapEquableValue[1];
     result[0] = value;
+    // Clear the nested elements pointer so GC won't try to free malloc'd memory.
+    // The copy still has valid serialized data for comparison.
+    result[0]._elements = null;
+    result[0]._elementCount = 0;
     return result;
   } catch (Exception) {
     return [];
@@ -388,6 +408,10 @@ HeapEquableValue[] copyToGCArray(const HeapEquableValue* elements, size_t count)
     auto result = new HeapEquableValue[count];
     foreach (i; 0 .. count) {
       result[i] = elements[i];
+      // Clear the nested elements pointer so GC won't try to free malloc'd memory.
+      // The copy still has valid serialized data for comparison.
+      result[i]._elements = null;
+      result[i]._elementCount = 0;
     }
     return result;
   } catch (Exception) {
