@@ -178,6 +178,7 @@ struct HeapEquableValue {
   }
 
   /// Extracts a number from wrapper type notation like "Type(123)" or "Type(-45.6)"
+  /// Issue #101: Supports std.checkedint.Checked and similar wrapper types
   private static double extractWrappedNumber(const(char)[] s, out bool success) @nogc nothrow {
     success = false;
     if (s.length == 0) {

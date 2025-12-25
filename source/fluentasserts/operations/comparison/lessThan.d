@@ -155,6 +155,7 @@ unittest {
   expect(evaluation.result.hasContent()).to.equal(true);
 }
 
+// Issue #101: lessThan works with std.checkedint.Checked
 @("lessThan works with std.checkedint.Checked")
 unittest {
   import std.checkedint : Checked, Abort;
