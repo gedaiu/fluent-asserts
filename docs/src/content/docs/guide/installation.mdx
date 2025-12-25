@@ -1,0 +1,224 @@
+---
+title: Installation
+description: How to install fluent-asserts in your D project
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Using DUB (Recommended)
+
+The easiest way to use fluent-asserts is through [DUB](https://code.dlang.org/), the D package manager.
+
+<Tabs>
+  <TabItem label="dub.sdl">
+```sdl
+dependency "fluent-asserts" version="~>2.0"
+```
+  </TabItem>
+  <TabItem label="dub.json">
+```json
+{
+    "dependencies": {
+        "fluent-asserts": "~>2.0"
+    }
+}
+```
+  </TabItem>
+</Tabs>
+
+Then run:
+
+```bash
+dub build
+```
+
+## Supported Compilers
+
+fluent-asserts works with:
+
+- **DMD** (Digital Mars D Compiler) - Reference compiler
+- **LDC** (LLVM D Compiler) - Recommended for production
+- **GDC** (GNU D Compiler)
+
+## Basic Usage
+
+Once installed, import the library and start writing assertions:
+
+```d
+import fluent.asserts;
+
+unittest {
+    // Basic equality
+    expect("hello").to.equal("hello");
+
+    // Numeric comparisons
+    expect(42).to.be.greaterThan(10);
+    expect(3.14).to.be.approximately(3.1, 0.1);
+
+    // String operations
+    expect("hello world").to.contain("world");
+
+    // Collections
+    expect([1, 2, 3]).to.contain(2);
+
+    // Exception testing
+    expect({
+        throw new Exception("error");
+    }).to.throwException!Exception;
+}
+```
+
+## Running Tests
+
+```bash
+# Run all tests
+dub test
+
+# Run tests with a specific compiler
+dub test --compiler=ldc2
+```
+
+## Release Builds
+
+By default, fluent-asserts assertions are disabled in release builds (similar to D's built-in `assert`). This means you can use fluent-asserts in production code without runtime overhead in release builds.
+
+See [Configuration](/guide/configuration/#release-build-configuration) for details on how to control this behavior.
+
+## Integration with Test Frameworks
+
+fluent-asserts integrates seamlessly with D test frameworks.
+
+### Trial (Recommended)
+
+[Trial](https://code.dlang.org/packages/trial) is an extensible test runner for D that pairs perfectly with fluent-asserts. It provides test discovery, custom reporters, and filtering capabilities.
+
+Add trial to your project:
+
+<Tabs>
+  <TabItem label="dub.sdl">
+```sdl
+dependency "fluent-asserts" version="~>2.0"
+dependency "trial" version="~>0.8.0-beta.7"
+```
+  </TabItem>
+  <TabItem label="dub.json">
+```json
+{
+    "dependencies": {
+        "fluent-asserts": "~>2.0",
+        "trial": "~>0.8.0-beta.7"
+    }
+}
+```
+  </TabItem>
+</Tabs>
+
+Run your tests with:
+
+```bash
+dub run trial
+```
+
+Filter tests by name:
+
+```bash
+dub run trial -- -t "test name pattern"
+```
+
+Trial discovers tests from `unittest` blocks and supports naming them with `@("name")` attributes or `///` doc comments.
+
+#### Naming Tests with Doc Comments
+
+Use `///` doc comments above your tests. Trial displays these in the test output:
+
+```d
+import fluent.asserts;
+
+/// user registration requires a valid email
+unittest {
+    expect({
+        registerUser("invalid-email");
+    }).to.throwException!ValidationError;
+}
+
+/// passwords are hashed before storage
+unittest {
+    auto user = createUser("test@example.com", "password123");
+    expect(user.passwordHash).to.not.equal("password123");
+}
+```
+
+#### BDD-Style Spec Syntax
+
+For behavior-driven development, trial provides the `Spec!` template with `describe`, `it`, and `beforeEach` blocks:
+
+```d
+module tests.user;
+
+import fluent.asserts;
+import trial.discovery.spec;
+
+alias suite = Spec!({
+    describe("User", {
+        int age;
+
+        beforeEach({
+            age = 21;
+        });
+
+        describe("age validation", {
+            it("accepts adults", {
+                expect(isAdult(age)).to.equal(true);
+            });
+
+            it("rejects minors", {
+                age = 16;
+                expect(isAdult(age)).to.equal(false);
+            });
+        });
+    });
+});
+```
+
+### Built-in Unittests
+
+```d
+unittest {
+    expect(1 + 1).to.equal(2);
+}
+```
+
+### Unit-threaded
+
+```d
+import unit_threaded;
+import fluent.asserts;
+
+@("my test")
+unittest {
+    expect(getValue()).to.equal(42);
+}
+```
+
+### Silly
+
+```d
+import silly;
+import fluent.asserts;
+
+@("calculates correctly")
+unittest {
+    expect(calculate(2, 3)).to.equal(5);
+}
+```
+
+## Upgrading from v1.x
+
+If you're upgrading from fluent-asserts v1.x, see the [Upgrading to v2.0.0](/guide/upgrading-v2/) guide for migration steps and breaking changes.
+
+## Next Steps
+
+- Learn about [Assertion Styles](/guide/assertion-styles/)
+- Configure [Output Formats](/guide/configuration/) for different environments
+- Explore the [API Reference](/api/)
+- See [Core Concepts](/guide/core-concepts/) for how it works under the hood

@@ -1,0 +1,218 @@
+---
+title: Extending
+description: Create custom operations and serializers for fluent-asserts
+---
+
+fluent-asserts is designed to be extensible. You can create custom operations for domain-specific assertions and custom serializers for your types.
+
+## Custom Operations
+
+Operations are functions that perform the actual assertion logic. They receive an `Evaluation` struct and determine success or failure.
+
+### Creating a Custom Operation
+
+```d
+import fluentasserts.core.evaluation.eval : Evaluation;
+
+/// Asserts that a string is a valid email address.
+void beValidEmail(ref Evaluation evaluation) @safe nothrow {
+    import std.regex : ctRegex, matchFirst;
+
+    // Get the actual value (use [] to access HeapString content)
+    auto emailSlice = evaluation.currentValue.strValue[];
+
+    // Remove quotes from string representation
+    string email;
+    if (emailSlice.length >= 2 && emailSlice[0] == '"' && emailSlice[$-1] == '"') {
+        email = emailSlice[1..$-1].idup;
+    } else {
+        email = emailSlice.idup;
+    }
+
+    // Check if it matches email pattern
+    auto emailRegex = ctRegex!`^[^@]+@[^@]+\.[^@]+$`;
+    auto isSuccess = !matchFirst(email, emailRegex).empty;
+
+    // Handle negation
+    if (evaluation.isNegated) {
+        isSuccess = !isSuccess;
+    }
+
+    // Set error message on failure using FixedAppender
+    if (!isSuccess && !evaluation.isNegated) {
+        evaluation.result.expected.put("a valid email address");
+        evaluation.result.actual.put(evaluation.currentValue.strValue[]);
+    }
+
+    if (!isSuccess && evaluation.isNegated) {
+        evaluation.result.expected.put("not a valid email address");
+        evaluation.result.actual.put(evaluation.currentValue.strValue[]);
+    }
+}
+```
+
+### Registering with UFCS
+
+Use UFCS (Uniform Function Call Syntax) to add the operation to `Expect`:
+
+```d
+import fluentasserts.core.expect : Expect;
+import fluentasserts.core.evaluator : Evaluator;
+
+// Extend Expect with UFCS
+Evaluator beValidEmail(ref Expect expect) {
+    expect.evaluation.addOperationName("beValidEmail");
+    expect.evaluation.result.addText(" be a valid email");
+    return Evaluator(expect.evaluation, &beValidEmailOp);
+}
+
+// The operation function
+void beValidEmailOp(ref Evaluation evaluation) @safe nothrow {
+    // ... implementation as above
+}
+```
+
+### Using Your Custom Operation
+
+```d
+unittest {
+    expect("user@example.com").to.beValidEmail();
+    expect("invalid-email").to.not.beValidEmail();
+}
+```
+
+## Custom Serializers
+
+Serializers convert values to strings for display in error messages. In v2, use `HeapSerializerRegistry` for all custom serializers. It provides `@nogc` compatible serialization using `HeapString`.
+
+### Creating a Custom Serializer
+
+```d
+import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
+import fluentasserts.core.memory.heapstring : HeapString, toHeapString;
+import std.format : format;
+
+struct User {
+    string name;
+    int age;
+}
+
+// Register a custom serializer during module initialization
+static this() {
+    HeapSerializerRegistry.instance.register!User((user) {
+        return toHeapString(format!"User(%s, age=%d)"(user.name, user.age));
+    });
+}
+```
+
+### Using Custom Serializers
+
+With the serializer registered, error messages show meaningful output:
+
+```d
+unittest {
+    auto alice = User("Alice", 30);
+    auto bob = User("Bob", 25);
+
+    expect(alice).to.equal(bob);
+    // Output:
+    // ASSERTION FAILED: alice should equal User(Bob, age=25).
+    //   ACTUAL: User(Alice, age=30)
+    //   EXPECTED: User(Bob, age=25)
+}
+```
+
+## Best Practices
+
+### Operation Guidelines
+
+1. **Make operations `@safe nothrow`** - Required for reliability and `@nogc` compatibility
+2. **Handle negation** - Always check `evaluation.isNegated`
+3. **Use FixedAppender for results** - Use `evaluation.result.expected.put()` and `evaluation.result.actual.put()`
+4. **Access HeapString with `[]`** - Values are stored as `HeapString`, use the slice operator to access content
+5. **Be type-safe** - Use D's type system to catch errors at compile time
+
+### Serializer Guidelines
+
+1. **Keep output concise** - Long strings are hard to read in error messages
+2. **Include identifying information** - Show what makes values different
+3. **Handle null/empty cases** - Don't crash on edge cases
+4. **Return HeapString for `@nogc`** - Use `toHeapString()` for compatibility
+
+## Real-World Examples
+
+### Domain-Specific Assertions
+
+```d
+import fluentasserts.core.evaluation.eval : Evaluation;
+import std.format : format;
+
+/// Assert that a response has a specific HTTP status
+void haveStatus(int expectedStatus)(ref Evaluation evaluation) @safe nothrow {
+    // Parse actual status from response (simplified)
+    auto statusStr = evaluation.currentValue.strValue[];
+    int actualStatus = 0;
+    try {
+        actualStatus = statusStr.to!int;
+    } catch (Exception) {
+        // Handle parse error
+    }
+
+    auto isSuccess = actualStatus == expectedStatus;
+    if (evaluation.isNegated) isSuccess = !isSuccess;
+
+    if (!isSuccess) {
+        try {
+            evaluation.result.expected.put(format!"HTTP %d"(expectedStatus));
+            evaluation.result.actual.put(format!"HTTP %d"(actualStatus));
+        } catch (Exception) {
+            // Handle format error
+        }
+    }
+}
+
+// Usage:
+expect(response.status).to.haveStatus!200;
+expect(errorResponse.status).to.haveStatus!404;
+```
+
+### Testing Exception Messages
+
+```d
+unittest {
+    expect({
+        throw new Exception("User not found");
+    }).to.throwException!Exception.withMessage.equal("User not found");
+}
+```
+
+### Memory Assertion Extensions
+
+```d
+unittest {
+    // Test that a function doesn't allocate GC memory
+    expect({
+        // Your @nogc code here
+        int sum = 0;
+        foreach (i; 0 .. 100) sum += i;
+        return sum;
+    }).to.not.allocateGCMemory();
+}
+```
+
+## Migration from v1
+
+If you have custom operations from v1, you'll need to update them:
+
+1. **Import path changed**: `fluentasserts.core.evaluation` to `fluentasserts.core.evaluation.eval`
+2. **String values are HeapString**: Use `evaluation.currentValue.strValue[]` instead of `evaluation.currentValue.strValue`
+3. **Result assignment changed**: Use `evaluation.result.expected.put()` instead of direct assignment
+4. **Serializer registry**: Use `HeapSerializerRegistry` for custom serializers
+
+See the [Upgrading to v2.0.0](/guide/upgrading-v2/) guide for more details.
+
+## Next Steps
+
+- See the [API Reference](/api/) for built-in operations
+- Read [Core Concepts](/guide/core-concepts/) to understand the internals
+- Learn about [Memory Management](/guide/memory-management/) for `@nogc` contexts

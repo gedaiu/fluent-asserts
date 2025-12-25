@@ -1,0 +1,18 @@
+---
+title: approximately
+description: Checks if a number is close to an expected value, within a specified range (delta).
+---
+
+# .approximately()
+
+The `.approximately()` assertion checks if a numeric value is close to an expected value. You must provide a `delta` to define the acceptable range.
+
+For example, `expect(1.5).to.be.approximately(1.4, 0.1)` will pass because 1.5 is within 0.1 of 1.4.
+
+## Modifiers
+
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

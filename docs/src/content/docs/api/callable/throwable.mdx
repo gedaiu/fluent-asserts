@@ -1,0 +1,35 @@
+---
+title: throwAnyException
+description: Checks if a function call throws any type of exception.
+---
+
+# .throwAnyException()
+
+The `.throwAnyException()` assertion checks if a function call throws any kind of `Throwable`, which includes `Exception` and `Error` types.
+
+This is useful when you want to confirm that a function fails under certain conditions, without checking for a specific error type.
+
+## Examples
+
+### Basic Usage
+
+To check if a function throws any exception:
+
+```d
+expect(() => myThrowingFunction()).to.throwAnyException();
+```
+
+### With Negation
+
+To check that a function does **not** throw any exception:
+
+```d
+expect(() => mySafeFunction()).not.to.throwAnyException();
+```
+
+## Modifiers
+
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion.
+- `.to` - Language chain (no effect).

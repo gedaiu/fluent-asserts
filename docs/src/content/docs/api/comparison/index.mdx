@@ -1,0 +1,40 @@
+---
+title: Comparison Operations
+description: Assertions for comparing numeric values
+---
+
+Compare numeric values with these assertions.
+
+## greaterThan / above
+
+Asserts that a value is greater than the expected value.
+
+```d
+expect(42).to.be.greaterThan(10);
+expect(42).to.be.above(10);  // alias
+```
+
+## lessThan / below
+
+Asserts that a value is less than the expected value.
+
+```d
+expect(10).to.be.lessThan(42);
+expect(10).to.be.below(42);  // alias
+```
+
+## between
+
+Asserts that a value is between two bounds (exclusive).
+
+```d
+expect(42).to.be.between(10, 100);
+```
+
+## within
+
+Asserts that a value is within a range (inclusive).
+
+```d
+expect(42).to.be.within(40, 45);
+```

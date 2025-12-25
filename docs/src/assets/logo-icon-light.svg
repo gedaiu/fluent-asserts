@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <defs>
+    <linearGradient id="flowGradientIconLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#5A9A7A"/>
+      <stop offset="100%" style="stop-color:#7ABFA0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Flowing curve into checkmark -->
+  <path d="M 8 52
+           Q 20 52, 28 42
+           Q 36 32, 44 40
+           L 54 50
+           L 68 30"
+        stroke="url(#flowGradientIconLight)"
+        stroke-width="5"
+        fill="none"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+</svg>

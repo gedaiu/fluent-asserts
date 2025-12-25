@@ -1,353 +1,364 @@
+/// Evaluator structs for executing assertion operations.
+/// Provides lifetime management and result handling for assertions.
 module fluentasserts.core.evaluator;
 
-import fluentasserts.core.evaluation;
-import fluentasserts.core.results;
+import fluentasserts.core.evaluation.eval : Evaluation, evaluate;
+import fluentasserts.core.lifecycle;
+import fluentasserts.results.printer;
 import fluentasserts.core.base : TestException;
-import fluentasserts.core.serializers;
+import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
+import fluentasserts.results.formatting : toNiceOperation;
 
 import std.functional : toDelegate;
 import std.conv : to;
 
-alias OperationFunc = IResult[] function(ref Evaluation) @safe nothrow;
-alias OperationFuncTrusted = IResult[] function(ref Evaluation) @trusted nothrow;
+alias OperationFunc = void function(ref Evaluation) @safe nothrow;
+alias OperationFuncTrusted = void function(ref Evaluation) @trusted nothrow;
+alias OperationFuncNoGC = void function(ref Evaluation) @safe nothrow @nogc;
+alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow @nogc;
+
+/// Mixin template providing context methods for evaluators.
+/// Reduces duplication across Evaluator, TrustedEvaluator, and ThrowableEvaluator.
+mixin template EvaluatorContextMethods() {
+  /// Adds a reason to the assertion message.
+  ref typeof(this) because(string reason) return {
+    _evaluation.result.prependText("Because " ~ reason ~ ", ");
+    return this;
+  }
+
+  /// Adds a formatted reason to the assertion message (Issue #79).
+  ref typeof(this) because(Args...)(string fmt, Args args) return if (Args.length > 0) {
+    import std.format : format;
+    _evaluation.result.prependText("Because " ~ format(fmt, args) ~ ", ");
+    return this;
+  }
+
+  /// Attaches context data to the assertion for debugging (Issue #79).
+  ref typeof(this) withContext(T)(string key, T value) return {
+    import std.conv : to;
+    _evaluation.result.addContext(key, value.to!string);
+    return this;
+  }
+}
 
 @safe struct Evaluator {
-    private {
-        Evaluation* evaluation;
-        IResult[] delegate(ref Evaluation) @safe nothrow operation;
-        int refCount;
+  private {
+    Evaluation _evaluation;
+    void delegate(ref Evaluation) @safe nothrow operation;
+    int refCount;
+  }
+
+  @disable this(this);
+
+  this(ref Evaluation eval, OperationFuncNoGC op) @trusted {
+    this._evaluation = eval;
+    this.operation = op.toDelegate;
+    this.refCount = 0;
+  }
+
+  this(ref Evaluation eval, OperationFunc op) @trusted {
+    this._evaluation = eval;
+    this.operation = op.toDelegate;
+    this.refCount = 0;
+  }
+
+  this(ref return scope inout Evaluator other) @trusted {
+    this._evaluation = other._evaluation;
+    this.operation = cast(typeof(this.operation)) other.operation;
+    this.refCount = other.refCount + 1;
+  }
+
+  ~this() @trusted {
+    refCount--;
+    if (refCount < 0) {
+      executeOperation();
+    }
+  }
+
+  mixin EvaluatorContextMethods;
+
+  void inhibit() nothrow @safe @nogc {
+    this.refCount = int.max;
+  }
+
+  Throwable thrown() @trusted {
+    executeOperation();
+    return _evaluation.throwable;
+  }
+
+  string msg() @trusted {
+    executeOperation();
+    if (_evaluation.throwable is null) {
+      return "";
+    }
+    return _evaluation.throwable.msg.to!string;
+  }
+
+  private void executeOperation() @trusted {
+    if (_evaluation.isEvaluated) {
+      return;
+    }
+    _evaluation.isEvaluated = true;
+
+    if (_evaluation.currentValue.throwable !is null) {
+      throw _evaluation.currentValue.throwable;
     }
 
-    this(ref Evaluation eval, OperationFunc op) @trusted {
-        this.evaluation = &eval;
-        this.operation = op.toDelegate;
-        this.refCount = 0;
+    if (_evaluation.expectedValue.throwable !is null) {
+      throw _evaluation.expectedValue.throwable;
     }
 
-    this(ref return scope Evaluator other) {
-        this.evaluation = other.evaluation;
-        this.operation = other.operation;
-        this.refCount = other.refCount + 1;
+    operation(_evaluation);
+    _evaluation.result.addText(".");
+
+    if (Lifecycle.instance.keepLastEvaluation) {
+      Lifecycle.instance.lastEvaluation = _evaluation;
     }
 
-    ~this() @trusted {
-        refCount--;
-        if (refCount < 0 && evaluation !is null) {
-            executeOperation();
-        }
+    if (!_evaluation.hasResult()) {
+      Lifecycle.instance.statistics.passedAssertions++;
+      return;
     }
 
-    Evaluator because(string reason) {
-        evaluation.message.prependText("Because " ~ reason ~ ", ");
-        return this;
-    }
-
-    void inhibit() {
-        this.refCount = int.max;
-    }
-
-    Throwable thrown() @trusted {
-        executeOperation();
-        return evaluation.throwable;
-    }
-
-    string msg() @trusted {
-        executeOperation();
-        if (evaluation.throwable is null) {
-            return "";
-        }
-        return evaluation.throwable.msg.to!string;
-    }
-
-    private void executeOperation() @trusted {
-        if (evaluation.isEvaluated) {
-            return;
-        }
-        evaluation.isEvaluated = true;
-
-        auto results = operation(*evaluation);
-
-        if (evaluation.currentValue.throwable !is null) {
-            throw evaluation.currentValue.throwable;
-        }
-
-        if (evaluation.expectedValue.throwable !is null) {
-            throw evaluation.expectedValue.throwable;
-        }
-
-        if (results.length == 0) {
-            return;
-        }
-
-        version (DisableSourceResult) {
-        } else {
-            results ~= evaluation.getSourceResult();
-        }
-
-        if (evaluation.message !is null) {
-            results = evaluation.message ~ results;
-        }
-
-        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
-    }
+    Lifecycle.instance.statistics.failedAssertions++;
+    Lifecycle.instance.handleFailure(_evaluation);
+  }
 }
 
 /// Evaluator for @trusted nothrow operations
 @safe struct TrustedEvaluator {
-    private {
-        Evaluation* evaluation;
-        IResult[] delegate(ref Evaluation) @trusted nothrow operation;
-        int refCount;
+  private {
+    Evaluation _evaluation;
+    void delegate(ref Evaluation) @trusted nothrow operation;
+    int refCount;
+  }
+
+  @disable this(this);
+
+  this(ref Evaluation eval, OperationFuncTrustedNoGC op) @trusted {
+    this._evaluation = eval;
+    this.operation = op.toDelegate;
+    this.refCount = 0;
+  }
+
+  this(ref Evaluation eval, OperationFuncNoGC op) @trusted {
+    this._evaluation = eval;
+    this.operation = cast(void delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
+    this.refCount = 0;
+  }
+
+  this(ref Evaluation eval, OperationFuncTrusted op) @trusted {
+    this._evaluation = eval;
+    this.operation = op.toDelegate;
+    this.refCount = 0;
+  }
+
+  this(ref Evaluation eval, OperationFunc op) @trusted {
+    this._evaluation = eval;
+    this.operation = cast(void delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
+    this.refCount = 0;
+  }
+
+  this(ref return scope inout TrustedEvaluator other) @trusted {
+    this._evaluation = other._evaluation;
+    this.operation = cast(typeof(this.operation)) other.operation;
+    this.refCount = other.refCount + 1;
+  }
+
+  ~this() @trusted {
+    refCount--;
+    if (refCount < 0) {
+      executeOperation();
+    }
+  }
+
+  mixin EvaluatorContextMethods;
+
+  void inhibit() nothrow @safe @nogc {
+    this.refCount = int.max;
+  }
+
+  private void executeOperation() @trusted {
+    if (_evaluation.isEvaluated) {
+      return;
+    }
+    _evaluation.isEvaluated = true;
+
+    operation(_evaluation);
+    _evaluation.result.addText(".");
+
+    if (_evaluation.currentValue.throwable !is null) {
+      throw _evaluation.currentValue.throwable;
     }
 
-    this(ref Evaluation eval, OperationFuncTrusted op) @trusted {
-        this.evaluation = &eval;
-        this.operation = op.toDelegate;
-        this.refCount = 0;
+    if (_evaluation.expectedValue.throwable !is null) {
+      throw _evaluation.expectedValue.throwable;
     }
 
-    this(ref Evaluation eval, OperationFunc op) @trusted {
-        this.evaluation = &eval;
-        this.operation = cast(IResult[] delegate(ref Evaluation) @trusted nothrow) op.toDelegate;
-        this.refCount = 0;
+    if (Lifecycle.instance.keepLastEvaluation) {
+      Lifecycle.instance.lastEvaluation = _evaluation;
     }
 
-    this(ref return scope TrustedEvaluator other) {
-        this.evaluation = other.evaluation;
-        this.operation = other.operation;
-        this.refCount = other.refCount + 1;
+    if (!_evaluation.hasResult()) {
+      Lifecycle.instance.statistics.passedAssertions++;
+      return;
     }
 
-    ~this() @trusted {
-        refCount--;
-        if (refCount < 0 && evaluation !is null) {
-            executeOperation();
-        }
-    }
-
-    TrustedEvaluator because(string reason) {
-        evaluation.message.prependText("Because " ~ reason ~ ", ");
-        return this;
-    }
-
-    void inhibit() {
-        this.refCount = int.max;
-    }
-
-    private void executeOperation() @trusted {
-        if (evaluation.isEvaluated) {
-            return;
-        }
-        evaluation.isEvaluated = true;
-
-        auto results = operation(*evaluation);
-
-        if (evaluation.currentValue.throwable !is null) {
-            throw evaluation.currentValue.throwable;
-        }
-
-        if (evaluation.expectedValue.throwable !is null) {
-            throw evaluation.expectedValue.throwable;
-        }
-
-        if (results.length == 0) {
-            return;
-        }
-
-        version (DisableSourceResult) {
-        } else {
-            results ~= evaluation.getSourceResult();
-        }
-
-        if (evaluation.message !is null) {
-            results = evaluation.message ~ results;
-        }
-
-        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
-    }
+    Lifecycle.instance.statistics.failedAssertions++;
+    Lifecycle.instance.handleFailure(_evaluation);
+  }
 }
 
 /// Evaluator for throwable operations that can chain with withMessage
 @safe struct ThrowableEvaluator {
-    private {
-        Evaluation* evaluation;
-        IResult[] delegate(ref Evaluation) @trusted nothrow standaloneOp;
-        IResult[] delegate(ref Evaluation) @trusted nothrow withMessageOp;
-        int refCount;
-        bool chainedWithMessage;
+  private {
+    Evaluation _evaluation;
+    void delegate(ref Evaluation) @trusted nothrow standaloneOp;
+    void delegate(ref Evaluation) @trusted nothrow withMessageOp;
+    int refCount;
+    bool chainedWithMessage;
+  }
+
+  @disable this(this);
+
+  this(ref Evaluation eval, OperationFuncTrusted standalone, OperationFuncTrusted withMsg) @trusted {
+    this._evaluation = eval;
+    this.standaloneOp = standalone.toDelegate;
+    this.withMessageOp = withMsg.toDelegate;
+    this.refCount = 0;
+    this.chainedWithMessage = false;
+  }
+
+  this(ref return scope inout ThrowableEvaluator other) @trusted {
+    this._evaluation = other._evaluation;
+    this.standaloneOp = cast(typeof(this.standaloneOp)) other.standaloneOp;
+    this.withMessageOp = cast(typeof(this.withMessageOp)) other.withMessageOp;
+    this.refCount = other.refCount + 1;
+    this.chainedWithMessage = other.chainedWithMessage;
+  }
+
+  ~this() @trusted {
+    refCount--;
+    if (refCount < 0 && !chainedWithMessage) {
+      executeOperation(standaloneOp);
+    }
+  }
+
+  ref ThrowableEvaluator withMessage() return {
+    _evaluation.addOperationName("withMessage");
+    _evaluation.result.addText(" with message");
+    return this;
+  }
+
+  ref ThrowableEvaluator withMessage(T)(T message) return {
+    _evaluation.addOperationName("withMessage");
+    _evaluation.result.addText(" with message");
+
+    auto expectedValue = message.evaluate.evaluation;
+    foreach (kv; _evaluation.expectedValue.meta.byKeyValue) {
+      expectedValue.meta[kv.key] = kv.value;
+    }
+    _evaluation.expectedValue = expectedValue;
+    () @trusted { _evaluation.expectedValue.meta["0"] = HeapSerializerRegistry.instance.serialize(message); }();
+
+    if (!_evaluation.expectedValue.niceValue.empty) {
+      _evaluation.result.addText(" ");
+      _evaluation.result.addValue(_evaluation.expectedValue.niceValue[]);
+    } else if (!_evaluation.expectedValue.strValue.empty) {
+      _evaluation.result.addText(" ");
+      _evaluation.result.addValue(_evaluation.expectedValue.strValue[]);
     }
 
-    this(ref Evaluation eval, OperationFuncTrusted standalone, OperationFuncTrusted withMsg) @trusted {
-        this.evaluation = &eval;
-        this.standaloneOp = standalone.toDelegate;
-        this.withMessageOp = withMsg.toDelegate;
-        this.refCount = 0;
-        this.chainedWithMessage = false;
+    chainedWithMessage = true;
+    executeOperation(withMessageOp);
+    inhibit();
+    return this;
+  }
+
+  ref ThrowableEvaluator equal(T)(T value) return {
+    _evaluation.addOperationName("equal");
+
+    auto expectedValue = value.evaluate.evaluation;
+    foreach (kv; _evaluation.expectedValue.meta.byKeyValue) {
+      expectedValue.meta[kv.key] = kv.value;
+    }
+    _evaluation.expectedValue = expectedValue;
+    () @trusted { _evaluation.expectedValue.meta["0"] = HeapSerializerRegistry.instance.serialize(value); }();
+
+    _evaluation.result.addText(" equal");
+    if (!_evaluation.expectedValue.niceValue.empty) {
+      _evaluation.result.addText(" ");
+      _evaluation.result.addValue(_evaluation.expectedValue.niceValue[]);
+    } else if (!_evaluation.expectedValue.strValue.empty) {
+      _evaluation.result.addText(" ");
+      _evaluation.result.addValue(_evaluation.expectedValue.strValue[]);
     }
 
-    this(ref return scope ThrowableEvaluator other) {
-        this.evaluation = other.evaluation;
-        this.standaloneOp = other.standaloneOp;
-        this.withMessageOp = other.withMessageOp;
-        this.refCount = other.refCount + 1;
-        this.chainedWithMessage = other.chainedWithMessage;
+    chainedWithMessage = true;
+    executeOperation(withMessageOp);
+    inhibit();
+    return this;
+  }
+
+  mixin EvaluatorContextMethods;
+
+  void inhibit() nothrow @safe @nogc {
+    this.refCount = int.max;
+  }
+
+  Throwable thrown() @trusted {
+    executeOperation(standaloneOp);
+    return _evaluation.throwable;
+  }
+
+  string msg() @trusted {
+    executeOperation(standaloneOp);
+    if (_evaluation.throwable is null) {
+      return "";
+    }
+    return _evaluation.throwable.msg.to!string;
+  }
+
+  private void finalizeMessage() {
+    _evaluation.result.addText(" ");
+    _evaluation.result.addText(toNiceOperation(_evaluation.operationName));
+
+    if (!_evaluation.expectedValue.niceValue.empty) {
+      _evaluation.result.addText(" ");
+      _evaluation.result.addValue(_evaluation.expectedValue.niceValue[]);
+    } else if (!_evaluation.expectedValue.strValue.empty) {
+      _evaluation.result.addText(" ");
+      _evaluation.result.addValue(_evaluation.expectedValue.strValue[]);
+    }
+  }
+
+  private void executeOperation(void delegate(ref Evaluation) @trusted nothrow op) @trusted {
+    if (_evaluation.isEvaluated) {
+      return;
+    }
+    _evaluation.isEvaluated = true;
+
+    op(_evaluation);
+    _evaluation.result.addText(".");
+
+    if (_evaluation.currentValue.throwable !is null) {
+      throw _evaluation.currentValue.throwable;
     }
 
-    ~this() @trusted {
-        refCount--;
-        if (refCount < 0 && !chainedWithMessage && evaluation !is null) {
-            executeOperation(standaloneOp);
-        }
+    if (_evaluation.expectedValue.throwable !is null) {
+      throw _evaluation.expectedValue.throwable;
     }
 
-    ThrowableEvaluator withMessage() {
-        evaluation.operationName ~= ".withMessage";
-        evaluation.message.addText(" with message");
-        return this;
+    if (Lifecycle.instance.keepLastEvaluation) {
+      Lifecycle.instance.lastEvaluation = _evaluation;
     }
 
-    ThrowableEvaluator withMessage(T)(T message) {
-        evaluation.operationName ~= ".withMessage";
-        evaluation.message.addText(" with message");
-
-        auto expectedValue = message.evaluate.evaluation;
-        foreach (key, value; evaluation.expectedValue.meta) {
-            expectedValue.meta[key] = value;
-        }
-        evaluation.expectedValue = expectedValue;
-        () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(message); }();
-
-        if (evaluation.expectedValue.niceValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.niceValue);
-        } else if (evaluation.expectedValue.strValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.strValue);
-        }
-
-        chainedWithMessage = true;
-        executeOperation(withMessageOp);
-        inhibit();
-        return this;
+    if (!_evaluation.hasResult()) {
+      Lifecycle.instance.statistics.passedAssertions++;
+      return;
     }
 
-    ThrowableEvaluator equal(T)(T value) {
-        evaluation.operationName ~= ".equal";
-
-        auto expectedValue = value.evaluate.evaluation;
-        foreach (key, v; evaluation.expectedValue.meta) {
-            expectedValue.meta[key] = v;
-        }
-        evaluation.expectedValue = expectedValue;
-        () @trusted { evaluation.expectedValue.meta["0"] = SerializerRegistry.instance.serialize(value); }();
-
-        evaluation.message.addText(" equal");
-        if (evaluation.expectedValue.niceValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.niceValue);
-        } else if (evaluation.expectedValue.strValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.strValue);
-        }
-
-        chainedWithMessage = true;
-        executeOperation(withMessageOp);
-        inhibit();
-        return this;
-    }
-
-    ThrowableEvaluator because(string reason) {
-        evaluation.message.prependText("Because " ~ reason ~ ", ");
-        return this;
-    }
-
-    void inhibit() {
-        this.refCount = int.max;
-    }
-
-    Throwable thrown() @trusted {
-        executeOperation(standaloneOp);
-        return evaluation.throwable;
-    }
-
-    string msg() @trusted {
-        executeOperation(standaloneOp);
-        if (evaluation.throwable is null) {
-            return "";
-        }
-        return evaluation.throwable.msg.to!string;
-    }
-
-    private void finalizeMessage() {
-        evaluation.message.addText(" ");
-        evaluation.message.addText(toNiceOperation(evaluation.operationName));
-
-        if (evaluation.expectedValue.niceValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.niceValue);
-        } else if (evaluation.expectedValue.strValue) {
-            evaluation.message.addText(" ");
-            evaluation.message.addValue(evaluation.expectedValue.strValue);
-        }
-    }
-
-    private void executeOperation(IResult[] delegate(ref Evaluation) @trusted nothrow op) @trusted {
-        if (evaluation.isEvaluated) {
-            return;
-        }
-        evaluation.isEvaluated = true;
-
-        auto results = op(*evaluation);
-
-        if (evaluation.currentValue.throwable !is null) {
-            throw evaluation.currentValue.throwable;
-        }
-
-        if (evaluation.expectedValue.throwable !is null) {
-            throw evaluation.expectedValue.throwable;
-        }
-
-        if (results.length == 0) {
-            return;
-        }
-
-        version (DisableSourceResult) {
-        } else {
-            results ~= evaluation.getSourceResult();
-        }
-
-        if (evaluation.message !is null) {
-            results = evaluation.message ~ results;
-        }
-
-        throw new TestException(results, evaluation.sourceFile, evaluation.sourceLine);
-    }
-}
-
-private string toNiceOperation(string value) @safe nothrow {
-    import std.uni : toLower, isUpper, isLower;
-
-    string newValue;
-
-    foreach (index, ch; value) {
-        if (index == 0) {
-            newValue ~= ch.toLower;
-            continue;
-        }
-
-        if (ch == '.') {
-            newValue ~= ' ';
-            continue;
-        }
-
-        if (ch.isUpper && value[index - 1].isLower) {
-            newValue ~= ' ';
-            newValue ~= ch.toLower;
-            continue;
-        }
-
-        newValue ~= ch;
-    }
-
-    return newValue;
+    Lifecycle.instance.statistics.failedAssertions++;
+    Lifecycle.instance.handleFailure(_evaluation);
+  }
 }

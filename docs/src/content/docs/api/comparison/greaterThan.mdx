@@ -1,0 +1,45 @@
+---
+title: greaterThanDuration
+description: Asserts that the tested value is greater than the tested value. However, it's often best to assert that the target is equal to its expected value.
+---
+
+# .greaterThanDuration()
+
+Asserts that the tested value is greater than the tested value. However, it's often best to assert that the target is equal to its expected value.
+
+## Examples
+
+### Basic Usage
+
+```d
+expect(largeValue).to.be.greaterThan(smallValue);
+expect(largeValue).to.be.above(smallValue);
+expect(largeValue).to.be.greaterThan(smallValue);
+expect(largeValue).to.be.above(smallValue);
+```
+
+### With Negation
+
+```d
+expect(smallValue).not.to.be.greaterThan(largeValue);
+expect(smallValue).not.to.be.above(largeValue);
+expect(smallValue).not.to.be.greaterThan(largeValue);
+expect(smallValue).not.to.be.above(largeValue);
+```
+
+### What Failures Look Like
+
+When the assertion fails, you'll see a clear error message:
+
+```d
+// This would fail:
+expect(smallValue).to.be.greaterThan(smallValue);
+```
+
+## Modifiers
+
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

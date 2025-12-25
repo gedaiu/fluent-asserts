@@ -1,0 +1,66 @@
+---
+title: Callable & Exception Operations
+description: Assertions for testing function behavior and exceptions
+---
+
+Test function behavior with these assertions.
+
+## throwException
+
+Asserts that a callable throws a specific exception type.
+
+```d
+expect({
+    throw new CustomException("error");
+}).to.throwException!CustomException;
+```
+
+### With Message Checking
+
+```d
+expect({
+    throw new Exception("specific error");
+}).to.throwException!Exception.withMessage.equal("specific error");
+```
+
+## throwAnyException
+
+Asserts that a callable throws any exception.
+
+```d
+expect({
+    throw new Exception("error");
+}).to.throwAnyException();
+```
+
+## haveExecutionTime
+
+Asserts constraints on how long a callable takes to execute.
+
+```d
+import core.time : msecs;
+
+expect({
+    fastOperation();
+}).to.haveExecutionTime.lessThan(100.msecs);
+```
+
+## allocateGCMemory
+
+Asserts that a callable allocates GC memory.
+
+```d
+expect({
+    auto arr = new int[1000];
+    return arr.length;
+}).to.allocateGCMemory();
+```
+
+### Negation
+
+```d
+expect({
+    int[4] stackArray = [1, 2, 3, 4];
+    return stackArray.length;
+}).to.not.allocateGCMemory();
+```

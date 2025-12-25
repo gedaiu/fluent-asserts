@@ -1,0 +1,39 @@
+---
+title: .containOnly()
+description: Asserts that an array contains only the specified elements (in any order)
+---
+
+Asserts that an array contains exactly the specified elements, regardless of order. The array must have the same elements as the expected set, no more and no less.
+
+## Examples
+
+```d
+expect([1, 2, 3]).to.containOnly([3, 2, 1]);
+expect([1, 2, 3]).to.containOnly([1, 2, 3]);
+expect(["a", "b"]).to.containOnly(["b", "a"]);
+```
+
+### With Negation
+
+```d
+expect([1, 2, 3]).to.not.containOnly([1, 2]);  // has extra element
+expect([1, 2]).to.not.containOnly([1, 2, 3]);  // missing element
+```
+
+### What Failures Look Like
+
+```d
+expect([1,2,3]).to.containOnly([1,2]);
+```
+
+```
+ASSERTION FAILED: [1, 2, 3] should contain only [1, 2].
+OPERATION: containOnly
+
+  ACTUAL: <int[]> [1, 2, 3]
+EXPECTED: <int[]> to contain only [1, 2]
+```
+
+## See Also
+
+- [contain](/api/ranges/) - Check if array contains a single element

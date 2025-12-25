@@ -1,0 +1,51 @@
+---
+title: betweenDuration
+description: Asserts that the target is a number or a date greater than or equal to the given number or date start, 
+---
+
+# .betweenDuration()
+
+Asserts that the target is a number or a date greater than or equal to the given number or date start, 
+
+Asserts that a value is strictly between two bounds (exclusive).
+
+## Examples
+
+### Basic Usage
+
+```d
+expect(middleValue).to.be.between(smallValue, largeValue);
+expect(middleValue).to.be.between(largeValue, smallValue);
+expect(middleValue).to.be.within(smallValue, largeValue);
+expect(middleValue).to.be.between(smallValue, largeValue);
+expect(middleValue).to.be.between(largeValue, smallValue);
+expect(middleValue).to.be.within(smallValue, largeValue);
+```
+
+### With Negation
+
+```d
+expect(largeValue).to.not.be.between(smallValue, largeValue);
+expect(largeValue).to.not.be.between(largeValue, smallValue);
+expect(largeValue).to.not.be.within(smallValue, largeValue);
+expect(largeValue).to.not.be.between(smallValue, largeValue);
+expect(largeValue).to.not.be.between(largeValue, smallValue);
+expect(largeValue).to.not.be.within(smallValue, largeValue);
+```
+
+### What Failures Look Like
+
+When the assertion fails, you'll see a clear error message:
+
+```d
+// This would fail:
+expect(largeValue).to.be.between(smallValue, largeValue);
+```
+
+## Modifiers
+
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion
+- `.to` - Language chain (no effect)
+- `.be` - Language chain (no effect)

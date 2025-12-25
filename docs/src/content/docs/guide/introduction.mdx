@@ -1,0 +1,249 @@
+---
+title: Introduction
+description: Fluent assertions for the D programming language
+---
+
+[Writing unit tests is easy with D](https://dlang.org/spec/unittest.html). The `unittest` block allows you to start writing tests and be productive with no special setup.
+
+Unfortunately the [assert expression](https://dlang.org/spec/expression.html#AssertExpression) does not help you write expressive asserts, and when a failure occurs it's hard to understand why. **fluent-asserts** allows you to more naturally specify the expected outcome of a TDD or BDD-style test.
+
+## Quick Start
+
+Add the dependency:
+
+```bash
+dub add fluent-asserts
+```
+
+Write your first test:
+
+```d
+unittest {
+    true.should.equal(false).because("this is a failing assert");
+}
+
+unittest {
+    Assert.equal(true, false, "this is a failing assert");
+}
+```
+
+Run the tests:
+
+```bash
+dub test
+```
+
+## Features
+
+fluent-asserts is packed with capabilities to make your tests expressive, fast, and easy to debug.
+
+### Readable Assertions
+
+Write tests that read like sentences. The fluent API chains naturally, making your test intent crystal clear.
+
+```d
+expect(user.age).to.be.greaterThan(18);
+expect(response.status).to.equal(200);
+expect(items).to.contain("apple").and.not.beEmpty();
+```
+
+### Rich Assertion Library
+
+A comprehensive set of built-in assertions for all common scenarios:
+
+- **Equality**: `equal`, `approximately`
+- **Comparison**: `greaterThan`, `lessThan`, `between`, `within`
+- **Strings**: `contain`, `startWith`, `endWith`, `match`
+- **Collections**: `contain`, `containOnly`, `beEmpty`, `beSorted`
+- **Types**: `beNull`, `instanceOf`
+- **Exceptions**: `throwException`, `throwAnyException`
+- **Memory**: `allocateGCMemory`, `allocateNonGCMemory`
+- **Timing**: `haveExecutionTime`
+
+See the [API Reference](/api/) for the complete list.
+
+### Detailed Failure Messages
+
+When assertions fail, you get all the context you need to understand what went wrong:
+
+```
+ASSERTION FAILED: user.age should be greater than 18.
+OPERATION: greaterThan
+
+  ACTUAL: <int> 16
+EXPECTED: <int> greater than 18
+
+source/test.d:42
+>  42:    expect(user.age).to.be.greaterThan(18);
+```
+
+### Multiple Output Formats
+
+Choose the right format for your environment:
+
+- **Verbose** - Human-friendly with full context for local development
+- **TAP** - Universal machine-readable format for CI/CD pipelines
+- **Compact** - Token-optimized for AI coding assistants
+
+See [Configuration](/guide/configuration/) for details.
+
+### Context Data for Debugging
+
+When testing in loops or complex scenarios, attach context to pinpoint failures:
+
+```d
+foreach (i, user; users) {
+    user.isValid.should.beTrue
+        .withContext("index", i)
+        .withContext("userId", user.id)
+        .because("user %s failed validation", user.name);
+}
+```
+
+See [Context Data](/guide/context-data/) for more examples.
+
+### Memory Allocation Testing
+
+Verify that your code behaves correctly with respect to memory:
+
+```d
+// Ensure code allocates GC memory
+expect({ auto arr = new int[100]; }).to.allocateGCMemory();
+
+// Ensure code is @nogc compliant
+expect({ int x = 42; }).not.to.allocateGCMemory();
+```
+
+### @nogc Compatible
+
+The entire library works in `@nogc` contexts. Use fluent-asserts in performance-critical code without triggering garbage collection.
+
+### Zero Overhead in Release Builds
+
+Like D's built-in `assert`, fluent-asserts becomes a complete no-op in release builds. Use it freely in production code with zero runtime cost.
+
+### Assertion Statistics
+
+Track how your tests are performing:
+
+```d
+auto stats = Lifecycle.instance.statistics;
+writeln("Passed: ", stats.passedAssertions);
+writeln("Failed: ", stats.failedAssertions);
+```
+
+See [Assertion Statistics](/guide/statistics/) for details.
+
+### Extensible
+
+Create custom assertions for your domain and register custom serializers for your types. See [Extending](/guide/extending/) for how to build on top of fluent-asserts.
+
+## The API
+
+The library provides three ways to write assertions: `expect`, `should`, and `Assert`.
+
+### expect
+
+`expect` is the main assertion function. It takes a value to test and returns a fluent assertion object.
+
+```d
+expect(testedValue).to.equal(42);
+```
+
+Use `not` to negate and `because` to add context:
+
+```d
+expect(testedValue).to.not.equal(42);
+expect(true).to.equal(false).because("of test reasons");
+// Output: Because of test reasons, true should equal `false`.
+```
+
+### should
+
+`should` works with [UFCS](https://dlang.org/spec/function.html#pseudo-member) for a more natural reading style. It's an alias for `expect`:
+
+```d
+// These are equivalent
+testedValue.should.equal(42);
+expect(testedValue).to.equal(42);
+```
+
+### Assert
+
+`Assert` provides a traditional assertion syntax:
+
+```d
+// These are equivalent
+expect(testedValue).to.equal(42);
+Assert.equal(testedValue, 42);
+
+// Negate with "not" prefix
+Assert.notEqual(testedValue, 42);
+```
+
+## Recording Evaluations
+
+The `recordEvaluation` function captures assertion results without throwing on failure. This is useful for testing assertion behavior or inspecting results programmatically.
+
+```d
+import fluentasserts.core.lifecycle : recordEvaluation;
+
+unittest {
+    auto evaluation = ({
+        expect(5).to.equal(10);
+    }).recordEvaluation;
+
+    // Inspect the evaluation result (use [] to access FixedAppender content)
+    assert(evaluation.result.expected[] == "10");
+    assert(evaluation.result.actual[] == "5");
+}
+```
+
+The `Evaluation.result` provides access to:
+- `expected` - the expected value (use `[]` to get the string)
+- `actual` - the actual value (use `[]` to get the string)
+- `negated` - whether the assertion was negated with `.not`
+- `missing` - array of missing elements (for collection comparisons)
+- `extra` - array of extra elements (for collection comparisons)
+- `messages` - the assertion message segments
+
+## Release Builds
+
+Like D's built-in `assert`, fluent-asserts assertions are disabled in release builds. This means you can use them in production code without runtime overhead:
+
+```d
+// In debug builds: assertion is checked
+// In release builds: this is a no-op
+expect(value).to.be.greaterThan(0);
+```
+
+See [Configuration](/guide/configuration/#release-build-configuration) for how to control this behavior.
+
+## Custom Assert Handler
+
+During unittest builds, the library automatically installs a custom handler for D's built-in `assert` statements. This provides fluent-asserts style error messages even when using standard `assert`:
+
+```d
+unittest {
+    assert(1 == 2, "math is broken");
+    // Output includes ACTUAL/EXPECTED formatting and source location
+}
+```
+
+The handler is only active during `version(unittest)` builds. To temporarily disable it:
+
+```d
+import core.exception;
+
+auto savedHandler = core.exception.assertHandler;
+scope(exit) core.exception.assertHandler = savedHandler;
+core.exception.assertHandler = null;
+```
+
+## Next Steps
+
+- See the [Installation](/guide/installation/) guide for detailed setup
+- Learn about [Assertion Styles](/guide/assertion-styles/) in depth
+- Explore the [API Reference](/api/) for all available operations
+- Understand the [Philosophy](/guide/philosophy/) behind fluent-asserts
+- Upgrading from v1? See [Upgrading to v2.0.0](/guide/upgrading-v2/)

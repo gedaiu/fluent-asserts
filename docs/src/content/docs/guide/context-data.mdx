@@ -1,0 +1,185 @@
+---
+title: Context Data
+description: Include additional debugging information with assertions
+---
+
+When assertions run in loops or complex scenarios, it's helpful to know exactly which iteration or condition caused a failure. fluent-asserts provides two features for attaching context data to assertions.
+
+## Format-Style `because`
+
+The `because` method now supports printf-style format strings, making it easy to include dynamic values in your failure messages:
+
+```d
+import fluent.asserts;
+
+unittest {
+    foreach (i; 0 .. 100) {
+        auto result = computeValue(i);
+        result.should.equal(expected).because("At iteration %s", i);
+    }
+}
+```
+
+On failure, you'll see:
+```
+Because At iteration 42, result should equal expected.
+```
+
+### Multiple Format Arguments
+
+You can include multiple values:
+
+```d
+result.should.equal(expected).because("iteration %s of %s with seed %s", i, total, seed);
+```
+
+### Format Specifiers
+
+Standard D format specifiers work:
+
+```d
+value.should.equal(0).because("value %.2f exceeded threshold", floatValue);
+value.should.beTrue.because("flags: 0x%08X", bitmask);
+```
+
+## Context Attachment with `withContext`
+
+For more structured debugging data, use `withContext` to attach key-value pairs:
+
+```d
+import fluent.asserts;
+
+unittest {
+    foreach (userId; userIds) {
+        auto user = fetchUser(userId);
+
+        user.isActive.should.beTrue
+            .withContext("userId", userId)
+            .withContext("email", user.email);
+    }
+}
+```
+
+### Chaining Multiple Contexts
+
+You can chain multiple `withContext` calls:
+
+```d
+result.should.equal(expected)
+    .withContext("iteration", i)
+    .withContext("input", testInput)
+    .withContext("config", configName);
+```
+
+### Context in Output
+
+Context data is displayed differently based on the output format:
+
+**Verbose format:**
+```
+ASSERTION FAILED: result should equal expected.
+OPERATION: equal
+
+CONTEXT:
+  userId = 42
+  email = test@example.com
+
+  ACTUAL: <bool> false
+EXPECTED: <bool> true
+```
+
+**Compact format:**
+```
+FAIL: result should equal expected. | context: userId=42, email=test@example.com | actual=false expected=true | test.d:15
+```
+
+**TAP format:**
+```
+not ok - result should equal expected.
+  ---
+  context:
+    userId: 42
+    email: test@example.com
+  actual: false
+  expected: true
+  at: test.d:15
+  ...
+```
+
+## Combining Both Features
+
+You can use `because` and `withContext` together:
+
+```d
+result.should.equal(expected)
+    .because("validation failed for user %s", userId)
+    .withContext("email", user.email)
+    .withContext("role", user.role);
+```
+
+## Use Cases
+
+### Loop Debugging
+
+```d
+foreach (i, testCase; testCases) {
+    auto result = process(testCase.input);
+    result.should.equal(testCase.expected)
+        .withContext("index", i)
+        .withContext("input", testCase.input);
+}
+```
+
+### Parameterized Tests
+
+```d
+static foreach (config; testConfigurations) {
+    unittest {
+        auto result = runWith(config);
+        result.isValid.should.beTrue
+            .withContext("config", config.name)
+            .withContext("timeout", config.timeout);
+    }
+}
+```
+
+### Multi-Threaded Tests
+
+```d
+import std.parallelism;
+
+foreach (task; parallel(tasks)) {
+    auto result = task.execute();
+    result.should.equal(task.expected)
+        .withContext("taskId", task.id)
+        .withContext("thread", thisThreadId);
+}
+```
+
+### Complex Object Validation
+
+```d
+void validateOrder(Order order) {
+    order.total.should.beGreaterThan(0)
+        .withContext("orderId", order.id)
+        .withContext("customer", order.customerId)
+        .withContext("items", order.items.length);
+
+    order.status.should.equal(Status.pending)
+        .withContext("orderId", order.id)
+        .withContext("createdAt", order.createdAt.toISOString);
+}
+```
+
+## Limits
+
+- Context is limited to 8 key-value pairs per assertion (defined by `MAX_CONTEXT_ENTRIES`)
+- Keys and values are converted to strings using `std.conv.to!string`
+- Context is cleared between assertions
+- If you exceed 8 context entries, a warning is displayed in the output indicating that additional entries were dropped
+
+## Next Steps
+
+- Learn about [Configuration](/guide/configuration/) for output format options
+- See [Assertion Styles](/guide/assertion-styles/) for different ways to write assertions
+- Explore [Core Concepts](/guide/core-concepts/) for understanding the assertion lifecycle

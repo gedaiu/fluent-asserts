@@ -1,0 +1,663 @@
+/* Custom styles for fluent-asserts documentation */
+/* Clean typography with vintage duotone feel */
+
+/* Google Fonts - Space Grotesk for headings, Newsreader for body */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap');
+
+:root {
+  /* Duotone palette - soft blacks and creamy whites with green tint */
+  --color-ink: #1a2421;          /* Soft black with green */
+  --color-ink-light: #2d3a35;    /* Lighter ink */
+  --color-ink-muted: #4a5752;    /* Muted text */
+  --color-paper: #f4f7f5;        /* Creamy white with green tint */
+  --color-paper-dark: #e8ece9;   /* Slightly darker paper */
+  --color-accent: #3D7A5A;       /* Logo green - matches gradient start */
+  --color-accent-light: #5A9A7A; /* Logo green - matches gradient end */
+
+  /* Override Starlight colors - replace default blue with our green */
+  --sl-color-accent-low: color-mix(in srgb, var(--color-accent) 20%, var(--color-paper));
+  --sl-color-accent: var(--color-accent);
+  --sl-color-accent-high: var(--color-accent-light);
+
+  /* Ensure accent is applied everywhere */
+  --sl-hue-accent: 150 !important;
+  --sl-color-bg-accent: #3D7A5A !important;
+  --sl-color-text-accent: #3D7A5A !important;
+
+  --sl-color-white: var(--color-paper);
+  --sl-color-black: var(--color-ink);
+
+  --sl-color-gray-1: var(--color-paper);
+  --sl-color-gray-2: var(--color-paper-dark);
+  --sl-color-gray-3: #d4dbd7;
+  --sl-color-gray-4: #b8c4bc;
+  --sl-color-gray-5: #8a9990;
+  --sl-color-gray-6: var(--color-ink-muted);
+
+  /* Base typography */
+  --sl-font: 'Newsreader', Georgia, serif;
+  --sl-font-mono: 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  /* Text colors */
+  --sl-color-text: var(--color-ink);
+  --sl-color-text-accent: var(--color-accent);
+}
+
+/* Dark mode overrides */
+:root[data-theme='dark'] {
+  --color-ink: #e4ebe7;          /* Soft white with green */
+  --color-ink-light: #c8d4cc;    /* Lighter text */
+  --color-ink-muted: #8a9b90;    /* Muted text */
+  --color-paper: #0d1210;        /* Darker background with green tint */
+  --color-paper-dark: #141a17;   /* Slightly lighter dark */
+  --color-accent: #5A9A7A;       /* Logo green - matches dark gradient start */
+  --color-accent-light: #7ABFA0; /* Logo green - matches dark gradient end */
+
+  --sl-color-gray-1: #0d1210;
+  --sl-color-gray-2: #141a17;
+  --sl-color-gray-3: #1c2420;
+  --sl-color-gray-4: #242e29;
+  --sl-color-gray-5: #3d4e45;
+  --sl-color-gray-6: #5a6e63;
+
+  --sl-color-white: var(--color-ink);
+  --sl-color-black: var(--color-paper);
+  --sl-color-text: var(--color-ink);
+
+  /* Override Starlight accent for dark mode */
+  --sl-color-accent-low: color-mix(in srgb, var(--color-accent) 15%, var(--color-paper));
+  --sl-color-accent: var(--color-accent);
+  --sl-color-accent-high: var(--color-accent-light);
+  --sl-hue-accent: 150 !important;
+  --sl-color-bg-accent: #5A9A7A !important;
+  --sl-color-text-accent: #5A9A7A !important;
+}
+
+/* Force accent color on all elements that might use it */
+:root,
+:root[data-theme='light'],
+:root[data-theme='dark'] {
+  --sl-color-accent: var(--color-accent) !important;
+}
+
+/* Fix dark mode navigation and sidebar text */
+:root[data-theme='dark'] .sidebar-content a,
+:root[data-theme='dark'] .sl-sidebar a,
+:root[data-theme='dark'] nav a,
+:root[data-theme='dark'] .sidebar-content,
+:root[data-theme='dark'] .sl-sidebar,
+:root[data-theme='dark'] nav {
+  color: var(--color-ink) !important;
+}
+
+:root[data-theme='dark'] .sidebar-content a:hover,
+:root[data-theme='dark'] .sl-sidebar a:hover,
+:root[data-theme='dark'] nav a:hover {
+  color: var(--color-accent-light) !important;
+}
+
+:root[data-theme='dark'] .sidebar-content a[aria-current="page"],
+:root[data-theme='dark'] .sl-sidebar a[aria-current="page"] {
+  color: var(--color-accent-light) !important;
+  font-weight: 600 !important;
+  background: var(--sl-color-gray-3) !important;
+  border-radius: 4px !important;
+}
+
+/* Right sidebar / table of contents */
+:root[data-theme='dark'] .right-sidebar a[aria-current="true"],
+:root[data-theme='dark'] [class*="toc"] a[aria-current="true"],
+:root[data-theme='dark'] .right-sidebar a.current,
+:root[data-theme='dark'] [class*="toc"] a.current {
+  color: var(--color-accent-light) !important;
+  font-weight: 600 !important;
+}
+
+:root[data-theme='dark'] .right-sidebar a,
+:root[data-theme='dark'] [class*="toc"] a {
+  color: var(--color-ink-muted) !important;
+}
+
+:root[data-theme='dark'] .right-sidebar a:hover,
+:root[data-theme='dark'] [class*="toc"] a:hover {
+  color: var(--color-ink) !important;
+}
+
+/* ===========================================
+   DARK MODE - Comprehensive fixes
+   =========================================== */
+
+/* Header/top bar */
+:root[data-theme='dark'] header,
+:root[data-theme='dark'] .header,
+:root[data-theme='dark'] [class*="header"] {
+  background: var(--color-paper) !important;
+  border-color: var(--sl-color-gray-3) !important;
+}
+
+/* Sidebar background */
+:root[data-theme='dark'] .sidebar,
+:root[data-theme='dark'] .sl-sidebar,
+:root[data-theme='dark'] aside,
+:root[data-theme='dark'] .sidebar-pane {
+  background: var(--color-paper) !important;
+}
+
+/* Main content area */
+:root[data-theme='dark'] main,
+:root[data-theme='dark'] .main-frame,
+:root[data-theme='dark'] .content-panel {
+  background: var(--color-paper) !important;
+}
+
+/* Body background */
+:root[data-theme='dark'] body {
+  background: var(--color-paper) !important;
+}
+
+/* Pagination / prev-next links */
+:root[data-theme='dark'] .pagination-links,
+:root[data-theme='dark'] [class*="pagination"] {
+  background: transparent !important;
+}
+
+:root[data-theme='dark'] .pagination-links a,
+:root[data-theme='dark'] [class*="pagination"] a {
+  background: var(--sl-color-gray-2) !important;
+  border: 1px solid var(--sl-color-gray-4) !important;
+  color: var(--color-ink) !important;
+}
+
+:root[data-theme='dark'] .pagination-links a:hover,
+:root[data-theme='dark'] [class*="pagination"] a:hover {
+  background: var(--sl-color-gray-3) !important;
+  border-color: var(--color-accent) !important;
+  color: var(--color-accent-light) !important;
+}
+
+/* Inline code in dark mode */
+:root[data-theme='dark'] .sl-markdown-content code:not(pre code) {
+  background: var(--sl-color-gray-3) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--sl-color-gray-4) !important;
+}
+
+/* Search input */
+:root[data-theme='dark'] input[type="search"],
+:root[data-theme='dark'] .search-input,
+:root[data-theme='dark'] [class*="search"] input,
+:root[data-theme='dark'] .pagefind-ui__search-input {
+  background: var(--sl-color-gray-2) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--sl-color-gray-4) !important;
+}
+
+:root[data-theme='dark'] input[type="search"]::placeholder,
+:root[data-theme='dark'] .search-input::placeholder,
+:root[data-theme='dark'] [class*="search"] input::placeholder,
+:root[data-theme='dark'] .pagefind-ui__search-input::placeholder {
+  color: var(--color-ink-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Search label text */
+:root[data-theme='dark'] [class*="search"] label,
+:root[data-theme='dark'] [class*="search"] span,
+:root[data-theme='dark'] .search-label {
+  color: var(--color-ink-muted) !important;
+}
+
+/* Starlight search trigger button */
+:root[data-theme='dark'] site-search button,
+:root[data-theme='dark'] .search button,
+:root[data-theme='dark'] button[data-open-modal] {
+  background: var(--sl-color-gray-2) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--sl-color-gray-4) !important;
+}
+
+:root[data-theme='dark'] site-search button span,
+:root[data-theme='dark'] .search button span,
+:root[data-theme='dark'] button[data-open-modal] span {
+  color: var(--color-ink-muted) !important;
+}
+
+:root[data-theme='dark'] site-search button svg,
+:root[data-theme='dark'] .search button svg,
+:root[data-theme='dark'] button[data-open-modal] svg {
+  color: var(--color-ink) !important;
+}
+
+:root[data-theme='dark'] input[type="search"]:focus,
+:root[data-theme='dark'] .search-input:focus,
+:root[data-theme='dark'] [class*="search"] input:focus {
+  background: var(--sl-color-gray-3) !important;
+  border-color: var(--color-accent) !important;
+  outline: none !important;
+}
+
+/* Search button/trigger */
+:root[data-theme='dark'] button[class*="search"],
+:root[data-theme='dark'] [class*="search"] button {
+  background: var(--sl-color-gray-2) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--sl-color-gray-4) !important;
+}
+
+:root[data-theme='dark'] button[class*="search"]:hover,
+:root[data-theme='dark'] [class*="search"] button:hover {
+  background: var(--sl-color-gray-3) !important;
+  border-color: var(--color-accent) !important;
+}
+
+/* Theme toggle button */
+:root[data-theme='dark'] starlight-theme-select,
+:root[data-theme='dark'] starlight-theme-select select,
+:root[data-theme='dark'] .sl-theme-select,
+:root[data-theme='dark'] [data-theme-select],
+:root[data-theme='dark'] select[aria-label*="theme" i],
+:root[data-theme='dark'] select[aria-label*="Theme" i] {
+  background: var(--sl-color-gray-2) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--sl-color-gray-4) !important;
+}
+
+:root[data-theme='dark'] starlight-theme-select:hover select,
+:root[data-theme='dark'] .sl-theme-select:hover,
+:root[data-theme='dark'] select[aria-label*="theme" i]:hover {
+  background: var(--sl-color-gray-3) !important;
+  border-color: var(--color-accent) !important;
+}
+
+/* Theme select icon */
+:root[data-theme='dark'] starlight-theme-select svg,
+:root[data-theme='dark'] .sl-theme-select svg {
+  color: var(--color-ink) !important;
+  fill: var(--color-ink) !important;
+}
+
+/* Search modal/dialog */
+:root[data-theme='dark'] dialog,
+:root[data-theme='dark'] [role="dialog"],
+:root[data-theme='dark'] .modal {
+  background: var(--color-paper-dark) !important;
+  border: 1px solid var(--sl-color-gray-4) !important;
+}
+
+/* Search results */
+:root[data-theme='dark'] .pagefind-ui__result,
+:root[data-theme='dark'] [class*="search-result"] {
+  background: var(--sl-color-gray-2) !important;
+  border-color: var(--sl-color-gray-4) !important;
+}
+
+:root[data-theme='dark'] .pagefind-ui__result:hover,
+:root[data-theme='dark'] [class*="search-result"]:hover {
+  background: var(--sl-color-gray-3) !important;
+}
+
+/* Subtle paper texture overlay - very light grain */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.015;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* ===========================================
+   HEADINGS - Space Grotesk (sans-serif)
+   =========================================== */
+
+h1, h2, h3, h4, h5, h6,
+.sl-markdown-content h1,
+.sl-markdown-content h2,
+.sl-markdown-content h3,
+.sl-markdown-content h4,
+.sl-markdown-content h5 {
+  font-family: 'Space Grotesk', -apple-system, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+h1, .sl-markdown-content h1 {
+  font-weight: 700;
+  font-size: 2.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.sl-markdown-content h2 {
+  font-weight: 600;
+  font-size: 1.5rem;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--sl-color-gray-4);
+}
+
+.sl-markdown-content h3 {
+  font-weight: 600;
+  font-size: 1.25rem;
+  margin-top: 2rem;
+}
+
+.sl-markdown-content h4 {
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+  color: var(--color-ink-light);
+}
+
+/* ===========================================
+   HERO
+   =========================================== */
+
+.hero h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 3rem;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.hero .tagline {
+  font-family: 'Newsreader', Georgia, serif;
+  font-style: normal;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: var(--color-ink-muted);
+}
+
+/* ===========================================
+   BODY TEXT - Newsreader (serif)
+   =========================================== */
+
+.sl-markdown-content p,
+.sl-markdown-content li,
+.sl-markdown-content td {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 400;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--color-ink-light);
+}
+
+.sl-markdown-content blockquote {
+  font-family: 'Newsreader', Georgia, serif;
+  font-style: italic;
+  font-size: 1.1rem;
+  border-left: 2px solid var(--color-accent);
+  padding-left: 1.25rem;
+  margin: 1.5rem 0;
+  color: var(--color-ink-muted);
+}
+
+/* ===========================================
+   NAVIGATION
+   =========================================== */
+
+.sidebar-content,
+nav,
+.pagination-links,
+.sl-sidebar,
+.site-title {
+  font-family: 'Space Grotesk', -apple-system, sans-serif;
+}
+
+.site-title {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ===========================================
+   TABLE
+   =========================================== */
+
+.sl-markdown-content th {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-ink-muted);
+}
+
+.sl-markdown-content td {
+  font-size: 1rem;
+}
+
+/* ===========================================
+   CODE BLOCKS - Softer colors
+   =========================================== */
+
+.expressive-code {
+  --ec-codeBg: #1c2420;
+  --ec-codeFg: #c8d4cc;
+}
+
+:root[data-theme='dark'] .expressive-code {
+  --ec-codeBg: #0f1412;
+}
+
+/* ===========================================
+   LAYOUT & ELEMENTS
+   =========================================== */
+
+hr {
+  border: none;
+  border-top: 1px solid var(--sl-color-gray-4);
+  margin: 2.5rem 0;
+}
+
+.sl-markdown-content hr {
+  margin: 3rem 0;
+}
+
+a:not([class]) {
+  color: var(--color-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:not([class]):hover {
+  color: var(--color-accent-light);
+}
+
+.sl-markdown-content .card {
+  background: var(--color-paper-dark);
+  border: 1px solid var(--sl-color-gray-4);
+}
+
+.hero {
+  text-align: left;
+}
+
+/* ===========================================
+   HERO BUTTONS
+   =========================================== */
+
+.hero .sl-flex.actions,
+.hero .actions {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.hero .sl-link-button,
+.hero a.action,
+.hero .action {
+  font-family: 'Space Grotesk', -apple-system, sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 4px !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem;
+  line-height: 1.2 !important;
+  transition: all 0.2s ease;
+}
+
+.hero .sl-link-button.primary,
+.hero a.action.primary,
+.hero .action.primary {
+  background: var(--color-accent) !important;
+  color: var(--color-paper) !important;
+  border: 2px solid var(--color-accent) !important;
+}
+
+.hero .sl-link-button.primary:hover,
+.hero a.action.primary:hover,
+.hero .action.primary:hover {
+  background: var(--color-accent-light) !important;
+  border-color: var(--color-accent-light) !important;
+}
+
+.hero .sl-link-button:not(.primary),
+.hero a.action:not(.primary),
+.hero .action:not(.primary) {
+  background: transparent !important;
+  color: var(--color-ink) !important;
+  border: 2px solid var(--color-ink-muted) !important;
+}
+
+.hero .sl-link-button:not(.primary):hover,
+.hero a.action:not(.primary):hover,
+.hero .action:not(.primary):hover {
+  border-color: var(--color-accent) !important;
+  color: var(--color-accent) !important;
+}
+
+/* Dark mode button adjustments */
+:root[data-theme='dark'] .hero .sl-link-button.primary,
+:root[data-theme='dark'] .hero a.action.primary,
+:root[data-theme='dark'] .hero .action.primary {
+  background: var(--color-accent) !important;
+  color: var(--color-paper) !important;
+}
+
+:root[data-theme='dark'] .hero .sl-link-button:not(.primary),
+:root[data-theme='dark'] .hero a.action:not(.primary),
+:root[data-theme='dark'] .hero .action:not(.primary) {
+  color: var(--color-ink) !important;
+  border-color: var(--color-ink-muted) !important;
+}
+
+:root[data-theme='dark'] .hero .sl-link-button:not(.primary):hover,
+:root[data-theme='dark'] .hero a.action:not(.primary):hover,
+:root[data-theme='dark'] .hero .action:not(.primary):hover {
+  border-color: var(--color-accent) !important;
+  color: var(--color-accent) !important;
+}
+
+/* Soften inline code */
+.sl-markdown-content code:not(pre code) {
+  background: var(--color-paper-dark);
+  color: var(--color-ink-light);
+  border: 1px solid var(--sl-color-gray-4);
+}
+
+/* ===========================================
+   REMOVE ALL SHADOWS
+   =========================================== */
+
+*,
+*::before,
+*::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+/* ===========================================
+   SEARCH & THEME FIXES (both modes)
+   =========================================== */
+
+/* Search placeholder - force visibility */
+::placeholder {
+  color: var(--color-ink-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Theme selector - clean style */
+starlight-theme-select {
+  border: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+starlight-theme-select svg {
+  display: none !important;
+}
+
+starlight-theme-select select {
+  background: transparent !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--sl-color-gray-4) !important;
+  border-radius: 4px !important;
+  padding: 0.25rem 0.5rem !important;
+  cursor: pointer;
+}
+
+starlight-theme-select select:hover,
+starlight-theme-select select:focus {
+  border-color: var(--color-accent) !important;
+  outline: none !important;
+}
+
+/* Search button clean style */
+site-search button {
+  border: 1px solid var(--sl-color-gray-4) !important;
+  background: transparent !important;
+}
+
+site-search button:hover {
+  border-color: var(--color-accent) !important;
+}
+
+/* ===========================================
+   CODE BLOCKS - Muted Green Theme
+   =========================================== */
+
+.expressive-code {
+  --ec-codeBg: #141a17;
+  --ec-codeFg: #c8d4cc;
+  --ec-codeSelBg: #3D7A5A30;
+  --ec-codePadBlk: 1rem;
+  --ec-codePadInl: 1rem;
+  --ec-brdRad: 4px;
+  --ec-brdCol: #242e29;
+  --ec-frm-edActTabBg: #1c2420;
+  --ec-frm-edActTabBrdCol: #242e29;
+  --ec-frm-edTabBarBg: #141a17;
+  --ec-frm-edTabBarBrdBtmCol: #242e29;
+}
+
+:root[data-theme='dark'] .expressive-code {
+  --ec-codeBg: #030404;
+  --ec-codeFg: #8a9b90;
+  --ec-frm-edActTabBg: #050606;
+  --ec-frm-edTabBarBg: #030404;
+  --ec-frm-trmBg: #020303;
+  --ec-frm-tooltipBg: #030404;
+  --ec-frm-inlBtnBg: #050606;
+  --ec-frm-inlBtnBgHov: #0a0d0b;
+}
+
+/* Force dark background in dark mode */
+:root[data-theme='dark'] .expressive-code pre,
+:root[data-theme='dark'] .expressive-code figure,
+:root[data-theme='dark'] .expressive-code .frame {
+  background: #030404 !important;
+}

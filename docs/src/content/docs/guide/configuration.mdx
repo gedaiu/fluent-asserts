@@ -1,0 +1,206 @@
+---
+title: Configuration
+description: Configuring fluent-asserts output formats and settings
+---
+
+fluent-asserts provides configurable output formats for assertion failure messages. This is useful for different environments like CI/CD pipelines, AI-assisted development, or custom tooling.
+
+## Output Formats
+
+Three output formats are available, each designed for a specific audience:
+
+### Verbose (Default)
+
+The **human-friendly** format. Provides detailed, readable output with full context including source code snippets. Perfect for local development and debugging when you need to understand exactly what went wrong.
+
+```
+ASSERTION FAILED: 5 should equal 3.
+OPERATION: equal
+
+  ACTUAL: <int> 5
+EXPECTED: <int> 3
+
+source/mytest.d:42
+>  42:    expect(5).to.equal(3);
+```
+
+### TAP (Test Anything Protocol)
+
+The **universal machine-readable** format. [TAP](https://testanything.org/) is a standard protocol understood by CI/CD systems, test harnesses, and reporting tools worldwide. Use this when integrating with automated pipelines or generating test reports.
+
+```
+not ok - 5 should equal 3.
+  ---
+  actual: 5
+  expected: 3
+  at: source/mytest.d:42
+  ...
+```
+
+### Compact
+
+The **token-optimized** format for AI-assisted development. Delivers all essential information in a single line, minimizing token usage when working with AI coding assistants like Claude Code. Every character counts when you're paying per token.
+
+```
+FAIL: 5 should equal 3. | actual=5 expected=3 | source/mytest.d:42
+```
+
+## Setting the Output Format
+
+### Environment Variable
+
+Set the `CLAUDECODE` environment variable to `1` to automatically use compact format:
+
+```bash
+CLAUDECODE=1 dub test
+```
+
+This is useful when running tests in AI-assisted development environments like Claude Code.
+
+### Programmatic Configuration
+
+You can set the output format at runtime:
+
+```d
+import fluentasserts.core.config;
+
+// Set to compact format
+config.output.setFormat(OutputFormat.compact);
+
+// Set to TAP format
+config.output.setFormat(OutputFormat.tap);
+
+// Set to verbose format (default)
+config.output.setFormat(OutputFormat.verbose);
+```
+
+### Per-Test Configuration
+
+You can temporarily change the format for specific tests:
+
+```d
+unittest {
+    // Save current format
+    auto previousFormat = config.output.format;
+    scope(exit) config.output.setFormat(previousFormat);
+
+    // Use TAP format for this test
+    config.output.setFormat(OutputFormat.tap);
+
+    expect(5).to.equal(3);
+}
+```
+
+## Format Comparison
+
+| Format | Audience | Use Case | Output Size |
+|--------|----------|----------|-------------|
+| `verbose` | Humans | Local development, debugging | Large |
+| `tap` | Machines | CI/CD pipelines, test harnesses, reporting tools | Medium |
+| `compact` | AI assistants | Claude Code, token-limited contexts | Small |
+
+## Example Outputs
+
+For a failing assertion `expect([1,2,3]).to.contain(5)`:
+
+**Verbose:**
+```
+ASSERTION FAILED: [1, 2, 3] should contain 5. 5 is missing from [1, 2, 3].
+OPERATION: contain
+
+  ACTUAL: <int[]> [1, 2, 3]
+EXPECTED: <int> to contain 5
+
+source/test.d:10
+>  10:    expect([1,2,3]).to.contain(5);
+```
+
+**Compact:**
+```
+FAIL: [1, 2, 3] should contain 5. 5 is missing from [1, 2, 3]. | actual=[1, 2, 3] expected=to contain 5 | source/test.d:10
+```
+
+**TAP:**
+```
+not ok - [1, 2, 3] should contain 5. 5 is missing from [1, 2, 3].
+  ---
+  actual: [1, 2, 3]
+  expected: to contain 5
+  at: source/test.d:10
+  ...
+```
+
+## Release Build Configuration
+
+By default, fluent-asserts behaves like D's built-in `assert`: assertions are enabled in debug builds and disabled (become no-ops) in release builds. This allows you to use fluent-asserts as a replacement for `assert` in your production code without any runtime overhead in release builds.
+
+### Default Behavior
+
+| Build Type | Assertions |
+|------------|------------|
+| Debug (default) | Enabled |
+| Release (`-release` or `dub build -b release`) | Disabled (no-op) |
+
+### Version Flags
+
+You can override the default behavior using version flags.
+
+**Force enable in release builds:**
+
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+
+<Tabs>
+  <TabItem label="dub.sdl">
+```sdl
+versions "FluentAssertsDebug"
+```
+  </TabItem>
+  <TabItem label="dub.json">
+```json
+{
+    "versions": ["FluentAssertsDebug"]
+}
+```
+  </TabItem>
+</Tabs>
+
+**Force disable in all builds:**
+
+<Tabs>
+  <TabItem label="dub.sdl">
+```sdl
+versions "D_Disable_FluentAsserts"
+```
+  </TabItem>
+  <TabItem label="dub.json">
+```json
+{
+    "versions": ["D_Disable_FluentAsserts"]
+}
+```
+  </TabItem>
+</Tabs>
+
+### Compile-Time Check
+
+You can check at compile-time whether assertions are enabled:
+
+```d
+import fluent.asserts;
+
+static if (fluentAssertsEnabled) {
+    // assertions are active
+    writeln("Running with assertions enabled");
+} else {
+    // assertions are disabled (release build)
+    writeln("Assertions disabled for performance");
+}
+```
+
+This is useful for conditionally including assertion-related code or logging.
+
+## Next Steps
+
+- Learn about [Assertion Statistics](/guide/statistics/) for tracking test metrics
+- Learn about [Core Concepts](/guide/core-concepts/)
+- Browse the [API Reference](/api/)

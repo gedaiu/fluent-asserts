@@ -1,14 +1,17 @@
+/// Base module for fluent-asserts.
+/// Re-exports all core assertion modules and provides the Assert struct
+/// for traditional-style assertions.
 module fluentasserts.core.base;
 
-public import fluentasserts.core.array;
-public import fluentasserts.core.string;
-public import fluentasserts.core.objects;
-public import fluentasserts.core.basetype;
-public import fluentasserts.core.callable;
-public import fluentasserts.core.results;
 public import fluentasserts.core.lifecycle;
 public import fluentasserts.core.expect;
-public import fluentasserts.core.evaluation;
+public import fluentasserts.core.evaluation.eval : Evaluation;
+public import fluentasserts.core.evaluation.value : ValueEvaluation;
+public import fluentasserts.core.memory.heapequable : HeapEquableValue;
+
+public import fluentasserts.results.message;
+public import fluentasserts.results.printer;
+public import fluentasserts.results.asserts : AssertResult;
 
 import std.traits;
 import std.stdio;
@@ -24,230 +27,6 @@ import std.typecons;
 
 @safe:
 
-struct Result {
-  bool willThrow;
-  IResult[] results;
-
-  MessageResult message;
-
-  string file;
-  size_t line;
-
-  private string reason;
-
-  auto because(string reason) {
-    this.reason = "Because " ~ reason ~ ", ";
-    return this;
-  }
-
-  void perform() {
-    if(!willThrow) {
-      return;
-    }
-
-    version(DisableMessageResult) {
-      IResult[] localResults = this.results;
-    } else {
-      IResult[] localResults = message ~ this.results;
-    }
-
-    version(DisableSourceResult) {} else {
-      auto sourceResult = new SourceResult(file, line);
-      message.prependValue(sourceResult.getValue);
-      message.prependText(reason);
-
-      localResults ~= sourceResult;
-    }
-
-    throw new TestException(localResults, file, line);
-  }
-
-  ~this() {
-    this.perform;
-  }
-
-  static Result success() {
-    return Result(false);
-  }
-}
-
-mixin template DisabledShouldThrowableCommons() {
-  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
-    static assert("`throwSomething` does not work for arrays and ranges");
-  }
-
-  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
-    static assert("`throwAnyException` does not work for arrays and ranges");
-  }
-
-  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
-    static assert("`throwException` does not work for arrays and ranges");
-  }
-}
-
-mixin template ShouldThrowableCommons() {
-  auto throwSomething(string file = __FILE__, size_t line = __LINE__) {
-    addMessage(" throw ");
-    addValue("something");
-    beginCheck;
-
-    return throwException!Throwable(file, line);
-  }
-
-  auto throwAnyException(const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage(" throw ");
-    addValue("any exception");
-    beginCheck;
-
-    return throwException!Exception(file, line);
-  }
-
-  auto throwException(T)(const string file = __FILE__, const size_t line = __LINE__) {
-    addMessage(" throw a `");
-    addValue(T.stringof);
-    addMessage("`");
-
-    return ThrowableProxy!T(valueEvaluation.throwable, expectedValue, messages, file, line);
-  }
-
-  private {
-    ThrowableProxy!T throwExceptionImplementation(T)(Throwable t, string file = __FILE__, size_t line = __LINE__) {
-      addMessage(" throw a `");
-      addValue(T.stringof);
-      addMessage("`");
-
-      bool rightType = true;
-      if(t !is null) {
-        T castedThrowable = cast(T) t;
-        rightType = castedThrowable !is null;
-      }
-
-      return ThrowableProxy!T(t, expectedValue, rightType, messages, file, line);
-    }
-  }
-}
-
-mixin template ShouldCommons()
-{
-  import std.string;
-  import fluentasserts.core.results;
-
-  private ValueEvaluation valueEvaluation;
-  private bool isNegation;
-
-  private void validateException() {
-    if(valueEvaluation.throwable !is null) {
-      throw valueEvaluation.throwable;
-    }
-  }
-
-  auto be() {
-    addMessage(" be");
-    return this;
-  }
-
-  auto should() {
-    return this;
-  }
-
-  auto not() {
-    addMessage(" not");
-    expectedValue = !expectedValue;
-    isNegation = !isNegation;
-
-    return this;
-  }
-
-  auto forceMessage(string message) {
-    messages = [];
-
-    addMessage(message);
-
-    return this;
-  }
-
-  auto forceMessage(Message[] messages) {
-    this.messages = messages;
-
-    return this;
-  }
-
-  private {
-    Message[] messages;
-    ulong mesageCheckIndex;
-
-    bool expectedValue = true;
-
-    void addMessage(string msg) {
-      if(mesageCheckIndex != 0) {
-        return;
-      }
-
-      messages ~= Message(false, msg);
-    }
-
-    void addValue(string msg) {
-      if(mesageCheckIndex != 0) {
-        return;
-      }
-
-      messages ~= Message(true, msg);
-    }
-
-    void addValue(EquableValue msg) {
-      if(mesageCheckIndex != 0) {
-        return;
-      }
-
-      messages ~= Message(true, msg.getSerialized);
-    }
-
-    void beginCheck() {
-      if(mesageCheckIndex != 0) {
-        return;
-      }
-
-      mesageCheckIndex = messages.length;
-    }
-
-    Result simpleResult(bool value, Message[] msg, string file, size_t line) {
-      return result(value, msg, [ ], file, line);
-    }
-
-    Result result(bool value, Message[] msg, IResult res, string file, size_t line) {
-      return result(value, msg, [ res ], file, line);
-    }
-
-    Result result(bool value, IResult res, string file, size_t line) {
-      return result(value, [], [ res ], file, line);
-    }
-
-    Result result(bool value, Message[] msg, IResult[] res, const string file, const size_t line) {
-      if(res.length == 0 && msg.length == 0) {
-        return Result(false);
-      }
-
-      auto finalMessage = new MessageResult(" should");
-
-      messages ~= Message(false, ".");
-
-      if(msg.length > 0) {
-        messages ~= Message(false, " ") ~ msg;
-      }
-
-      foreach(message; messages) {
-        if(message.isValue) {
-          finalMessage.addValue(message.text);
-        } else {
-          finalMessage.addText(message.text);
-        }
-      }
-
-      return Result(expectedValue != value, res, finalMessage, file, line);
-    }
-  }
-}
-
 version(Have_unit_threaded) {
   import unit_threaded.should;
   alias ReferenceException = UnitTestException;
@@ -255,228 +34,26 @@ version(Have_unit_threaded) {
   alias ReferenceException = Exception;
 }
 
+/// Exception thrown when an assertion fails.
+/// Contains the failure message and optionally structured message segments
+/// for rich output formatting.
 class TestException : ReferenceException {
-  private {
-    IResult[] results;
-  }
 
-  this(IResult[] results, string fileName, size_t line, Throwable next = null) {
-    auto msg = results.map!"a.toString".filter!"a != ``".join("\n") ~ '\n';
-    this.results = results;
-
-    super(msg, fileName, line, next);
-  }
-
-  void print(ResultPrinter printer) {
-    foreach(result; results) {
-      result.print(printer);
-      printer.primary("\n");
-    }
+  /// Constructs a TestException from an Evaluation.
+  /// The message is formatted from the evaluation's content.
+  this(Evaluation evaluation, Throwable next = null) @safe nothrow {
+    super(evaluation.toString(), evaluation.sourceFile, evaluation.sourceLine, next);
   }
 }
 
-@("TestException separates the results by a new line")
-unittest {
-  import std.stdio;
-  IResult[] results = [
-    cast(IResult) new MessageResult("message"),
-    cast(IResult) new SourceResult("test/missing.txt", 10),
-    cast(IResult) new DiffResult("a", "b"),
-    cast(IResult) new ExpectedActualResult("a", "b"),
-    cast(IResult) new ExtraMissingResult("a", "b") ];
-
-  auto exception = new TestException(results, "unknown", 0);
-
-  exception.msg.should.equal(`message
-
---------------------
-test/missing.txt:10
---------------------
-
-Diff:
-[-a][+b]
-
- Expected:a
-   Actual:b
-
-    Extra:a
-  Missing:b
-`);
-}
-
-@("TestException should concatenate all the Result strings")
-unittest {
-  class TestResult : IResult {
-    override string toString() {
-      return "message";
-    }
-
-    void print(ResultPrinter) {}
-  }
-
-  auto exception = new TestException([ new TestResult, new TestResult, new TestResult], "", 0);
-
-  exception.msg.should.equal("message\nmessage\nmessage\n");
-}
-
-@("TestException should call all the result print methods on print")
-unittest {
-  int count;
-
-  class TestResult : IResult {
-    override string toString() {
-      return "";
-    }
-
-    void print(ResultPrinter) {
-      count++;
-    }
-  }
-
-  auto exception = new TestException([ new TestResult, new TestResult, new TestResult], "", 0);
-  exception.print(new DefaultResultPrinter);
-
-  count.should.equal(3);
-}
-
-struct ThrowableProxy(T : Throwable) {
-  import fluentasserts.core.results;
-
-  private const {
-    bool expectedValue;
-    const string _file;
-    size_t _line;
-  }
-
-  private {
-    Message[] messages;
-    string reason;
-    bool check;
-    Throwable thrown;
-    T thrownTyped;
-  }
-
-  this(Throwable thrown, bool expectedValue, Message[] messages, const string file, size_t line) {
-    this.expectedValue = expectedValue;
-    this._file = file;
-    this._line = line;
-    this.thrown = thrown;
-    this.thrownTyped = cast(T) thrown;
-    this.messages = messages;
-    this.check = true;
-  }
-
-  ~this() {
-    checkException;
-  }
-
-  auto msg() {
-    checkException;
-    check = false;
-
-    return thrown.msg.dup.to!string.strip;
-  }
-
-  auto original() {
-    checkException;
-    check = false;
-
-    return thrownTyped;
-  }
-
-  auto file() {
-    checkException;
-    check = false;
-
-    return thrown.file;
-  }
-
-  auto info() {
-    checkException;
-    check = false;
-
-    return thrown.info;
-  }
-
-  auto line() {
-    checkException;
-    check = false;
-
-    return thrown.line;
-  }
-
-  auto next() {
-    checkException;
-    check = false;
-
-    return thrown.next;
-  }
-
-  auto withMessage() {
-    auto s = ShouldString(msg);
-    check = false;
-
-    return s.forceMessage(messages ~ Message(false, " with message"));
-  }
-
-  auto withMessage(string expectedMessage) {
-    auto s = ShouldString(msg);
-    check = false;
-
-    return s.forceMessage(messages ~ Message(false, " with message")).equal(expectedMessage);
-  }
-
-  private void checkException() {
-    if(!check) {
-      return;
-    }
-
-    bool hasException = thrown !is null;
-    bool hasTypedException = thrownTyped !is null;
-
-    if(hasException == expectedValue && hasTypedException == expectedValue) {
-      return;
-    }
-
-    auto sourceResult = new SourceResult(_file, _line);
-    auto message = new MessageResult("");
-
-    if(reason != "") {
-      message.addText("Because " ~ reason ~ ", ");
-    }
-
-    message.addText(sourceResult.getValue ~ " should");
-
-    foreach(msg; messages) {
-      if(msg.isValue) {
-        message.addValue(msg.text);
-      } else {
-        message.addText(msg.text);
-      }
-    }
-
-    message.addText(".");
-
-    if(thrown is null) {
-      message.addText(" Nothing was thrown.");
-    } else {
-      message.addText(" An exception of type `");
-      message.addValue(thrown.classinfo.name);
-      message.addText("` saying `");
-      message.addValue(thrown.msg);
-      message.addText("` was thrown.");
-    }
-
-    throw new TestException([ cast(IResult) message ], _file, _line);
-  }
-
-  auto because(string reason) {
-    this.reason = reason;
-
-    return this;
-  }
-}
-
+/// Creates a fluent assertion using UFCS syntax.
+/// This is an alias for `expect` that reads more naturally with UFCS.
+/// Example: `value.should.equal(42)`
+/// Params:
+///   testData = The value to test
+///   file = Source file (auto-captured)
+///   line = Source line (auto-captured)
+/// Returns: An Expect struct for chaining assertions.
 auto should(T)(lazy T testData, const string file = __FILE__, const size_t line = __LINE__) @trusted {
   static if(is(T == void)) {
     auto callable = ({ testData; });
@@ -488,14 +65,48 @@ auto should(T)(lazy T testData, const string file = __FILE__, const size_t line 
 
 @("because adds a text before the assert message")
 unittest {
-  auto msg = ({
+  auto evaluation = ({
     true.should.equal(false).because("of test reasons");
-  }).should.throwException!TestException.msg;
+  }).recordEvaluation;
 
-  msg.split("\n")[0].should.equal("Because of test reasons, true should equal false. ");
+  evaluation.result.messageString.should.equal("Because of test reasons, true should equal false.");
 }
 
+// Issue #90: std.container.array ranges have @system destructors
+// The should function is @trusted so it can handle these ranges
+@("issue #90: should works with std.container.array ranges")
+@system unittest {
+  import std.container.array : Array;
+
+  auto arr = Array!int();
+  arr.insertBack(1);
+  arr.insertBack(2);
+  arr.insertBack(3);
+
+  // This should compile and pass - the range has a @system destructor
+  // but should/expect/evaluate are all @trusted so they can handle it
+  arr[].should.equal([1, 2, 3]);
+}
+
+// Issue #88: std.range.interfaces.InputRange should work with should()
+// The unified Expect API handles InputRange interfaces as ranges
+@("issue #88: should works with std.range.interfaces.InputRange")
+unittest {
+  import std.range.interfaces : InputRange, inputRangeObject;
+
+  auto arr = [1, 2, 3];
+  InputRange!int ir = inputRangeObject(arr);
+
+  // InputRange interfaces are treated as ranges and converted to arrays
+  ir.should.equal([1, 2, 3]);
+}
+
+/// Provides a traditional assertion API as an alternative to fluent syntax.
+/// All methods are static and can be called as `Assert.equal(a, b)`.
+/// Supports negation by prefixing with "not": `Assert.notEqual(a, b)`.
 struct Assert {
+  /// Dispatches assertion calls dynamically based on the method name.
+  /// Supports negation with "not" prefix (e.g., notEqual, notContain).
   static void opDispatch(string s, T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto sh = expect(actual);
@@ -524,6 +135,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is between two bounds (exclusive).
   static void between(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).to.be.between(begin, end);
@@ -533,6 +145,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is NOT between two bounds.
   static void notBetween(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).not.to.be.between(begin, end);
@@ -542,6 +155,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is within two bounds (alias for between).
   static void within(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).to.be.between(begin, end);
@@ -551,6 +165,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is NOT within two bounds.
   static void notWithin(T, U)(T actual, U begin, U end, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).not.to.be.between(begin, end);
@@ -560,6 +175,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is approximately equal to expected within delta.
   static void approximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).to.be.approximately(expected, delta);
@@ -569,6 +185,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is NOT approximately equal to expected.
   static void notApproximately(T, U, V)(T actual, U expected, V delta, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).not.to.be.approximately(expected, delta);
@@ -578,6 +195,7 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is null.
   static void beNull(T)(T actual, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).to.beNull;
@@ -587,9 +205,156 @@ struct Assert {
     }
   }
 
+  /// Asserts that a value is NOT null.
   static void notNull(T)(T actual, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
   {
     auto s = expect(actual, file, line).not.to.beNull;
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable throws a specific exception type.
+  static void throwException(E : Throwable = Exception, T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(callable, file, line).to.throwException!E;
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable does NOT throw a specific exception type.
+  static void notThrowException(E : Throwable = Exception, T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(callable, file, line).not.to.throwException!E;
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable throws any exception.
+  static void throwAnyException(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(callable, file, line).to.throwAnyException;
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable does NOT throw any exception.
+  static void notThrowAnyException(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(callable, file, line).not.to.throwAnyException;
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable allocates GC memory.
+  static void allocateGCMemory(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto ex = expect(callable, file, line);
+    auto s = ex.allocateGCMemory();
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable does NOT allocate GC memory.
+  static void notAllocateGCMemory(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto ex = expect(callable, file, line);
+    ex.not();
+    auto s = ex.allocateGCMemory();
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable allocates non-GC memory.
+  static void allocateNonGCMemory(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto ex = expect(callable, file, line);
+    auto s = ex.allocateNonGCMemory();
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a callable does NOT allocate non-GC memory.
+  static void notAllocateNonGCMemory(T)(T callable, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto ex = expect(callable, file, line);
+    ex.not();
+    auto s = ex.allocateNonGCMemory();
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a string starts with the expected prefix.
+  static void startWith(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).to.startWith(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a string does NOT start with the expected prefix.
+  static void notStartWith(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).not.to.startWith(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a string ends with the expected suffix.
+  static void endWith(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).to.endWith(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a string does NOT end with the expected suffix.
+  static void notEndWith(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).not.to.endWith(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a value contains the expected element.
+  static void contain(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).to.contain(expected);
+
+    if(reason != "") {
+      s.because(reason);
+    }
+  }
+
+  /// Asserts that a value does NOT contain the expected element.
+  static void notContain(T, U)(T actual, U expected, string reason = "", const string file = __FILE__, const size_t line = __LINE__)
+  {
+    auto s = expect(actual, file, line).not.to.contain(expected);
 
     if(reason != "") {
       s.because(reason);
@@ -599,6 +364,7 @@ struct Assert {
 
 @("Assert works for base types")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Assert.equal(1, 1, "they are the same value");
   Assert.notEqual(1, 2, "they are not the same value");
 
@@ -624,8 +390,22 @@ unittest {
   Assert.notApproximately(1.5f, 1, 0.2f);
 }
 
+// Issue #93: Assert.greaterOrEqualTo and Assert.lessOrEqualTo for numeric types
+@("Assert.greaterOrEqualTo and lessOrEqualTo work for integers")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  Assert.greaterOrEqualTo(5, 3);
+  Assert.greaterOrEqualTo(5, 5);
+  Assert.notGreaterOrEqualTo(3, 5);
+
+  Assert.lessOrEqualTo(3, 5);
+  Assert.lessOrEqualTo(5, 5);
+  Assert.notLessOrEqualTo(5, 3);
+}
+
 @("Assert works for objects")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Object o = null;
   Assert.beNull(o, "it's a null");
   Assert.notNull(new Object, "it's not a null");
@@ -633,6 +413,7 @@ unittest {
 
 @("Assert works for strings")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Assert.equal("abcd", "abcd");
   Assert.notEqual("abcd", "abwcd");
 
@@ -654,6 +435,7 @@ unittest {
 
 @("Assert works for ranges")
 unittest {
+  Lifecycle.instance.disableFailureHandling = false;
   Assert.equal([1, 2, 3], [1, 2, 3]);
   Assert.notEqual([1, 2, 3], [1, 1, 3]);
 
@@ -664,18 +446,57 @@ unittest {
   Assert.notContainOnly([1, 2, 3], [3, 1]);
 }
 
-void fluentHandler(string file, size_t line, string msg) nothrow {
-  import core.exception;
+@("Assert works for callables - exceptions")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
 
-  auto message = new MessageResult("Assert failed. " ~ msg);
-  auto source = new SourceResult(file, line);
+  Assert.throwException({ throw new Exception("test"); });
+  Assert.notThrowException({ });
 
-  throw new AssertError(message.toString ~ "\n\n" ~ source.toString, file, line);
+  Assert.throwAnyException({ throw new Exception("test"); });
+  Assert.notThrowAnyException({ });
 }
 
-void setupFluentHandler() {
+@("Assert works for callables - GC memory")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+
+  ulong delegate() allocates = { auto arr = new int[100]; return arr.length; };
+  ulong delegate() noAlloc = { int x = 42; return x; };
+
+  Assert.allocateGCMemory(allocates);
+  Assert.notAllocateGCMemory(noAlloc);
+}
+
+/// Custom assert handler that provides better error messages.
+/// Replaces the default D runtime assert handler to show fluent-asserts style output.
+void fluentHandler(string file, size_t line, string msg) @system nothrow {
   import core.exception;
-  core.exception.assertHandler = &fluentHandler;
+  import fluentasserts.core.evaluation.eval : Evaluation;
+  import fluentasserts.results.source.result : SourceResult;
+
+  Evaluation evaluation;
+  evaluation.source = SourceResult.create(file, line);
+  evaluation.addOperationName("assert");
+  evaluation.currentValue.typeNames.put("assert state");
+  evaluation.expectedValue.typeNames.put("assert state");
+  evaluation.isEvaluated = true;
+  evaluation.result.expected.put("true");
+  evaluation.result.actual.put("false");
+  evaluation.result.addText("Assert failed: " ~ msg);
+
+  throw new AssertError(evaluation.toString(), file, line);
+}
+
+/// Installs the fluent handler as the global assert handler.
+/// Uses pragma(crt_constructor) to run before druntime initialization,
+/// avoiding cyclic module dependency issues.
+pragma(crt_constructor)
+extern(C) void setupFluentHandler() {
+  version (unittest) {
+    import core.exception;
+    core.exception.assertHandler = &fluentHandler;
+  }
 }
 
 @("calls the fluent handler")
@@ -692,7 +513,9 @@ unittest {
     assert(false, "What?");
   } catch(Throwable t) {
     thrown = true;
-    t.msg.should.startWith("Assert failed. What?\n");
+    t.msg.should.contain("Assert failed: What?");
+    t.msg.should.contain("ACTUAL:");
+    t.msg.should.contain("EXPECTED:");
   }
 
   thrown.should.equal(true);

@@ -1,0 +1,43 @@
+---
+title: arrayEqual
+description: Checks if two arrays are strictly equal, element by element.
+---
+
+# .arrayEqual()
+
+The `.arrayEqual()` assertion checks if two arrays are strictly equal. It compares each element in the arrays using the `==` operator.
+
+## Examples
+
+### Basic Usage
+
+```d
+expect([1, 2, 3]).to.arrayEqual([1, 2, 3]);
+expect(["a", "b", "c"]).to.arrayEqual(["a", "b", "c"]);
+```
+
+### With Negation
+
+You can use `.not` to check that two arrays are not equal.
+
+```d
+expect([1, 2, 3]).not.to.arrayEqual([1, 2, 4]);
+expect(["a", "b", "c"]).not.to.arrayEqual(["a", "b", "d"]);
+```
+
+### How Failures Are Displayed
+
+If the assertion fails, you will see a clear error message indicating the differences between the arrays.
+
+```d
+// This will fail:
+expect([1, 2, 3]).to.arrayEqual([1, 2, 4]);
+```
+
+## Modifiers
+
+This assertion supports the following modifiers:
+
+- `.not` - Negates the assertion.
+- `.to` - Language chain (no effect).
+- `.be` - Language chain (no effect).

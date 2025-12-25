@@ -1,0 +1,271 @@
+---
+title: Contributing
+description: How you can contribute to fluent-asserts.
+---
+
+Thank you for your interest in contributing to fluent-asserts! This guide will help you get started.
+
+## Getting Started
+
+### What You Need
+
+- A D compiler (DMD, LDC, or GDC)
+- The DUB package manager
+- Git
+- Node.js (for documentation work)
+
+### Clone the Repository
+
+First, get a copy of the project on your computer.
+
+```bash
+git clone https://github.com/gedaiu/fluent-asserts.git
+cd fluent-asserts
+```
+
+### Build and Test
+
+Next, build the library and run the tests to make sure everything is working.
+
+```bash
+# Build the library
+dub build
+
+# Run tests
+dub test
+
+# Run tests with a specific compiler
+dub test --compiler=ldc2
+```
+
+## Project Structure
+
+Here is how the project is organized in v2:
+
+```
+fluent-asserts/
+  source/
+    fluent/
+      asserts.d              # The main file you import in your project
+    fluentasserts/
+      core/
+        base.d               # Re-exports and Assert struct
+        expect.d             # The main Expect struct and fluent API
+        evaluator.d          # Evaluator structs that execute assertions
+        lifecycle.d          # Lifecycle singleton and statistics
+        config.d             # FluentAssertsConfig settings
+        listcomparison.d     # Helpers for comparing lists
+        evaluation/          # Evaluation pipeline
+          eval.d             # Evaluation struct and print methods
+          value.d            # ValueEvaluation struct
+          equable.d          # Type comparison helpers
+          types.d            # Type detection utilities
+          constraints.d      # Constraint checking
+        memory/              # @nogc memory management
+          heapstring.d       # HeapString for @nogc strings
+          heapequable.d      # HeapEquableValue for comparisons
+          process.d          # Platform memory tracking
+          typenamelist.d     # Type name storage
+        diff/                # Myers diff algorithm
+        conversion/          # Type conversion utilities
+      operations/            # All assertion operations
+        registry.d           # Operation registry
+        snapshot.d           # Snapshot testing
+        comparison/          # greaterThan, lessThan, between, approximately
+        equality/            # equal, arrayEqual
+        exception/           # throwException, throwAnyException
+        memory/              # allocateGCMemory, allocateNonGCMemory
+        string/              # contain, startWith, endWith
+        type/                # beNull, instanceOf
+      results/               # Result formatting and output
+        asserts.d            # AssertResult struct
+        message.d            # Message building
+        printer.d            # Output printing
+        formatting.d         # Value formatting
+        source/              # Source code extraction
+        serializers/         # Type serialization
+          heap_registry.d    # HeapSerializerRegistry (@nogc)
+          stringprocessing.d # String processing utilities
+  docs/                      # Documentation website (Starlight)
+```
+
+## Key Concepts for Contributors
+
+### Memory Management
+
+fluent-asserts v2 uses manual memory management for `@nogc` compatibility:
+
+- **HeapString** - Reference-counted string type with Small Buffer Optimization
+- **HeapEquableValue** - Stores values for comparison without GC
+- **FixedAppender** - Fixed-size buffer for building strings
+
+When writing new code, prefer these types over regular D strings in hot paths. See [Memory Management](/guide/memory-management/) for details.
+
+### The Evaluation Pipeline
+
+Assertions flow through this pipeline:
+
+1. `expect(value)` creates an `Expect` struct
+2. Chain methods (`.to`, `.be`, `.not`) modify state
+3. Terminal operations (`.equal()`, `.contain()`) trigger evaluation
+4. `Evaluator` executes the operation and handles results
+5. On failure, `Lifecycle` formats and throws the exception
+
+## Adding a New Operation
+
+To add a new assertion operation:
+
+### 1. Create the Operation Function
+
+Create a new file in the appropriate `operations/` subfolder:
+
+```d
+module fluentasserts.operations.myCategory.myOperation;
+
+import fluentasserts.core.evaluation.eval : Evaluation;
+
+/// Asserts that the value satisfies some condition.
+void myOperation(ref Evaluation evaluation) @safe nothrow {
+    // 1. Get values (use [] to access HeapString content)
+    auto actual = evaluation.currentValue.strValue[];
+    auto expected = evaluation.expectedValue.strValue[];
+
+    // 2. Perform the check
+    auto isSuccess = /* your logic here */;
+
+    // 3. Handle negation (.not)
+    if (evaluation.isNegated) {
+        isSuccess = !isSuccess;
+    }
+
+    // 4. Set error messages on failure (use .put() for FixedAppender)
+    if (!isSuccess) {
+        evaluation.result.expected.put("description of what was expected");
+        evaluation.result.actual.put(actual);
+    }
+}
+```
+
+### 2. Add to Expect Struct
+
+Add the method to `expect.d`:
+
+```d
+auto myOperation(T)(T expected) {
+    _evaluation.addOperationName("myOperation");
+    // Set up expected value...
+    return Evaluator(_evaluation, &myOperationOp);
+}
+```
+
+### 3. Write Tests
+
+```d
+@("myOperation returns success when condition is met")
+unittest {
+    auto evaluation = ({
+        expect(actualValue).to.myOperation(expectedValue);
+    }).recordEvaluation;
+
+    // Check the results (use [] for FixedAppender content)
+    expect(evaluation.result.expected[]).to.equal("...");
+    expect(evaluation.result.actual[]).to.equal("...");
+}
+```
+
+### 4. Add Documentation
+
+Create a documentation page in `docs/src/content/docs/api/myCategory/myOperation.mdx`.
+
+## Writing Tests
+
+Use `recordEvaluation` to test assertion behavior without throwing:
+
+```d
+@("equal returns expected and actual on mismatch")
+unittest {
+    auto evaluation = ({
+        expect(5).to.equal(10);
+    }).recordEvaluation;
+
+    expect(evaluation.result.expected[]).to.equal("10");
+    expect(evaluation.result.actual[]).to.equal("5");
+}
+
+@("equal passes when values match")
+unittest {
+    auto evaluation = ({
+        expect(42).to.equal(42);
+    }).recordEvaluation;
+
+    // No failure means empty expected/actual
+    expect(evaluation.result.expected[]).to.beEmpty();
+}
+```
+
+## Documentation
+
+The documentation website is built with [Starlight](https://starlight.astro.build/).
+
+### Local Development
+
+```bash
+cd docs
+npm install
+npm run dev
+```
+
+Visit `http://localhost:4321` to see the site.
+
+### Documentation Structure
+
+- `docs/src/content/docs/guide/` - User guides and tutorials
+- `docs/src/content/docs/api/` - API reference pages
+- `docs/src/content/docs/index.mdx` - Landing page
+
+### Writing Documentation
+
+- Use clear, concise language
+- Include code examples that can be copy-pasted
+- Link to related pages
+- Update the upgrade guide if adding breaking changes
+
+## Code Style
+
+### General Guidelines
+
+- Use `@safe nothrow` for all operation functions
+- Use `@nogc` where possible for memory-sensitive code
+- Follow D naming conventions: `camelCase` for functions, `PascalCase` for types
+- Add doc comments (`///`) to public functions and types
+
+### Specific to v2
+
+- Access `HeapString` content with `[]` slice operator
+- Use `FixedAppender.put()` instead of string assignment
+- Prefer `HeapSerializerRegistry` for new serializers
+- Keep operations focused on a single check
+
+## Submitting Changes
+
+1. Fork the repository on GitHub
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Make your changes
+4. Run tests: `dub test`
+5. Commit with a clear message describing the change
+6. Push and create a Pull Request
+
+### Pull Request Guidelines
+
+- Describe what the PR does and why
+- Reference any related issues
+- Include tests for new functionality
+- Update documentation if needed
+- Keep changes focused - one feature per PR
+
+## Questions?
+
+- Open an issue on [GitHub](https://github.com/gedaiu/fluent-asserts/issues)
+- Check existing issues for similar questions
+- See [Core Concepts](/guide/core-concepts/) for architecture details
+- See [Extending](/guide/extending/) for custom operation examples

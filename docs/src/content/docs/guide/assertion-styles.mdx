@@ -1,0 +1,179 @@
+---
+title: Assertion Styles
+description: Learn about BDD-style assertions in fluent-asserts.
+---
+
+fluent-asserts uses a **BDD (Behavior-Driven Development)** style for writing tests. This makes your tests easy to read, like plain English.
+
+## The `expect` Function
+
+All assertions start with the `expect` function. It takes the value you want to test.
+
+```d
+expect(actualValue).to.equal(expectedValue);
+```
+
+## The `Assert` Struct
+
+You can also use the `Assert` struct for a more traditional style.
+
+```d
+// These two lines do the same thing:
+expect(testedValue).to.equal(42);
+Assert.equal(testedValue, 42);
+```
+
+To check for the opposite, add `not` to the beginning of the method name.
+
+```d
+Assert.notEqual(testedValue, 42);
+Assert.notContain(text, "error");
+Assert.notNull(value);
+```
+
+You can add an optional message to explain the assertion.
+
+```d
+Assert.equal(user.age, 18, "The user must be an adult.");
+Assert.greaterThan(balance, 0, "The balance cannot be negative.");
+```
+
+For assertions with multiple arguments:
+
+```d
+Assert.between(score, 0, 100);
+Assert.within(temperature, 20, 25);
+Assert.approximately(pi, 3.14, 0.01);
+```
+
+## Language Chains
+
+fluent-asserts includes words that make assertions more readable but don't change the result. These are called "language chains."
+
+- `.to`
+- `.be`
+- `.been`
+- `.is`
+- `.that`
+- `.which`
+- `.has`
+- `.have`
+- `.with`
+- `.at`
+- `.of`
+- `.same`
+
+You can use them to make your code read more naturally.
+
+```d
+// All of these are the same:
+expect(value).to.equal(42);
+expect(value).to.be.equal(42);
+expect(value).equal(42);
+```
+
+## Negation with `.not`
+
+Use `.not` to reverse any assertion.
+
+```d
+expect(42).to.not.equal(0);
+expect("hello").to.not.contain("xyz");
+expect([1, 2, 3]).to.not.beEmpty();
+```
+
+## Common Assertion Examples
+
+### Equality
+
+```d
+// Check for exact equality
+expect(value).to.equal(42);
+expect(name).to.equal("Alice");
+
+// Check for approximate equality for numbers
+expect(pi).to.be.approximately(3.14, 0.01);
+```
+
+### Comparisons
+
+```d
+expect(age).to.be.greaterThan(18);
+expect(count).to.be.lessThan(100);
+expect(score).to.be.between(0, 100);
+expect(temperature).to.be.within(20, 25);
+```
+
+### Strings
+
+```d
+expect(text).to.contain("world");
+expect(url).to.startWith("https://");
+expect(filename).to.endWith(".txt");
+```
+
+### Collections
+
+```d
+expect(array).to.contain(42);
+expect(list).to.containOnly([1, 2, 3]);
+expect(empty).to.beEmpty();
+expect(sorted).to.beSorted();
+```
+
+### Types
+
+```d
+expect(value).to.beNull();
+expect(obj).to.be.instanceOf!MyClass;
+```
+
+### Exceptions
+
+```d
+// Check for a specific exception
+expect({
+    throw new CustomException("error");
+}).to.throwException!CustomException;
+
+// Check for any exception
+expect({
+    riskyOperation();
+}).to.throwAnyException();
+
+// Check that no exception is thrown
+expect({
+    safeOperation();
+}).to.not.throwAnyException();
+```
+
+### Callables
+
+```d
+// Check memory allocation
+expect({
+    auto arr = new int[1000];
+    return arr.length;
+}).to.allocateGCMemory();
+
+// Check execution time
+expect({
+    fastOperation();
+}).to.haveExecutionTime.lessThan(100.msecs);
+```
+
+## Custom Error Messages
+
+When an assertion fails, fluent-asserts provides a clear error message:
+
+```
+ASSERTION FAILED: expect(value) should equal 42
+  ACTUAL: 10
+  EXPECTED: 42
+```
+
+## Next Steps
+
+- See the full [API Reference](/api/) for all available assertions.
+- Learn about [Core Concepts](/guide/core-concepts/).
+- Discover how to [Extend](/guide/extending/) fluent-asserts.

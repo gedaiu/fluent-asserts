@@ -1,0 +1,239 @@
+---
+title: Core Concepts
+description: Understanding how fluent-asserts works internally
+---
+
+This guide explains the internal architecture of fluent-asserts, which is helpful for understanding advanced usage and extending the library.
+
+## The Evaluation Pipeline
+
+When you write an assertion like:
+
+```d
+expect(42).to.be.greaterThan(10);
+```
+
+Here's what happens internally:
+
+1. **Value Capture**: `expect(42)` creates an `Expect` struct holding the value
+2. **Chain Building**: `.to.be` are language chains (no-ops for readability)
+3. **Operation Execution**: `.greaterThan(10)` triggers the actual comparison
+4. **Result Reporting**: Success or failure is reported with detailed messages
+
+## The Expect Struct
+
+The `Expect` struct is the main API entry point:
+
+```d
+@safe struct Expect {
+    private {
+        Evaluation _evaluation;
+        int refCount;
+        bool _initialized;
+    }
+
+    // Language chains (return self)
+    ref Expect to() return { return this; }
+    ref Expect be() return { return this; }
+    ref Expect not() return {
+        _evaluation.isNegated = !_evaluation.isNegated;
+        return this;
+    }
+
+    // Terminal operations return Evaluator types
+    auto equal(T)(T expected) { /* ... */ }
+    auto greaterThan(T)(T value) { /* ... */ }
+    // ...
+}
+```
+
+Key design points:
+- The struct uses reference counting to track copies
+- Evaluation runs in the destructor of the last copy
+- All operations are `@safe` compatible
+
+## The Evaluation Struct
+
+The `Evaluation` struct holds all state for an assertion:
+
+```d
+struct Evaluation {
+    size_t id;                        // Unique evaluation ID
+    ValueEvaluation currentValue;     // The actual value
+    ValueEvaluation expectedValue;    // The expected value
+    bool isNegated;                   // true if .not was used
+    SourceResult source;              // Source location (lazily computed)
+    Throwable throwable;              // Captured exception, if any
+    bool isEvaluated;                 // Whether evaluation is complete
+    AssertResult result;              // Contains failure details
+}
+```
+
+The operation names are stored internally and joined on access.
+
+## Value Evaluation
+
+For each value (actual and expected), fluent-asserts captures:
+
+```d
+struct ValueEvaluation {
+    HeapString strValue;       // String representation
+    HeapString niceValue;      // Pretty-printed value
+    TypeNameList typeNames;    // Type information
+    size_t gcMemoryUsed;       // GC memory tracking
+    size_t nonGCMemoryUsed;    // Non-GC memory tracking
+    Duration duration;         // Execution time (for callables)
+    HeapString fileName;       // Source file
+    size_t line;               // Source line
+}
+```
+
+Note: Values use `HeapString` for `@nogc` compatibility instead of regular D strings.
+
+## Callable Handling
+
+When you pass a callable (delegate/lambda) to `expect`, fluent-asserts has special handling:
+
+```d
+expect({
+    auto arr = new int[1000];
+    return arr.length;
+}).to.allocateGCMemory();
+```
+
+The callable is:
+1. **Wrapped** in an evaluation context
+2. **Executed** with memory and timing measurement
+3. **Results captured** for the assertion
+
+This enables testing:
+- Exception throwing behavior
+- Memory allocation (GC and non-GC)
+- Execution time
+
+## Memory Tracking
+
+For memory assertions, fluent-asserts measures allocations:
+
+```d
+// Before callable execution
+gcMemoryBefore = GC.stats().usedSize;
+nonGCMemoryBefore = getNonGCMemory();
+
+// Execute callable
+callable();
+
+// Calculate delta
+gcMemoryUsed = GC.stats().usedSize - gcMemoryBefore;
+nonGCMemoryUsed = getNonGCMemory() - nonGCMemoryBefore;
+```
+
+Platform-specific implementations for non-GC memory:
+- **Linux**: Uses `mallinfo()` for malloc arena statistics
+- **macOS**: Uses `phys_footprint` from `TASK_VM_INFO`
+- **Windows**: Falls back to process memory estimation
+
+## Operations
+
+Each assertion type (equal, greaterThan, contain, etc.) is implemented as an **operation function**:
+
+```d
+void equal(ref Evaluation evaluation) @safe nothrow {
+    // Compare using HeapEquableValue for type-safe comparison
+    auto actualValue = evaluation.currentValue.getSerialized!T();
+    auto expectedValue = evaluation.expectedValue.getSerialized!T();
+
+    auto isSuccess = actualValue == expectedValue;
+
+    if (evaluation.isNegated) {
+        isSuccess = !isSuccess;
+    }
+
+    if (!isSuccess) {
+        evaluation.result.expected.put(evaluation.expectedValue.strValue[]);
+        evaluation.result.actual.put(evaluation.currentValue.strValue[]);
+    }
+}
+```
+
+Operations:
+- Receive the `Evaluation` struct by reference
+- Are `@safe nothrow` for reliability
+- Check if the assertion passes
+- Handle negation (`.not`)
+- Set error messages on failure using `FixedAppender`
+
+## Error Reporting
+
+When an assertion fails, fluent-asserts builds a detailed error message:
+
+```d
+struct AssertResult {
+    Message[] messages;                    // Descriptive message parts
+    FixedAppender expected;                // Expected value
+    FixedAppender actual;                  // Actual value
+    bool negated;                          // Was .not used?
+    immutable(DiffSegment)[] diff;         // For string/array diffs
+    FixedStringArray extra;                // Extra items found
+    FixedStringArray missing;              // Missing items
+    HeapString[] contextKeys;              // Context data keys
+    HeapString[] contextValues;            // Context data values
+}
+```
+
+This produces output like:
+
+```
+ASSERTION FAILED: value should equal "hello".
+OPERATION: equal
+
+  ACTUAL: <string> "world"
+EXPECTED: <string> "hello"
+
+source/test.d:42
+>  42:    expect(value).to.equal("hello");
+```
+
+## Type Serialization
+
+Values are converted to strings for display using `HeapSerializerRegistry`, which provides `@nogc` compatible serialization using `HeapString`.
+
+```d
+// Register a custom serializer
+HeapSerializerRegistry.instance.register!MyType((value) {
+    return toHeapString(format!"MyType(%s)"(value.field));
+});
+```
+
+Built-in serializers handle common types like strings, numbers, arrays, and objects.
+
+## Lifecycle Management
+
+The `Lifecycle` singleton manages assertion state:
+
+```d
+class Lifecycle {
+    static Lifecycle instance;
+
+    // Begin a new evaluation
+    size_t beginEvaluation(ValueEvaluation value);
+
+    // Complete an evaluation
+    void endEvaluation(ref Evaluation evaluation);
+
+    // Handle assertion failure
+    void handleFailure(ref Evaluation evaluation);
+
+    // Statistics tracking
+    AssertionStatistics statistics;
+
+    // Custom failure handling
+    void setFailureHandler(FailureHandlerDelegate handler);
+}
+```
+
+## Next Steps
+
+- Learn how to [Extend](/guide/extending/) fluent-asserts with custom operations
+- Browse the [API Reference](/api/) for all built-in operations
+- Understand [Memory Management](/guide/memory-management/) for `@nogc` contexts
