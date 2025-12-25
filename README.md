@@ -66,6 +66,23 @@ expect(testedValue).to.not.equal(42);
     /// will output this message: Because of test reasons, true should equal `false`.
 ```
 
+`because` also supports format strings for dynamic messages:
+
+```D
+    foreach (i; 0..100) {
+        result.should.equal(expected).because("at iteration %s", i);
+    }
+```
+
+`withContext` attaches key-value debugging data:
+
+```D
+    result.should.equal(expected)
+        .withContext("userId", 42)
+        .withContext("input", testInput);
+    /// On failure, displays: CONTEXT: userId = 42, input = ...
+```
+
 
 ## Should
 

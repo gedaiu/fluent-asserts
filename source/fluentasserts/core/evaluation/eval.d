@@ -309,6 +309,21 @@ struct Evaluation {
 
     printer.primary(operationName);
     printer.newLine;
+
+    // Issue #79: Print context data if present
+    if (result.hasContext) {
+      printer.newLine;
+      printer.info("CONTEXT:");
+      printer.newLine;
+      foreach (i; 0 .. result.contextCount) {
+        printer.primary("  ");
+        printer.primary(result.contextKey(i).idup);
+        printer.primary(" = ");
+        printer.primary(result.contextValue(i).idup);
+        printer.newLine;
+      }
+    }
+
     printer.newLine;
 
     printer.info("  ACTUAL: ");
@@ -337,6 +352,19 @@ struct Evaluation {
       printer.print(message);
     }
 
+    // Issue #79: Print context data if present
+    if (result.hasContext) {
+      printer.primary(" | context: ");
+      foreach (i; 0 .. result.contextCount) {
+        if (i > 0) {
+          printer.primary(", ");
+        }
+        printer.primary(result.contextKey(i).idup);
+        printer.primary("=");
+        printer.primary(result.contextValue(i).idup);
+      }
+    }
+
     printer.primary(" | actual=");
     printer.primary(result.actual[].idup);
     printer.primary(" expected=");
@@ -361,6 +389,20 @@ struct Evaluation {
     printer.newLine;
     printer.primary("  ---");
     printer.newLine;
+
+    // Issue #79: Print context data if present
+    if (result.hasContext) {
+      printer.primary("  context:");
+      printer.newLine;
+      foreach (i; 0 .. result.contextCount) {
+        printer.primary("    ");
+        printer.primary(result.contextKey(i).idup);
+        printer.primary(": ");
+        printer.primary(result.contextValue(i).idup);
+        printer.newLine;
+      }
+    }
+
     printer.primary("  actual: ");
     printer.primary(result.actual[].idup);
     printer.newLine;

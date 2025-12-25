@@ -58,6 +58,13 @@ struct AssertResult {
     size_t _messageCount;
   }
 
+  /// Context data for debugging (Issue #79)
+  private {
+    HeapString[8] _contextKeys;
+    HeapString[8] _contextValues;
+    size_t _contextCount;
+  }
+
   /// Returns the active message segments as a slice
   inout(Message)[] messages() return inout nothrow @safe @nogc {
     return _messages[0 .. _messageCount];
@@ -218,5 +225,43 @@ struct AssertResult {
     }
 
     diff = cast(immutable(DiffSegment)[]) segments;
+  }
+
+  /// Adds context data for debugging (Issue #79).
+  /// Context is displayed alongside the assertion failure message.
+  void addContext(string key, string value) @trusted nothrow {
+    import fluentasserts.core.memory.heapstring : toHeapString;
+
+    if (_contextCount < 8) {
+      _contextKeys[_contextCount] = toHeapString(key);
+      _contextValues[_contextCount] = toHeapString(value);
+      _contextCount++;
+    }
+  }
+
+  /// Returns true if context data has been added.
+  bool hasContext() const @safe nothrow @nogc {
+    return _contextCount > 0;
+  }
+
+  /// Returns the number of context entries.
+  size_t contextCount() const @safe nothrow @nogc {
+    return _contextCount;
+  }
+
+  /// Returns context key at index.
+  const(char)[] contextKey(size_t index) const @safe nothrow @nogc {
+    if (index < _contextCount) {
+      return _contextKeys[index][];
+    }
+    return "";
+  }
+
+  /// Returns context value at index.
+  const(char)[] contextValue(size_t index) const @safe nothrow @nogc {
+    if (index < _contextCount) {
+      return _contextValues[index][];
+    }
+    return "";
   }
 }

@@ -57,6 +57,20 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
         return this;
     }
 
+    /// Adds a formatted reason to the assertion message (Issue #79).
+    ref Evaluator because(Args...)(string fmt, Args args) return if (Args.length > 0) {
+        import std.format : format;
+        _evaluation.result.prependText("Because " ~ format(fmt, args) ~ ", ");
+        return this;
+    }
+
+    /// Attaches context data to the assertion for debugging (Issue #79).
+    ref Evaluator withContext(T)(string key, T value) return {
+        import std.conv : to;
+        _evaluation.result.addContext(key, value.to!string);
+        return this;
+    }
+
     void inhibit() nothrow @safe @nogc {
         this.refCount = int.max;
     }
@@ -154,6 +168,20 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
 
     ref TrustedEvaluator because(string reason) return {
         _evaluation.result.prependText("Because " ~ reason ~ ", ");
+        return this;
+    }
+
+    /// Adds a formatted reason to the assertion message (Issue #79).
+    ref TrustedEvaluator because(Args...)(string fmt, Args args) return if (Args.length > 0) {
+        import std.format : format;
+        _evaluation.result.prependText("Because " ~ format(fmt, args) ~ ", ");
+        return this;
+    }
+
+    /// Attaches context data to the assertion for debugging (Issue #79).
+    ref TrustedEvaluator withContext(T)(string key, T value) return {
+        import std.conv : to;
+        _evaluation.result.addContext(key, value.to!string);
         return this;
     }
 
@@ -285,6 +313,20 @@ alias OperationFuncTrustedNoGC = void function(ref Evaluation) @trusted nothrow 
 
     ref ThrowableEvaluator because(string reason) return {
         _evaluation.result.prependText("Because " ~ reason ~ ", ");
+        return this;
+    }
+
+    /// Adds a formatted reason to the assertion message (Issue #79).
+    ref ThrowableEvaluator because(Args...)(string fmt, Args args) return if (Args.length > 0) {
+        import std.format : format;
+        _evaluation.result.prependText("Because " ~ format(fmt, args) ~ ", ");
+        return this;
+    }
+
+    /// Attaches context data to the assertion for debugging (Issue #79).
+    ref ThrowableEvaluator withContext(T)(string key, T value) return {
+        import std.conv : to;
+        _evaluation.result.addContext(key, value.to!string);
         return this;
     }
 

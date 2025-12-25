@@ -251,6 +251,23 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
     return this;
   }
 
+  /// Adds a formatted reason to the assertion message (Issue #79).
+  /// Supports printf-style formatting: because("At iteration %s", i)
+  ref Expect because(Args...)(string fmt, Args args) return if (Args.length > 0) {
+    import std.format : format;
+    _evaluation.result.prependText("Because " ~ format(fmt, args) ~ ", ");
+    return this;
+  }
+
+  /// Attaches context data to the assertion for debugging (Issue #79).
+  /// Context is displayed alongside the failure message.
+  /// Can be chained: .withContext("key1", val1).withContext("key2", val2)
+  ref Expect withContext(T)(string key, T value) return {
+    import std.conv : to;
+    _evaluation.result.addContext(key, value.to!string);
+    return this;
+  }
+
   /// Asserts that the actual value equals the expected value.
   Evaluator equal(T)(T value) {
     import std.algorithm : endsWith;
@@ -624,4 +641,63 @@ unittest {
   auto lifecycle = ensureLifecycle();
   assert(lifecycle !is null, "ensureLifecycle should create a Lifecycle instance");
   assert(Lifecycle.instance is lifecycle, "ensureLifecycle should set Lifecycle.instance");
+}
+
+// Issue #79: format-style because with arguments
+@("issue #79: because with format arguments")
+unittest {
+  auto evaluation = ({
+    expect(5).to.equal(3).because("At iteration %s of %s", 5, 100);
+  }).recordEvaluation;
+
+  expect(evaluation.result.messageString).to.contain("Because At iteration 5 of 100");
+}
+
+// Issue #79: withContext attaches context data to assertions
+@("issue #79: withContext attaches context data")
+unittest {
+  auto evaluation = ({
+    expect(5).to.equal(3).withContext("iteration", 5).withContext("total", 100);
+  }).recordEvaluation;
+
+  expect(evaluation.result.hasContext).to.equal(true);
+  expect(evaluation.result.contextCount).to.equal(2);
+  expect(evaluation.result.contextKey(0)).to.equal("iteration");
+  expect(evaluation.result.contextValue(0)).to.equal("5");
+  expect(evaluation.result.contextKey(1)).to.equal("total");
+  expect(evaluation.result.contextValue(1)).to.equal("100");
+}
+
+// Issue #79: withContext works with string values
+@("issue #79: withContext with string values")
+unittest {
+  auto evaluation = ({
+    expect(5).to.equal(3).withContext("name", "test").withContext("type", "unit");
+  }).recordEvaluation;
+
+  expect(evaluation.result.hasContext).to.equal(true);
+  expect(evaluation.result.contextKey(0)).to.equal("name");
+  expect(evaluation.result.contextValue(0)).to.equal("test");
+}
+
+// Issue #79: because format works on Evaluator (after .equal)
+@("issue #79: because format on Evaluator")
+unittest {
+  auto evaluation = ({
+    expect(5).to.equal(3).because("loop %s", 42);
+  }).recordEvaluation;
+
+  expect(evaluation.result.messageString).to.contain("Because loop 42");
+}
+
+// Issue #79: withContext works on Evaluator (after .equal)
+@("issue #79: withContext on Evaluator")
+unittest {
+  auto evaluation = ({
+    expect(5).to.equal(3).withContext("idx", 7);
+  }).recordEvaluation;
+
+  expect(evaluation.result.hasContext).to.equal(true);
+  expect(evaluation.result.contextKey(0)).to.equal("idx");
+  expect(evaluation.result.contextValue(0)).to.equal("7");
 }
