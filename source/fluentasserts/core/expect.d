@@ -77,20 +77,17 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
 
   /// Constructs an Expect from a ValueEvaluation.
   /// Initializes the evaluation state and sets up the initial message.
+  /// Source parsing is deferred until assertion failure for performance.
   this(ValueEvaluation value) @trusted {
     _evaluation.id = Lifecycle.instance.beginEvaluation(value);
     _evaluation.currentValue = value;
     _evaluation.source = SourceResult.create(value.fileName[].idup, value.line);
 
-    try {
-      auto sourceValue = _evaluation.source.getValue;
-
-      if (sourceValue == "") {
-        _evaluation.result.startWith(truncateForMessage(_evaluation.currentValue.niceValue[]));
-      } else {
-        _evaluation.result.startWith(sourceValue);
-      }
-    } catch (Exception) {
+    // Use niceValue/strValue for the message - source parsing is expensive
+    // and only needed when assertions fail (done lazily in SourceResult)
+    if (!_evaluation.currentValue.niceValue.empty) {
+      _evaluation.result.startWith(truncateForMessage(_evaluation.currentValue.niceValue[]));
+    } else {
       _evaluation.result.startWith(truncateForMessage(_evaluation.currentValue.strValue[]));
     }
 

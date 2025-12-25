@@ -927,7 +927,7 @@ unittest {
     nullObject.should.equal(new Object);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.startWith("nullObject should equal Object(");
+  evaluation.result.messageString.should.startWith("null should equal Object(");
 }
 
 @("new object equals null reports message starts with equal null")
@@ -936,7 +936,7 @@ unittest {
     (new Object).should.equal(null);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.startWith("(new Object) should equal null.");
+  evaluation.result.messageString.should.contain("should equal null.");
 }
 
 version (unittest):

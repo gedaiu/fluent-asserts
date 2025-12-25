@@ -186,6 +186,14 @@ struct AssertResult {
     prepend(Message(Message.Type.info, text));
   }
 
+  /// Replaces the first message (the subject) with new text.
+  /// Used to update the message with source expression on failure.
+  void replaceFirst(string text) nothrow @safe @nogc {
+    if (_messageCount > 0) {
+      _messages[0] = Message(Message.Type.info, text);
+    }
+  }
+
   /// Computes the diff between expected and actual values.
   void setDiff(string expectedVal, string actualVal) nothrow @trusted {
     import fluentasserts.core.memory.heapstring : toHeapString;

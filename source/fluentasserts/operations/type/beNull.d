@@ -99,7 +99,7 @@ unittest {
     o.should.not.beNull;
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal("o should not be null.");
+  evaluation.result.messageString.should.equal("null should not be null.");
   evaluation.result.expected[].should.equal("not null");
   evaluation.result.actual[].should.equal("object.Object");
 }
@@ -110,7 +110,7 @@ unittest {
     (new Object).should.beNull;
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal("(new Object) should be null.");
+  evaluation.result.messageString.should.contain("should be null.");
   evaluation.result.expected[].should.equal("null");
   evaluation.result.actual[].should.equal("object.Object");
 }

@@ -161,7 +161,7 @@ unittest {
     [1, 2, 3].map!"a".should.contain([4, 5]);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal(`[1, 2, 3].map!"a" should contain [4, 5]. [4, 5] are missing from [1, 2, 3].`);
+  evaluation.result.messageString.should.equal(`[1, 2, 3] should contain [4, 5]. [4, 5] are missing from [1, 2, 3].`);
 }
 
 @("range not contain present array reports present elements")
@@ -170,7 +170,7 @@ unittest {
     [1, 2, 3].map!"a".should.not.contain([1, 2]);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal(`[1, 2, 3].map!"a" should not contain [1, 2]. [1, 2] are present in [1, 2, 3].`);
+  evaluation.result.messageString.should.equal(`[1, 2, 3] should not contain [1, 2]. [1, 2] are present in [1, 2, 3].`);
 }
 
 @("range contain missing element reports missing element")
@@ -179,7 +179,7 @@ unittest {
     [1, 2, 3].map!"a".should.contain(4);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal(`[1, 2, 3].map!"a" should contain 4. 4 is missing from [1, 2, 3].`);
+  evaluation.result.messageString.should.equal(`[1, 2, 3] should contain 4. 4 is missing from [1, 2, 3].`);
 }
 
 @("const range contain array succeeds")
@@ -385,7 +385,7 @@ unittest {
     Range().should.contain([2, 3]);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal("Range() should contain [2, 3]. 3 is missing from [0, 1, 2].");
+  evaluation.result.messageString.should.equal("[0, 1, 2] should contain [2, 3]. 3 is missing from [0, 1, 2].");
 }
 
 @("custom range contain missing single element reports missing")
@@ -407,5 +407,5 @@ unittest {
     Range().should.contain(3);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal("Range() should contain 3. 3 is missing from [0, 1, 2].");
+  evaluation.result.messageString.should.equal("[0, 1, 2] should contain 3. 3 is missing from [0, 1, 2].");
 }

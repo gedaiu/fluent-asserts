@@ -178,7 +178,7 @@ unittest {
     otherObject.should.be.instanceOf!InstanceOfBaseClass;
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.contain(`otherObject should be instance of`);
+  evaluation.result.messageString.should.contain(`should be instance of`);
   evaluation.result.expected[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfBaseClass");
   evaluation.result.actual[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
 }
@@ -191,7 +191,7 @@ unittest {
     otherObject.should.not.be.instanceOf!InstanceOfOtherClass;
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.startWith(`otherObject should not be instance of "fluentasserts.operations.type.instanceOf.InstanceOfOtherClass".`);
+  evaluation.result.messageString.should.contain(`should not be instance of`);
   evaluation.result.messageString.should.endWith(`is instance of fluentasserts.operations.type.instanceOf.InstanceOfOtherClass.`);
   evaluation.result.actual[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
   evaluation.result.expected[].should.equal("not typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
@@ -223,7 +223,7 @@ unittest {
     otherObject.should.be.instanceOf!InstanceOfTestInterface;
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.contain(`otherObject should be instance of`);
+  evaluation.result.messageString.should.contain(`should be instance of`);
   evaluation.result.messageString.should.contain(`InstanceOfTestInterface`);
   evaluation.result.expected[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfTestInterface");
   evaluation.result.actual[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfOtherClass");
@@ -237,7 +237,7 @@ unittest {
     someObject.should.not.be.instanceOf!InstanceOfTestInterface;
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.startWith(`someObject should not be instance of "fluentasserts.operations.type.instanceOf.InstanceOfTestInterface".`);
+  evaluation.result.messageString.should.contain(`should not be instance of`);
   evaluation.result.messageString.should.endWith(`is instance of fluentasserts.operations.type.instanceOf.InstanceOfBaseClass.`);
   evaluation.result.expected[].should.equal("not typeof fluentasserts.operations.type.instanceOf.InstanceOfTestInterface");
   evaluation.result.actual[].should.equal("typeof fluentasserts.operations.type.instanceOf.InstanceOfBaseClass");

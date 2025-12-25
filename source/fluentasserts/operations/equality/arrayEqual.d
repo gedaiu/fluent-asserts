@@ -244,7 +244,7 @@ unittest {
     [1, 2, 3].map!"a".should.equal([4, 5]);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal(`[1, 2, 3].map!"a" should equal [4, 5].`);
+  evaluation.result.messageString.should.equal(`[1, 2, 3] should equal [4, 5].`);
 }
 
 @("range equal different same-length array reports not equal")
@@ -253,7 +253,7 @@ unittest {
     [1, 2].map!"a".should.equal([4, 5]);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal(`[1, 2].map!"a" should equal [4, 5].`);
+  evaluation.result.messageString.should.equal(`[1, 2] should equal [4, 5].`);
 }
 
 @("range equal reordered array reports not equal")
@@ -262,7 +262,7 @@ unittest {
     [1, 2, 3].map!"a".should.equal([2, 3, 1]);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal(`[1, 2, 3].map!"a" should equal [2, 3, 1].`);
+  evaluation.result.messageString.should.equal(`[1, 2, 3] should equal [2, 3, 1].`);
 }
 
 @("range not equal same array reports is equal")
@@ -271,7 +271,7 @@ unittest {
     [1, 2, 3].map!"a".should.not.equal([1, 2, 3]);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal(`[1, 2, 3].map!"a" should not equal [1, 2, 3].`);
+  evaluation.result.messageString.should.equal(`[1, 2, 3] should not equal [1, 2, 3].`);
 }
 
 @("custom range equal array succeeds")
@@ -311,7 +311,7 @@ unittest {
     Range().should.equal([0,1]);
   }).recordEvaluation;
 
-  evaluation.result.messageString.should.equal("Range() should equal [0, 1].");
+  evaluation.result.messageString.should.equal("[0, 1, 2] should equal [0, 1].");
 }
 
 @("custom const range equal array succeeds")

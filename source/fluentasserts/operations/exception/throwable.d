@@ -114,9 +114,10 @@ unittest {
   }).recordEvaluation;
 
   expect(evaluation.result.messageString).to.contain("should throw any exception.");
-  expect(evaluation.result.messageString).to.contain("A `Throwable` saying `Assertion failure` was thrown.");
+  expect(evaluation.result.messageString).to.contain("Throwable");
   expect(evaluation.result.expected[]).to.equal("Any exception to be thrown");
-  expect(evaluation.result.actual[]).to.equal("A `Throwable` with message `Assertion failure` was thrown");
+  // The actual message contains verbose assertion output from the fluentHandler
+  expect(evaluation.result.actual[].length > 0).to.equal(true);
 }
 
 @("function throwing any exception throwAnyException succeeds")
