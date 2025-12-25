@@ -361,6 +361,19 @@ unittest {
   Assert.notApproximately(1.5f, 1, 0.2f);
 }
 
+// Issue #93: Assert.greaterOrEqualTo and Assert.lessOrEqualTo for numeric types
+@("Assert.greaterOrEqualTo and lessOrEqualTo work for integers")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  Assert.greaterOrEqualTo(5, 3);
+  Assert.greaterOrEqualTo(5, 5);
+  Assert.notGreaterOrEqualTo(3, 5);
+
+  Assert.lessOrEqualTo(3, 5);
+  Assert.lessOrEqualTo(5, 5);
+  Assert.notLessOrEqualTo(5, 3);
+}
+
 @("Assert works for objects")
 unittest {
   Lifecycle.instance.disableFailureHandling = false;

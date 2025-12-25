@@ -67,6 +67,7 @@ void greaterOrEqualToSysTime(ref Evaluation evaluation) @safe nothrow {
 
 // ---------------------------------------------------------------------------
 // Unit tests
+// Issue #93: greaterOrEqualTo operation for numeric types
 // ---------------------------------------------------------------------------
 
 alias NumericTypes = AliasSeq!(byte, ubyte, short, ushort, int, uint, long, ulong, float, double, real);
