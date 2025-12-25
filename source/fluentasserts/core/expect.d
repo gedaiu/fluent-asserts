@@ -38,6 +38,16 @@ import std.string;
 import std.uni;
 import std.conv;
 
+/// Ensures the Lifecycle singleton is initialized.
+/// Called from Expect to handle the case where assertions are used
+/// in shared static this() before the module static this() runs.
+private Lifecycle ensureLifecycle() @trusted {
+  if (Lifecycle.instance is null) {
+    Lifecycle.instance = new Lifecycle();
+  }
+  return Lifecycle.instance;
+}
+
 /// Truncates a string value for display in assertion messages.
 /// Only multiline strings are shortened to keep messages readable.
 /// Long single-line values are kept intact to preserve type names and other identifiers.
@@ -87,7 +97,7 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
   /// Source parsing is deferred until assertion failure for performance.
   this(ValueEvaluation value) @trusted {
     _initialized = true;
-    _evaluation.id = Lifecycle.instance.beginEvaluation(value);
+    _evaluation.id = ensureLifecycle().beginEvaluation(value);
     _evaluation.currentValue = value;
     _evaluation.source = SourceResult.create(value.fileName[].idup, value.line);
 
@@ -139,7 +149,7 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
         _evaluation.result.addValue(truncateForMessage(_evaluation.expectedValue.strValue[]));
       }
 
-      Lifecycle.instance.endEvaluation(_evaluation);
+      ensureLifecycle().endEvaluation(_evaluation);
     }
   }
 
@@ -181,7 +191,7 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
 
   /// Returns the throwable captured during evaluation.
   Throwable thrown() {
-    Lifecycle.instance.endEvaluation(_evaluation);
+    ensureLifecycle().endEvaluation(_evaluation);
     return _evaluation.throwable;
   }
 
@@ -597,4 +607,21 @@ Expect expect(T)(lazy T testedValue, const string file = __FILE__, const size_t 
     auto result = Expect(testedValue.evaluate(file, line, prependText).evaluation);
     return result;
   }
+}
+
+// Issue #99: ensureLifecycle initializes Lifecycle when called before static this()
+@("issue #99: ensureLifecycle creates instance when null")
+unittest {
+  // Save the current instance
+  auto savedInstance = Lifecycle.instance;
+  scope(exit) Lifecycle.instance = savedInstance;
+
+  // Simulate the condition where Lifecycle.instance is null
+  // (as happens when expect() is called from shared static this())
+  Lifecycle.instance = null;
+
+  // ensureLifecycle should create a new instance
+  auto lifecycle = ensureLifecycle();
+  assert(lifecycle !is null, "ensureLifecycle should create a Lifecycle instance");
+  assert(Lifecycle.instance is lifecycle, "ensureLifecycle should set Lifecycle.instance");
 }
