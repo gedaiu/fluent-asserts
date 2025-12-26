@@ -6,6 +6,24 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'fluent-asserts',
+      favicon: '/favicon.svg',
+      head: [
+        {
+          tag: 'script',
+          content: `
+            var _paq = window._paq = window._paq || [];
+            _paq.push(['trackPageView']);
+            _paq.push(['enableLinkTracking']);
+            (function() {
+              var u="https://analytics.giscollective.com/";
+              _paq.push(['setTrackerUrl', u+'matomo.php']);
+              _paq.push(['setSiteId', '12']);
+              var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+              g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+            })();
+          `,
+        },
+      ],
       logo: {
         light: './src/assets/logo.svg',
         dark: './src/assets/logo-light.svg',
