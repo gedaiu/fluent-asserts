@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a"/>
+      <stop offset="100%" style="stop-color:#2d2d2d"/>
+    </linearGradient>
+    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3D7A5A"/>
+      <stop offset="100%" style="stop-color:#5A9A7A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Logo icon (scaled up) -->
+  <g transform="translate(100, 180) scale(3)">
+    <path d="M 8 52
+             Q 20 52, 28 42
+             Q 36 32, 44 40
+             L 54 50
+             L 68 30"
+          stroke="url(#flowGradient)"
+          stroke-width="5"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- Title -->
+  <text x="420" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="bold" fill="#ffffff">fluent-asserts</text>
+
+  <!-- Tagline -->
+  <text x="420" y="370" font-family="system-ui, -apple-system, sans-serif" font-size="32" fill="#a0a0a0">Fluent assertion framework for D</text>
+
+  <!-- Code sample hint -->
+  <text x="420" y="450" font-family="monospace" font-size="24" fill="#5A9A7A">expect(value).to.equal(expected)</text>
+
+  <!-- Bottom accent line -->
+  <rect x="0" y="610" width="1200" height="20" fill="url(#flowGradient)"/>
+</svg>

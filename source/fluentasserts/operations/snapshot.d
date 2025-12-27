@@ -1,17 +1,18 @@
 module fluentasserts.operations.snapshot;
 
+import std.regex : regex, replaceAll;
+import fluentasserts.core.config : config = FluentAssertsConfig, OutputFormat;
+
 version (unittest) {
   import fluent.asserts;
   import fluentasserts.core.base;
   import fluentasserts.core.expect;
   import fluentasserts.core.lifecycle;
   import fluentasserts.core.evaluation.eval : Evaluation;
-  import fluentasserts.core.config : config = FluentAssertsConfig, OutputFormat;
   import std.stdio;
   import std.file;
   import std.array;
   import std.algorithm : canFind;
-  import std.regex;
 }
 
 /// Normalizes snapshot output by removing unstable elements like line numbers and object addresses.

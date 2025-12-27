@@ -1,13 +1,81 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
   site: 'https://fluentasserts.szabobogdan.com',
   integrations: [
+    sitemap(),
     starlight({
       title: 'fluent-asserts',
       favicon: '/favicon.svg',
+      description: 'Fluent assertion framework for the D programming language. Write readable, expressive tests with a fluent API.',
       head: [
+        // Open Graph / Social sharing
+        {
+          tag: 'meta',
+          attrs: { property: 'og:type', content: 'website' },
+        },
+        {
+          tag: 'meta',
+          attrs: { property: 'og:site_name', content: 'fluent-asserts' },
+        },
+        {
+          tag: 'meta',
+          attrs: { property: 'og:image', content: 'https://fluentasserts.szabobogdan.com/og-image.png' },
+        },
+        {
+          tag: 'meta',
+          attrs: { property: 'og:locale', content: 'en_US' },
+        },
+        // Twitter Card
+        {
+          tag: 'meta',
+          attrs: { name: 'twitter:card', content: 'summary_large_image' },
+        },
+        {
+          tag: 'meta',
+          attrs: { name: 'twitter:image', content: 'https://fluentasserts.szabobogdan.com/og-image.png' },
+        },
+        // Additional SEO
+        {
+          tag: 'meta',
+          attrs: { name: 'keywords', content: 'D language, dlang, unit testing, assertions, fluent API, testing framework, expect, BDD' },
+        },
+        {
+          tag: 'meta',
+          attrs: { name: 'author', content: 'Bogdan Szabo' },
+        },
+        {
+          tag: 'link',
+          attrs: { rel: 'canonical', href: 'https://fluentasserts.szabobogdan.com' },
+        },
+        // Structured Data (JSON-LD)
+        {
+          tag: 'script',
+          attrs: { type: 'application/ld+json' },
+          content: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareSourceCode',
+            name: 'fluent-asserts',
+            description: 'Fluent assertion framework for the D programming language. Write readable, expressive tests with a fluent API.',
+            url: 'https://fluentasserts.szabobogdan.com',
+            codeRepository: 'https://github.com/gedaiu/fluent-asserts',
+            programmingLanguage: {
+              '@type': 'ComputerLanguage',
+              name: 'D',
+              alternateName: 'dlang',
+            },
+            author: {
+              '@type': 'Person',
+              name: 'Bogdan Szabo',
+            },
+            license: 'https://opensource.org/licenses/BSL-1.0',
+            applicationCategory: 'DeveloperApplication',
+            operatingSystem: 'Cross-platform',
+          }),
+        },
+        // Matomo Analytics
         {
           tag: 'script',
           content: `
