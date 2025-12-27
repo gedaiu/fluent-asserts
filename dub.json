@@ -12,6 +12,10 @@
     "unit-threaded": {
       "version": "*",
       "optional": true
+    },
+    "silly": {
+      "version": "~>1.2.0-dev.2",
+      "optional": true
     }
   },
   "configurations": [
