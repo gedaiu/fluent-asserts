@@ -189,10 +189,11 @@ if (__traits(isIntegral, T) && !is(T == bool)) {
 ///
 /// Params:
 ///   value = The floating point value to convert
+///   precision = Maximum decimal places (0 = use config default)
 ///
 /// Returns:
 ///   The string representation of the value.
-HeapString toFloatingString(T)(T value) @safe nothrow @nogc
+HeapString toFloatingString(T)(T value, size_t precision = 0) @safe nothrow @nogc
 if (__traits(isFloating, T)) {
   // Handle special cases
   if (value != value) { // NaN check
@@ -237,12 +238,15 @@ if (__traits(isFloating, T)) {
   // Get fractional part
   T fractional = value - integralPart;
 
+  // Use provided precision or fall back to config default
+  immutable maxDecimals = precision > 0 ? precision : config.numeric.floatingPointDecimals;
+
   // Only add decimal point if there's a fractional part
   if (fractional > 0.0) {
     result.put(".");
 
-    // Convert up to configured decimal places
-    for (size_t i = 0; i < config.numeric.floatingPointDecimals && fractional > 0.0; i++) {
+    // Convert up to specified decimal places
+    for (size_t i = 0; i < maxDecimals && fractional > 0.0; i++) {
       fractional *= 10;
       int digit = cast(int)fractional;
       result.put(cast(char)('0' + digit));
