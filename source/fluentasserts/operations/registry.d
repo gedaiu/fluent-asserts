@@ -88,6 +88,23 @@ class Registry {
     return operations[matchedKey];
   }
 
+  /// Try to get an operation function, returning null if not found
+  Operation tryGet(string valueType, string expectedValueType, string name) @safe nothrow {
+    if (valueType == "" || name == "") {
+      return null;
+    }
+
+    auto genericKeys = [valueType ~ "." ~ expectedValueType ~ "." ~ name] ~ generalizeKey(valueType, expectedValueType, name);
+
+    foreach(key; genericKeys) {
+      if(key in operations) {
+        return operations[key];
+      }
+    }
+
+    return null;
+  }
+
   ///
   void handle(ref Evaluation evaluation) @safe nothrow {
     if(evaluation.operationName == "" || evaluation.operationName == "to" || evaluation.operationName == "should") {

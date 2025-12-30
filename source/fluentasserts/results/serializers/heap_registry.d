@@ -34,7 +34,7 @@ class HeapSerializerRegistry {
 
   /// Registers a custom serializer delegate for an aggregate type.
   /// The serializer will be used when serializing values of that type.
-  void register(T)(HeapString delegate(T) serializer) @trusted if(isAggregateType!T) {
+  void register(T)(HeapString delegate(T) serializer) @trusted {
     enum key = T.stringof;
 
     static if(is(Unqual!T == T)) {

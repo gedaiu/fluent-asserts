@@ -62,6 +62,12 @@ mixin template EvaluatorContextMethods() {
     this.refCount = 0;
   }
 
+  this(ref Evaluation eval, void delegate(ref Evaluation) @safe nothrow op) @trusted {
+    this._evaluation = eval;
+    this.operation = op;
+    this.refCount = 0;
+  }
+
   this(ref return scope inout Evaluator other) @trusted {
     this._evaluation = other._evaluation;
     this.operation = cast(typeof(this.operation)) other.operation;

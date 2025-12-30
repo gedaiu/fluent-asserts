@@ -270,12 +270,24 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
   /// Asserts that the actual value equals the expected value.
   Evaluator equal(T)(T value) {
     import std.algorithm : endsWith;
+    import fluentasserts.operations.registry : Registry;
 
     addOperationName("equal");
     setExpectedValue(value);
     finalizeMessage();
     inhibit();
 
+    // Try to get a custom operation from the Registry first
+    auto currentTypeName = (() @trusted => _evaluation.currentValue.typeName[].idup)();
+    auto expectedTypeName = (() @trusted => _evaluation.expectedValue.typeName[].idup)();
+
+    auto customOp = Registry.instance.tryGet(currentTypeName, expectedTypeName, "equal");
+
+    if (customOp !is null) {
+      return Evaluator(_evaluation, customOp);
+    }
+
+    // Fall back to default operations
     if (_evaluation.currentValue.typeName.endsWith("[]") || _evaluation.currentValue.typeName.endsWith("]")) {
       return Evaluator(_evaluation, &arrayEqualOp);
     } else {
