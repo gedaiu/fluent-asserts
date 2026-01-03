@@ -69,6 +69,41 @@ struct AssertResult {
     bool _contextOverflow;
   }
 
+  /// Disable postblit to use copy constructor instead.
+  @disable this(this);
+
+  /// Copy constructor from mutable AssertResult.
+  this(ref return scope AssertResult other) @trusted @nogc nothrow {
+    _messages = other._messages;
+    _messageCount = other._messageCount;
+    _contextKeys = other._contextKeys;
+    _contextValues = other._contextValues;
+    _contextCount = other._contextCount;
+    _contextOverflow = other._contextOverflow;
+    expected = other.expected;
+    actual = other.actual;
+    negated = other.negated;
+    diff = other.diff;
+    extra = other.extra;
+    missing = other.missing;
+  }
+
+  /// Copy constructor from const AssertResult.
+  this(ref return scope const AssertResult other) @trusted @nogc nothrow {
+    _messages = other._messages;
+    _messageCount = other._messageCount;
+    _contextKeys = other._contextKeys;
+    _contextValues = other._contextValues;
+    _contextCount = other._contextCount;
+    _contextOverflow = other._contextOverflow;
+    expected = other.expected;
+    actual = other.actual;
+    negated = other.negated;
+    diff = other.diff;
+    extra = other.extra;
+    missing = other.missing;
+  }
+
   /// Returns the active message segments as a slice
   inout(Message)[] messages() return inout nothrow @safe @nogc {
     return _messages[0 .. _messageCount];
@@ -275,5 +310,37 @@ struct AssertResult {
       return _contextValues[index][];
     }
     return "";
+  }
+
+  /// Assignment from const AssertResult (by ref).
+  void opAssign(ref const AssertResult other) @trusted @nogc nothrow {
+    _messages = other._messages;
+    _messageCount = other._messageCount;
+    _contextKeys = other._contextKeys;
+    _contextValues = other._contextValues;
+    _contextCount = other._contextCount;
+    _contextOverflow = other._contextOverflow;
+    expected = other.expected;
+    actual = other.actual;
+    negated = other.negated;
+    diff = other.diff;
+    extra = other.extra;
+    missing = other.missing;
+  }
+
+  /// Assignment from const AssertResult (by value).
+  void opAssign(const AssertResult other) @trusted @nogc nothrow {
+    _messages = other._messages;
+    _messageCount = other._messageCount;
+    _contextKeys = other._contextKeys;
+    _contextValues = other._contextValues;
+    _contextCount = other._contextCount;
+    _contextOverflow = other._contextOverflow;
+    expected = other.expected;
+    actual = other.actual;
+    negated = other.negated;
+    diff = other.diff;
+    extra = other.extra;
+    missing = other.missing;
   }
 }
