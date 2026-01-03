@@ -14,6 +14,7 @@ import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
 
 import fluentasserts.operations.equality.equal : equalOp = equal;
 import fluentasserts.operations.equality.arrayEqual : arrayEqualOp = arrayEqual;
+import fluentasserts.operations.registry : Registry;
 import fluentasserts.operations.string.contain : containOp = contain, arrayContainOp = arrayContain, arrayContainOnlyOp = arrayContainOnly;
 import fluentasserts.operations.string.startWith : startWithOp = startWith;
 import fluentasserts.operations.string.endWith : endWithOp = endWith;
