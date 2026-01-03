@@ -106,22 +106,26 @@ struct EvaluationResult(T) {
   /// Disable postblit - use copy constructor instead
   @disable this(this);
 
+  private static void assignValue(ref Unqual!T dest, ref const EvaluationResult src) @trusted nothrow {
+    static if (__traits(compiles, { Unqual!T v; v = cast(Unqual!T) src.value; }())) {
+      static if (__traits(compiles, (ref Unqual!T v, ref const EvaluationResult s) nothrow { v = cast(Unqual!T) s.value; })) {
+        dest = cast(Unqual!T) src.value;
+      }
+    } else static if (isCopyable!(const(Unqual!T))) {
+      static if (__traits(compiles, (ref Unqual!T v, ref const EvaluationResult s) nothrow { v = s.value; })) {
+        dest = src.value;
+      }
+    }
+  }
+
   /// Copy constructor - creates a deep copy from the source.
   this(ref return scope const EvaluationResult rhs) @trusted nothrow {
-    static if (__traits(compiles, cast(Unqual!T) rhs.value)) {
-      value = cast(Unqual!T) rhs.value;
-    } else static if (isCopyable!(const(Unqual!T))) {
-      value = rhs.value;
-    }
-    evaluation = rhs.evaluation; // Uses ValueEvaluation's copy constructor
+    assignValue(value, rhs);
+    evaluation = rhs.evaluation;
   }
 
   void opAssign(ref const EvaluationResult rhs) @trusted nothrow {
-    static if (__traits(compiles, cast(Unqual!T) rhs.value)) {
-      value = cast(Unqual!T) rhs.value;
-    } else static if (isCopyable!(const(Unqual!T))) {
-      value = rhs.value;
-    }
+    assignValue(value, rhs);
     evaluation = rhs.evaluation;
   }
 }

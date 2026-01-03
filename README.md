@@ -280,6 +280,67 @@ The library provides assertions for checking memory allocations:
 
 **Note:** Non-GC memory measurement uses process-wide metrics (`mallinfo` on Linux, `phys_footprint` on macOS). This is inherently unreliable during parallel test execution because allocations from other threads are included. For accurate non-GC memory testing, run tests single-threaded with `dub test -- -j1`.
 
+# Extension Libraries
+
+fluent-asserts supports extension libraries that add custom assertions for specific frameworks or types. Extension libraries register their operations automatically when imported.
+
+## Using Extension Libraries
+
+To use an extension library like `fluent-asserts-vibe`:
+
+1. Add the extension library as a dependency in your `dub.json`:
+
+```json
+{
+    "configurations": [
+        {
+            "name": "unittest",
+            "dependencies": {
+                "fluent-asserts": "*",
+                "fluent-asserts-vibe": "*"
+            }
+        }
+    ]
+}
+```
+
+2. Import the extension module in your test file or a shared test fixtures module:
+
+```d
+import fluentasserts.vibe.json;
+```
+
+The import triggers the extension's `static this()` constructor, which registers its custom operations with the global registry.
+
+3. Use the enhanced assertions:
+
+```d
+import vibe.data.json;
+import fluentasserts.vibe.json;
+
+unittest {
+    auto json1 = `{"key": "value"}`.parseJsonString;
+    auto json2 = `{  "key"  :  "value"  }`.parseJsonString;
+
+    // JSON equality ignores whitespace differences
+    json1.should.equal(json2);
+}
+```
+
+## Available Extension Libraries
+
+- **fluent-asserts-vibe** - Adds JSON comparison operations for `vibe.data.json.Json` types with whitespace-insensitive equality, better diff output, and support for comparing `Json` with `Json[]` arrays.
+
+## Creating Extension Libraries
+
+Extension libraries follow a simple pattern:
+
+1. Create operation functions that work with your types
+2. Register them in a `static this()` module constructor
+3. Optionally register custom serializers for better error output
+
+See the "Registering new operations" section below for details.
+
 # Extend the library
 
 ## Registering new operations

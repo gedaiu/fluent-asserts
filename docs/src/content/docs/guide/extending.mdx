@@ -3,7 +3,92 @@ title: Extending
 description: Create custom operations and serializers for fluent-asserts
 ---
 
-fluent-asserts is designed to be extensible. You can create custom operations for domain-specific assertions and custom serializers for your types.
+fluent-asserts is designed to be extensible. You can use extension libraries for common frameworks, create custom operations for domain-specific assertions, and add custom serializers for your types.
+
+## Extension Libraries
+
+Extension libraries provide pre-built assertions for popular frameworks and types. They register their operations automatically when imported.
+
+### Using Extension Libraries
+
+To use an extension library like `fluent-asserts-vibe`:
+
+1. **Add the dependency** to your `dub.json`:
+
+```json
+{
+    "configurations": [
+        {
+            "name": "unittest",
+            "dependencies": {
+                "fluent-asserts": "*",
+                "fluent-asserts-vibe": "*"
+            }
+        }
+    ]
+}
+```
+
+2. **Import the extension module** in your test file or a shared test fixtures module:
+
+```d
+import fluentasserts.vibe.json;
+```
+
+:::note
+The import triggers the extension's `static this()` constructor, which registers its custom operations with the global registry. Without this import, the operations won't be available.
+:::
+
+3. **Use the enhanced assertions**:
+
+```d
+import vibe.data.json;
+import fluentasserts.vibe.json;
+
+unittest {
+    auto json1 = `{"key": "value"}`.parseJsonString;
+    auto json2 = `{  "key"  :  "value"  }`.parseJsonString;
+
+    // JSON equality ignores whitespace differences
+    json1.should.equal(json2);
+}
+```
+
+### Creating an Extension Library
+
+Extension libraries follow a simple pattern:
+
+```d
+module myextension.json;
+
+import fluentasserts.operations.registry : Registry;
+import fluentasserts.results.serializers.heap_registry : HeapSerializerRegistry;
+import fluentasserts.core.evaluation.eval : Evaluation;
+
+// Register operations and serializers on module load
+static this() {
+    // Register custom serializers for better error output
+    HeapSerializerRegistry.instance.register!MyType(&myTypeSerializer);
+
+    // Register custom operations for type pairs
+    Registry.instance.register!(MyType, MyType)("equal", &myTypeEqual);
+    Registry.instance.register!(MyType, string)("equal", &myTypeEqual);
+}
+
+// Custom serializer
+HeapString myTypeSerializer(MyType value) {
+    // Convert to string representation
+}
+
+// Custom operation
+void myTypeEqual(ref Evaluation evaluation) @safe nothrow {
+    // Perform comparison logic
+}
+```
+
+:::tip
+For a complete example, see the [fluent-asserts-vibe source code](https://github.com/example/fluent-asserts-vibe).
+:::
 
 ## Custom Operations
 
