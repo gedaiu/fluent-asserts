@@ -206,14 +206,172 @@ struct DiffRenderState {
   bool[size_t] visibleLines;
 }
 
+/// Represents a line-level diff operation.
+struct LineDiffOp {
+  EditOp op;
+  size_t lineNum;  // Line number in original (for remove/equal) or new (for insert)
+}
+
+/// Computes line-based diff using LCS (Longest Common Subsequence) approach.
+/// Returns an array of operations indicating which lines to keep, remove, or insert.
+LineDiffOp[] computeLineDiff(ref HeapString[] expectedLines, ref HeapString[] actualLines) @trusted nothrow {
+  LineDiffOp[] result;
+  size_t expLen = expectedLines.length;
+  size_t actLen = actualLines.length;
+
+  if (expLen == 0 && actLen == 0) {
+    return result;
+  }
+
+  if (expLen == 0) {
+    foreach (i; 0 .. actLen) {
+      result ~= LineDiffOp(EditOp.insert, i);
+    }
+    return result;
+  }
+
+  if (actLen == 0) {
+    foreach (i; 0 .. expLen) {
+      result ~= LineDiffOp(EditOp.remove, i);
+    }
+    return result;
+  }
+
+  // Build LCS table
+  size_t[][] lcs;
+  lcs.length = expLen + 1;
+  foreach (i; 0 .. expLen + 1) {
+    lcs[i].length = actLen + 1;
+  }
+
+  foreach (i; 1 .. expLen + 1) {
+    foreach (j; 1 .. actLen + 1) {
+      if (linesEqual(expectedLines[i - 1], actualLines[j - 1])) {
+        lcs[i][j] = lcs[i - 1][j - 1] + 1;
+      } else if (lcs[i - 1][j] >= lcs[i][j - 1]) {
+        lcs[i][j] = lcs[i - 1][j];
+      } else {
+        lcs[i][j] = lcs[i][j - 1];
+      }
+    }
+  }
+
+  // Backtrack to build the diff
+  LineDiffOp[] reversed;
+  size_t i = expLen;
+  size_t j = actLen;
+
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && linesEqual(expectedLines[i - 1], actualLines[j - 1])) {
+      reversed ~= LineDiffOp(EditOp.equal, i - 1);
+      i--;
+      j--;
+    } else if (j > 0 && (i == 0 || lcs[i][j - 1] >= lcs[i - 1][j])) {
+      reversed ~= LineDiffOp(EditOp.insert, j - 1);
+      j--;
+    } else {
+      reversed ~= LineDiffOp(EditOp.remove, i - 1);
+      i--;
+    }
+  }
+
+  // Reverse to get correct order
+  foreach_reverse (idx; 0 .. reversed.length) {
+    result ~= reversed[idx];
+  }
+
+  return result;
+}
+
+/// A block of consecutive diff operations of the same type.
+struct DiffBlock {
+  EditOp op;
+  size_t[] lineIndices;
+}
+
+/// Groups consecutive diff operations into blocks.
+DiffBlock[] groupIntoBlocks(ref LineDiffOp[] ops) @trusted nothrow {
+  DiffBlock[] blocks;
+
+  if (ops.length == 0) {
+    return blocks;
+  }
+
+  DiffBlock current;
+  current.op = ops[0].op;
+  current.lineIndices ~= ops[0].lineNum;
+
+  foreach (i; 1 .. ops.length) {
+    if (ops[i].op == current.op) {
+      current.lineIndices ~= ops[i].lineNum;
+    } else {
+      if (current.op != EditOp.equal) {
+        blocks ~= current;
+      }
+      current.op = ops[i].op;
+      current.lineIndices = [ops[i].lineNum];
+    }
+  }
+
+  if (current.op != EditOp.equal) {
+    blocks ~= current;
+  }
+
+  return blocks;
+}
+
+/// Holds information about a change block with its context.
+struct ChangeBlockWithContext {
+  size_t firstChangeLine;  // First changed line index in expected (for remove) or actual (for insert)
+  size_t lastChangeLine;   // Last changed line index
+  EditOp op;
+  size_t[] lineIndices;
+}
+
+/// Builds change blocks with position information for context lookup.
+ChangeBlockWithContext[] buildChangeBlocksWithContext(ref LineDiffOp[] ops) @trusted nothrow {
+  ChangeBlockWithContext[] result;
+
+  if (ops.length == 0) {
+    return result;
+  }
+
+  ChangeBlockWithContext current;
+  current.op = ops[0].op;
+  current.lineIndices ~= ops[0].lineNum;
+  current.firstChangeLine = ops[0].lineNum;
+  current.lastChangeLine = ops[0].lineNum;
+
+  foreach (i; 1 .. ops.length) {
+    if (ops[i].op == current.op) {
+      current.lineIndices ~= ops[i].lineNum;
+      current.lastChangeLine = ops[i].lineNum;
+    } else {
+      if (current.op != EditOp.equal) {
+        result ~= current;
+      }
+      current.op = ops[i].op;
+      current.lineIndices = [ops[i].lineNum];
+      current.firstChangeLine = ops[i].lineNum;
+      current.lastChangeLine = ops[i].lineNum;
+    }
+  }
+
+  if (current.op != EditOp.equal) {
+    result ~= current;
+  }
+
+  return result;
+}
+
 /// Sets a user-friendly line-by-line diff on the evaluation result.
-/// Shows lines that differ between expected and actual values.
+/// Uses line-based diff algorithm and groups changes into readable blocks with context.
 void setMultilineDiff(ref Evaluation evaluation) @trusted nothrow {
-  // Unescape the serialized strings before diffing
+  enum CONTEXT_LINES = 2;
+
   auto expectedUnescaped = unescapeString(evaluation.expectedValue.strValue);
   auto actualUnescaped = unescapeString(evaluation.currentValue.strValue);
 
-  // Split into lines
   auto expectedLines = splitLines(expectedUnescaped);
   auto actualLines = splitLines(actualUnescaped);
 
@@ -221,54 +379,89 @@ void setMultilineDiff(ref Evaluation evaluation) @trusted nothrow {
     return;
   }
 
-  // Build the diff output
+  auto lineDiff = computeLineDiff(expectedLines, actualLines);
+  auto blocks = buildChangeBlocksWithContext(lineDiff);
+
+  if (blocks.length == 0) {
+    return;
+  }
+
   auto diffBuffer = HeapString.create(4096);
   diffBuffer.put("\n\nDiff:\n");
 
-  size_t maxLines = expectedLines.length > actualLines.length ? expectedLines.length : actualLines.length;
-  bool hasChanges = false;
+  foreach (blockIdx; 0 .. blocks.length) {
+    auto block = blocks[blockIdx];
 
-  foreach (i; 0 .. maxLines) {
-    bool hasExpected = i < expectedLines.length;
-    bool hasActual = i < actualLines.length;
+    // Add separator and title at the start of each block
+    if (blockIdx > 0) {
+      diffBuffer.put("\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    }
 
-    if (hasExpected && hasActual) {
-      // Both have this line - check if different
-      if (!linesEqual(expectedLines[i], actualLines[i])) {
-        hasChanges = true;
-        auto lineNum = formatLineNumber(i + 1);
+    if (block.op == EditOp.remove) {
+      diffBuffer.put("    --- Expected (missing in actual) ---\n");
+    } else if (block.op == EditOp.insert) {
+      diffBuffer.put("    +++ Actual (not in expected) +++\n");
+    }
+    diffBuffer.put("\n");
+
+    // Determine context lines source based on operation type
+    HeapString[]* contextSource;
+    size_t firstIdx = block.firstChangeLine;
+
+    if (block.op == EditOp.remove) {
+      contextSource = &expectedLines;
+    } else {
+      contextSource = &actualLines;
+    }
+
+    // Show context lines before the change
+    size_t contextStart = firstIdx > CONTEXT_LINES ? firstIdx - CONTEXT_LINES : 0;
+    foreach (ctxIdx; contextStart .. firstIdx) {
+      auto lineNum = formatLineNumber(ctxIdx + 1);
+      diffBuffer.put(lineNum[]);
+      diffBuffer.put("   ");
+      diffBuffer.put((*contextSource)[ctxIdx][]);
+      diffBuffer.put("\n");
+    }
+
+    // Show the changed lines
+    if (block.op == EditOp.remove) {
+      foreach (idx; 0 .. block.lineIndices.length) {
+        size_t lineIdx = block.lineIndices[idx];
+        auto lineNum = formatLineNumber(lineIdx + 1);
         diffBuffer.put(lineNum[]);
         diffBuffer.put("[-");
-        diffBuffer.put(expectedLines[i][]);
+        diffBuffer.put(expectedLines[lineIdx][]);
         diffBuffer.put("-]\n");
+      }
+    } else if (block.op == EditOp.insert) {
+      foreach (idx; 0 .. block.lineIndices.length) {
+        size_t lineIdx = block.lineIndices[idx];
+        auto lineNum = formatLineNumber(lineIdx + 1);
         diffBuffer.put(lineNum[]);
         diffBuffer.put("[+");
-        diffBuffer.put(actualLines[i][]);
+        diffBuffer.put(actualLines[lineIdx][]);
         diffBuffer.put("+]\n");
       }
-    } else if (hasExpected) {
-      // Line only in expected (removed)
-      hasChanges = true;
-      auto lineNum = formatLineNumber(i + 1);
+    }
+
+    // Show context lines after the change
+    size_t lastIdx = block.lastChangeLine;
+    size_t contextEnd = lastIdx + 1 + CONTEXT_LINES;
+    if (contextEnd > (*contextSource).length) {
+      contextEnd = (*contextSource).length;
+    }
+    foreach (ctxIdx; lastIdx + 1 .. contextEnd) {
+      auto lineNum = formatLineNumber(ctxIdx + 1);
       diffBuffer.put(lineNum[]);
-      diffBuffer.put("[-");
-      diffBuffer.put(expectedLines[i][]);
-      diffBuffer.put("-]\n");
-    } else if (hasActual) {
-      // Line only in actual (added)
-      hasChanges = true;
-      auto lineNum = formatLineNumber(i + 1);
-      diffBuffer.put(lineNum[]);
-      diffBuffer.put("[+");
-      diffBuffer.put(actualLines[i][]);
-      diffBuffer.put("+]\n");
+      diffBuffer.put("   ");
+      diffBuffer.put((*contextSource)[ctxIdx][]);
+      diffBuffer.put("\n");
     }
   }
 
-  if (hasChanges) {
-    diffBuffer.put("\n");
-    evaluation.result.addText(diffBuffer[]);
-  }
+  diffBuffer.put("\n");
+  evaluation.result.addText(diffBuffer[]);
 }
 
 /// Splits a HeapString into lines.

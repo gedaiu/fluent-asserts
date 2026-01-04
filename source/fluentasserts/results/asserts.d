@@ -133,6 +133,18 @@ struct AssertResult {
       || diff.length > 0 || extra.length > 0 || missing.length > 0;
   }
 
+  /// Returns true if the message ends with a newline (multiline output).
+  bool endsWithNewline() nothrow @safe @nogc const {
+    if (_messageCount == 0) {
+      return false;
+    }
+    auto lastMsg = _messages[_messageCount - 1];
+    if (lastMsg.text.length == 0) {
+      return false;
+    }
+    return lastMsg.text[lastMsg.text.length - 1] == '\n';
+  }
+
   /// Formats a value for display, replacing special characters with glyphs.
   string formatValue(string value) nothrow inout {
     return value

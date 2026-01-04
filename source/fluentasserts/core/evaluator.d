@@ -115,7 +115,9 @@ mixin template EvaluatorContextMethods() {
     }
 
     operation(_evaluation);
-    _evaluation.result.addText(".");
+    if (!_evaluation.result.endsWithNewline()) {
+      _evaluation.result.addText(".");
+    }
 
     if (Lifecycle.instance.keepLastEvaluation) {
       Lifecycle.instance.lastEvaluation = _evaluation;
@@ -191,7 +193,9 @@ mixin template EvaluatorContextMethods() {
     _evaluation.isEvaluated = true;
 
     operation(_evaluation);
-    _evaluation.result.addText(".");
+    if (!_evaluation.result.endsWithNewline()) {
+      _evaluation.result.addText(".");
+    }
 
     if (_evaluation.currentValue.throwable !is null) {
       throw _evaluation.currentValue.throwable;
@@ -345,7 +349,9 @@ mixin template EvaluatorContextMethods() {
     _evaluation.isEvaluated = true;
 
     op(_evaluation);
-    _evaluation.result.addText(".");
+    if (!_evaluation.result.endsWithNewline()) {
+      _evaluation.result.addText(".");
+    }
 
     if (_evaluation.currentValue.throwable !is null) {
       throw _evaluation.currentValue.throwable;
