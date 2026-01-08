@@ -22,6 +22,20 @@ string normalizeSnapshot(string input) {
   return addressNormalized;
 }
 
+/// Normalizes snapshot output for documentation by removing source location entirely.
+string normalizeForDocs(string input) {
+  import std.string : indexOf;
+  auto normalized = normalizeSnapshot(input);
+  auto sourceIdx = normalized.indexOf("\nsource/");
+  if (sourceIdx == -1) {
+    sourceIdx = normalized.indexOf("\n./source/");
+  }
+  if (sourceIdx != -1) {
+    return normalized[0 .. sourceIdx + 1];
+  }
+  return normalized;
+}
+
 /// Snapshot test case definition.
 struct SnapshotTest {
   string name;
@@ -224,6 +238,18 @@ version (unittest) {
     return normalizeSnapshot(eval.toString());
   }
 
+  /// Helper to run a positive test and return output string for docs (no source location).
+  string runPosAndGetDocsOutput(string code)() {
+    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
+    return normalizeForDocs(eval.toString());
+  }
+
+  /// Helper to run a negated test and return output string for docs (no source location).
+  string runNegAndGetDocsOutput(string code)() {
+    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
+    return normalizeForDocs(eval.toString());
+  }
+
   /// Generates snapshot content for a single test at compile time.
   mixin template GenerateSnapshotContent(size_t idx, Appender) {
     enum test = snapshotTests[idx];
@@ -305,6 +331,50 @@ version (unittest) {
 
       std.file.write(filename, output[]);
     }
+
+    generateDocsMdx();
+  }
+
+  /// Generates the MDX documentation file for the docs site.
+  void generateDocsMdx() {
+    import std.array : Appender;
+
+    auto previousFormat = config.output.format;
+    scope(exit) config.output.setFormat(previousFormat);
+
+    config.output.setFormat(OutputFormat.verbose);
+
+    Appender!string output;
+
+    output.put(`---
+title: Operation Snapshots
+description: Reference of assertion failure messages for all operations
+---
+
+This page shows what assertion failure messages look like for each operation.
+Use this as a reference to understand the output format when tests fail.
+
+This file is auto-generated from test runs. Do not edit manually.
+`);
+
+    static foreach (i; 0 .. snapshotTests.length) {
+      {
+        enum test = snapshotTests[i];
+        output.put("\n## ");
+        output.put(test.name);
+        output.put("\n\n### Positive failure\n\n```d\n");
+        output.put(test.posCode);
+        output.put(";\n```\n\n```\n");
+        output.put(runPosAndGetDocsOutput!(test.posCode)());
+        output.put("```\n\n### Negated failure\n\n```d\n");
+        output.put(test.negCode);
+        output.put(";\n```\n\n```\n");
+        output.put(runNegAndGetDocsOutput!(test.negCode)());
+        output.put("```\n");
+      }
+    }
+
+    std.file.write("docs/src/content/docs/api/other/snapshot.mdx", output[]);
   }
 
   @("generate snapshot markdown files")

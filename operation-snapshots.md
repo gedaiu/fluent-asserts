@@ -18,107 +18,7 @@ OPERATION: equal
 EXPECTED: <int> 3
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -135,13 +35,20 @@ OPERATION: not equal
 EXPECTED: <int> not 5
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## equal string
@@ -160,107 +67,7 @@ OPERATION: equal
 EXPECTED: <string> world
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -277,13 +84,20 @@ OPERATION: not equal
 EXPECTED: <string> not hello
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## equal array
@@ -302,107 +116,7 @@ OPERATION: equal
 EXPECTED: <int[]> [1, 2, 4]
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -419,13 +133,20 @@ OPERATION: not equal
 EXPECTED: <int[]> not [1, 2, 3]
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## contain string
@@ -444,107 +165,7 @@ OPERATION: contain
 EXPECTED: <string> to contain xyz
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -561,13 +182,20 @@ OPERATION: not contain
 EXPECTED: <string> not to contain ell
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## contain array
@@ -586,107 +214,7 @@ OPERATION: contain
 EXPECTED: <int> to contain 5
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -703,13 +231,20 @@ OPERATION: not contain
 EXPECTED: <int> not to contain 2
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## containOnly
@@ -728,107 +263,7 @@ OPERATION: containOnly
 EXPECTED: <int[]> to contain only [1, 2]
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -845,13 +280,20 @@ OPERATION: not containOnly
 EXPECTED: <int[]> not to contain only [1, 2, 3]
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## startWith
@@ -870,107 +312,7 @@ OPERATION: startWith
 EXPECTED: <string> to start with xyz
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -987,13 +329,20 @@ OPERATION: not startWith
 EXPECTED: <string> not to start with hel
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## endWith
@@ -1012,107 +361,7 @@ OPERATION: endWith
 EXPECTED: <string> to end with xyz
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -1129,13 +378,20 @@ OPERATION: not endWith
 EXPECTED: <string> not to end with llo
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## approximately scalar
@@ -1154,107 +410,7 @@ OPERATION: approximately
 EXPECTED: <double> 0.3±0.1
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -1271,13 +427,20 @@ OPERATION: not approximately
 EXPECTED: <double> 0.35±0.01
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## approximately array
@@ -1296,107 +459,7 @@ OPERATION: approximately
 EXPECTED: <double[]> [0.3±0.1]
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -1413,13 +476,20 @@ OPERATION: not approximately
 EXPECTED: <double[]> [0.35±0.01]
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## greaterThan
@@ -1438,107 +508,7 @@ OPERATION: greaterThan
 EXPECTED: <int> greater than 5
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -1555,13 +525,20 @@ OPERATION: not greaterThan
 EXPECTED: <int> less than or equal to 3
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## lessThan
@@ -1580,107 +557,7 @@ OPERATION: lessThan
 EXPECTED: <int> less than 3
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -1697,13 +574,20 @@ OPERATION: not lessThan
 EXPECTED: <int> greater than or equal to 5
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## between
@@ -1722,107 +606,7 @@ OPERATION: between
 EXPECTED: <int> a value inside (1, 5) interval
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -1839,13 +623,20 @@ OPERATION: not between
 EXPECTED: <int> a value outside (1, 5) interval
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## greaterOrEqualTo
@@ -1864,107 +655,7 @@ OPERATION: greaterOrEqualTo
 EXPECTED: <int> greater or equal than 5
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -1981,13 +672,20 @@ OPERATION: not greaterOrEqualTo
 EXPECTED: <int> less than 3
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## lessOrEqualTo
@@ -2006,107 +704,7 @@ OPERATION: lessOrEqualTo
 EXPECTED: <int> less or equal to 3
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -2123,13 +721,20 @@ OPERATION: not lessOrEqualTo
 EXPECTED: <int> greater than 5
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## instanceOf
@@ -2148,107 +753,7 @@ OPERATION: instanceOf
 EXPECTED: <object.Exception> typeof object.Exception
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -2265,13 +770,20 @@ OPERATION: not instanceOf
 EXPECTED: <object.Object> not typeof object.Object
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
 
 ## beNull
@@ -2290,107 +802,7 @@ OPERATION: beNull
 EXPECTED: <unknown> null
 
 source/fluentasserts/operations/snapshot.d:XXX
-   214:version (unittest) {
-   215:  /// Helper to run a positive test and return output string.
-   216:  string runPosAndGetOutput(string code)() {
->  217:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   218:    return normalizeSnapshot(eval.toString());
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
-   223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
-   226:
-   227:  /// Generates snapshot content for a single test at compile time.
-   228:  mixin template GenerateSnapshotContent(size_t idx, Appender) {
-   229:    enum test = snapshotTests[idx];
-   230:
-   231:    static void appendContent(ref Appender output) {
-   232:      output.put("\n## ");
-   233:      output.put(test.name);
-   234:      output.put("\n\n### Positive fail\n\n```d\n");
-   235:      output.put(test.posCode);
-   236:      output.put(";\n```\n\n```\n");
-   237:      output.put(runPosAndGetOutput!(test.posCode)());
-   238:      output.put("```\n\n### Negated fail\n\n```d\n");
-   239:      output.put(test.negCode);
-   240:      output.put(";\n```\n\n```\n");
-   241:      output.put(runNegAndGetOutput!(test.negCode)());
-   242:      output.put("```\n");
-   243:    }
-   244:  }
-   245:
-   246:  /// Generates snapshot markdown files for all output formats.
-   247:  void generateSnapshotFiles() {
-   248:    import std.array : Appender;
-   249:
-   250:    auto previousFormat = config.output.format;
-   251:    scope(exit) config.output.setFormat(previousFormat);
-   252:
-   253:    foreach (format; [OutputFormat.verbose, OutputFormat.compact, OutputFormat.tap]) {
-   254:      config.output.setFormat(format);
-   255:
-   256:      Appender!string output;
-   257:      string formatName;
-   258:      string description;
-   259:
-   260:      final switch (format) {
-   261:        case OutputFormat.verbose:
-   262:          formatName = "verbose";
-   263:          description = "This file contains snapshots of all assertion operations with both positive and negated failure variants.";
-   264:          break;
-   265:        case OutputFormat.compact:
-   266:          formatName = "compact";
-   267:          description = "This file contains snapshots in compact format (default when CLAUDECODE=1).";
-   268:          break;
-   269:        case OutputFormat.tap:
-   270:          formatName = "tap";
-   271:          description = "This file contains snapshots in TAP (Test Anything Protocol) format.";
-   272:          break;
-   273:      }
-   274:
-   275:      output.put("# Operation Snapshots");
-   276:      if (format != OutputFormat.verbose) {
-   277:        output.put(" (");
-   278:        output.put(formatName);
-   279:        output.put(")");
-   280:      }
-   281:      output.put("\n\n");
-   282:      output.put(description);
-   283:      output.put("\n");
-   284:
-   285:      static foreach (i; 0 .. snapshotTests.length) {
-   286:        {
-   287:          enum test = snapshotTests[i];
-   288:          output.put("\n## ");
-   289:          output.put(test.name);
-   290:          output.put("\n\n### Positive fail\n\n```d\n");
-   291:          output.put(test.posCode);
-   292:          output.put(";\n```\n\n```\n");
-   293:          output.put(runPosAndGetOutput!(test.posCode)());
-   294:          output.put("```\n\n### Negated fail\n\n```d\n");
-   295:          output.put(test.negCode);
-   296:          output.put(";\n```\n\n```\n");
-   297:          output.put(runNegAndGetOutput!(test.negCode)());
-   298:          output.put("```\n");
-   299:        }
-   300:      }
-   301:
-   302:      string filename = format == OutputFormat.verbose
-   303:        ? "operation-snapshots.md"
-   304:        : "operation-snapshots-" ~ formatName ~ ".md";
-   305:
-   306:      std.file.write(filename, output[]);
-   307:    }
-   308:  }
-   309:
-   310:  @("generate snapshot markdown files")
-   311:  unittest {
-   312:    generateSnapshotFiles();
-   313:  }
-   314:}
+>  219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
 ```
 
 ### Negated fail
@@ -2407,11 +819,18 @@ OPERATION: not beNull
 EXPECTED: <unknown> not null
 
 source/fluentasserts/operations/snapshot.d:XXX
-   219:  }
-   220:
-   221:  /// Helper to run a negated test and return output string.
-   222:  string runNegAndGetOutput(string code)() {
->  223:    mixin("auto eval = recordEvaluation({ " ~ code ~ "; });");
-   224:    return normalizeSnapshot(eval.toString());
-   225:  }
+   213:unittest {
+   214:  auto previousFormat = config.output.format;
+   215:  scope(exit) config.output.setFormat(previousFormat);
+   216:
+   217:  config.output.setFormat(OutputFormat.verbose);
+   218:
+   219:  auto eval = recordEvaluation({ expect(5).to.equal(3); });
+   220:  auto output = eval.toString();
+   221:
+   222:  assert(output.canFind("ASSERTION FAILED:"), "Verbose format should contain ASSERTION FAILED:");
+>  223:  assert(output.canFind("OPERATION:"), "Verbose format should contain OPERATION:");
+   224:  assert(output.canFind("ACTUAL:"), "Verbose format should contain ACTUAL:");
+   225:  assert(output.canFind("EXPECTED:"), "Verbose format should contain EXPECTED:");
+   226:}
 ```
