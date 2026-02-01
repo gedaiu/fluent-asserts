@@ -73,7 +73,9 @@ struct StringResult {
 /// ---
 StringResult toHeapString(T)(T value) @safe nothrow @nogc
 if (__traits(isIntegral, T) || __traits(isFloating, T)) {
-  static if (is(T == bool)) {
+  import std.traits : Unqual;
+
+  static if (is(Unqual!T == bool)) {
     return StringResult(toBoolString(value), true);
   } else static if (__traits(isIntegral, T)) {
     return StringResult(toIntegralString(value), true);
@@ -273,6 +275,20 @@ unittest {
   auto result = toHeapString(false);
   expect(result.success).to.equal(true);
   expect(result.value[]).to.equal("false");
+}
+
+@("toHeapString converts const bool")
+unittest {
+  auto result = toHeapString(cast(const bool)true);
+  expect(result.success).to.equal(true);
+  expect(result.value[]).to.equal("true");
+}
+
+@("toHeapString converts immutable bool")
+unittest {
+  auto result = toHeapString(cast(immutable bool)true);
+  expect(result.success).to.equal(true);
+  expect(result.value[]).to.equal("true");
 }
 
 // ---------------------------------------------------------------------------
