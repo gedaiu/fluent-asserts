@@ -503,6 +503,10 @@ extern(C) void setupFluentHandler() {
 @trusted
 unittest {
   import core.exception;
+  import fluentasserts.core.config : FluentAssertsConfig, OutputFormat;
+
+  FluentAssertsConfig.output.setFormat(OutputFormat.verbose);
+  scope(exit) FluentAssertsConfig.output.setFormat(OutputFormat.verbose);
 
   setupFluentHandler;
   scope(exit) core.exception.assertHandler = null;
