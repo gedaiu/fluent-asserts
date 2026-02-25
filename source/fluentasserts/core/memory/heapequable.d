@@ -265,12 +265,14 @@ struct HeapEquableValue {
 
   @disable this(this);
 
-  this(ref return scope const HeapEquableValue rhs) @trusted nothrow {
+  this(ref return scope const HeapEquableValue rhs) @safe nothrow {
     _serialized = rhs._serialized;
     _kind = rhs._kind;
-    _elements = duplicateHeapEquableArray(rhs._elements, rhs._elementCount);
-    _elementCount = (_elements !is null) ? rhs._elementCount : 0;
-    _objectRef = cast(Object) rhs._objectRef;
+    () @trusted {
+      _elements = duplicateHeapEquableArray(rhs._elements, rhs._elementCount);
+      _elementCount = (_elements !is null) ? rhs._elementCount : 0;
+      _objectRef = cast(Object) rhs._objectRef;
+    }();
   }
 
   void opAssign(ref const HeapEquableValue rhs) @trusted nothrow {

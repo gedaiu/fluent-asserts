@@ -52,13 +52,13 @@ struct ValueEvaluation {
   @disable this(this);
 
   /// Copy constructor - creates a deep copy from the source.
-  this(ref return scope const ValueEvaluation rhs) @trusted nothrow {
-    throwable = cast(Throwable) rhs.throwable;
+  this(ref return scope const ValueEvaluation rhs) @safe nothrow {
+    () @trusted { throwable = cast(Throwable) rhs.throwable; }();
     duration = rhs.duration;
     gcMemoryUsed = rhs.gcMemoryUsed;
     nonGCMemoryUsed = rhs.nonGCMemoryUsed;
     strValue = rhs.strValue;
-    proxyValue = rhs.proxyValue;
+    proxyValue = HeapEquableValue(rhs.proxyValue);
     niceValue = rhs.niceValue;
     typeNames = rhs.typeNames;
     meta = rhs.meta;
@@ -74,7 +74,7 @@ struct ValueEvaluation {
     gcMemoryUsed = rhs.gcMemoryUsed;
     nonGCMemoryUsed = rhs.nonGCMemoryUsed;
     strValue = rhs.strValue;
-    proxyValue = rhs.proxyValue;
+    proxyValue = HeapEquableValue(rhs.proxyValue);
     niceValue = rhs.niceValue;
     typeNames = rhs.typeNames;
     meta = rhs.meta;
@@ -82,6 +82,7 @@ struct ValueEvaluation {
     line = rhs.line;
     prependText = rhs.prependText;
   }
+
 
   /// Returns true if this ValueEvaluation's HeapString fields are valid.
   bool isValid() @trusted nothrow @nogc const {
@@ -121,11 +122,11 @@ struct EvaluationResult(T) {
   /// Copy constructor - creates a deep copy from the source.
   this(ref return scope const EvaluationResult rhs) @trusted nothrow {
     assignValue(value, rhs);
-    evaluation = rhs.evaluation;
+    evaluation.opAssign(rhs.evaluation);
   }
 
   void opAssign(ref const EvaluationResult rhs) @trusted nothrow {
     assignValue(value, rhs);
-    evaluation = rhs.evaluation;
+    evaluation.opAssign(rhs.evaluation);
   }
 }
