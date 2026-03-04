@@ -72,6 +72,7 @@ struct SourceResult {
       auto result = getScope(fileTokensCache[pathToUse], line);
 
       auto begin = getPreviousIdentifier(fileTokensCache[pathToUse], result.begin);
+      begin = max(begin, result.begin);
       begin = extendToLineStart(fileTokensCache[pathToUse], begin);
       auto end = getFunctionEnd(fileTokensCache[pathToUse], begin) + 1;
 
@@ -225,4 +226,29 @@ struct SourceResult {
 
     printer.primary("\n");
   }
+}
+
+version(unittest) {
+  import fluent.asserts;
+  import fluentasserts.results.source.tokens;
+}
+
+@("ensureTokensLoaded clamps begin for lambda inside map")
+unittest {
+  auto source = SourceResult.create("testdata/values.d", 108);
+  auto toks = source.tokens;
+  auto output = source.toString();
+
+  output.should.not.contain("auto a = 1");
+  output.should.contain("iota");
+}
+
+@("ensureTokensLoaded clamps begin for if block")
+unittest {
+  auto source = SourceResult.create("testdata/values.d", 114);
+  auto toks = source.tokens;
+  auto output = source.toString();
+
+  output.should.not.contain("auto a = 1");
+  output.should.contain("if");
 }

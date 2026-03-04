@@ -102,3 +102,15 @@ unittest {
     });
   });
 }
+
+unittest {
+  auto a = 1;
+  iota(1).map!((a) { a.should.equal(2); return a + 1; }).array;
+}
+
+unittest {
+  auto a = 1;
+  if (a == 1) {
+    a.should.equal(2);
+  }
+}
