@@ -35,12 +35,12 @@ auto getScope(const(Token)[] tokens, size_t line) nothrow {
     }
 
     if (foundScope) {
-      if (token.text == "should" || token.text == "Assert" || type == "assert" || type == ";") {
+      if (!foundAssert && (token.text == "should" || token.text == "Assert" || type == "assert" || type == ";")) {
         foundAssert = true;
         scopeLevel = paranthesisCount;
       }
 
-      if (type == "}" && paranthesisCount <= scopeLevel) {
+      if (foundAssert && type == "}" && paranthesisCount < scopeLevel) {
         beginToken = paranthesisLevels[paranthesisCount];
         endToken = i + 1;
 
@@ -109,6 +109,22 @@ unittest {
   ({
     ({ }).should.beNull;
   }).should.throwException!TestException.msg;
+
+}`);
+}
+
+@("getScope returns full parent scope when it contains other nested blocks")
+unittest {
+  const(Token)[] tokens = [];
+  splitMultilinetokens(fileToDTokens("testdata/values.d"), tokens);
+
+  auto result = getScope(tokens, 120);
+  auto identifierStart = getPreviousIdentifier(tokens, result.begin);
+  
+  tokens[identifierStart .. result.end].tokensToString.strip.should.equal(`unittest {
+  auto a = 1;
+  a.shoud.equal(1);
+  receive(2.seconds, (int m) { m.should.equal(1); });
 
 }`);
 }

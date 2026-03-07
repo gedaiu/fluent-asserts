@@ -114,3 +114,9 @@ unittest {
     a.should.equal(2);
   }
 }
+
+unittest {
+  auto a = 1;
+  a.shoud.equal(1);
+  receive(2.seconds, (int m) { m.should.equal(1); });
+}
