@@ -264,11 +264,12 @@ mixin template EvaluatorContextMethods() {
     _evaluation.addOperationName("withMessage");
     _evaluation.result.addText(" with message");
 
-    auto expectedValue = message.evaluate.evaluation;
-    foreach (kv; _evaluation.expectedValue.meta.byKeyValue) {
-      expectedValue.meta[kv.key] = kv.value;
+    auto oldMeta = _evaluation.expectedValue.meta;
+    auto evalResult = message.evaluate;
+    _evaluation.expectedValue = evalResult.evaluation;
+    foreach (kv; oldMeta.byKeyValue) {
+      _evaluation.expectedValue.meta[kv.key] = kv.value;
     }
-    _evaluation.expectedValue = expectedValue;
     () @trusted { _evaluation.expectedValue.meta["0"] = HeapSerializerRegistry.instance.serialize(message); }();
 
     if (!_evaluation.expectedValue.niceValue.empty) {
@@ -288,11 +289,12 @@ mixin template EvaluatorContextMethods() {
   ref ThrowableEvaluator equal(T)(T value) return {
     _evaluation.addOperationName("equal");
 
-    auto expectedValue = value.evaluate.evaluation;
-    foreach (kv; _evaluation.expectedValue.meta.byKeyValue) {
-      expectedValue.meta[kv.key] = kv.value;
+    auto oldMeta = _evaluation.expectedValue.meta;
+    auto evalResult = value.evaluate;
+    _evaluation.expectedValue = evalResult.evaluation;
+    foreach (kv; oldMeta.byKeyValue) {
+      _evaluation.expectedValue.meta[kv.key] = kv.value;
     }
-    _evaluation.expectedValue = expectedValue;
     () @trusted { _evaluation.expectedValue.meta["0"] = HeapSerializerRegistry.instance.serialize(value); }();
 
     _evaluation.result.addText(" equal");

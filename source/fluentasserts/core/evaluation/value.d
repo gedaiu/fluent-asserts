@@ -52,7 +52,7 @@ struct ValueEvaluation {
   @disable this(this);
 
   /// Copy constructor - creates a deep copy from the source.
-  this(ref return scope const ValueEvaluation rhs) @safe nothrow {
+  this(ref return const ValueEvaluation rhs) @safe nothrow {
     () @trusted { throwable = cast(Throwable) rhs.throwable; }();
     duration = rhs.duration;
     gcMemoryUsed = rhs.gcMemoryUsed;

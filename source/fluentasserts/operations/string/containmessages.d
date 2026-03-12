@@ -72,7 +72,7 @@ void addNegatedLifecycleMessage(ref Evaluation evaluation, HeapEquableValue[] mi
   addNegatedLifecycleMessage(evaluation, missing);
 }
 
-string createResultMessage(ValueEvaluation expectedValue, string[] expectedPieces) nothrow {
+string createResultMessage(ref ValueEvaluation expectedValue, string[] expectedPieces) nothrow {
   string message = "to contain ";
 
   if(expectedPieces.length > 1) {
@@ -85,7 +85,7 @@ string createResultMessage(ValueEvaluation expectedValue, string[] expectedPiece
 }
 
 /// Creates an expected result message from HeapEquableValue array.
-string createResultMessage(ValueEvaluation expectedValue, HeapEquableValue[] missingValues) nothrow {
+string createResultMessage(ref ValueEvaluation expectedValue, HeapEquableValue[] missingValues) nothrow {
   string[] missing;
   try {
     missing = new string[missingValues.length];
@@ -99,7 +99,7 @@ string createResultMessage(ValueEvaluation expectedValue, HeapEquableValue[] mis
   return createResultMessage(expectedValue, missing);
 }
 
-string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expectedPieces) nothrow {
+string createNegatedResultMessage(ref ValueEvaluation expectedValue, string[] expectedPieces) nothrow {
   string message = "not to contain ";
 
   if(expectedPieces.length > 1) {
@@ -112,7 +112,7 @@ string createNegatedResultMessage(ValueEvaluation expectedValue, string[] expect
 }
 
 /// Creates a negated expected result message from HeapEquableValue array.
-string createNegatedResultMessage(ValueEvaluation expectedValue, HeapEquableValue[] missingValues) nothrow {
+string createNegatedResultMessage(ref ValueEvaluation expectedValue, HeapEquableValue[] missingValues) nothrow {
   string[] missing;
   try {
     missing = new string[missingValues.length];

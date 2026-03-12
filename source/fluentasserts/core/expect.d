@@ -555,13 +555,13 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
     addOperationName(methodName);
 
     static if(Params.length > 0) {
-      auto expectedValue = params[0].evaluate.evaluation;
+      auto oldMeta = _evaluation.expectedValue.meta;
+      auto evalResult = params[0].evaluate;
+      _evaluation.expectedValue = evalResult.evaluation;
 
-      foreach(kv; _evaluation.expectedValue.meta.byKeyValue) {
-        expectedValue.meta[kv.key] = kv.value;
+      foreach(kv; oldMeta.byKeyValue) {
+        _evaluation.expectedValue.meta[kv.key] = kv.value;
       }
-
-      _evaluation.expectedValue = expectedValue;
     }
 
     static if(Params.length >= 1) {
@@ -576,13 +576,13 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
   /// Sets the expected value for terminal operations.
   /// Serializes the value and stores it in the evaluation.
   void setExpectedValue(T)(T value) @trusted {
-    auto expectedValue = value.evaluate.evaluation;
+    auto oldMeta = _evaluation.expectedValue.meta;
+    auto evalResult = value.evaluate;
+    _evaluation.expectedValue = evalResult.evaluation;
 
-    foreach(kv; _evaluation.expectedValue.meta.byKeyValue) {
-      expectedValue.meta[kv.key] = kv.value;
+    foreach(kv; oldMeta.byKeyValue) {
+      _evaluation.expectedValue.meta[kv.key] = kv.value;
     }
-
-    _evaluation.expectedValue = expectedValue;
     _evaluation.expectedValue.meta["0"] = HeapSerializerRegistry.instance.serialize(value);
   }
 }
