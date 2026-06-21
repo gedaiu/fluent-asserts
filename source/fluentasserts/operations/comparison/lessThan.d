@@ -2,7 +2,7 @@ module fluentasserts.operations.comparison.lessThan;
 
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation.eval : Evaluation;
-import fluentasserts.core.conversion.tonumeric : toNumeric;
+import fluentasserts.core.conversion.numericcompare : compareNumeric, isComparableNumeric;
 
 import fluentasserts.core.lifecycle;
 
@@ -18,17 +18,18 @@ version(unittest) {
 
 static immutable lessThanDescription = "Asserts that the tested value is less than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
-void lessThan(T)(ref Evaluation evaluation) @safe nothrow @nogc {
-  auto expected = toNumeric!T(evaluation.expectedValue.strValue);
-  auto current = toNumeric!T(evaluation.currentValue.strValue);
+void lessThan(T)(ref Evaluation evaluation) @safe nothrow @nogc if (isComparableNumeric!T) {
+  auto cmp = compareNumeric(
+    evaluation.currentValue.typeName, evaluation.currentValue.strValue,
+    evaluation.expectedValue.typeName, evaluation.expectedValue.strValue);
 
-  if (!expected.success || !current.success) {
+  if (!cmp.success) {
     evaluation.conversionError(T.stringof);
     return;
   }
 
   evaluation.check(
-    current.value < expected.value,
+    cmp.order < 0,
     "less than ",
     evaluation.expectedValue.strValue[],
     "greater than or equal to "
@@ -113,6 +114,26 @@ unittest {
 unittest {
   3.14.should.be.lessThan(3.15);
   3.15.should.not.be.lessThan(3.14);
+}
+
+@("lessThan compares a double actual with an int expected")
+unittest {
+  expect(cast(double) 0.5).to.be.lessThan(1);
+}
+
+@("lessThan compares an int actual with a double expected")
+unittest {
+  expect(2).to.be.lessThan(2.5);
+}
+
+@("lessThan compares a negative signed value with an unsigned value by true value")
+unittest {
+  expect(-1).to.be.lessThan(1u);
+}
+
+@("lessThan keeps precision for ulong values near the maximum")
+unittest {
+  expect(ulong.max - 1).to.be.lessThan(ulong.max);
 }
 
 @("lessThan works with custom comparable struct")

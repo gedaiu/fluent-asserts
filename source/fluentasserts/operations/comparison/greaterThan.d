@@ -2,7 +2,7 @@ module fluentasserts.operations.comparison.greaterThan;
 
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation.eval : Evaluation;
-import fluentasserts.core.conversion.tonumeric : toNumeric;
+import fluentasserts.core.conversion.numericcompare : compareNumeric, isComparableNumeric;
 
 import fluentasserts.core.lifecycle;
 
@@ -20,17 +20,18 @@ version (unittest) {
 
 static immutable greaterThanDescription = "Asserts that the tested value is greater than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
-void greaterThan(T)(ref Evaluation evaluation) @safe nothrow @nogc {
-  auto expected = toNumeric!T(evaluation.expectedValue.strValue);
-  auto current = toNumeric!T(evaluation.currentValue.strValue);
+void greaterThan(T)(ref Evaluation evaluation) @safe nothrow @nogc if (isComparableNumeric!T) {
+  auto cmp = compareNumeric(
+    evaluation.currentValue.typeName, evaluation.currentValue.strValue,
+    evaluation.expectedValue.typeName, evaluation.expectedValue.strValue);
 
-  if (!expected.success || !current.success) {
+  if (!cmp.success) {
     evaluation.conversionError(T.stringof);
     return;
   }
 
   evaluation.check(
-    current.value > expected.value,
+    cmp.order > 0,
     "greater than ",
     evaluation.expectedValue.strValue[],
     "less than or equal to "
@@ -125,6 +126,26 @@ static foreach (Type; NumericTypes) {
     expect(evaluation.result.expected[]).to.equal("less than or equal to " ~ smallValue.to!string);
     expect(evaluation.result.actual[]).to.equal(largeValue.to!string);
   }
+}
+
+@("greaterThan compares a double actual with an int expected")
+unittest {
+  expect(cast(double) 3.22681e+10).to.be.greaterThan(0);
+}
+
+@("greaterThan compares an int actual with a double expected")
+unittest {
+  expect(5).to.be.greaterThan(2.5);
+}
+
+@("greaterThan compares a negative signed value with an unsigned value by true value")
+unittest {
+  expect(-1).not.to.be.greaterThan(1u);
+}
+
+@("greaterThan keeps precision for ulong values near the maximum")
+unittest {
+  expect(ulong.max).to.be.greaterThan(ulong.max - 1);
 }
 
 @("Duration compares two values")

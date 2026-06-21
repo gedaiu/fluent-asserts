@@ -2,7 +2,7 @@ module fluentasserts.operations.comparison.greaterOrEqualTo;
 
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation.eval : Evaluation;
-import fluentasserts.core.conversion.tonumeric : toNumeric;
+import fluentasserts.core.conversion.numericcompare : compareNumeric, isComparableNumeric;
 
 import fluentasserts.core.lifecycle;
 
@@ -20,17 +20,18 @@ version (unittest) {
 
 static immutable greaterOrEqualToDescription = "Asserts that the tested value is greater or equal than the tested value. However, it's often best to assert that the target is equal to its expected value.";
 
-void greaterOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow @nogc {
-  auto expected = toNumeric!T(evaluation.expectedValue.strValue);
-  auto current = toNumeric!T(evaluation.currentValue.strValue);
+void greaterOrEqualTo(T)(ref Evaluation evaluation) @safe nothrow @nogc if (isComparableNumeric!T) {
+  auto cmp = compareNumeric(
+    evaluation.currentValue.typeName, evaluation.currentValue.strValue,
+    evaluation.expectedValue.typeName, evaluation.expectedValue.strValue);
 
-  if (!expected.success || !current.success) {
+  if (!cmp.success) {
     evaluation.conversionError(T.stringof);
     return;
   }
 
   evaluation.check(
-    current.value >= expected.value,
+    cmp.order >= 0,
     "greater or equal than ",
     evaluation.expectedValue.strValue[],
     "less than "
@@ -113,6 +114,26 @@ static foreach (Type; NumericTypes) {
     expect(evaluation.result.expected[]).to.equal("less than " ~ smallValue.to!string);
     expect(evaluation.result.actual[]).to.equal(largeValue.to!string);
   }
+}
+
+@("greaterOrEqualTo compares a double actual with an int expected")
+unittest {
+  expect(cast(double) 3.5).to.be.greaterOrEqualTo(3);
+}
+
+@("greaterOrEqualTo compares an equal int actual with a double expected")
+unittest {
+  expect(3).to.be.greaterOrEqualTo(3.0);
+}
+
+@("greaterOrEqualTo compares a negative signed value with an unsigned value by true value")
+unittest {
+  expect(-1).not.to.be.greaterOrEqualTo(1u);
+}
+
+@("greaterOrEqualTo keeps precision for ulong values near the maximum")
+unittest {
+  expect(ulong.max).to.be.greaterOrEqualTo(ulong.max);
 }
 
 @("Duration compares two values")

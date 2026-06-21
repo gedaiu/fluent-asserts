@@ -390,6 +390,15 @@ unittest {
   Assert.notApproximately(1.5f, 1, 0.2f);
 }
 
+@("Assert compares a double actual against an int expected")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+
+  Assert.greaterThan(cast(double) 3.22681e+10, 0);
+  Assert.lessThan(cast(double) 0.5, 1);
+  Assert.between(cast(double) 5.5, 0, 10);
+}
+
 // Issue #93: Assert.greaterOrEqualTo and Assert.lessOrEqualTo for numeric types
 @("Assert.greaterOrEqualTo and lessOrEqualTo work for integers")
 unittest {

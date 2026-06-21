@@ -3,6 +3,7 @@ module fluentasserts.operations.comparison.between;
 import fluentasserts.results.printer;
 import fluentasserts.core.evaluation.eval : Evaluation;
 import fluentasserts.core.conversion.tonumeric : toNumeric;
+import fluentasserts.core.conversion.numericcompare : commonCompareType, CompareType, isComparableNumeric;
 import fluentasserts.core.memory.heapstring : toHeapString;
 
 import fluentasserts.core.lifecycle;
@@ -23,20 +24,36 @@ static immutable betweenDescription = "Asserts that the target is a number or a 
   "and less than or equal to the given number or date finish respectively. However, it's often best to assert that the target is equal to its expected value.";
 
 /// Asserts that a value is strictly between two bounds (exclusive).
-void between(T)(ref Evaluation evaluation) @safe nothrow {
+void between(T)(ref Evaluation evaluation) @safe nothrow if (isComparableNumeric!T) {
   evaluation.result.addText(" and ");
   evaluation.result.addValue(evaluation.expectedValue.meta["1"]);
 
-  auto currentParsed = toNumeric!T(evaluation.currentValue.strValue);
-  auto limit1Parsed = toNumeric!T(evaluation.expectedValue.strValue);
-  auto limit2Parsed = toNumeric!T(toHeapString(evaluation.expectedValue.meta["1"]));
+  final switch (commonCompareType(evaluation.currentValue.typeName, evaluation.expectedValue.typeName)) {
+    case CompareType.asLong:
+      betweenAs!long(evaluation);
+      break;
+    case CompareType.asULong:
+      betweenAs!ulong(evaluation);
+      break;
+    case CompareType.asReal:
+      betweenAs!real(evaluation);
+      break;
+  }
+}
+
+/// Parses the value and both bounds using the common comparison type and runs
+/// the interval check.
+private void betweenAs(C)(ref Evaluation evaluation) @safe nothrow {
+  auto currentParsed = toNumeric!C(evaluation.currentValue.strValue);
+  auto limit1Parsed = toNumeric!C(evaluation.expectedValue.strValue);
+  auto limit2Parsed = toNumeric!C(toHeapString(evaluation.expectedValue.meta["1"]));
 
   if (!currentParsed.success || !limit1Parsed.success || !limit2Parsed.success) {
-    evaluation.conversionError(T.stringof);
+    evaluation.conversionError(C.stringof);
     return;
   }
 
-  betweenResults(currentParsed.value, limit1Parsed.value, limit2Parsed.value,
+  betweenResults!C(currentParsed.value, limit1Parsed.value, limit2Parsed.value,
       evaluation.expectedValue.strValue[], evaluation.expectedValue.meta["1"], evaluation);
 }
 
@@ -251,6 +268,26 @@ static foreach (Type; NumericTypes) {
     expect(evaluation.result.actual[]).to.equal(middleValue.to!string);
     expect(evaluation.result.negated).to.equal(true);
   }
+}
+
+@("between compares a double actual with int bounds")
+unittest {
+  expect(cast(double) 5.5).to.be.between(0, 10);
+}
+
+@("between compares an int actual with double bounds")
+unittest {
+  expect(5).to.be.between(0.0, 10.0);
+}
+
+@("between compares a negative signed actual with unsigned bounds by true value")
+unittest {
+  expect(-1).to.not.be.between(0u, 10u);
+}
+
+@("between keeps precision for ulong values near the maximum")
+unittest {
+  expect(ulong.max - 1).to.be.between(ulong.max - 2, ulong.max);
 }
 
 @("Duration value is inside an interval")
