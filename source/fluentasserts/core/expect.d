@@ -288,11 +288,17 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
       return Evaluator(_evaluation, customOp);
     }
 
-    // Fall back to default operations
-    if (_evaluation.currentValue.typeName.endsWith("[]") || _evaluation.currentValue.typeName.endsWith("]")) {
-      return Evaluator(_evaluation, &arrayEqualOp);
-    } else {
+    // Comparing against the null literal is handled by the scalar equal op,
+    // which checks null-ness directly instead of array contents.
+    static if (is(T == typeof(null))) {
       return Evaluator(_evaluation, &equalOp);
+    } else {
+      // Fall back to default operations
+      if (_evaluation.currentValue.typeName.endsWith("[]") || _evaluation.currentValue.typeName.endsWith("]")) {
+        return Evaluator(_evaluation, &arrayEqualOp);
+      } else {
+        return Evaluator(_evaluation, &equalOp);
+      }
     }
   }
 

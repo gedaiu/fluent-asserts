@@ -53,14 +53,21 @@ static immutable endSentence = Message(Message.Type.info, ".");
 /// Asserts that the current value is strictly equal to the expected value.
 /// Note: This function is not @nogc because it may use opEquals for object comparison.
 void equal(ref Evaluation evaluation) @safe nothrow {
-  auto hasCurrentProxy = !evaluation.currentValue.proxyValue.isNull();
-  auto hasExpectedProxy = !evaluation.expectedValue.proxyValue.isNull();
+  auto comparesToNullLiteral = evaluation.currentValue.typeName == "typeof(null)" ||
+                               evaluation.expectedValue.typeName == "typeof(null)";
 
   bool isEqual;
-  if (hasCurrentProxy && hasExpectedProxy) {
-    isEqual = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
+  if (comparesToNullLiteral) {
+    isEqual = evaluation.currentValue.isNull && evaluation.expectedValue.isNull;
   } else {
-    isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
+    auto hasCurrentProxy = !evaluation.currentValue.proxyValue.isNull();
+    auto hasExpectedProxy = !evaluation.expectedValue.proxyValue.isNull();
+
+    if (hasCurrentProxy && hasExpectedProxy) {
+      isEqual = evaluation.currentValue.proxyValue.isEqualTo(evaluation.expectedValue.proxyValue);
+    } else {
+      isEqual = evaluation.currentValue.strValue == evaluation.expectedValue.strValue;
+    }
   }
 
   bool passed = evaluation.isNegated ? !isEqual : isEqual;
@@ -1133,6 +1140,29 @@ unittest {
   }).recordEvaluation;
 
   evaluation.result.messageString.should.contain("should equal null.");
+}
+
+@("null string equals null")
+unittest {
+  string s = null;
+  s.should.equal(null);
+}
+
+@("null array equals null")
+unittest {
+  int[] a = null;
+  a.should.equal(null);
+}
+
+@("null associative array equals null")
+unittest {
+  int[string] aa;
+  aa.should.equal(null);
+}
+
+@("empty string does not equal null")
+unittest {
+  "".should.not.equal(null);
 }
 
 // Issue #100: double serialized as scientific notation should equal integer

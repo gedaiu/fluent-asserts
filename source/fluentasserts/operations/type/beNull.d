@@ -25,7 +25,7 @@ void beNull(ref Evaluation evaluation) @safe nothrow @nogc {
     }
   }
 
-  auto isNull = hasNullType || evaluation.currentValue.strValue[] == "null";
+  auto isNull = evaluation.currentValue.isNull || hasNullType || evaluation.currentValue.strValue[] == "null";
 
   if (evaluation.checkCustomActual(isNull, "null", "not null")) {
     return;
@@ -113,4 +113,21 @@ unittest {
   evaluation.result.messageString.should.contain("should be null.");
   evaluation.result.expected[].should.equal("null");
   evaluation.result.actual[].should.equal("object.Object");
+}
+
+@("null string beNull succeeds")
+unittest {
+  string s = null;
+  s.should.beNull;
+}
+
+@("null array beNull succeeds")
+unittest {
+  int[] a = null;
+  a.should.beNull;
+}
+
+@("empty string not beNull succeeds")
+unittest {
+  "".should.not.beNull;
 }

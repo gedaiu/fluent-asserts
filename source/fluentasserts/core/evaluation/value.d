@@ -48,6 +48,9 @@ struct ValueEvaluation {
   /// a custom text to be prepended to the value
   HeapString prependText;
 
+  /// Whether the evaluated value was a null reference (for nullable types)
+  bool isNull;
+
   /// Disable postblit - use copy constructor instead
   @disable this(this);
 
@@ -65,6 +68,7 @@ struct ValueEvaluation {
     fileName = rhs.fileName;
     line = rhs.line;
     prependText = rhs.prependText;
+    isNull = rhs.isNull;
   }
 
   /// Assignment operator - creates a deep copy from the source.
@@ -81,6 +85,7 @@ struct ValueEvaluation {
     fileName = rhs.fileName;
     line = rhs.line;
     prependText = rhs.prependText;
+    isNull = rhs.isNull;
   }
 
 

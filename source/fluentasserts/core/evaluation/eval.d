@@ -468,6 +468,10 @@ void populateEvaluation(T)(
   eval.fileName = toHeapString(file);
   eval.line = line;
   eval.prependText = toHeapString(prependText);
+
+  static if (__traits(compiles, value is null)) {
+    eval.isNull = value is null;
+  }
 }
 
 
@@ -572,6 +576,7 @@ auto evaluateObject(T)(T obj, const string file = __FILE__, const size_t line = 
   result.evaluation.fileName = toHeapString(file);
   result.evaluation.line = line;
   result.evaluation.prependText = toHeapString(prependText);
+  result.evaluation.isNull = obj is null;
 
   return move(result);
 }
