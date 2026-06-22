@@ -5,19 +5,30 @@ description: Assertions for testing value equality
 
 Test for value equality with these assertions.
 
-## equal
+## equal / equals
 
 Asserts that the target is strictly (`==`) equal to the given value.
 
 ```d
 expect("hello").to.equal("hello");
 expect(42).to.equal(42);
+expect(42).to.equals(42);  // alias
 ```
 
 ### With Negation
 
 ```d
 expect("hello").to.not.equal("world");
+```
+
+### Comparing with null
+
+A null reference is equal to `null`; an empty (but non-null) value is not.
+
+```d
+string s = null;
+expect(s).to.equal(null);
+expect("").to.not.equal(null);
 ```
 
 ## approximately

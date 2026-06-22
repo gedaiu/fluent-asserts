@@ -5,13 +5,14 @@ description: Assertions for testing string content
 
 Test string content with these assertions.
 
-## contain
+## contain / contains
 
 Asserts that a string contains the expected substring.
 
 ```d
 expect("hello world").to.contain("world");
 expect("hello world").to.contain("o w");
+expect("hello world").to.contains("world");  // alias
 ```
 
 ## startWith

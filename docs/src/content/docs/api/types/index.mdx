@@ -7,11 +7,17 @@ Test type properties with these assertions.
 
 ## beNull
 
-Asserts that a value is null.
+Asserts that a value is null. Works with any nullable type — pointers, delegates,
+classes, as well as null strings, arrays, and associative arrays. An empty (but
+non-null) string or array is not considered null.
 
 ```d
 void delegate() action = null;
 expect(action).to.beNull();
+
+string s = null;
+expect(s).to.beNull();
+expect("").to.not.beNull();
 ```
 
 ### Negation

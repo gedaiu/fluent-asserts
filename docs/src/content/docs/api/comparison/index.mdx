@@ -5,22 +5,51 @@ description: Assertions for comparing numeric values
 
 Compare numeric values with these assertions.
 
-## greaterThan / above
+Operands of different numeric types are promoted to a common type before comparing,
+following D's usual arithmetic conversions, so mixing types works as expected:
+
+```d
+double value = 3.22681e+10;
+expect(value).to.be.greaterThan(0);   // double vs int
+expect(-1).to.be.lessThan(1u);        // signed vs unsigned, compared by value
+```
+
+## greaterThan / above / greater
 
 Asserts that a value is greater than the expected value.
 
 ```d
 expect(42).to.be.greaterThan(10);
-expect(42).to.be.above(10);  // alias
+expect(42).to.be.above(10);    // alias
+expect(42).to.be.greater(10);  // alias
 ```
 
-## lessThan / below
+## greaterOrEqualTo / greaterOrEqual
+
+Asserts that a value is greater than or equal to the expected value.
+
+```d
+expect(42).to.be.greaterOrEqualTo(42);
+expect(42).to.be.greaterOrEqual(10);  // alias
+```
+
+## lessThan / below / less
 
 Asserts that a value is less than the expected value.
 
 ```d
 expect(10).to.be.lessThan(42);
 expect(10).to.be.below(42);  // alias
+expect(10).to.be.less(42);   // alias
+```
+
+## lessOrEqualTo / lessOrEqual
+
+Asserts that a value is less than or equal to the expected value.
+
+```d
+expect(42).to.be.lessOrEqualTo(42);
+expect(10).to.be.lessOrEqual(42);  // alias
 ```
 
 ## between
