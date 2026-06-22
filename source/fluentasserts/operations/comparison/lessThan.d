@@ -136,6 +136,12 @@ unittest {
   expect(ulong.max - 1).to.be.lessThan(ulong.max);
 }
 
+@("less is an alias for lessThan")
+unittest {
+  expect(2).to.be.less(5);
+  expect(5).not.to.be.less(2);
+}
+
 @("lessThan works with custom comparable struct")
 unittest {
   static struct Money {

@@ -120,6 +120,8 @@ struct Assert {
 
     static if(assertName == "greaterThan" ||
               assertName == "lessThan" ||
+              assertName == "greater" ||
+              assertName == "less" ||
               assertName == "above" ||
               assertName == "below" ||
               assertName == "between" ||
@@ -397,6 +399,18 @@ unittest {
   Assert.greaterThan(cast(double) 3.22681e+10, 0);
   Assert.lessThan(cast(double) 0.5, 1);
   Assert.between(cast(double) 5.5, 0, 10);
+}
+
+@("Assert.greater and Assert.less alias greaterThan and lessThan")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+  double a = 2.0;
+  double b = 1.0;
+
+  Assert.greater(a, b);
+  Assert.less(b, a);
+  Assert.notGreater(b, a);
+  Assert.notLess(a, b);
 }
 
 // Issue #93: Assert.greaterOrEqualTo and Assert.lessOrEqualTo for numeric types

@@ -418,6 +418,10 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
     }
   }
 
+  /// `greater` and `less` are aliases for `greaterThan` and `lessThan`.
+  alias greater = greaterThan;
+  alias less = lessThan;
+
   /// Asserts that the string starts with the expected prefix.
   Evaluator startWith(T)(T value) {
     addOperationName("startWith");

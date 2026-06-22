@@ -148,6 +148,12 @@ unittest {
   expect(ulong.max).to.be.greaterThan(ulong.max - 1);
 }
 
+@("greater is an alias for greaterThan")
+unittest {
+  expect(5).to.be.greater(2);
+  expect(2).not.to.be.greater(5);
+}
+
 @("Duration compares two values")
 unittest {
   Duration smallValue = 40.seconds;
