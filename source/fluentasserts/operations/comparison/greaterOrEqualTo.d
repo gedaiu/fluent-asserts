@@ -136,6 +136,13 @@ unittest {
   expect(ulong.max).to.be.greaterOrEqualTo(ulong.max);
 }
 
+@("greaterOrEqual is an alias for greaterOrEqualTo")
+unittest {
+  expect(5).to.be.greaterOrEqual(2);
+  expect(5).to.be.greaterOrEqual(5);
+  expect(2).not.to.be.greaterOrEqual(5);
+}
+
 @("Duration compares two values")
 unittest {
   Duration smallValue = 40.seconds;

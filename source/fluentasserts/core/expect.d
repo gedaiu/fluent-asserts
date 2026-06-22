@@ -418,9 +418,13 @@ string truncateForMessage(const(char)[] value) @trusted nothrow {
     }
   }
 
-  /// `greater` and `less` are aliases for `greaterThan` and `lessThan`.
+  /// Convenience aliases for the canonical operation names.
   alias greater = greaterThan;
   alias less = lessThan;
+  alias greaterOrEqual = greaterOrEqualTo;
+  alias lessOrEqual = lessOrEqualTo;
+  alias equals = equal;
+  alias contains = contain;
 
   /// Asserts that the string starts with the expected prefix.
   Evaluator startWith(T)(T value) {
@@ -613,6 +617,7 @@ Expect expect(void delegate() callable, const string file = __FILE__, const size
       } else {
         value.typeNames.clear();
         value.typeNames.put("null");
+        value.isNull = true;
       }
     } catch(Exception e) {
       value.throwable = e;

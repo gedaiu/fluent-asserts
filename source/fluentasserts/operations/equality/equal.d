@@ -1142,6 +1142,11 @@ unittest {
   evaluation.result.messageString.should.contain("should equal null.");
 }
 
+@("null literal equals null literal")
+unittest {
+  expect(null).to.equal(null);
+}
+
 @("null string equals null")
 unittest {
   string s = null;
@@ -1163,6 +1168,12 @@ unittest {
 @("empty string does not equal null")
 unittest {
   "".should.not.equal(null);
+}
+
+@("equals is an alias for equal")
+unittest {
+  expect(5).to.equals(5);
+  expect(5).to.not.equals(6);
 }
 
 // Issue #100: double serialized as scientific notation should equal integer

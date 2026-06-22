@@ -120,8 +120,12 @@ struct Assert {
 
     static if(assertName == "greaterThan" ||
               assertName == "lessThan" ||
+              assertName == "greaterOrEqualTo" ||
+              assertName == "lessOrEqualTo" ||
               assertName == "greater" ||
               assertName == "less" ||
+              assertName == "greaterOrEqual" ||
+              assertName == "lessOrEqual" ||
               assertName == "above" ||
               assertName == "below" ||
               assertName == "between" ||
@@ -411,6 +415,33 @@ unittest {
   Assert.less(b, a);
   Assert.notGreater(b, a);
   Assert.notLess(a, b);
+}
+
+@("Assert.greaterOrEqual and Assert.lessOrEqual alias the OrEqualTo operations")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+
+  Assert.greaterOrEqual(2, 2);
+  Assert.greaterOrEqual(3, 2);
+  Assert.lessOrEqual(2, 2);
+  Assert.lessOrEqual(2, 3);
+}
+
+@("Assert.equals and Assert.contains alias equal and contain")
+unittest {
+  Lifecycle.instance.disableFailureHandling = false;
+
+  Assert.equals(1, 1);
+  Assert.contains("foobar", "bar");
+}
+
+@("Assert.greaterOrEqualTo message reads grammatically with be")
+unittest {
+  auto evaluation = ({
+    Assert.greaterOrEqualTo(2, 5);
+  }).recordEvaluation;
+
+  expect(evaluation.result.messageString).to.equal("2 should be greater or equal to 5.");
 }
 
 // Issue #93: Assert.greaterOrEqualTo and Assert.lessOrEqualTo for numeric types

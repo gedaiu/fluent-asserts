@@ -107,6 +107,12 @@ unittest {
   expect("hello world").to.contain("world");
 }
 
+@("contains is an alias for contain")
+unittest {
+  expect("hello world").to.contains("world");
+  expect("hello world").to.not.contains("xyz");
+}
+
 @("string contains multiple substrings")
 unittest {
   expect("hello world").to.contain("hello");
