@@ -172,7 +172,7 @@ size_t getAssertIndex(const(Token)[] tokens, size_t startLine) {
 }
 
 /// Finds the index of the first opening parenthesis after a given start index.
-/// Skips whitespace and other tokens to find the '('.
+/// Skips whitespace and other tokens to find the opening parenthesis.
 /// Issue #95: Handles extra whitespace in Assert.   lessThan(...) style calls.
 size_t findOpenParen(const(Token)[] tokens, size_t startIndex) {
   foreach (i; startIndex .. tokens.length) {
