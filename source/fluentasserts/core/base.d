@@ -545,9 +545,9 @@ void fluentHandler(string file, size_t line, string msg) @system nothrow {
 /// Installs the fluent handler as the global assert handler.
 /// Uses pragma(crt_constructor) to run before druntime initialization,
 /// avoiding cyclic module dependency issues.
-pragma(crt_constructor)
-extern(C) void setupFluentHandler() {
-  version (unittest) {
+version (unittest) {
+  pragma(crt_constructor)
+  extern(C) void setupFluentHandler() {
     import core.exception;
     core.exception.assertHandler = &fluentHandler;
   }
